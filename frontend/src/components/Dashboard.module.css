@@ -1,0 +1,19 @@
+.container {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.charts {
+  display: flex;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.charts > * {
+  flex: 1;
+  background-color: white;
+  padding: 1rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}

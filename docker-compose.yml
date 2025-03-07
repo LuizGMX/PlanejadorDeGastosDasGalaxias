@@ -1,0 +1,33 @@
+version: '3'
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: planejador
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    ports:
+      - "3306:3306"  # Adicionado para mapear a porta ao host
+    volumes:
+      - db_data:/var/lib/mysql
+  backend:
+    build: ./backend
+    expose:
+      - "5000"
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db
+      DB_USER: user
+      DB_PASSWORD: password
+      DB_NAME: planejador
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+volumes:
+  db_data:
