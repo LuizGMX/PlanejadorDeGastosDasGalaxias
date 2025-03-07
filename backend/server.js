@@ -54,12 +54,8 @@ app.use('/api/expenses', authenticate, require('./routes/expenses')(Expense, Cre
 app.use('/api/credit-cards', authenticate, require('./routes/creditCards')(CreditCard));
 app.use('/api/dashboard', authenticate, require('./routes/dashboard')(Expense, Category));
 
-// Rotas protegidas de auth
-app.get('/api/auth/me', authenticate, authRoutes);
-app.put('/api/auth/me', authenticate, authRoutes);
-
 // Sincronizar banco de dados e adicionar dados iniciais apenas se necessário
-sequelize.sync().then(async () => {
+sequelize.sync({force:true}).then(async () => {
   const categoryCount = await Category.count();
   if (categoryCount === 0) {
     await Category.bulkCreate([
@@ -75,6 +71,10 @@ sequelize.sync().then(async () => {
       { category_name: 'Outros' },
     ]);
     console.log('Categorias iniciais criadas.');
+
+    // Adicionar dados de teste
+    const expensesSeeder = require('./seeders/expenses');
+    await expensesSeeder(User, Expense, Category, CreditCard);
   }
 
   const PORT = process.env.PORT || 5000;

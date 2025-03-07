@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
+import PixIcon from '@mui/icons-material/Pix';
+import CreditCardIcon from '@mui/icons-material/CreditCard';
+import DeleteIcon from '@mui/icons-material/Delete';
+import AddIcon from '@mui/icons-material/Add';
+import Layout from './Layout';
 import styles from './Expenses.module.css';
 
 function Expenses() {
@@ -23,39 +28,87 @@ function Expenses() {
     setExpenses(expenses.filter((e) => e.id !== id));
   };
 
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
   return (
-    <div className={styles.container}>
-      <h2>Despesas</h2>
-      <Link to="/add-expense" className={styles.addButton}>Adicionar Despesa</Link>
-      <table>
-        <thead>
-          <tr>
-            <th>Descrição</th>
-            <th>Valor</th>
-            <th>Cartão</th>
-            <th>Categoria</th>
-            <th>Parcela</th>
-            <th>Data</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {expenses.map((expense) => (
-            <tr key={expense.id}>
-              <td>{expense.description}</td>
-              <td>R$ {expense.amount}</td>
-              <td>{expense.CreditCard?.card_name || 'N/A'}</td>
-              <td>{expense.Category.category_name}</td>
-              <td>{expense.installment_number}/{expense.total_installments}</td>
-              <td>{new Date(expense.expense_date).toLocaleDateString()}</td>
-              <td>
-                <button onClick={() => deleteExpense(expense.id)}>Excluir</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <Layout>
+      <div className={styles.container}>
+        <div className={styles.headerSection}>
+          <h2>Despesas</h2>
+          <Link to="/add-expense" className={styles.addButton}>
+            <AddIcon />
+            <span>Adicionar Despesa</span>
+          </Link>
+        </div>
+
+        {expenses.length === 0 ? (
+          <p className={styles.noExpenses}>
+            Nenhuma despesa encontrada. Clique em "Adicionar Despesa" para começar!
+          </p>
+        ) : (
+          <div className={styles.tableContainer}>
+            <table>
+              <thead>
+                <tr>
+                  <th>Descrição</th>
+                  <th>Valor</th>
+                  <th>Tipo</th>
+                  <th>Cartão</th>
+                  <th>Categoria</th>
+                  <th>Parcela</th>
+                  <th>Data</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {expenses.map((expense) => (
+                  <tr key={expense.id}>
+                    <td>{expense.description}</td>
+                    <td>{formatCurrency(expense.amount)}</td>
+                    <td className={styles.paymentType}>
+                      {expense.payment_method === 'pix' ? (
+                        <div className={styles.paymentIcon}>
+                          <PixIcon className={styles.pixIcon} />
+                        </div>
+                      ) : (
+                        <div className={styles.paymentIcon}>
+                          <CreditCardIcon className={styles.cardIcon} />
+                        </div>
+                      )}
+                    </td>
+                    <td className={styles.cardInfo}>
+                      {expense.CreditCard ? (
+                        <>
+                          <span className={`${styles.bankIcon} bb-${expense.CreditCard.bank_name}`}></span>
+                          <span>{expense.CreditCard.card_name}</span>
+                        </>
+                      ) : '-'}
+                    </td>
+                    <td>{expense.Category.category_name}</td>
+                    <td>{expense.installment_number}/{expense.total_installments}</td>
+                    <td>{new Date(expense.expense_date).toLocaleDateString()}</td>
+                    <td>
+                      <button 
+                        onClick={() => deleteExpense(expense.id)}
+                        className={styles.deleteButton}
+                        title="Excluir despesa"
+                      >
+                        <DeleteIcon />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </Layout>
   );
 }
 

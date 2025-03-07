@@ -3,3 +3,5 @@
 
 # Ignorar variações de .env como .env.local, .env.development, etc.
 **/.env.*
+
+node_modules/
