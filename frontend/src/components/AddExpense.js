@@ -1,311 +1,177 @@
-import { useEffect, useState } from 'react';
-import { Formik, Form, Field } from 'formik';
-import * as Yup from 'yup';
-import axios from 'axios';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import DatePicker from 'react-datepicker';
-import { NumericFormat } from 'react-number-format';
-import 'react-datepicker/dist/react-datepicker.css';
-import PixIcon from '@mui/icons-material/Pix';
-import CreditCardIcon from '@mui/icons-material/CreditCard';
-import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
-import styles from './AddExpense.module.css';
-import Layout from './Layout';
+import { AuthContext } from '../App';
+import styles from '../styles/shared.module.css';
 
-const schema = Yup.object().shape({
-  amount: Yup.string().required('Valor é obrigatório').test('is-valid-amount', 'Valor inválido', value => {
-    if (!value) return false;
-    const number = parseFloat(value.replace(/\./g, '').replace(',', '.').replace(/[^\d.-]/g, ''));
-    return !isNaN(number) && number > 0;
-  }),
-  description: Yup.string().required('Descrição é obrigatória'),
-  payment_method: Yup.string().oneOf(['card', 'pix']).required('Forma de pagamento é obrigatória'),
-  credit_card_id: Yup.mixed().when('payment_method', {
-    is: 'card',
-    then: () => Yup.number().required('Cartão é obrigatório para pagamento com cartão'),
-    otherwise: () => Yup.mixed().nullable()
-  }),
-  bank_name: Yup.string().when('payment_method', {
-    is: 'card',
-    then: () => Yup.string().required('Nome do banco é obrigatório'),
-    otherwise: () => Yup.mixed().nullable()
-  }),
-  category_id: Yup.number().required('Categoria é obrigatória'),
-  has_installments: Yup.boolean(),
-  installment_number: Yup.number().when('has_installments', {
-    is: true,
-    then: () => Yup.number().min(1).required('Número da parcela é obrigatório'),
-    otherwise: () => Yup.number().default(1)
-  }),
-  total_installments: Yup.number().when('has_installments', {
-    is: true,
-    then: () => Yup.number().min(1).required('Total de parcelas é obrigatório'),
-    otherwise: () => Yup.number().default(1)
-  })
-});
-
-function AddExpense() {
-  const [cards, setCards] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filteredCards, setFilteredCards] = useState([]);
-  const [showDropdown, setShowDropdown] = useState(false);
+const AddExpense = () => {
   const navigate = useNavigate();
+  const { auth } = useContext(AuthContext);
+  const [formData, setFormData] = useState({
+    description: '',
+    amount: '',
+    date: new Date().toISOString().split('T')[0],
+    category_id: '',
+    payment_method: 'card'
+  });
+  const [categories, setCategories] = useState([]);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchCategories = async () => {
       try {
-        const cardsRes = await axios.get('/api/credit-cards', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        const response = await fetch('/api/categories', {
+          headers: {
+            'Authorization': `Bearer ${auth.token}`
+          }
         });
-        // Filtra os cartões indesejados ao carregar
-        const filteredCards = cardsRes.data.filter(card => 
-          !['xp visa', 'bb ouro card'].includes(card.card_name.toLowerCase())
-        );
-        setCards(filteredCards);
-        setFilteredCards(filteredCards);
 
-        const categoriesRes = await axios.get('/api/expenses/categories', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-        });
-        setCategories(categoriesRes.data);
-      } catch (error) {
-        console.error('Erro ao buscar dados:', error.response?.data || error.message);
+        if (!response.ok) {
+          throw new Error('Falha ao carregar categorias');
+        }
+
+        const data = await response.json();
+        setCategories(data);
+      } catch (err) {
+        setError('Erro ao carregar categorias. Por favor, tente novamente.');
       }
     };
-    fetchData();
-  }, []);
 
-  const handleSearchChange = (e, setFieldValue) => {
-    const value = e.target.value;
-    setSearchTerm(value);
-    setShowDropdown(true);
+    fetchCategories();
+  }, [auth.token]);
 
-    if (value === '') {
-      // Filtra os cartões indesejados
-      const filteredList = cards.filter(card => 
-        !['xp visa', 'bb ouro card'].includes(card.card_name.toLowerCase())
-      );
-      setFilteredCards(filteredList);
-      setFieldValue('credit_card_id', '');
-    } else {
-      const filtered = cards
-        .filter(card => !['xp visa', 'bb ouro card'].includes(card.card_name.toLowerCase()))
-        .filter(card => card.bank_name.toLowerCase().includes(value.toLowerCase()));
-      setFilteredCards(filtered);
-    }
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  const handleCardSelect = (cardId, cardName, bankName, setFieldValue) => {
-    setFieldValue('credit_card_id', cardId);
-    setFieldValue('bank_name', bankName);
-    setSearchTerm(cardName);
-    setShowDropdown(false);
-  };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
 
-  const toggleFavorite = async (id, type) => {
     try {
-      const endpoint = type === 'card' 
-        ? `/api/credit-cards/${id}/toggle-favorite`
-        : `/api/expenses/categories/${id}/toggle-favorite`;
-      
-      await axios.patch(endpoint, {}, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      const response = await fetch('/api/expenses', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${auth.token}`
+        },
+        body: JSON.stringify(formData)
       });
 
-      // Atualizar a lista após favoritar/desfavoritar
-      const fetchData = async () => {
-        const cardsRes = await axios.get('/api/credit-cards', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        });
-        setCards(cardsRes.data);
-        setFilteredCards(cardsRes.data);
+      if (!response.ok) {
+        throw new Error('Falha ao adicionar despesa');
+      }
 
-        const categoriesRes = await axios.get('/api/expenses/categories', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        });
-        setCategories(categoriesRes.data);
-      };
-      fetchData();
-    } catch (error) {
-      console.error('Erro ao atualizar favorito:', error);
+      setSuccess('Despesa adicionada com sucesso!');
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 2000);
+    } catch (err) {
+      setError('Erro ao adicionar despesa. Por favor, tente novamente.');
     }
   };
 
   return (
-    <Layout>
-      <div className={styles.container}>
-        <h2>Adicionar Despesa</h2>
-        <Formik
-          initialValues={{
-            amount: '',
-            description: '',
-            payment_method: 'card',
-            credit_card_id: '',
-            bank_name: '',
-            category_id: '',
-            has_installments: false,
-            installment_number: 1,
-            total_installments: 1,
-            expense_date: new Date(),
-          }}
-          validationSchema={schema}
-          validateOnBlur={false}
-          validateOnChange={false}
-          onSubmit={async (values) => {
-            const cleanedValues = {
-              ...values,
-              amount: parseFloat(values.amount.replace(/\./g, '').replace(',', '.').replace(/[^\d.-]/g, '')),
-              credit_card_id: values.payment_method === 'pix' ? null : (values.credit_card_id === '' ? null : values.credit_card_id),
-            };
-            await axios.post('/api/expenses', cleanedValues, {
-              headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-            });
-            navigate('/expenses');
-          }}
-        >
-          {({ errors, touched, setFieldValue, values }) => (
-            <Form className={styles.form}>
-              <Field name="description" placeholder="Descrição" />
-              {errors.description ? <div className={styles.error}>{errors.description}</div> : null}
-              
-              <NumericFormat
-                displayType="input"
-                value={values.amount}
-                onValueChange={({ value }) => {
-                  setFieldValue('amount', value);
-                }}
-                thousandSeparator="."
-                decimalSeparator=","
-                prefix="R$ "
-                decimalScale={2}
-                fixedDecimalScale
-                allowNegative={false}
-                placeholder="Valor"
-                className={styles.searchInput}
-                isNumericString={true}
-              />
-              {errors.amount ? <div className={styles.error}>{errors.amount}</div> : null}
+    <div className={styles.container}>
+      <div className={`${styles.card} ${styles.fadeIn}`}>
+        <h1 className={styles.title}>Adicionar Despesa</h1>
 
-              {/* Campo de Forma de Pagamento */}
-              <div className={styles.paymentMethod}>
-                <label>Forma de Pagamento:</label>
-                <div className={styles.paymentOptions}>
-                  <label className={`${styles.paymentOption} ${values.payment_method === 'card' ? styles.selected : ''}`}>
-                    <Field type="radio" name="payment_method" value="card" />
-                    <CreditCardIcon className={styles.cardIcon} />
-                    <span>Cartão</span>
-                  </label>
-                  <label className={`${styles.paymentOption} ${values.payment_method === 'pix' ? styles.selected : ''}`}>
-                    <Field type="radio" name="payment_method" value="pix" />
-                    <PixIcon className={styles.pixIcon} />
-                    <span>Pix</span>
-                  </label>
-                </div>
-                {errors.payment_method ? <div className={styles.error}>{errors.payment_method}</div> : null}
-              </div>
+        {error && <p className={styles.error}>{error}</p>}
+        {success && <p className={styles.success}>{success}</p>}
 
-              {/* Campo de busca de cartão (aparece apenas se for "card") */}
-              {values.payment_method === 'card' && (
-                <div className={styles.searchContainer}>
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => handleSearchChange(e, setFieldValue)}
-                    placeholder="Digite para buscar um cartão"
-                    onFocus={() => setShowDropdown(true)}
-                    className={styles.searchInput}
-                  />
-                  {showDropdown && (
-                    <ul className={styles.dropdown}>
-                      {filteredCards.map((card) => (
-                        <li
-                          key={card.id}
-                          onClick={() => handleCardSelect(card.id, card.card_name, card.bank_name, setFieldValue)}
-                          className={styles.dropdownItem}
-                        >
-                          <div className={styles.cardInfo}>
-                            <AccountBalanceIcon className={styles.bankIcon} />
-                            <span>{card.bank_name}</span>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleFavorite(card.id, 'card');
-                              }}
-                              className={`${styles.favoriteButton} ${card.is_favorite ? styles.active : ''}`}
-                              tabIndex="-1"
-                            >
-                              ★
-                            </button>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  {errors.credit_card_id ? <div className={styles.error}>{errors.credit_card_id}</div> : null}
-                </div>
-              )}
+        <form onSubmit={handleSubmit} className={styles.form}>
+          <div className={styles.inputGroup}>
+            <label className={styles.label}>Descrição</label>
+            <input
+              type="text"
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              className={styles.input}
+              required
+            />
+          </div>
 
-              <div className={styles.categorySelect}>
-                <Field as="select" name="category_id">
-                  <option value="">Selecione uma categoria</option>
-                  {categories
-                    .sort((a, b) => {
-                      if (a.is_favorite === b.is_favorite) {
-                        return a.category_name.localeCompare(b.category_name);
-                      }
-                      return b.is_favorite - a.is_favorite;
-                    })
-                    .map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.category_name} {cat.is_favorite ? '⭐' : ''}
-                      </option>
-                    ))}
-                </Field>
-                {errors.category_id ? <div className={styles.error}>{errors.category_id}</div> : null}
-              </div>
-              
-              <div className={styles.installmentsSection}>
-                <label className={styles.checkboxLabel}>
-                  <Field type="checkbox" name="has_installments" />
-                  <span>Possui parcelas</span>
-                </label>
-                
-                {values.has_installments && (
-                  <div className={styles.installmentsFields}>
-                    <Field 
-                      name="installment_number" 
-                      type="number" 
-                      placeholder="Número da Parcela"
-                      min="1" 
-                    />
-                    {errors.installment_number ? <div className={styles.error}>{errors.installment_number}</div> : null}
-                    
-                    <Field 
-                      name="total_installments" 
-                      type="number" 
-                      placeholder="Total de Parcelas"
-                      min="1" 
-                    />
-                    {errors.total_installments ? <div className={styles.error}>{errors.total_installments}</div> : null}
-                  </div>
-                )}
-              </div>
-              
-              <DatePicker
-                selected={values.expense_date}
-                onChange={(date) => setFieldValue('expense_date', date)}
-                dateFormat="dd/MM/yyyy"
-                className={styles.datePicker}
-              />
-              <button type="submit">Adicionar</button>
-            </Form>
-          )}
-        </Formik>
+          <div className={styles.inputGroup}>
+            <label className={styles.label}>Valor</label>
+            <input
+              type="number"
+              name="amount"
+              value={formData.amount}
+              onChange={handleChange}
+              className={styles.input}
+              step="0.01"
+              min="0"
+              required
+            />
+          </div>
+
+          <div className={styles.inputGroup}>
+            <label className={styles.label}>Data</label>
+            <input
+              type="date"
+              name="date"
+              value={formData.date}
+              onChange={handleChange}
+              className={styles.input}
+              required
+            />
+          </div>
+
+          <div className={styles.inputGroup}>
+            <label className={styles.label}>Categoria</label>
+            <select
+              name="category_id"
+              value={formData.category_id}
+              onChange={handleChange}
+              className={styles.input}
+              required
+            >
+              <option value="">Selecione uma categoria</option>
+              {categories.map(category => (
+                <option key={category.id} value={category.id}>
+                  {category.category_name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className={styles.inputGroup}>
+            <label className={styles.label}>Método de Pagamento</label>
+            <select
+              name="payment_method"
+              value={formData.payment_method}
+              onChange={handleChange}
+              className={styles.input}
+              required
+            >
+              <option value="card">Cartão</option>
+              <option value="pix">PIX</option>
+              <option value="money">Dinheiro</option>
+            </select>
+          </div>
+
+          <div className={styles.buttonGroup}>
+            <button type="submit" className={styles.button}>
+              Adicionar Despesa
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/dashboard')}
+              className={`${styles.button} ${styles.secondary}`}
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
       </div>
-    </Layout>
+    </div>
   );
-}
+};
 
 export default AddExpense;

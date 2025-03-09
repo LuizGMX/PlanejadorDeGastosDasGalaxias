@@ -1,25 +1,24 @@
 import { DataTypes } from 'sequelize';
 
 export default (sequelize) => {
-  const Category = sequelize.define('Category', {
+  const SubCategory = sequelize.define('SubCategory', {
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true
     },
-    category_name: {
+    name: {
       type: DataTypes.STRING,
       allowNull: false
     },
-    is_favorite: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
-      defaultValue: false
+    category_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false
     }
   }, {
     timestamps: true,
-    tableName: 'categories' // Adicionado para clareza
+    tableName: 'subcategories'
   });
 
-  return Category;
+  return SubCategory;
 };

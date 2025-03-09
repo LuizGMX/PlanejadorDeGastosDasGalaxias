@@ -1,204 +1,285 @@
-import React, { useState, useContext } from 'react';
-import axios from 'axios';
-import { AuthContext } from '../App';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { NumericFormat } from 'react-number-format';
-import styles from './Login.module.css';
+import { AuthContext } from '../App';
+import styles from '../styles/shared.module.css';
 
-function Login() {
-  const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
-  const [netIncome, setNetIncome] = useState('');
-  const [selectedBanks, setSelectedBanks] = useState([]);
-  const [step, setStep] = useState('email');
-  const [isNewUser, setIsNewUser] = useState(false);
-  const [userName, setUserName] = useState('');
-  const [error, setError] = useState('');
-  const [code, setCode] = useState('');
-  const { setAuth } = useContext(AuthContext);
+const Login = () => {
   const navigate = useNavigate();
+  const { setAuth } = useContext(AuthContext);
+  const [step, setStep] = useState('email');
+  const [formData, setFormData] = useState({
+    email: '',
+    name: '',
+    netIncome: '',
+    selectedBanks: []
+  });
+  const [code, setCode] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [banks, setBanks] = useState([]);
+  const [isNewUser, setIsNewUser] = useState(false);
 
-  const validateEmail = (email) => {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return re.test(email);
+  useEffect(() => {
+    const fetchBanks = async () => {
+      try {
+        const response = await fetch('/api/bank');
+        if (!response.ok) {
+          throw new Error('Falha ao carregar bancos');
+        }
+        const data = await response.json();
+        setBanks(data);
+      } catch (err) {
+        setError('Erro ao carregar bancos. Por favor, tente novamente.');
+      }
+    };
+
+    if (step === 'banks') {
+      fetchBanks();
+    }
+  }, [step]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  const checkEmail = async () => {
-    if (!email || !validateEmail(email)) {
-      setError('Por favor, insira um e-mail válido.');
-      return;
-    }
+  const handleBankToggle = (bankId) => {
+    setFormData(prev => {
+      const selectedBanks = prev.selectedBanks.includes(bankId)
+        ? prev.selectedBanks.filter(id => id !== bankId)
+        : [...prev.selectedBanks, bankId];
+      return { ...prev, selectedBanks };
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
     try {
-      setError('');
-      const res = await axios.post('/api/auth/check-email', { email });
-      setIsNewUser(res.data.isNewUser);
-      if (res.data.isNewUser) {
-        setStep('name');
-      } else {
-        setUserName(res.data.name);
-        await axios.post('/api/auth/send-code', { email, name: res.data.name });
+      if (step === 'email') {
+        const response = await fetch('/api/auth/check-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: formData.email })
+        });
+
+        if (!response.ok) {
+          throw new Error('Falha ao verificar email');
+        }
+
+        const data = await response.json();
+        setIsNewUser(data.isNewUser);
+        
+        if (data.isNewUser) {
+          setStep('name');
+        } else {
+          setFormData(prev => ({ ...prev, name: data.name }));
+          await requestCode();
+          setStep('code');
+        }
+      } else if (step === 'name') {
+        setStep('income');
+      } else if (step === 'income') {
+        setStep('banks');
+      } else if (step === 'banks') {
+        await requestCode();
         setStep('code');
+      } else if (step === 'code') {
+        await verifyCode();
       }
-    } catch (error) {
-      setError(error.response?.data?.message || 'Erro ao verificar email. Tente novamente.');
+    } catch (err) {
+      setError(err.message || 'Ocorreu um erro. Por favor, tente novamente.');
     }
   };
 
-  const handleNextStep = () => {
-    if (step === 'name') {
-      if (!name.trim()) {
-        setError('Por favor, insira seu nome.');
-        return;
-      }
-      setStep('netIncome');
-    } else if (step === 'netIncome') {
-      if (!netIncome || isNaN(netIncome) || netIncome <= 0) {
-        setError('Por favor, insira uma renda líquida válida.');
-        return;
-      }
-      setStep('banks');
-    } else if (step === 'banks') {
-      if (selectedBanks.length === 0) {
-        setError('Por favor, selecione pelo menos um banco.');
-        return;
-      }
-      sendCode();
-    }
-  };
+  const requestCode = async () => {
+    const response = await fetch('/api/auth/send-code', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    });
 
-  const toggleBankSelection = (bank) => {
-    setSelectedBanks((prev) =>
-      prev.includes(bank) ? prev.filter((b) => b !== bank) : [...prev, bank]
-    );
-  };
-
-  const sendCode = async () => {
-    try {
-      setError('');
-      const payload = { email, name, netIncome: Number(netIncome), selectedBanks };
-      const res = await axios.post('/api/auth/send-code', payload);
-      if (res.data.message === 'Código enviado com sucesso!') {
-        setStep('code');
-      } else {
-        setError('Resposta inesperada do servidor.');
-      }
-    } catch (error) {
-      setError(error.response?.data?.message || 'Erro ao enviar código. Tente novamente.');
+    if (!response.ok) {
+      throw new Error('Falha ao enviar código');
     }
+
+    const data = await response.json();
+    console.log('Código enviado:', data);
   };
 
   const verifyCode = async () => {
-    if (!code.trim()) {
-      setError('Por favor, insira o código.');
-      return;
+    const response = await fetch('/api/auth/verify-code', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: formData.email,
+        code
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('Código inválido');
     }
-    try {
-      setError('');
-      const res = await axios.post('/api/auth/verify-code', { email, code });
-      setAuth({ token: res.data.token });
-      navigate('/dashboard');
-    } catch (error) {
-      setError(error.response?.data?.message || 'Código inválido. Tente novamente.');
-    }
+
+    const data = await response.json();
+    setAuth({ token: data.token });
+    localStorage.setItem('token', data.token);
+    navigate('/dashboard');
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (step === 'email') checkEmail();
-    else if (step === 'name' || step === 'netIncome' || step === 'banks') handleNextStep();
-    else if (step === 'code') verifyCode();
+  const renderStep = () => {
+    switch (step) {
+      case 'email':
+        return (
+          <>
+            <div className={styles.loginHeader}>
+              <h1 className={styles.title}>Faça login</h1>
+              <p className={styles.subtitle}>para entrar para o nosso time</p>
+            </div>
+            <div className={styles.inputGroup}>
+              <label className={styles.label}>Email</label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                className={styles.input}
+                placeholder="Digite seu email"
+                required
+              />
+            </div>
+          </>
+        );
+
+      case 'name':
+        return (
+          <>
+            <h1 className={styles.title}>Como podemos te chamar?</h1>
+            <div className={styles.inputGroup}>
+              <label className={styles.label}>Nome</label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                className={styles.input}
+                placeholder="Digite seu nome"
+                required
+              />
+            </div>
+          </>
+        );
+
+      case 'income':
+        return (
+          <>
+            <h1 className={styles.title}>Qual sua renda líquida mensal?</h1>
+            <div className={styles.inputGroup}>
+              <label className={styles.label}>Renda Líquida</label>
+              <input
+                type="number"
+                name="netIncome"
+                value={formData.netIncome}
+                onChange={handleChange}
+                className={styles.input}
+                placeholder="Digite sua renda"
+                step="0.01"
+                min="0"
+                required
+              />
+            </div>
+          </>
+        );
+
+      case 'banks':
+        return (
+          <>
+            <h1 className={styles.title}>Selecione seus bancos</h1>
+            <div className={styles.bankGrid}>
+              {banks.map(bank => (
+                <div
+                  key={bank.id}
+                  className={`${styles.bankCard} ${
+                    formData.selectedBanks.includes(bank.id) ? styles.selected : ''
+                  }`}
+                  onClick={() => handleBankToggle(bank.id)}
+                >
+                  <span className={styles.bankName}>{bank.name}</span>
+                </div>
+              ))}
+            </div>
+          </>
+        );
+
+      case 'code':
+        return (
+          <>
+            <h1 className={styles.title}>Digite o código de verificação</h1>
+            <p className={styles.subtitle}>
+              Enviamos um código para {formData.email}
+            </p>
+            <div className={styles.inputGroup}>
+              <label className={styles.label}>Código</label>
+              <input
+                type="text"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                className={styles.input}
+                placeholder="Digite o código"
+                maxLength={6}
+                required
+              />
+            </div>
+          </>
+        );
+
+      default:
+        return null;
+    }
   };
 
   return (
     <div className={styles.container}>
-      <div className={styles['login-text']}>Entre para começar a mudar a sua vida financeira.</div>
-      <div className={styles.form}>
-        {step === 'email' && <h2>ENTRAR</h2>}
-        {step === 'email' && <p className={styles.helperText}>Por favor, insira seu e-mail para continuar.</p>}
-        <form onSubmit={handleSubmit}>
-          {step === 'email' ? (
-            <>
-              <input
-                type="email"
-                className={styles['login-input']}
-                placeholder="Seu e-mail"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-              <button type="submit" className={styles['login-button']}>Continuar</button>
-            </>
-          ) : step === 'name' ? (
-            <>
-              <p className={styles.helperText}>Digite seu nome completo.</p>
-              <input
-                type="text"
-                className={styles['login-input']}
-                placeholder="Seu nome"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-              <button type="submit" className={styles['login-button']}>Próximo</button>
-            </>
-          ) : step === 'netIncome' ? (
-            <>
-              <p className={styles.helperText}>Informe sua renda líquida mensal.</p>
-              <NumericFormat
-                className={styles['login-input']}
-                placeholder="Renda líquida"
-                value={netIncome}
-                onValueChange={(values) => setNetIncome(values.floatValue)}
-                thousandSeparator={true}
-                prefix={'R$ '}
-                decimalScale={2}
-                fixedDecimalScale={true}
-                allowNegative={false}
-                isNumericString={true}
-              />
-              <button type="submit" className={styles['login-button']}>Próximo</button>
-            </>
-          ) : step === 'banks' ? (
-            <>
-              <p className={styles.helperText}>Escolha os bancos que deseja adicionar.</p>
-              <div className={styles.bankButtons}>
-                {['Itaú Unibanco', 'Banco do Brasil', 'Bradesco', 'Caixa Econômica Federal', 'Santander Brasil', 'Nubank', 'Banco Inter', 'BTG Pactual', 'Safra', 'Sicredi', 'Banrisul', 'C6 Bank', 'Banco Pan', 'Original', 'Sicoob', 'Votorantim (Banco BV)', 'BMG', 'Mercantil do Brasil', 'Daycoval', 'Neon'].map(bank => (
-                  <button
-                    key={bank}
-                    type="button"
-                    className={`${styles.bankButton} ${selectedBanks.includes(bank) ? styles.selected : ''}`}
-                    onClick={() => toggleBankSelection(bank)}
-                  >
-                    {bank}
-                  </button>
-                ))}
-              </div>
-              <button type="submit" className={styles['login-button']}>Próximo</button>
-            </>
-          ) : step === 'code' ? (
-            <>
-              {isNewUser ? (
-                <p className={styles.message}>
-                  Digite o código enviado ao seu e-mail para finalizar a criação da sua conta.
-                </p>
-              ) : (
-                <p className={styles.message}>
-                  Bem-vindo de volta, {userName}! Digite o código enviado ao seu e-mail.
-                </p>
-              )}
-              <input
-                type="text"
-                className={styles['login-input']}
-                placeholder="Código recebido"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-              />
-              <button type="submit" className={styles['login-button']}>Verificar</button>
-            </>
-          ) : null}
+      <div className={styles.loginContainer}>
+        <div className={styles.loginIllustration}>
+          {/* Aqui você pode adicionar a ilustração do astronauta */}
+        </div>
+        <div className={`${styles.card} ${styles.fadeIn}`}>
           {error && <p className={styles.error}>{error}</p>}
-        </form>
+          {success && <p className={styles.success}>{success}</p>}
+
+          <form onSubmit={handleSubmit} className={styles.form}>
+            {renderStep()}
+
+            <div className={styles.buttonGroup}>
+              {step !== 'email' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (step === 'name') setStep('email');
+                    if (step === 'income') setStep('name');
+                    if (step === 'banks') setStep('income');
+                    if (step === 'code') setStep(isNewUser ? 'banks' : 'email');
+                  }}
+                  className={`${styles.button} ${styles.secondary}`}
+                >
+                  Voltar
+                </button>
+              )}
+              <button type="submit" className={styles.button}>
+                {step === 'code' ? 'Verificar' : 'Próximo'}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
-}
+};
 
 export default Login;

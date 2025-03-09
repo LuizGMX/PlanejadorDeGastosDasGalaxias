@@ -1,115 +1,155 @@
-import { useEffect, useState } from 'react';
-import axios from 'axios';
-import { Link } from 'react-router-dom';
-import PixIcon from '@mui/icons-material/Pix';
-import CreditCardIcon from '@mui/icons-material/CreditCard';
-import DeleteIcon from '@mui/icons-material/Delete';
-import AddIcon from '@mui/icons-material/Add';
-import Layout from './Layout';
-import styles from './Expenses.module.css';
+import React, { useState, useEffect, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { AuthContext } from '../App';
+import styles from '../styles/shared.module.css';
 
-function Expenses() {
+const Expenses = () => {
+  const navigate = useNavigate();
+  const { auth } = useContext(AuthContext);
   const [expenses, setExpenses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [filter, setFilter] = useState({
+    month: new Date().getMonth() + 1,
+    year: new Date().getFullYear()
+  });
 
   useEffect(() => {
     const fetchExpenses = async () => {
-      const res = await axios.get('/api/expenses', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-      });
-      setExpenses(res.data);
+      try {
+        const response = await fetch(`/api/expenses?month=${filter.month}&year=${filter.year}`, {
+          headers: {
+            'Authorization': `Bearer ${auth.token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Falha ao carregar despesas');
+        }
+
+        const data = await response.json();
+        setExpenses(data);
+      } catch (err) {
+        setError('Erro ao carregar despesas. Por favor, tente novamente.');
+      } finally {
+        setLoading(false);
+      }
     };
+
     fetchExpenses();
-  }, []);
+  }, [auth.token, filter]);
 
-  const deleteExpense = async (id) => {
-    await axios.delete(`/api/expenses/${id}`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-    });
-    setExpenses(expenses.filter((e) => e.id !== id));
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilter(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
+  if (loading) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.card}>
+          <p className={styles.text}>Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.card}>
+          <p className={styles.error}>{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <Layout>
-      <div className={styles.container}>
-        <div className={styles.headerSection}>
-          <h2>Despesas</h2>
-          <Link to="/add-expense" className={styles.addButton}>
-            <AddIcon />
-            <span>Adicionar Despesa</span>
-          </Link>
+    <div className={styles.container}>
+      <div className={`${styles.card} ${styles.fadeIn}`}>
+        <h1 className={styles.title}>Minhas Despesas</h1>
+
+        <div className={styles.filters}>
+          <div className={styles.inputGroup}>
+            <label className={styles.label}>Mês</label>
+            <select
+              name="month"
+              value={filter.month}
+              onChange={handleFilterChange}
+              className={styles.input}
+            >
+              {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
+                <option key={month} value={month}>
+                  {new Date(2000, month - 1).toLocaleString('pt-BR', { month: 'long' })}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className={styles.inputGroup}>
+            <label className={styles.label}>Ano</label>
+            <select
+              name="year"
+              value={filter.year}
+              onChange={handleFilterChange}
+              className={styles.input}
+            >
+              {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map(year => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        {expenses.length === 0 ? (
-          <p className={styles.noExpenses}>
-            Nenhuma despesa encontrada. Clique em "Adicionar Despesa" para começar!
-          </p>
-        ) : (
+        {expenses.length > 0 ? (
           <div className={styles.tableContainer}>
-            <table>
+            <table className={styles.table}>
               <thead>
                 <tr>
-                  <th>Descrição</th>
-                  <th>Valor</th>
-                  <th>Tipo</th>
-                  <th>Cartão</th>
-                  <th>Categoria</th>
-                  <th>Parcela</th>
                   <th>Data</th>
-                  <th>Ações</th>
+                  <th>Descrição</th>
+                  <th>Categoria</th>
+                  <th>Valor</th>
+                  <th>Método</th>
                 </tr>
               </thead>
               <tbody>
-                {expenses.map((expense) => (
+                {expenses.map(expense => (
                   <tr key={expense.id}>
+                    <td>{new Date(expense.date).toLocaleDateString('pt-BR')}</td>
                     <td>{expense.description}</td>
-                    <td>{formatCurrency(expense.amount)}</td>
-                    <td className={styles.paymentType}>
-                      {expense.payment_method === 'pix' ? (
-                        <div className={styles.paymentIcon}>
-                          <PixIcon className={styles.pixIcon} />
-                        </div>
-                      ) : (
-                        <div className={styles.paymentIcon}>
-                          <CreditCardIcon className={styles.cardIcon} />
-                        </div>
-                      )}
-                    </td>
-                    <td className={styles.cardInfo}>
-                      {expense.CreditCard ? (
-                        <>
-                          <span className={`${styles.bankIcon} bb-${expense.CreditCard.bank_name}`}></span>
-                          <span>{expense.CreditCard.card_name}</span>
-                        </>
-                      ) : '-'}
-                    </td>
-                    <td>{expense.Category.category_name}</td>
-                    <td>{expense.installment_number}/{expense.total_installments}</td>
-                    <td>{new Date(expense.expense_date).toLocaleDateString()}</td>
-                    <td>
-                      <button 
-                        onClick={() => deleteExpense(expense.id)}
-                        className={styles.deleteButton}
-                        title="Excluir despesa"
-                      >
-                        <DeleteIcon />
-                      </button>
-                    </td>
+                    <td>{expense.category_name}</td>
+                    <td>R$ {expense.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                    <td>{expense.payment_method}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+        ) : (
+          <p className={styles.noData}>Nenhuma despesa encontrada para o período selecionado.</p>
         )}
+
+        <div className={styles.buttonGroup}>
+          <button
+            className={styles.button}
+            onClick={() => navigate('/add-expense')}
+          >
+            Adicionar Despesa
+          </button>
+          <button
+            className={`${styles.button} ${styles.secondary}`}
+            onClick={() => navigate('/dashboard')}
+          >
+            Voltar para Dashboard
+          </button>
+        </div>
       </div>
-    </Layout>
+    </div>
   );
-}
+};
 
 export default Expenses;

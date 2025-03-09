@@ -1,25 +1,28 @@
 import { DataTypes } from 'sequelize';
 
 export default (sequelize) => {
-  const Category = sequelize.define('Category', {
+  const UserBank = sequelize.define('UserBank', {
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true
     },
-    category_name: {
-      type: DataTypes.STRING,
+    user_id: {
+      type: DataTypes.INTEGER,
       allowNull: false
     },
-    is_favorite: {
+    bank_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false
+    },
+    is_active: {
       type: DataTypes.BOOLEAN,
-      allowNull: false,
-      defaultValue: false
+      defaultValue: true
     }
   }, {
     timestamps: true,
-    tableName: 'categories' // Adicionado para clareza
+    tableName: 'user_banks'
   });
 
-  return Category;
+  return UserBank;
 };

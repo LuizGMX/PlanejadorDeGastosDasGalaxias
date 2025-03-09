@@ -1,28 +1,24 @@
 import { DataTypes } from 'sequelize';
 
 export default (sequelize) => {
-  const VerificationCode = sequelize.define('VerificationCode', {
+  const Bank = sequelize.define('Bank', {
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true
     },
-    email: {
+    name: {
       type: DataTypes.STRING,
       allowNull: false
     },
     code: {
-      type: DataTypes.STRING(6),
+      type: DataTypes.STRING,
       allowNull: false
-    },
-    created_at: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW
     }
   }, {
     timestamps: true,
-    tableName: 'verification_codes' // Adicionado para clareza
+    tableName: 'banks'
   });
 
-  return VerificationCode;
+  return Bank;
 };

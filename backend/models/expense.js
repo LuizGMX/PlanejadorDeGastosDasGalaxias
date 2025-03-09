@@ -1,51 +1,71 @@
-const { Sequelize, DataTypes } = require('sequelize');
+import { DataTypes } from 'sequelize';
 
-module.exports = (sequelize) => {
+export default (sequelize) => {
   const Expense = sequelize.define('Expense', {
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
-      autoIncrement: true,
+      autoIncrement: true
     },
     user_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
-    },
-    credit_card_id: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
+      references: {
+        model: 'users',
+        key: 'id'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'CASCADE'
     },
     category_id: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: false, // Mantido como NOT NULL
+      references: {
+        model: 'categories',
+        key: 'id',
+        name: 'fk_expense_category'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'NO ACTION' // Alterado de 'SET NULL'
+    },
+    subcategory_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false, // Mantido como NOT NULL
+      references: {
+        model: 'subcategories',
+        key: 'id',
+        name: 'fk_expense_subcategory'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'NO ACTION' // Alterado de 'SET NULL'
+    },
+    bank_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false, // Mantido como NOT NULL
+      references: {
+        model: 'banks',
+        key: 'id',
+        name: 'fk_expense_bank'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'NO ACTION' // Alterado de 'SET NULL'
     },
     amount: {
-      type: DataTypes.FLOAT,
-      allowNull: false,
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false
     },
     description: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: false
     },
-    payment_method: {
-      type: DataTypes.STRING, // 'card' ou 'pix'
-      allowNull: false,
-    },
-    installment_number: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-    },
-    total_installments: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-    },
-    expense_date: {
+    date: {
       type: DataTypes.DATE,
       allowNull: false,
-    },
+      defaultValue: DataTypes.NOW
+    }
   }, {
-    tableName: 'Expenses',
     timestamps: true,
+    tableName: 'expenses'
   });
 
   return Expense;

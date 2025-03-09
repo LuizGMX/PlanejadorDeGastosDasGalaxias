@@ -1,7 +1,41 @@
-# Ignorar todos os arquivos .env em qualquer pasta
-**/.env
-
-# Ignorar variações de .env como .env.local, .env.development, etc.
-**/.env.*
-
+# Dependencies
 node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build files
+dist/
+build/
+*.bundle.js
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Testing
+coverage/
+.nyc_output/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/

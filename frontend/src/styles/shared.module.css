@@ -1,0 +1,354 @@
+/* Variáveis de cores */
+:root {
+  --primary-color: #00FF85;
+  --secondary-color: #1A1B23;
+  --background-color: #13141B;
+  --card-background: #1A1B23;
+  --text-color: #FFFFFF;
+  --text-secondary: #8B8D97;
+  --error-color: #FF6B6B;
+  --success-color: #51CF66;
+  --border-color: #2A2B33;
+  --hover-color: #00E676;
+  --input-background: #2A2B33;
+  --gradient-start: #00FF85;
+  --gradient-end: #80FFB9;
+}
+
+/* Container principal */
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: var(--background-color);
+  padding: 20px;
+  color: var(--text-color);
+}
+
+/* Card */
+.card {
+  background: var(--card-background);
+  border-radius: 16px;
+  padding: 40px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 480px;
+  border: 1px solid var(--border-color);
+}
+
+/* Título */
+.title {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 8px;
+  text-align: left;
+}
+
+.subtitle {
+  font-size: 16px;
+  color: var(--text-secondary);
+  margin-bottom: 32px;
+  text-align: left;
+}
+
+/* Formulário */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Campo de entrada */
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.input {
+  padding: 16px;
+  background-color: var(--input-background);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  font-size: 16px;
+  color: var(--text-color);
+  transition: all 0.2s;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(0, 255, 133, 0.1);
+}
+
+.input::placeholder {
+  color: var(--text-secondary);
+}
+
+/* Botão */
+.buttonGroup {
+  display: flex;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.button {
+  flex: 1;
+  padding: 16px 24px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  background-color: var(--primary-color);
+  color: var(--secondary-color);
+  text-transform: uppercase;
+}
+
+.button:hover {
+  background-color: var(--hover-color);
+  transform: translateY(-1px);
+}
+
+.button.secondary {
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+}
+
+.button.secondary:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Mensagem de erro */
+.error {
+  color: var(--error-color);
+  font-size: 14px;
+  text-align: center;
+  margin-bottom: 16px;
+  padding: 12px;
+  background-color: rgba(255, 107, 107, 0.1);
+  border-radius: 8px;
+}
+
+/* Mensagem de sucesso */
+.success {
+  color: var(--success-color);
+  font-size: 14px;
+  text-align: center;
+  margin-bottom: 16px;
+  padding: 12px;
+  background-color: rgba(81, 207, 102, 0.1);
+  border-radius: 8px;
+}
+
+/* Grid de bancos */
+.bankGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.bankCard {
+  padding: 16px;
+  background-color: var(--input-background);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.bankCard:hover {
+  border-color: var(--primary-color);
+  background-color: rgba(0, 255, 133, 0.05);
+}
+
+.bankCard.selected {
+  border-color: var(--primary-color);
+  background-color: rgba(0, 255, 133, 0.1);
+}
+
+.bankName {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+/* Animações */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+
+  .card {
+    padding: 24px;
+  }
+
+  .title {
+    font-size: 24px;
+  }
+
+  .button {
+    padding: 14px 20px;
+  }
+}
+
+/* Dashboard específico */
+.dashboard {
+  background-color: var(--background-color);
+  min-height: 100vh;
+  padding: 32px;
+  color: var(--text-color);
+}
+
+.dashboardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  margin-top: 32px;
+}
+
+.dashboardCard {
+  background: var(--card-background);
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid var(--border-color);
+}
+
+.dashboardTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 16px;
+}
+
+/* Tabela */
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 16px;
+}
+
+.table th,
+.table td {
+  padding: 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.table th {
+  font-weight: 600;
+  color: var(--text-secondary);
+  background-color: var(--card-background);
+}
+
+.table tr:hover td {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px;
+  background-color: var(--card-background);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.logo {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.nav {
+  display: flex;
+  gap: 24px;
+}
+
+.navLink {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.navLink:hover,
+.navLink.active {
+  color: var(--primary-color);
+}
+
+/* Login específico */
+.loginContainer {
+  display: flex;
+  align-items: center;
+  gap: 64px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px;
+}
+
+.loginIllustration {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.loginHeader {
+  text-align: left;
+  margin-bottom: 32px;
+}
+
+.loginHeader .title {
+  font-size: 32px;
+  margin-bottom: 8px;
+  background: linear-gradient(90deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.loginHeader .subtitle {
+  font-size: 18px;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 1024px) {
+  .loginContainer {
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  .loginIllustration {
+    order: -1;
+  }
+} 

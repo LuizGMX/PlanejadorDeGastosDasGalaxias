@@ -1,362 +1,157 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useNavigate, Link } from 'react-router-dom';
-import ReactApexChart from 'react-apexcharts';
-import Layout from './Layout';
-import AddIcon from '@mui/icons-material/Add';
-import styles from './Dashboard.module.css';
+import React, { useState, useEffect, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { AuthContext } from '../App';
+import styles from '../styles/shared.module.css';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import { Pie } from 'react-chartjs-2';
 
-function Dashboard() {
-  const [chartData, setChartData] = useState(null);
-  const [selectedMonth, setSelectedMonth] = useState(null);
-  const [selectedYear, setSelectedYear] = useState(null);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('all');
-  const [availableYears, setAvailableYears] = useState([]);
-  const [availableMonths, setAvailableMonths] = useState([]);
-  const [greeting, setGreeting] = useState('');
-  const [userName, setUserName] = useState('');
-  const [motivationalQuote, setMotivationalQuote] = useState('');
+ChartJS.register(ArcElement, Tooltip, Legend);
+
+const Dashboard = () => {
   const navigate = useNavigate();
-
-  const motivationalQuotes = [
-    "Cada centavo economizado hoje é um passo em direção à liberdade financeira de amanhã.",
-    "O controle das finanças é o primeiro passo para conquistar seus sonhos.",
-    "Organize suas finanças e veja seus objetivos se tornarem realidade.",
-    "Investir em conhecimento financeiro é investir em seu futuro.",
-    "Pequenas economias diárias se transformam em grandes conquistas.",
-    "O planejamento financeiro é a chave para uma vida mais tranquila.",
-    "Cada decisão financeira consciente é uma vitória para seu futuro.",
-    "A educação financeira é o melhor investimento que você pode fazer.",
-    "Controle suas finanças, controle seu destino.",
-    "Organize suas despesas e veja suas oportunidades crescerem."
-  ];
-
-  const months = [
-    { value: 1, label: 'Janeiro' },
-    { value: 2, label: 'Fevereiro' },
-    { value: 3, label: 'Março' },
-    { value: 4, label: 'Abril' },
-    { value: 5, label: 'Maio' },
-    { value: 6, label: 'Junho' },
-    { value: 7, label: 'Julho' },
-    { value: 8, label: 'Agosto' },
-    { value: 9, label: 'Setembro' },
-    { value: 10, label: 'Outubro' },
-    { value: 11, label: 'Novembro' },
-    { value: 12, label: 'Dezembro' }
-  ];
-
-  const paymentMethods = [
-    { value: 'all', label: 'Todos' },
-    { value: 'card', label: 'Cartão' },
-    { value: 'pix', label: 'PIX' }
-  ];
-
-  const chartOptions = {
-    chart: {
-      type: 'pie',
-      background: 'transparent'
-    },
-    labels: [],
-    legend: {
-      position: 'right',
-      fontSize: '14px',
-      labels: {
-        colors: '#495057'
-      },
-      markers: {
-        width: 12,
-        height: 12,
-        radius: 6
-      },
-      itemMargin: {
-        horizontal: 10,
-        vertical: 5
-      }
-    },
-    stroke: {
-      width: 2,
-      colors: ['#fff']
-    },
-    dataLabels: {
-      enabled: true,
-      formatter: function(val, opts) {
-        return opts.w.config.labels[opts.seriesIndex] + ' (' + val.toFixed(1) + '%)';
-      },
-      style: {
-        fontSize: '12px',
-        fontFamily: 'Arial, sans-serif',
-        fontWeight: 'bold'
-      },
-      dropShadow: {
-        enabled: true,
-        blur: 3,
-        opacity: 0.3
-      }
-    },
-    plotOptions: {
-      pie: {
-        expandOnClick: true,
-        donut: {
-          size: '0%'
-        }
-      }
-    },
-    colors: [
-      '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0',
-      '#9966FF', '#FF9F40', '#4BCFB1', '#7E57C2',
-      '#26A69A', '#EC407A'
-    ],
-    tooltip: {
-      y: {
-        formatter: function(value) {
-          return 'R$ ' + value.toFixed(2);
-        }
-      }
-    },
-    responsive: [{
-      breakpoint: 480,
-      options: {
-        legend: {
-          position: 'bottom'
-        }
-      }
-    }]
-  };
-
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour >= 5 && hour < 12) {
-      return 'Bom dia';
-    } else if (hour >= 12 && hour < 18) {
-      return 'Boa tarde';
-    } else {
-      return 'Boa noite';
-    }
-  };
-
-  const getRandomQuote = () => {
-    const randomIndex = Math.floor(Math.random() * motivationalQuotes.length);
-    return motivationalQuotes[randomIndex];
-  };
-
-  const fetchUserData = async () => {
-    try {
-      const res = await axios.get('/api/auth/me', {
-        headers: { 
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        },
-      });
-      setUserName(res.data.name);
-    } catch (error) {
-      console.error('Erro ao buscar dados do usuário:', error);
-    }
-  };
-
-  const fetchAvailablePeriods = async (year = null) => {
-    try {
-      const params = year ? { year } : {};
-      const res = await axios.get('/api/dashboard/available-periods', {
-        params,
-        headers: { 
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!year) {
-        setAvailableYears(res.data.years);
-        setSelectedMonth(null);
-      } else {
-        setAvailableMonths(res.data.months);
-      }
-    } catch (error) {
-      console.error('Erro ao buscar períodos disponíveis:', error);
-    }
-  };
+  const { auth } = useContext(AuthContext);
+  const [expenses, setExpenses] = useState([]);
+  const [totalExpenses, setTotalExpenses] = useState(0);
+  const [expensesByCategory, setExpensesByCategory] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    setGreeting(getGreeting());
-    setMotivationalQuote(getRandomQuote());
-    fetchUserData();
-    fetchAvailablePeriods();
-  }, []);
+    const fetchData = async () => {
+      try {
+        const response = await fetch('/api/dashboard', {
+          headers: {
+            'Authorization': `Bearer ${auth.token}`
+          }
+        });
 
-  useEffect(() => {
-    if (selectedYear) {
-      fetchAvailablePeriods(selectedYear);
-    } else {
-      setAvailableMonths([]);
-      setSelectedMonth(null);
-    }
-  }, [selectedYear]);
+        if (!response.ok) {
+          throw new Error('Falha ao carregar dados do dashboard');
+        }
 
-  useEffect(() => {
-    if (selectedYear && selectedMonth) {
-      fetchData();
-    } else {
-      setChartData(null);
-    }
-  }, [selectedYear, selectedMonth, selectedPaymentMethod]);
-
-  const fetchData = async () => {
-    try {
-      const params = {
-        year: selectedYear,
-        month: selectedMonth,
-        payment_method: selectedPaymentMethod
-      };
-
-      console.log('Iniciando busca de dados com filtros:', params);
-
-      const res = await axios.get('/api/dashboard', {
-        params,
-        headers: { 
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        },
-      });
-
-      console.log('Resposta da API:', res.data);
-
-      const expensesByCategory = res.data.expenses_by_category;
-
-      if (!expensesByCategory || expensesByCategory.length === 0) {
-        console.log('Nenhuma despesa encontrada');
-        setChartData(null);
-        return;
+        const data = await response.json();
+        setExpenses(data.expenses);
+        setTotalExpenses(data.totalExpenses);
+        setExpensesByCategory(data.expensesByCategory);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
       }
+    };
 
-      const total = expensesByCategory.reduce((acc, item) => acc + item.total, 0);
-      console.log('Total calculado:', total);
+    fetchData();
+  }, [auth.token]);
 
-      const series = expensesByCategory.map(item => item.total);
-      const labels = expensesByCategory.map(item => item.category_name);
-
-      setChartData({
-        options: {
-          ...chartOptions,
-          labels
-        },
-        series
-      });
-    } catch (error) {
-      console.error('Erro ao buscar dados:', error);
-      setChartData(null);
-    }
+  const chartData = {
+    labels: Object.keys(expensesByCategory),
+    datasets: [
+      {
+        data: Object.values(expensesByCategory),
+        backgroundColor: [
+          '#FF6384',
+          '#36A2EB',
+          '#FFCE56',
+          '#4BC0C0',
+          '#9966FF',
+          '#FF9F40',
+          '#FF6384',
+          '#36A2EB',
+          '#FFCE56',
+          '#4BC0C0'
+        ]
+      }
+    ]
   };
 
-  const handleYearChange = (e) => {
-    const newYear = e.target.value ? parseInt(e.target.value) : null;
-    setSelectedYear(newYear);
-  };
-
-  const handleMonthChange = (e) => {
-    const newMonth = e.target.value ? parseInt(e.target.value) : null;
-    setSelectedMonth(newMonth);
-  };
-
-  const handlePaymentMethodChange = (e) => {
-    const newPaymentMethod = e.target.value;
-    setSelectedPaymentMethod(newPaymentMethod);
-  };
-
-  return (
-    <Layout>
+  if (loading) {
+    return (
       <div className={styles.container}>
-        <div className={styles.header}>
-          <div className={styles.greetingSection}>
-            <h2>{greeting}, {userName}! 👋</h2>
-            <p className={styles.motivationalQuote}>{motivationalQuote}</p>
-          </div>
-          <div className={styles.headerButtons}>
-            <Link to="/expenses" className={`${styles.addButton} ${styles.viewButton}`}>
-              <span>Ver Todas as Despesas</span>
-            </Link>
-            <Link to="/add-expense" className={styles.addButton}>
-              <AddIcon />
-              <span>Adicionar Despesa</span>
-            </Link>
-          </div>
-        </div>
-
-        <div className={styles.filters}>
-          <div className={styles.filterGroup}>
-            <label>Ano:</label>
-            <select 
-              value={selectedYear || ''}
-              onChange={handleYearChange}
-              className={styles.select}
-            >
-              <option value="">Selecione o ano</option>
-              {availableYears.map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className={styles.filterGroup}>
-            <label>Mês:</label>
-            <select 
-              value={selectedMonth || ''}
-              onChange={handleMonthChange}
-              className={styles.select}
-              disabled={!selectedYear}
-            >
-              <option value="">Selecione o mês</option>
-              {months
-                .filter(month => availableMonths.includes(month.value))
-                .map((month) => (
-                  <option key={month.value} value={month.value}>
-                    {month.label}
-                  </option>
-                ))
-              }
-            </select>
-          </div>
-
-          <div className={styles.filterGroup}>
-            <label>Tipo de Pagamento:</label>
-            <select 
-              value={selectedPaymentMethod}
-              onChange={handlePaymentMethodChange}
-              className={styles.select}
-            >
-              {paymentMethods.map((method) => (
-                <option key={method.value} value={method.value}>
-                  {method.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div className={styles.chart}>
-          {chartData ? (
-            <ReactApexChart
-              options={chartData.options}
-              series={chartData.series}
-              type="pie"
-              height="100%"
-              width="100%"
-            />
-          ) : (
-            <p className={styles.noData}>
-              {!selectedYear 
-                ? 'Selecione um ano para começar'
-                : !selectedMonth 
-                  ? 'Selecione um mês para visualizar as despesas'
-                  : 'Nenhuma despesa encontrada para o período selecionado'
-              }
-            </p>
-          )}
+        <div className={styles.card}>
+          <p className={styles.text}>Carregando...</p>
         </div>
       </div>
-    </Layout>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.card}>
+          <p className={styles.error}>{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.container}>
+      <div className={`${styles.card} ${styles.fadeIn}`}>
+        <h1 className={styles.title}>Dashboard</h1>
+        
+        <div className={styles.grid}>
+          <div className={styles.card}>
+            <h2 className={styles.subtitle}>Total de Gastos</h2>
+            <p className={styles.amount}>
+              R$ {totalExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </p>
+          </div>
+
+          <div className={styles.card}>
+            <h2 className={styles.subtitle}>Gastos por Categoria</h2>
+            <div className={styles.chartContainer}>
+              <Pie data={chartData} options={{ responsive: true }} />
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.card}>
+          <h2 className={styles.subtitle}>Últimas Despesas</h2>
+          <div className={styles.tableContainer}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Descrição</th>
+                  <th>Categoria</th>
+                  <th>Valor</th>
+                  <th>Data</th>
+                </tr>
+              </thead>
+              <tbody>
+                {expenses.slice(0, 5).map((expense) => (
+                  <tr key={expense.id}>
+                    <td>{expense.description}</td>
+                    <td>{expense.category_name}</td>
+                    <td>
+                      R$ {expense.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </td>
+                    <td>
+                      {new Date(expense.date).toLocaleDateString('pt-BR')}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className={styles.buttonGroup}>
+          <button
+            className={styles.button}
+            onClick={() => navigate('/add-expense')}
+          >
+            Adicionar Despesa
+          </button>
+          <button
+            className={`${styles.button} ${styles.secondary}`}
+            onClick={() => navigate('/expenses')}
+          >
+            Ver Todas as Despesas
+          </button>
+        </div>
+      </div>
+    </div>
   );
-}
+};
 
 export default Dashboard;
