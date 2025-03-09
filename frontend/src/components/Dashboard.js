@@ -143,6 +143,10 @@ const Dashboard = () => {
     }).format(value);
   };
 
+  const formatDate = (date) => {
+    return new Date(date).toLocaleDateString('pt-BR');
+  };
+
   const handleChartExpand = (chartId) => {
     setExpandedChart(expandedChart === chartId ? null : chartId);
   };
@@ -152,11 +156,16 @@ const Dashboard = () => {
     return (
       <div 
         className={`${styles.chartContainer} ${isExpanded ? styles.expanded : ''}`}
-        onClick={() => handleChartExpand(chartId)}
       >
         <div className={styles.chartHeader}>
           <h3>{title}</h3>
-          <button className={styles.expandButton}>
+          <button 
+            className={styles.expandButton}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleChartExpand(chartId);
+            }}
+          >
             {isExpanded ? 'Minimizar' : 'Expandir'}
           </button>
         </div>
@@ -266,18 +275,24 @@ const Dashboard = () => {
           {data.expenses_by_category && data.expenses_by_category.length > 0 && (
             <div className={styles.chartsGrid}>
               {renderChart('timeline', 'Gastos ao Longo do Tempo',
-                <LineChart data={data.expenses_by_date}>
+                <LineChart data={data.expenses_by_date} margin={{ top: 10, right: 30, left: 80, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
                   <XAxis 
                     dataKey="date"
                     tick={{ fill: 'var(--text-color)' }}
+                    tickFormatter={formatDate}
+                    angle={-45}
+                    textAnchor="end"
+                    height={70}
                   />
                   <YAxis 
                     tickFormatter={formatCurrency}
                     tick={{ fill: 'var(--text-color)' }}
+                    width={80}
                   />
                   <Tooltip 
                     formatter={formatCurrency}
+                    labelFormatter={formatDate}
                     contentStyle={{
                       backgroundColor: 'var(--card-background)',
                       border: '1px solid var(--border-color)',
@@ -298,7 +313,7 @@ const Dashboard = () => {
               )}
 
               {renderChart('categories', 'Gastos por Categoria',
-                <PieChart>
+                <PieChart margin={{ top: 10, right: 30, left: 30, bottom: 20 }}>
                   <Pie
                     data={data.expenses_by_category}
                     dataKey="total"
@@ -330,7 +345,7 @@ const Dashboard = () => {
               )}
 
               {renderChart('banks', 'Gastos por Banco',
-                <BarChart data={data.expenses_by_bank}>
+                <BarChart data={data.expenses_by_bank} margin={{ top: 10, right: 30, left: 80, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
                   <XAxis 
                     dataKey="bank_name" 
@@ -339,6 +354,7 @@ const Dashboard = () => {
                   <YAxis 
                     tickFormatter={formatCurrency}
                     tick={{ fill: 'var(--text-color)' }}
+                    width={80}
                   />
                   <Tooltip 
                     formatter={formatCurrency}
@@ -360,8 +376,14 @@ const Dashboard = () => {
                 </BarChart>
               )}
 
-              {renderChart('comparison', 'Comparativo de Gastos',
-                <BarChart data={data.expenses_by_category}>
+              {data.budget_info && filters.month !== 'all' && filters.year !== 'all' && renderChart('budget', 'Orçamento vs Gastos por Categoria',
+                <BarChart 
+                  data={data.expenses_by_category.map(cat => ({
+                    ...cat,
+                    budget: data.budget_info.categories_budget?.[cat.category_id] || 0
+                  }))}
+                  margin={{ top: 10, right: 30, left: 80, bottom: 20 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
                   <XAxis 
                     dataKey="category_name" 
@@ -370,6 +392,7 @@ const Dashboard = () => {
                   <YAxis 
                     tickFormatter={formatCurrency}
                     tick={{ fill: 'var(--text-color)' }}
+                    width={80}
                   />
                   <Tooltip 
                     formatter={formatCurrency}
@@ -380,14 +403,9 @@ const Dashboard = () => {
                     }}
                     labelStyle={{ color: 'var(--text-color)' }}
                   />
-                  <Legend 
-                    formatter={(value) => <span style={{ color: 'var(--text-color)' }}>{value}</span>}
-                  />
-                  <Bar dataKey="total" fill="var(--primary-color)">
-                    {data.expenses_by_category.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Bar>
+                  <Legend formatter={(value) => <span style={{ color: 'var(--text-color)' }}>{value}</span>} />
+                  <Bar dataKey="total" name="Gasto" fill="var(--primary-color)" />
+                  <Bar dataKey="budget" name="Orçamento" fill="var(--error-color)" />
                 </BarChart>
               )}
             </div>
