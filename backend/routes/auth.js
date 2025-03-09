@@ -83,9 +83,9 @@ const authenticate = async (req, res, next) => {
 const validateSendCodeInput = ({ email, netIncome, selectedBanks }) => {
   if (!email || !/^\S+@\S+\.\S+$/.test(email)) return 'E-mail inválido';
   if (!netIncome || isNaN(netIncome)) return 'Renda líquida inválida';
-  if (!selectedBanks || !Array.isArray(selectedBanks) || selectedBanks.length === 0) {
-    return 'Bancos selecionados inválidos';
-  }
+  // if (!selectedBanks || !Array.isArray(selectedBanks) || selectedBanks.length === 0) {
+  //   return 'Bancos selecionados inválidos';
+  // }
   return null;
 };
 
@@ -126,9 +126,9 @@ router.post('/send-code', async (req, res) => {
       if (!netIncome || isNaN(netIncome)) {
         return res.status(400).json({ message: 'Renda líquida inválida' });
       }
-      if (!selectedBanks || !Array.isArray(selectedBanks) || selectedBanks.length === 0) {
-        return res.status(400).json({ message: 'Bancos selecionados inválidos' });
-      }
+      // if (!selectedBanks || !Array.isArray(selectedBanks) || selectedBanks.length === 0) {
+      //   return res.status(400).json({ message: 'Bancos selecionados inválidos' });
+      // }
       // Cria o novo usuário
       user = await User.create({ 
         email, 
@@ -138,13 +138,13 @@ router.post('/send-code', async (req, res) => {
       });
 
       // Associa os bancos ao usuário
-      if (selectedBanks && selectedBanks.length > 0) {
-        await Promise.all(
-          selectedBanks.map(bankId =>
-            user.addBank(bankId)
-          )
-        );
-      }
+      // if (selectedBanks && selectedBanks.length > 0) {
+      //   await Promise.all(
+      //     selectedBanks.map(bankId =>
+      //       user.addBank(bankId)
+      //     )
+      //   );
+      // }
     } else {
       // Para usuários existentes, atualiza o nome se fornecido
       if (name) {

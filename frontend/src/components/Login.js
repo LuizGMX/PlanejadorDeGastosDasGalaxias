@@ -11,35 +11,35 @@ const Login = () => {
     email: '',
     name: '',
     netIncome: '',
-    selectedBanks: []
+    // selectedBanks: []
   });
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [banks, setBanks] = useState([]);
+  // const [banks, setBanks] = useState([]);
   const [isNewUser, setIsNewUser] = useState(false);
 
-  useEffect(() => {
-    const fetchBanks = async () => {
-      try {
-        console.log('Buscando bancos...');
-        const response = await fetch('/api/bank');
-        if (!response.ok) {
-          throw new Error('Falha ao carregar bancos');
-        }
-        const data = await response.json();
-        console.log('Bancos recebidos:', data);
-        setBanks(data);
-      } catch (err) {
-        console.error('Erro ao buscar bancos:', err);
-        setError('Erro ao carregar bancos. Por favor, tente novamente.');
-      }
-    };
+  // useEffect(() => {
+  //   const fetchBanks = async () => {
+  //     try {
+  //       console.log('Buscando bancos...');
+  //       const response = await fetch('/api/bank');
+  //       if (!response.ok) {
+  //         throw new Error('Falha ao carregar bancos');
+  //       }
+  //       const data = await response.json();
+  //       console.log('Bancos recebidos:', data);
+  //       setBanks(data);
+  //     } catch (err) {
+  //       console.error('Erro ao buscar bancos:', err);
+  //       setError('Erro ao carregar bancos. Por favor, tente novamente.');
+  //     }
+  //   };
 
-    if (step === 'banks') {
-      fetchBanks();
-    }
-  }, [step]);
+  //   if (step === 'banks') {
+  //     fetchBanks();
+  //   }
+  // }, [step]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -49,14 +49,14 @@ const Login = () => {
     }));
   };
 
-  const handleBankToggle = (bankId) => {
-    setFormData(prev => {
-      const selectedBanks = prev.selectedBanks.includes(bankId)
-        ? prev.selectedBanks.filter(id => id !== bankId)
-        : [...prev.selectedBanks, bankId];
-      return { ...prev, selectedBanks };
-    });
-  };
+  // const handleBankToggle = (bankId) => {
+  //   setFormData(prev => {
+  //     const selectedBanks = prev.selectedBanks.includes(bankId)
+  //       ? prev.selectedBanks.filter(id => id !== bankId)
+  //       : [...prev.selectedBanks, bankId];
+  //     return { ...prev, selectedBanks };
+  //   });
+  // };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -106,7 +106,7 @@ const Login = () => {
           email: formData.email,
           name: formData.name,
           netIncome: formData.netIncome,
-          selectedBanks: formData.selectedBanks
+          // selectedBanks: formData.selectedBanks
         }
       : {
           email: formData.email,
@@ -155,19 +155,16 @@ const Login = () => {
       case 'email':
         return (
           <>
-            <div className={styles.loginHeader}>
-              <h1 className={styles.title}>Faça login</h1>
-              <p className={styles.subtitle}>para entrar para o nosso time</p>
-            </div>
+            <h1 className={styles.title}>Bem-vindo!</h1>
             <div className={styles.inputGroup}>
-              <label className={styles.label}>Email</label>
+              <label className={styles.label}>E-mail</label>
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
                 className={styles.input}
-                placeholder="Digite seu email"
+                placeholder="Digite seu e-mail"
                 required
               />
             </div>
@@ -214,25 +211,25 @@ const Login = () => {
           </>
         );
 
-      case 'banks':
-        return (
-          <>
-            <h1 className={styles.title}>Selecione seus bancos</h1>
-            <div className={styles.bankGrid}>
-              {banks.map(bank => (
-                <div
-                  key={bank.id}
-                  className={`${styles.bankCard} ${
-                    formData.selectedBanks.includes(bank.id) ? styles.selected : ''
-                  }`}
-                  onClick={() => handleBankToggle(bank.id)}
-                >
-                  <span className={styles.bankName}>{bank.name}</span>
-                </div>
-              ))}
-            </div>
-          </>
-        );
+      // case 'banks':
+      //   return (
+      //     <>
+      //       <h1 className={styles.title}>Selecione seus bancos</h1>
+      //       <div className={styles.bankGrid}>
+      //         {banks.map(bank => (
+      //           <div
+      //             key={bank.id}
+      //             className={`${styles.bankCard} ${
+      //               formData.selectedBanks.includes(bank.id) ? styles.selected : ''
+      //             }`}
+      //             onClick={() => handleBankToggle(bank.id)}
+      //           >
+      //             <span className={styles.bankName}>{bank.name}</span>
+      //           </div>
+      //         ))}
+      //       </div>
+      //     </>
+      //   );
 
       case 'code':
         return (

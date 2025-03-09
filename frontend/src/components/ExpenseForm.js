@@ -46,21 +46,21 @@ const ExpenseForm = () => {
         console.log('Dados das categorias:', categoriesData);
         setCategories(categoriesData);
 
-        // Busca bancos do usuário
-        const banksResponse = await fetch('/api/user/banks', {
-          headers: { 
-            'Authorization': `Bearer ${auth.token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        console.log('Resposta da busca de bancos:', banksResponse);
-        if (!banksResponse.ok) {
-          const errorData = await banksResponse.json();
-          throw new Error(errorData.message || 'Erro ao carregar bancos');
-        }
-        const banksData = await banksResponse.json();
-        console.log('Dados dos bancos:', banksData);
-        setBanks(banksData);
+        // // Busca bancos do usuário
+        // const banksResponse = await fetch('/api/user/banks', {
+        //   headers: { 
+        //     'Authorization': `Bearer ${auth.token}`,
+        //     'Content-Type': 'application/json'
+        //   }
+        // });
+        // console.log('Resposta da busca de bancos:', banksResponse);
+        // if (!banksResponse.ok) {
+        //   const errorData = await banksResponse.json();
+        //   throw new Error(errorData.message || 'Erro ao carregar bancos');
+        // }
+        // const banksData = await banksResponse.json();
+        // console.log('Dados dos bancos:', banksData);
+        // setBanks(banksData);
 
         setLoading(false);
       } catch (err) {

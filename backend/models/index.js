@@ -34,7 +34,7 @@ Expense.belongsTo(SubCategory, {
 });
 Expense.belongsTo(Bank, {
   foreignKey: 'bank_id',
-  onDelete: 'NO ACTION', // Alterado de 'SET NULL'
+  onDelete: 'NO ACTION',
   onUpdate: 'CASCADE'
 });
 
@@ -50,6 +50,9 @@ SubCategory.belongsTo(Category, {
   onDelete: 'CASCADE',
   onUpdate: 'CASCADE'
 });
+
+// User.belongsToMany(Bank, { through: UserBank, foreignKey: 'user_id' });
+// Bank.belongsToMany(User, { through: UserBank, foreignKey: 'bank_id' });
 
 export default {
   sequelize,

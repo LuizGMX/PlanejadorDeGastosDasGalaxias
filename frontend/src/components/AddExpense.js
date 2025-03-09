@@ -13,10 +13,12 @@ const AddExpense = () => {
     date: new Date().toISOString().split('T')[0],
     category_id: '',
     subcategory_id: '',
-    payment_method: 'card'
+    payment_method: 'card',
+    bank_id: '' // Adicionando o campo para o banco
   });
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
+  const [banks, setBanks] = useState([]); // Novo estado para os bancos
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -41,6 +43,29 @@ const AddExpense = () => {
     };
 
     fetchCategories();
+  }, [auth.token]);
+
+  useEffect(() => {
+    const fetchBanks = async () => {
+      try {
+        const response = await fetch('/api/bank', {
+          headers: {
+            'Authorization': `Bearer ${auth.token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Falha ao carregar bancos');
+        }
+
+        const data = await response.json();
+        setBanks(data);
+      } catch (err) {
+        setError('Erro ao carregar bancos. Por favor, tente novamente.');
+      }
+    };
+
+    fetchBanks();
   }, [auth.token]);
 
   useEffect(() => {
@@ -198,21 +223,33 @@ const AddExpense = () => {
             </div>
           )}
 
+          {banks.length > 0 && (
+            <div className={styles.inputGroup}>
+              <label className={styles.label}>Banco</label>
+              <select
+                name="bank_id"
+                value={formData.bank_id}
+                onChange={handleChange}
+                className={styles.input}
+                required
+              >
+                <option value="">Selecione um banco</option>
+                {banks.map(bank => (
+                  <option key={bank.id} value={bank.id}>
+                    {bank.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div className={styles.inputGroup}>
             <label className={styles.label}>Forma de Pagamento</label>
             <div className={styles.buttonGroup}>
-              <button
-                type="button"
-                className={`${styles.button} ${formData.payment_method === 'card' ? styles.selected : ''}`}
-                onClick={() => handlePaymentMethod('card')}
-              >
+              <button type="button" className={`${styles.button} ${formData.payment_method === 'card' ? styles.active : ''}`} onClick={() => handlePaymentMethod('card')}>
                 <FaCreditCard /> Cartão
               </button>
-              <button
-                type="button"
-                className={`${styles.button} ${formData.payment_method === 'pix' ? styles.selected : ''}`}
-                onClick={() => handlePaymentMethod('pix')}
-              >
+              <button type="button" className={`${styles.button} ${formData.payment_method === 'pix' ? styles.active : ''}`} onClick={() => handlePaymentMethod('pix')}>
                 <FaQrcode /> PIX
               </button>
             </div>
@@ -222,11 +259,7 @@ const AddExpense = () => {
             <button type="submit" className={styles.button}>
               Adicionar Despesa
             </button>
-            <button
-              type="button"
-              onClick={() => navigate('/dashboard')}
-              className={`${styles.button} ${styles.secondary}`}
-            >
+            <button type="button" onClick={() => navigate('/dashboard')} className={`${styles.button} ${styles.secondary}`}>
               Cancelar
             </button>
           </div>
