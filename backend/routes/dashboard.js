@@ -1,6 +1,6 @@
 import { Sequelize } from 'sequelize';
 import express from 'express';
-import { Expense, Category, SubCategory, Bank } from '../models/index.js';
+import { Expense, Category, SubCategory, Bank, Budget } from '../models/index.js';
 import { Op } from 'sequelize';
 
 const router = express.Router();
@@ -50,6 +50,9 @@ router.get('/', async (req, res) => {
         message: "Você ainda não possui despesas cadastradas neste período!",
         suggestion: "Que tal começar a registrar suas despesas agora?",
         expenses_by_category: [],
+        expenses_by_date: [],
+        expenses_by_bank: [],
+        budget_info: null,
         current_filters: {
           month: month,
           year: year,
@@ -67,6 +70,7 @@ router.get('/', async (req, res) => {
       });
     }
 
+    // Agrupa despesas por categoria
     const expensesByCategory = expenses.reduce((acc, expense) => {
       const category = expense.Category.category_name;
       const existing = acc.find((item) => item.category_name === category);
@@ -78,10 +82,73 @@ router.get('/', async (req, res) => {
       return acc;
     }, []);
 
-    console.log('Despesas agrupadas por categoria:', expensesByCategory);
+    // Agrupa despesas por data
+    const expensesByDate = expenses.reduce((acc, expense) => {
+      const date = expense.expense_date.toISOString().split('T')[0];
+      const existing = acc.find((item) => item.date === date);
+      if (existing) {
+        existing.total += parseFloat(expense.amount);
+      } else {
+        acc.push({ date, total: parseFloat(expense.amount) });
+      }
+      return acc;
+    }, []).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    // Agrupa despesas por banco
+    const expensesByBank = expenses.reduce((acc, expense) => {
+      if (!expense.Bank) return acc;
+      const bank = expense.Bank.name;
+      const existing = acc.find((item) => item.bank_name === bank);
+      if (existing) {
+        existing.total += parseFloat(expense.amount);
+      } else {
+        acc.push({ bank_name: bank, total: parseFloat(expense.amount) });
+      }
+      return acc;
+    }, []);
+
+    // Calcula informações de orçamento se mês e ano específicos
+    let budgetInfo = null;
+    if (month !== 'all' && year !== 'all') {
+      const parsedMonth = parseInt(month);
+      const parsedYear = parseInt(year);
+      const today = new Date();
+      const lastDayOfMonth = new Date(parsedYear, parsedMonth, 0).getDate();
+      const remainingDays = parsedMonth === today.getMonth() + 1 && parsedYear === today.getFullYear()
+        ? lastDayOfMonth - today.getDate()
+        : 0;
+
+      const totalSpent = expenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
+
+      // Busca o orçamento do usuário (você precisará criar esta tabela e relacionamento)
+      const budget = await Budget.findOne({
+        where: {
+          user_id: req.user.id,
+          month: parsedMonth,
+          year: parsedYear
+        }
+      });
+
+      if (budget) {
+        const remainingBudget = budget.amount - totalSpent;
+        const suggestedDailySpend = remainingDays > 0 ? remainingBudget / remainingDays : 0;
+
+        budgetInfo = {
+          total_budget: budget.amount,
+          total_spent: totalSpent,
+          remaining_budget: remainingBudget,
+          remaining_days: remainingDays,
+          suggested_daily_spend: suggestedDailySpend,
+          percentage_spent: (totalSpent / budget.amount) * 100
+        };
+      }
+    }
 
     res.json({ 
       expenses_by_category: expensesByCategory,
+      expenses_by_date: expensesByDate,
+      expenses_by_bank: expensesByBank,
+      budget_info: budgetInfo,
       total_expenses: expenses.length,
       current_filters: {
         month: month,

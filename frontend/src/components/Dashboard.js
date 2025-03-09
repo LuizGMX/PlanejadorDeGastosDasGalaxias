@@ -32,8 +32,12 @@ const Dashboard = () => {
   const { auth } = useContext(AuthContext);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [expandedChart, setExpandedChart] = useState(null);
   const [data, setData] = useState({
     expenses_by_category: [],
+    expenses_by_date: [],
+    expenses_by_bank: [],
+    budget_info: null,
     total_expenses: 0,
     current_filters: {}
   });
@@ -139,6 +143,30 @@ const Dashboard = () => {
     }).format(value);
   };
 
+  const handleChartExpand = (chartId) => {
+    setExpandedChart(expandedChart === chartId ? null : chartId);
+  };
+
+  const renderChart = (chartId, title, chartComponent) => {
+    const isExpanded = expandedChart === chartId;
+    return (
+      <div 
+        className={`${styles.chartContainer} ${isExpanded ? styles.expanded : ''}`}
+        onClick={() => handleChartExpand(chartId)}
+      >
+        <div className={styles.chartHeader}>
+          <h3>{title}</h3>
+          <button className={styles.expandButton}>
+            {isExpanded ? 'Minimizar' : 'Expandir'}
+          </button>
+        </div>
+        <ResponsiveContainer width="100%" height={isExpanded ? 600 : 300}>
+          {chartComponent}
+        </ResponsiveContainer>
+      </div>
+    );
+  };
+
   if (loading) return <div className={styles.loading}>Carregando...</div>;
   if (error) return <div className={styles.error}>{error}</div>;
 
@@ -202,151 +230,166 @@ const Dashboard = () => {
             </select>
           </div>
 
+          {data.budget_info && filters.month !== 'all' && filters.year !== 'all' && (
+            <div className={styles.budgetInfoContainer}>
+              <h3>Informações do Orçamento</h3>
+              <div className={styles.budgetStats}>
+                <div className={styles.budgetStat}>
+                  <span>Orçamento Total:</span>
+                  <strong>{formatCurrency(data.budget_info.total_budget)}</strong>
+                </div>
+                <div className={styles.budgetStat}>
+                  <span>Gasto até agora:</span>
+                  <strong>{formatCurrency(data.budget_info.total_spent)}</strong>
+                </div>
+                <div className={styles.budgetStat}>
+                  <span>Restante:</span>
+                  <strong>{formatCurrency(data.budget_info.remaining_budget)}</strong>
+                </div>
+                {data.budget_info.remaining_days > 0 && (
+                  <div className={styles.budgetStat}>
+                    <span>Sugestão de gasto diário:</span>
+                    <strong>{formatCurrency(data.budget_info.suggested_daily_spend)}</strong>
+                  </div>
+                )}
+              </div>
+              <div className={styles.budgetProgressBar}>
+                <div 
+                  className={styles.budgetProgress}
+                  style={{ width: `${Math.min(data.budget_info.percentage_spent, 100)}%` }}
+                />
+                <span>{data.budget_info.percentage_spent.toFixed(1)}% utilizado</span>
+              </div>
+            </div>
+          )}
+
           {data.expenses_by_category && data.expenses_by_category.length > 0 && (
             <div className={styles.chartsGrid}>
-              {/* Gráfico de Pizza: Distribuição por Categoria */}
-              <div className={styles.chartContainer}>
-                <h3>Gastos por Categoria</h3>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={data.expenses_by_category}
-                      dataKey="total"
-                      nameKey="category_name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      label={({ category_name, percent }) => 
-                        `${category_name} (${(percent * 100).toFixed(0)}%)`
-                      }
-                    >
-                      {data.expenses_by_category.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      formatter={(value) => formatCurrency(value)}
-                      contentStyle={{
-                        backgroundColor: 'var(--card-background)',
-                        border: '1px solid var(--border-color)',
-                        color: 'var(--text-color)'
-                      }}
-                      labelStyle={{ color: 'var(--text-color)' }}
-                    />
-                    <Legend 
-                      formatter={(value) => <span style={{ color: 'var(--text-color)' }}>{value}</span>}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+              {renderChart('timeline', 'Gastos ao Longo do Tempo',
+                <LineChart data={data.expenses_by_date}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+                  <XAxis 
+                    dataKey="date"
+                    tick={{ fill: 'var(--text-color)' }}
+                  />
+                  <YAxis 
+                    tickFormatter={formatCurrency}
+                    tick={{ fill: 'var(--text-color)' }}
+                  />
+                  <Tooltip 
+                    formatter={formatCurrency}
+                    contentStyle={{
+                      backgroundColor: 'var(--card-background)',
+                      border: '1px solid var(--border-color)',
+                      color: 'var(--text-color)'
+                    }}
+                    labelStyle={{ color: 'var(--text-color)' }}
+                  />
+                  <Legend 
+                    formatter={(value) => <span style={{ color: 'var(--text-color)' }}>Total Gasto</span>}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="total" 
+                    stroke="var(--primary-color)" 
+                    strokeWidth={2}
+                  />
+                </LineChart>
+              )}
 
-              {/* Gráfico de Barras: Gastos por Categoria */}
-              <div className={styles.chartContainer}>
-                <h3>Comparativo de Gastos</h3>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={data.expenses_by_category}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
-                    <XAxis 
-                      dataKey="category_name" 
-                      tick={{ fill: 'var(--text-color)' }}
-                    />
-                    <YAxis 
-                      tickFormatter={formatCurrency}
-                      tick={{ fill: 'var(--text-color)' }}
-                    />
-                    <Tooltip 
-                      formatter={formatCurrency}
-                      contentStyle={{
-                        backgroundColor: 'var(--card-background)',
-                        border: '1px solid var(--border-color)',
-                        color: 'var(--text-color)'
-                      }}
-                      labelStyle={{ color: 'var(--text-color)' }}
-                    />
-                    <Legend 
-                      formatter={(value) => <span style={{ color: 'var(--text-color)' }}>{value}</span>}
-                    />
-                    <Bar dataKey="total" fill="var(--primary-color)">
-                      {data.expenses_by_category.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+              {renderChart('categories', 'Gastos por Categoria',
+                <PieChart>
+                  <Pie
+                    data={data.expenses_by_category}
+                    dataKey="total"
+                    nameKey="category_name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    label={({ category_name, percent }) => 
+                      `${category_name} (${(percent * 100).toFixed(0)}%)`
+                    }
+                  >
+                    {data.expenses_by_category.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    formatter={formatCurrency}
+                    contentStyle={{
+                      backgroundColor: 'var(--card-background)',
+                      border: '1px solid var(--border-color)',
+                      color: 'var(--text-color)'
+                    }}
+                    labelStyle={{ color: 'var(--text-color)' }}
+                  />
+                  <Legend 
+                    formatter={(value) => <span style={{ color: 'var(--text-color)' }}>{value}</span>}
+                  />
+                </PieChart>
+              )}
 
-              {/* Gráfico de Linha: Evolução de Gastos */}
-              <div className={styles.chartContainer}>
-                <h3>Evolução de Gastos</h3>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={data.expenses_by_category}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
-                    <XAxis 
-                      dataKey="category_name"
-                      tick={{ fill: 'var(--text-color)' }}
-                    />
-                    <YAxis 
-                      tickFormatter={formatCurrency}
-                      tick={{ fill: 'var(--text-color)' }}
-                    />
-                    <Tooltip 
-                      formatter={formatCurrency}
-                      contentStyle={{
-                        backgroundColor: 'var(--card-background)',
-                        border: '1px solid var(--border-color)',
-                        color: 'var(--text-color)'
-                      }}
-                      labelStyle={{ color: 'var(--text-color)' }}
-                    />
-                    <Legend 
-                      formatter={(value) => <span style={{ color: 'var(--text-color)' }}>{value}</span>}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="total" 
-                      stroke="var(--primary-color)" 
-                      strokeWidth={2}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
+              {renderChart('banks', 'Gastos por Banco',
+                <BarChart data={data.expenses_by_bank}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+                  <XAxis 
+                    dataKey="bank_name" 
+                    tick={{ fill: 'var(--text-color)' }}
+                  />
+                  <YAxis 
+                    tickFormatter={formatCurrency}
+                    tick={{ fill: 'var(--text-color)' }}
+                  />
+                  <Tooltip 
+                    formatter={formatCurrency}
+                    contentStyle={{
+                      backgroundColor: 'var(--card-background)',
+                      border: '1px solid var(--border-color)',
+                      color: 'var(--text-color)'
+                    }}
+                    labelStyle={{ color: 'var(--text-color)' }}
+                  />
+                  <Legend 
+                    formatter={(value) => <span style={{ color: 'var(--text-color)' }}>Total por Banco</span>}
+                  />
+                  <Bar dataKey="total" fill="var(--primary-color)">
+                    {data.expenses_by_bank.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              )}
 
-              {/* Gráfico de Área: Distribuição Acumulada */}
-              <div className={styles.chartContainer}>
-                <h3>Distribuição Acumulada</h3>
-                <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={data.expenses_by_category}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
-                    <XAxis 
-                      dataKey="category_name"
-                      tick={{ fill: 'var(--text-color)' }}
-                    />
-                    <YAxis 
-                      tickFormatter={formatCurrency}
-                      tick={{ fill: 'var(--text-color)' }}
-                    />
-                    <Tooltip 
-                      formatter={formatCurrency}
-                      contentStyle={{
-                        backgroundColor: 'var(--card-background)',
-                        border: '1px solid var(--border-color)',
-                        color: 'var(--text-color)'
-                      }}
-                      labelStyle={{ color: 'var(--text-color)' }}
-                    />
-                    <Legend 
-                      formatter={(value) => <span style={{ color: 'var(--text-color)' }}>{value}</span>}
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="total" 
-                      fill="var(--primary-color)" 
-                      stroke="var(--hover-color)"
-                      fillOpacity={0.6}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
+              {renderChart('comparison', 'Comparativo de Gastos',
+                <BarChart data={data.expenses_by_category}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+                  <XAxis 
+                    dataKey="category_name" 
+                    tick={{ fill: 'var(--text-color)' }}
+                  />
+                  <YAxis 
+                    tickFormatter={formatCurrency}
+                    tick={{ fill: 'var(--text-color)' }}
+                  />
+                  <Tooltip 
+                    formatter={formatCurrency}
+                    contentStyle={{
+                      backgroundColor: 'var(--card-background)',
+                      border: '1px solid var(--border-color)',
+                      color: 'var(--text-color)'
+                    }}
+                    labelStyle={{ color: 'var(--text-color)' }}
+                  />
+                  <Legend 
+                    formatter={(value) => <span style={{ color: 'var(--text-color)' }}>{value}</span>}
+                  />
+                  <Bar dataKey="total" fill="var(--primary-color)">
+                    {data.expenses_by_category.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              )}
             </div>
           )}
         </div>

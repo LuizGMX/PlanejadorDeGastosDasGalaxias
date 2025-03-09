@@ -124,6 +124,19 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   transition: all 0.3s ease;
   border: 1px solid var(--border-color);
+  cursor: pointer;
+  position: relative;
+}
+
+.chartContainer.expanded {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90vw;
+  height: 90vh;
+  z-index: 1000;
+  cursor: default;
 }
 
 .chartContainer:hover {
@@ -137,6 +150,91 @@
   color: var(--text-color);
   font-size: 18px;
   font-weight: 600;
+}
+
+.chartHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.expandButton {
+  background: none;
+  border: 1px solid var(--border-color);
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  color: var(--text-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.expandButton:hover {
+  background-color: var(--hover-color);
+  color: var(--secondary-color);
+}
+
+.budgetInfoContainer {
+  background-color: var(--card-background);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  margin-bottom: 24px;
+  border: 1px solid var(--border-color);
+}
+
+.budgetInfoContainer h3 {
+  margin: 0 0 1rem 0;
+  color: var(--text-color);
+}
+
+.budgetStats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.budgetStat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.budgetStat span {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.budgetStat strong {
+  color: var(--text-color);
+  font-size: 1.2rem;
+}
+
+.budgetProgressBar {
+  width: 100%;
+  height: 20px;
+  background-color: var(--input-background);
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+  margin-top: 1rem;
+}
+
+.budgetProgress {
+  height: 100%;
+  background-color: var(--primary-color);
+  transition: width 0.3s ease;
+}
+
+.budgetProgressBar span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--text-color);
+  font-size: 0.9rem;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
 }
 
 .loading {
@@ -189,6 +287,16 @@
   .addFirstExpenseButton, .backButton {
     width: 100%;
   }
+
+  .budgetStats {
+    grid-template-columns: 1fr;
+  }
+
+  .chartContainer.expanded {
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+  }
 }
 
 /* Animações */
@@ -205,4 +313,16 @@
 
 .chartContainer {
   animation: fadeIn 0.3s ease-out;
+}
+
+/* Overlay para quando o gráfico estiver expandido */
+.chartContainer.expanded::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: -1;
 } 
