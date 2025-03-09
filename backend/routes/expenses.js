@@ -1,7 +1,9 @@
 import express from 'express';
-import { Expense, Category, SubCategory } from '../models/index.js';
+import { Expense, Category, SubCategory, Bank } from '../models/index.js';
 import { authenticate } from '../middleware/auth.js';
 import { v4 as uuidv4 } from 'uuid';
+import { Op } from 'sequelize';
+import { Sequelize } from 'sequelize';
 
 const router = express.Router();
 
@@ -203,6 +205,149 @@ router.delete('/batch', authenticate, async (req, res) => {
   } catch (error) {
     console.error('Erro ao excluir despesas:', error);
     res.status(500).json({ message: 'Erro ao excluir despesas' });
+  }
+});
+
+// Rota para estatísticas dos gráficos
+router.get('/stats', authenticate, async (req, res) => {
+  try {
+    const { month, year, category, bank, paymentMethod } = req.query;
+    const where = { user_id: req.user.id };
+
+    // Filtros
+    if (month) {
+      where[Op.and] = [
+        Sequelize.where(Sequelize.fn('MONTH', Sequelize.col('expense_date')), month)
+      ];
+    }
+    if (year) {
+      where[Op.and] = [
+        ...(where[Op.and] || []),
+        Sequelize.where(Sequelize.fn('YEAR', Sequelize.col('expense_date')), year)
+      ];
+    }
+    if (category) {
+      where.category_id = category;
+    }
+    if (bank) {
+      where.bank_id = bank;
+    }
+    if (paymentMethod) {
+      where.payment_method = paymentMethod;
+    }
+
+    // Buscar todas as despesas com os filtros aplicados
+    const expenses = await Expense.findAll({
+      where,
+      include: [
+        { model: Category },
+        { model: Bank }
+      ],
+      order: [['expense_date', 'ASC']]
+    });
+
+    // Dados para o gráfico de linha (evolução de gastos)
+    const expensesByDate = expenses.reduce((acc, expense) => {
+      const date = expense.expense_date.toISOString().split('T')[0];
+      if (!acc[date]) {
+        acc[date] = 0;
+      }
+      acc[date] += Number(expense.amount);
+      return acc;
+    }, {});
+
+    // Dados para o gráfico de pizza (gastos por categoria)
+    const expensesByCategory = expenses.reduce((acc, expense) => {
+      const categoryName = expense.Category.category_name;
+      if (!acc[categoryName]) {
+        acc[categoryName] = 0;
+      }
+      acc[categoryName] += Number(expense.amount);
+      return acc;
+    }, {});
+
+    // Dados para o gráfico de barras (gastos por banco)
+    const expensesByBank = expenses.reduce((acc, expense) => {
+      const bankName = expense.Bank.name;
+      if (!acc[bankName]) {
+        acc[bankName] = 0;
+      }
+      acc[bankName] += Number(expense.amount);
+      return acc;
+    }, {});
+
+    // Dados para o gráfico de barras empilhadas (gastos por tipo de pagamento)
+    const expensesByPaymentMethod = expenses.reduce((acc, expense) => {
+      const method = expense.payment_method;
+      const categoryName = expense.Category.category_name;
+      
+      if (!acc[method]) {
+        acc[method] = {};
+      }
+      if (!acc[method][categoryName]) {
+        acc[method][categoryName] = 0;
+      }
+      acc[method][categoryName] += Number(expense.amount);
+      return acc;
+    }, {});
+
+    // Dados para o gráfico de dispersão
+    const scatterData = {
+      pix: expenses
+        .filter(e => e.payment_method === 'pix')
+        .map(e => ({
+          bank: e.Bank.name,
+          amount: Number(e.amount)
+        })),
+      card: expenses
+        .filter(e => e.payment_method === 'card')
+        .map(e => ({
+          bank: e.Bank.name,
+          amount: Number(e.amount)
+        }))
+    };
+
+    // Formatar dados para o frontend
+    const formattedData = {
+      expenses: Object.entries(expensesByDate).map(([date, amount]) => ({
+        date,
+        amount
+      })),
+      categories: Object.entries(expensesByCategory).map(([name, amount]) => ({
+        name,
+        amount
+      })),
+      banks: Object.entries(expensesByBank).map(([name, amount]) => ({
+        name,
+        amount
+      })),
+      paymentMethods: Object.entries(expensesByPaymentMethod).map(([method, categories]) => ({
+        method,
+        ...categories
+      })),
+      scatterData
+    };
+
+    // Buscar todas as categorias e bancos para os filtros
+    const [categories, banks] = await Promise.all([
+      Category.findAll({ order: [['category_name', 'ASC']] }),
+      Bank.findAll({ order: [['name', 'ASC']] })
+    ]);
+
+    res.json({
+      ...formattedData,
+      categories: categories.map(c => ({
+        id: c.id,
+        name: c.category_name
+      })),
+      banks: banks.map(b => ({
+        id: b.id,
+        name: b.name
+      }))
+    });
+  } catch (error) {
+    console.error('Erro ao buscar estatísticas:', error);
+    res.status(500).json({ message: 'Erro ao buscar estatísticas' });
   }
 });
 

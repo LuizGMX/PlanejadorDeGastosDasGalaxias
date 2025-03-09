@@ -5,6 +5,7 @@ import Dashboard from './components/Dashboard';
 import Expenses from './components/Expenses';
 import AddExpense from './components/AddExpense';
 import Profile from './components/Profile';
+import Layout from './components/Layout';
 
 export const AuthContext = createContext();
 
@@ -20,7 +21,7 @@ function App() {
   }, [auth.token]);
 
   const ProtectedRoute = ({ children }) => {
-    return auth.token ? children : <Navigate to="/login" />;
+    return auth.token ? <Layout>{children}</Layout> : <Navigate to="/login" />;
   };
 
   return (

@@ -419,4 +419,95 @@
 
 .logoutButton:hover svg {
   transform: scale(1.1);
+}
+
+.paymentMethodGroup {
+  margin-bottom: 2rem;
+}
+
+.paymentMethodGroup .label {
+  display: block;
+  margin-bottom: 1rem;
+  color: var(--text-color);
+  font-weight: 500;
+}
+
+.paymentButtons {
+  display: flex;
+  gap: 1rem;
+  width: 100%;
+}
+
+.paymentButton {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--card-background);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.paymentButton:hover {
+  border-color: var(--primary-color);
+  background: var(--input-background);
+  transform: translateY(-2px);
+}
+
+.paymentButton.active {
+  border-color: var(--primary-color);
+  background: var(--input-background);
+  color: var(--text-color);
+}
+
+.paymentButton .cardIcon {
+  color: var(--primary-color);
+  font-size: 2rem;
+}
+
+.paymentButton .pixIcon {
+  color: var(--success-color);
+  font-size: 2rem;
+}
+
+.paymentButton span {
+  font-weight: 500;
+  font-size: 1.1rem;
+}
+
+/* Botão principal de adicionar despesa */
+.submitButton {
+  width: 100%;
+  padding: 1rem;
+  background: var(--primary-color);
+  color: var(--secondary-color);
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 2rem;
+}
+
+.submitButton:hover {
+  background: var(--hover-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .paymentButtons {
+    flex-direction: column;
+  }
+
+  .paymentButton {
+    width: 100%;
+  }
 } 

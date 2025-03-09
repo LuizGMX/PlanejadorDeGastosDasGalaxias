@@ -1,58 +1,38 @@
 import { Sequelize } from 'sequelize';
 import express from 'express';
-import { Expense, Category } from '../models/index.js';
+import { Expense, Category, SubCategory, Bank } from '../models/index.js';
+import { Op } from 'sequelize';
 
 const router = express.Router();
 
 router.get('/', async (req, res) => {
   try {
-    // Se não houver mês e ano na query, usa o mês e ano atuais
-    const currentDate = new Date();
-    const { 
-      month = currentDate.getMonth() + 1, // getMonth() retorna 0-11
-      year = currentDate.getFullYear(),
-      payment_method = 'all'
-    } = req.query;
-    
-    console.log('Parâmetros recebidos:', { 
-      month, 
-      year, 
-      payment_method,
-      tipos: { 
-        month: typeof month, 
-        year: typeof year,
-        payment_method: typeof payment_method 
-      } 
-    });
-    
-    // Construir a cláusula WHERE
+    const { month, year, payment_method } = req.query;
+    const parsedMonth = parseInt(month) || new Date().getMonth() + 1;
+    const parsedYear = parseInt(year) || new Date().getFullYear();
+
     const whereClause = {
-      user_id: req.user.id
+      user_id: req.user.id,
+      expense_date: {
+        [Op.and]: [
+          Sequelize.where(Sequelize.fn('MONTH', Sequelize.col('expense_date')), parsedMonth),
+          Sequelize.where(Sequelize.fn('YEAR', Sequelize.col('expense_date')), parsedYear)
+        ]
+      }
     };
 
-    // Sempre adiciona os filtros de data com os valores padrão ou fornecidos
-    const parsedMonth = parseInt(month);
-    const parsedYear = parseInt(year);
-    
-    console.log('Valores parseados:', { parsedMonth, parsedYear });
-    
-    whereClause.expense_date = Sequelize.where(
-      Sequelize.fn('DATE_FORMAT', Sequelize.col('expense_date'), '%Y-%m'),
-      `${parsedYear}-${parsedMonth.toString().padStart(2, '0')}`
-    );
-
-    // Adiciona filtro de tipo de pagamento se não for 'all'
-    if (payment_method && payment_method !== 'all') {
+    if (payment_method) {
       whereClause.payment_method = payment_method;
     }
 
-    // Log da cláusula WHERE para debug
-    console.log('WHERE clause:', JSON.stringify(whereClause, null, 2));
-
     const expenses = await Expense.findAll({
       where: whereClause,
-      include: [{ model: Category }],
-      logging: (sql) => console.log('Query SQL executada:', sql)
+      include: [
+        { model: Category, as: 'Category' },
+        { model: SubCategory, as: 'SubCategory' },
+        { model: Bank, as: 'Bank' }
+      ],
+      order: [['expense_date', 'DESC']]
     });
 
     // Se não houver despesas, retorna uma mensagem amigável

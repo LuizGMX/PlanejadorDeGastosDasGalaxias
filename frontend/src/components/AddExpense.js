@@ -2,7 +2,8 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../App';
 import styles from '../styles/shared.module.css';
-import { FaCreditCard, FaQrcode } from 'react-icons/fa';
+import { BsCreditCard2Front } from 'react-icons/bs';
+import { SiPix } from 'react-icons/si';
 
 const AddExpense = () => {
   const navigate = useNavigate();
@@ -14,11 +15,11 @@ const AddExpense = () => {
     category_id: '',
     subcategory_id: '',
     payment_method: 'card',
-    bank_id: '' // Adicionando o campo para o banco
+    bank_id: ''
   });
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
-  const [banks, setBanks] = useState([]); // Novo estado para os bancos
+  const [banks, setBanks] = useState([]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -110,6 +111,30 @@ const AddExpense = () => {
     }));
   };
 
+  const formatCurrency = (value) => {
+    if (!value) return '';
+    
+    // Remove tudo que não é número
+    value = value.replace(/\D/g, '');
+    
+    // Converte para número e divide por 100 para considerar centavos
+    const numericValue = parseFloat(value) / 100;
+    
+    // Formata o número para moeda brasileira
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(numericValue);
+  };
+
+  const handleAmountChange = (e) => {
+    const value = e.target.value.replace(/\D/g, '');
+    setFormData(prev => ({
+      ...prev,
+      amount: value
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -162,13 +187,12 @@ const AddExpense = () => {
           <div className={styles.inputGroup}>
             <label className={styles.label}>Valor</label>
             <input
-              type="number"
+              type="text"
               name="amount"
-              value={formData.amount}
-              onChange={handleChange}
+              value={formatCurrency(formData.amount)}
+              onChange={handleAmountChange}
               className={styles.input}
-              step="0.01"
-              min="0"
+              placeholder="R$ 0,00"
               required
             />
           </div>
@@ -243,24 +267,34 @@ const AddExpense = () => {
             </div>
           )}
 
-          <div className={styles.inputGroup}>
+          <div className={styles.paymentMethodGroup}>
             <label className={styles.label}>Forma de Pagamento</label>
-            <div className={styles.buttonGroup}>
-              <button type="button" className={`${styles.button} ${formData.payment_method === 'card' ? styles.active : ''}`} onClick={() => handlePaymentMethod('card')}>
-                <FaCreditCard /> Cartão
+            <div className={styles.paymentButtons}>
+              <button
+                type="button"
+                className={`${styles.paymentButton} ${formData.payment_method === 'card' ? styles.active : ''}`}
+                onClick={() => handlePaymentMethod('card')}
+              >
+                <BsCreditCard2Front size={24} className={styles.cardIcon} />
+                <span>Cartão</span>
               </button>
-              <button type="button" className={`${styles.button} ${formData.payment_method === 'pix' ? styles.active : ''}`} onClick={() => handlePaymentMethod('pix')}>
-                <FaQrcode /> PIX
+              <button
+                type="button"
+                className={`${styles.paymentButton} ${formData.payment_method === 'pix' ? styles.active : ''}`}
+                onClick={() => handlePaymentMethod('pix')}
+              >
+                <SiPix size={24} className={styles.pixIcon} />
+                <span>Pix</span>
               </button>
             </div>
           </div>
 
           <div className={styles.buttonGroup}>
-            <button type="submit" className={styles.button}>
+            <button
+              type="submit"
+              className={styles.submitButton}
+            >
               Adicionar Despesa
-            </button>
-            <button type="button" onClick={() => navigate('/dashboard')} className={`${styles.button} ${styles.secondary}`}>
-              Cancelar
             </button>
           </div>
         </form>
