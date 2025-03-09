@@ -138,7 +138,7 @@ router.post('/send-code', async (req, res) => {
       }
     }
 
-    // Gera e envia o código de verificação
+    // Gera o código de verificação
     const code = generateVerificationCode();
     await VerificationCode.destroy({ where: { email } });
     await VerificationCode.create({ 
@@ -147,16 +147,15 @@ router.post('/send-code', async (req, res) => {
       expires_at: new Date(Date.now() + 10 * 60 * 1000) 
     });
     
-    try {
-      await sendVerificationEmail(email, name || user.name, code);
-      return res.json({ message: 'Código enviado com sucesso!' });
-    } catch (emailError) {
-      console.error('Erro ao enviar email:', emailError);
-      return res.status(500).json({ message: 'Falha ao enviar email de verificação' });
-    }
+    // Apenas mostra o código no console ao invés de enviar por email
+    console.log('=================================');
+    console.log(`Código de verificação para ${email}: ${code}`);
+    console.log('=================================');
+    
+    return res.json({ message: 'Código gerado com sucesso! Verifique o console do backend.' });
   } catch (error) {
-    console.error('Erro ao enviar código:', error);
-    return res.status(500).json({ message: 'Erro interno ao enviar código' });
+    console.error('Erro ao gerar código:', error);
+    return res.status(500).json({ message: 'Erro interno ao gerar código' });
   }
 });
 
