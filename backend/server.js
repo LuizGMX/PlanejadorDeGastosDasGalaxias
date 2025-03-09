@@ -49,10 +49,22 @@ const authenticate = async (req, res, next) => {
 
 // Rotas
 const authRoutes = require('./routes/auth')(User, VerificationCode, sgMail, CreditCard); // Passe CreditCard aqui
-app.use('/api/auth', authRoutes);
-app.use('/api/expenses', authenticate, require('./routes/expenses')(Expense, CreditCard, Category));
-app.use('/api/credit-cards', authenticate, require('./routes/creditCards')(CreditCard));
-app.use('/api/dashboard', authenticate, require('./routes/dashboard')(Expense, Category));
+app.use('/api/auth', (req, res, next) => {
+  console.log('/api/auth called');
+  next();
+}, authRoutes);
+app.use('/api/expenses', authenticate, (req, res, next) => {
+  console.log('/api/expenses called');
+  next();
+}, require('./routes/expenses')(Expense, CreditCard, Category));
+app.use('/api/credit-cards', authenticate, (req, res, next) => {
+  console.log('/api/credit-cards called');
+  next();
+}, require('./routes/creditCards')(CreditCard));
+app.use('/api/dashboard', authenticate, (req, res, next) => {
+  console.log('/api/dashboard called');
+  next();
+}, require('./routes/dashboard')(Expense, Category));
 
 // Sincronizar banco de dados e adicionar dados iniciais apenas se necessário
 sequelize.sync({force:true}).then(async () => {

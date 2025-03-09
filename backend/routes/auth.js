@@ -1,132 +1,184 @@
 const crypto = require('crypto');
+const express = require('express');
+require('dotenv').config(); // For environment variables
 
 module.exports = (User, VerificationCode, sgMail, CreditCard) => {
-  const router = require('express').Router();
+  const router = express.Router();
+
+  // Utility Functions
+  const generateVerificationCode = () => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  };
+
+  const sendVerificationEmail = async (email, name, code) => {
+    const msg = {
+      to: email,
+      from: process.env.SENDGRID_FROM_EMAIL,
+      subject: 'Código de Verificação - Planejador Das Galáxias',
+      text: `Seu código de verificação é: ${code}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #333;">Código de Verificação</h2>
+          <p>Olá ${name || 'Usuário'},</p>
+          <p>Seu código de verificação é:</p>
+          <div style="background-color: #f4f4f4; padding: 20px; text-align: center; font-size: 24px; font-weight: bold; margin: 20px 0;">
+            ${code}
+          </div>
+          <p>Este código expira em 10 minutos.</p>
+          <p>Se você não solicitou este código, ignore este email.</p>
+        </div>
+      `,
+    };
+    try {
+      await sgMail.send(msg);
+      console.log(`Email enviado com sucesso para: ${email}`);
+    } catch (error) {
+      console.error(`Erro ao enviar email para ${email}:`, error);
+      throw new Error('Falha ao enviar email de verificação');
+    }
+  };
 
   // Middleware de autenticação
   const authenticate = async (req, res, next) => {
     const token = req.headers.authorization?.split(' ')[1];
-    if (!token) return res.status(401).json({ message: 'Não autorizado' });
-    const user = await User.findOne({ where: { session_token: token } });
-    if (!user) return res.status(401).json({ message: 'Não autorizado' });
-    req.user = user;
-    next();
+    if (!token) {
+      return res.status(401).json({ message: 'Token não fornecido' });
+    }
+    try {
+      const user = await User.findOne({ where: { session_token: token } });
+      if (!user) {
+        return res.status(401).json({ message: 'Token inválido' });
+      }
+      req.user = user;
+      next();
+    } catch (error) {
+      console.error('Erro na autenticação:', error);
+      res.status(500).json({ message: 'Erro ao autenticar usuário' });
+    }
   };
 
+  // Validação de entrada
+  const validateSendCodeInput = ({ email, netIncome, selectedBanks }) => {
+    if (!email || !/^\S+@\S+\.\S+$/.test(email)) return 'E-mail inválido';
+    if (!netIncome || isNaN(netIncome)) return 'Renda líquida inválida';
+    if (!selectedBanks || !Array.isArray(selectedBanks) || selectedBanks.length === 0) {
+      return 'Bancos selecionados inválidos';
+    }
+    return null;
+  };
+
+  // Rotas
   router.post('/check-email', async (req, res) => {
+    console.log('/api/auth/check-email chamado');
     try {
       const { email } = req.body;
       if (!email) {
         return res.status(400).json({ message: 'E-mail é obrigatório' });
       }
       const user = await User.findOne({ where: { email } });
-      res.json({ 
+      return res.json({
         isNewUser: !user,
-        name: user ? user.name : null
+        name: user ? user.name : null,
       });
     } catch (error) {
       console.error('Erro ao verificar email:', error);
-      res.status(500).json({ message: 'Erro interno ao verificar email' });
+      return res.status(500).json({ message: 'Erro interno ao verificar email' });
     }
   });
 
   router.post('/send-code', async (req, res) => {
+    console.log('/api/auth/send-code chamado');
     try {
-      const { email, name } = req.body;
-      if (!email || !name) {
-        return res.status(400).json({ message: 'E-mail e nome são obrigatórios' });
+      const { email, name, netIncome, selectedBanks } = req.body;
+      // Validação básica do email
+      if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+        return res.status(400).json({ message: 'E-mail inválido' });
       }
+  
+      // Verifica se o usuário já existe
       let user = await User.findOne({ where: { email } });
       const isNewUser = !user;
-      
-      if (!user) {
-        user = await User.create({ email, name });
-        const banks = [
-          'Itaú Unibanco', 'Banco do Brasil', 'Bradesco', 'Caixa Econômica Federal', 'Santander Brasil',
-          'Nubank', 'Banco Inter', 'BTG Pactual', 'Safra', 'Sicredi',
-          'Banrisul', 'C6 Bank', 'Banco Pan', 'Original', 'Sicoob',
-          'Votorantim (Banco BV)', 'BMG', 'Mercantil do Brasil', 'Daycoval', 'Neon'
-        ];
-        await CreditCard.bulkCreate(banks.map(bank => ({
-          card_name: bank,
-          user_id: user.id,
-        })));
-        console.log(`Cartões criados para o usuário ${email}`);
+  
+      if (isNewUser) {
+        // Para novos usuários, valida netIncome e selectedBanks
+        if (!netIncome || isNaN(netIncome)) {
+          return res.status(400).json({ message: 'Renda líquida inválida' });
+        }
+        if (!selectedBanks || !Array.isArray(selectedBanks) || selectedBanks.length === 0) {
+          return res.status(400).json({ message: 'Bancos selecionados inválidos' });
+        }
+        // Cria o novo usuário
+        user = await User.create({ email, name: name || '', net_income: netIncome });
+        await CreditCard.bulkCreate(
+          selectedBanks.map((bank) => ({
+            bank_name: bank,
+            user_id: user.id,
+            is_favorite: false,
+          }))
+        );
+        console.log(`Novo usuário criado: ${email} com bancos: ${selectedBanks}`);
+      } else {
+        // Para usuários existentes, atualiza o nome se fornecido
+        if (name) {
+          await user.update({ name });
+        }
       }
-      const code = Math.floor(100000 + Math.random() * 900000).toString();
+  
+      // Gera e envia o código de verificação
+      const code = generateVerificationCode();
       await VerificationCode.destroy({ where: { email } });
-      await VerificationCode.create({ email, code });
-      
-      // Em desenvolvimento, apenas mostra o código no terminal
-      console.log(`\n=== CÓDIGO DE VERIFICAÇÃO ===`);
-      console.log(`Email: ${email}`);
-      console.log(`Código: ${code}`);
-      console.log(`===========================\n`);
-
-      // Código para produção (comentado)
-      /*
-      const msg = {
-        to: email,
-        from: process.env.SENDGRID_FROM_EMAIL,
-        subject: 'Código de Verificação - Planejador Das Galáxias',
-        text: `Seu código de verificação é: ${code}`,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #333;">Código de Verificação</h2>
-            <p>Olá ${name},</p>
-            <p>Seu código de verificação é:</p>
-            <div style="background-color: #f4f4f4; padding: 20px; text-align: center; font-size: 24px; font-weight: bold; margin: 20px 0;">
-              ${code}
-            </div>
-            <p>Este código expira em 10 minutos.</p>
-            <p>Se você não solicitou este código, por favor ignore este email.</p>
-          </div>
-        `,
-      };
-      await sgMail.send(msg);
-      */
-
-      res.json({ 
-        message: 'Código gerado (verifique o console do backend)',
-        isNewUser
-      });
+      await VerificationCode.create({ email, code, expires_at: Date.now() + 10 * 60 * 1000 });
+      // await sendVerificationEmail(email, name || user.name, code);
+      console.log(`Código de verificação: ${code}`);
+      return res.json({ message: 'Código enviado com sucesso!'});
     } catch (error) {
       console.error('Erro ao enviar código:', error);
-      res.status(500).json({ message: 'Erro interno ao enviar o código' });
+      return res.status(500).json({ message: 'Erro interno ao enviar código' });
     }
   });
 
   router.post('/verify-code', async (req, res) => {
+    console.log('/api/auth/verify-code chamado');
     try {
       const { email, code } = req.body;
       if (!email || !code) {
         return res.status(400).json({ message: 'E-mail e código são obrigatórios' });
       }
+
       const verification = await VerificationCode.findOne({ where: { email, code } });
-      if (!verification || Date.now() - verification.created_at > 10 * 60 * 1000) {
+      if (!verification || Date.now() > verification.expires_at) {
         return res.status(400).json({ message: 'Código inválido ou expirado' });
       }
+
       const user = await User.findOne({ where: { email } });
       let sessionToken = user.session_token;
       if (!sessionToken) {
-        sessionToken = crypto.randomBytes(16).toString('hex');
+        sessionToken = crypto.randomBytes(32).toString('hex'); // Aumentado para 32 bytes
         await user.update({ session_token: sessionToken });
       }
+
       await VerificationCode.destroy({ where: { email } });
-      res.json({ token: sessionToken });
+      return res.json({ token: sessionToken });
     } catch (error) {
       console.error('Erro ao verificar código:', error);
-      res.status(500).json({ message: 'Erro interno ao verificar o código' });
+      return res.status(500).json({ message: 'Erro interno ao verificar o código' });
     }
   });
 
   router.get('/me', authenticate, async (req, res) => {
-    res.json({ name: req.user.name, avatar: req.user.avatar });
+    console.log('/api/auth/me chamado');
+    return res.json({ name: req.user.name, avatar: req.user.avatar });
   });
 
   router.put('/me', authenticate, async (req, res) => {
-    await req.user.update(req.body);
-    res.json({ message: 'Perfil atualizado' });
+    console.log('/api/auth/me chamado');
+    try {
+      await req.user.update(req.body);
+      return res.json({ message: 'Perfil atualizado com sucesso' });
+    } catch (error) {
+      console.error('Erro ao atualizar perfil:', error);
+      return res.status(500).json({ message: 'Erro ao atualizar perfil' });
+    }
   });
 
   return router;
