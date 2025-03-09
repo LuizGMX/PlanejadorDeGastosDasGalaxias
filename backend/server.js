@@ -10,6 +10,7 @@ import logger from './config/logger.js';
 import { getCache, setCache } from './config/cache.js';
 import jwt from 'jsonwebtoken';
 import db from './models/index.js';
+import seedDatabase from './seeders/index.js';
 
 dotenv.config();
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -115,36 +116,24 @@ app.use('/api/dashboard', authenticate, dashboardRoutes);
 import banksRouter from './routes/banks.js';
 app.use('/api/bank', banksRouter);
 
-// Sincronizar banco de dados e adicionar dados iniciais apenas se necessário
-(async () => {
-  try {
-    if (process.env.NODE_ENV !== 'production') {
-      await db.sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
-      await db.sequelize.sync({ force: true });
-      await db.sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
-      
-      const categoryCount = await db.Category.count();
-      if (categoryCount === 0) {
-        await db.Category.bulkCreate([
-          { category_name: 'Alimentação' },
-          { category_name: 'Transporte' },
-          { category_name: 'Moradia' },
-          { category_name: 'Saúde' },
-          { category_name: 'Educação' },
-          { category_name: 'Lazer' },
-          { category_name: 'Vestuário' },
-          { category_name: 'Contas (água, luz, internet)' },
-          { category_name: 'Impostos' },
-          { category_name: 'Outros' },
-        ]);
-        logger.info('Categorias iniciais criadas');
-      }
-    }
+const PORT = process.env.PORT || 5000;
 
-    const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => logger.info(`Servidor rodando na porta ${PORT}`));
+// Sincroniza o banco de dados e inicia o servidor
+const startServer = async () => {
+  try {
+    await db.sequelize.sync();
+    console.log('Banco de dados sincronizado');
+    
+    await seedDatabase();
+    console.log('Seed concluído');
+
+    app.listen(PORT, () => {
+      console.log(`Servidor rodando na porta ${PORT}`);
+    });
   } catch (error) {
-    logger.error('Erro ao sincronizar banco de dados:', error);
+    console.error('Erro ao iniciar servidor:', error);
     process.exit(1);
   }
-})();
+};
+
+startServer();

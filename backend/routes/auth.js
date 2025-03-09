@@ -147,8 +147,13 @@ router.post('/send-code', async (req, res) => {
       expires_at: new Date(Date.now() + 10 * 60 * 1000) 
     });
     
-    await sendVerificationEmail(email, name || user.name, code);
-    return res.json({ message: 'Código enviado com sucesso!' });
+    try {
+      await sendVerificationEmail(email, name || user.name, code);
+      return res.json({ message: 'Código enviado com sucesso!' });
+    } catch (emailError) {
+      console.error('Erro ao enviar email:', emailError);
+      return res.status(500).json({ message: 'Falha ao enviar email de verificação' });
+    }
   } catch (error) {
     console.error('Erro ao enviar código:', error);
     return res.status(500).json({ message: 'Erro interno ao enviar código' });

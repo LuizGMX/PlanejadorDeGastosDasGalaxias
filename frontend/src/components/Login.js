@@ -22,13 +22,16 @@ const Login = () => {
   useEffect(() => {
     const fetchBanks = async () => {
       try {
+        console.log('Buscando bancos...');
         const response = await fetch('/api/bank');
         if (!response.ok) {
           throw new Error('Falha ao carregar bancos');
         }
         const data = await response.json();
+        console.log('Bancos recebidos:', data);
         setBanks(data);
       } catch (err) {
+        console.error('Erro ao buscar bancos:', err);
         setError('Erro ao carregar bancos. Por favor, tente novamente.');
       }
     };
@@ -98,14 +101,29 @@ const Login = () => {
   };
 
   const requestCode = async () => {
+    const requestData = isNewUser
+      ? {
+          email: formData.email,
+          name: formData.name,
+          netIncome: formData.netIncome,
+          selectedBanks: formData.selectedBanks
+        }
+      : {
+          email: formData.email,
+          name: formData.name
+        };
+
+    console.log('Enviando dados:', requestData);
+
     const response = await fetch('/api/auth/send-code', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData)
+      body: JSON.stringify(requestData)
     });
 
     if (!response.ok) {
-      throw new Error('Falha ao enviar código');
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Falha ao enviar código');
     }
 
     const data = await response.json();
