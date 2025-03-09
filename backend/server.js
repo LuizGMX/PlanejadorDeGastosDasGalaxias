@@ -127,7 +127,7 @@ import userRouter from './routes/user.js';
 app.use('/api/user', authenticate, userRouter);
 
 import categoriesRouter from './routes/categories.js';
-app.use('/api/categories', categoriesRouter);
+app.use('/api/categories', authenticate, categoriesRouter);
 
 const PORT = process.env.PORT || 5000;
 

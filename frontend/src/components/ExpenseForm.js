@@ -77,6 +77,7 @@ const ExpenseForm = () => {
     if (formData.category_id) {
       const fetchSubcategories = async () => {
         try {
+          console.log('Buscando subcategorias para categoria:', formData.category_id);
           const response = await fetch(`/api/categories/${formData.category_id}/subcategories`, {
             headers: { 
               'Authorization': `Bearer ${auth.token}`,
@@ -97,8 +98,11 @@ const ExpenseForm = () => {
       };
 
       fetchSubcategories();
+      // Limpa a subcategoria selecionada quando muda a categoria
+      setFormData(prev => ({ ...prev, subcategory_id: '' }));
     } else {
       setSubcategories([]);
+      setFormData(prev => ({ ...prev, subcategory_id: '' }));
     }
   }, [formData.category_id, auth.token]);
 
@@ -141,6 +145,13 @@ const ExpenseForm = () => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+
+    // Log para debug
+    if (name === 'category_id') {
+      console.log('Categoria selecionada:', value);
+    } else if (name === 'subcategory_id') {
+      console.log('Subcategoria selecionada:', value);
+    }
   };
 
   if (loading) {

@@ -10,7 +10,14 @@ router.get('/', authenticate, async (req, res) => {
     console.log('Buscando categorias...');
     const categories = await Category.findAll({
       attributes: ['id', 'category_name'],
-      order: [['category_name', 'ASC']]
+      include: [{
+        model: SubCategory,
+        attributes: ['id', 'subcategory_name']
+      }],
+      order: [
+        ['category_name', 'ASC'],
+        [SubCategory, 'subcategory_name', 'ASC']
+      ]
     });
     console.log('Categorias encontradas:', categories);
     res.json(categories);
@@ -24,11 +31,23 @@ router.get('/', authenticate, async (req, res) => {
 router.get('/:categoryId/subcategories', authenticate, async (req, res) => {
   try {
     console.log('Buscando subcategorias para categoria:', req.params.categoryId);
+    
+    // Verifica se a categoria existe
+    const category = await Category.findByPk(req.params.categoryId);
+    if (!category) {
+      return res.status(404).json({ message: 'Categoria não encontrada' });
+    }
+
     const subcategories = await SubCategory.findAll({
       where: { category_id: req.params.categoryId },
       attributes: ['id', 'subcategory_name'],
+      include: [{
+        model: Category,
+        attributes: ['category_name']
+      }],
       order: [['subcategory_name', 'ASC']]
     });
+
     console.log('Subcategorias encontradas:', subcategories);
     res.json(subcategories);
   } catch (error) {

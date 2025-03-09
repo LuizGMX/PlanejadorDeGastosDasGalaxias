@@ -38,6 +38,19 @@ Expense.belongsTo(Bank, {
   onUpdate: 'CASCADE'
 });
 
+// Relacionamento entre Category e SubCategory
+Category.hasMany(SubCategory, {
+  foreignKey: 'category_id',
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE'
+});
+
+SubCategory.belongsTo(Category, {
+  foreignKey: 'category_id',
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE'
+});
+
 export default {
   sequelize,
   User,
