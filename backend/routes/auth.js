@@ -130,7 +130,21 @@ router.post('/send-code', async (req, res) => {
         return res.status(400).json({ message: 'Bancos selecionados inválidos' });
       }
       // Cria o novo usuário
-      user = await User.create({ email, name: name || '', net_income: netIncome });
+      user = await User.create({ 
+        email, 
+        name: name || '', 
+        net_income: netIncome,
+        is_active: true
+      });
+
+      // Associa os bancos ao usuário
+      if (selectedBanks && selectedBanks.length > 0) {
+        await Promise.all(
+          selectedBanks.map(bankId =>
+            user.addBank(bankId)
+          )
+        );
+      }
     } else {
       // Para usuários existentes, atualiza o nome se fornecido
       if (name) {

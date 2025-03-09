@@ -12,9 +12,11 @@ const Dashboard = () => {
   const { auth } = useContext(AuthContext);
   const [expenses, setExpenses] = useState([]);
   const [totalExpenses, setTotalExpenses] = useState(0);
-  const [expensesByCategory, setExpensesByCategory] = useState({});
+  const [expensesByCategory, setExpensesByCategory] = useState([]);
+  const [currentFilters, setCurrentFilters] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [message, setMessage] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -30,9 +32,14 @@ const Dashboard = () => {
         }
 
         const data = await response.json();
-        setExpenses(data.expenses);
-        setTotalExpenses(data.totalExpenses);
-        setExpensesByCategory(data.expensesByCategory);
+        
+        if (data.message) {
+          setMessage(data.message);
+        }
+
+        setExpensesByCategory(data.expenses_by_category || []);
+        setTotalExpenses(data.total_expenses || 0);
+        setCurrentFilters(data.current_filters || null);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -44,10 +51,10 @@ const Dashboard = () => {
   }, [auth.token]);
 
   const chartData = {
-    labels: Object.keys(expensesByCategory),
+    labels: expensesByCategory.map(cat => cat.category_name),
     datasets: [
       {
-        data: Object.values(expensesByCategory),
+        data: expensesByCategory.map(cat => cat.total),
         backgroundColor: [
           '#FF6384',
           '#36A2EB',
@@ -84,11 +91,39 @@ const Dashboard = () => {
     );
   }
 
+  if (message) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.card}>
+          <h1 className={styles.title}>Dashboard</h1>
+          <p className={styles.message}>{message}</p>
+          <button
+            className={styles.button}
+            onClick={() => navigate('/add-expense')}
+          >
+            Adicionar Despesa
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.container}>
       <div className={`${styles.card} ${styles.fadeIn}`}>
         <h1 className={styles.title}>Dashboard</h1>
         
+        {currentFilters && (
+          <div className={styles.filters}>
+            <p>
+              Mostrando despesas de {currentFilters.month}/{currentFilters.year}
+              {currentFilters.payment_method !== 'all' && 
+                ` - Pagamento: ${currentFilters.payment_method}`
+              }
+            </p>
+          </div>
+        )}
+
         <div className={styles.grid}>
           <div className={styles.card}>
             <h2 className={styles.subtitle}>Total de Gastos</h2>
@@ -97,42 +132,14 @@ const Dashboard = () => {
             </p>
           </div>
 
-          <div className={styles.card}>
-            <h2 className={styles.subtitle}>Gastos por Categoria</h2>
-            <div className={styles.chartContainer}>
-              <Pie data={chartData} options={{ responsive: true }} />
+          {expensesByCategory.length > 0 && (
+            <div className={styles.card}>
+              <h2 className={styles.subtitle}>Gastos por Categoria</h2>
+              <div className={styles.chartContainer}>
+                <Pie data={chartData} options={{ responsive: true }} />
+              </div>
             </div>
-          </div>
-        </div>
-
-        <div className={styles.card}>
-          <h2 className={styles.subtitle}>Últimas Despesas</h2>
-          <div className={styles.tableContainer}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Descrição</th>
-                  <th>Categoria</th>
-                  <th>Valor</th>
-                  <th>Data</th>
-                </tr>
-              </thead>
-              <tbody>
-                {expenses.slice(0, 5).map((expense) => (
-                  <tr key={expense.id}>
-                    <td>{expense.description}</td>
-                    <td>{expense.category_name}</td>
-                    <td>
-                      R$ {expense.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </td>
-                    <td>
-                      {new Date(expense.date).toLocaleDateString('pt-BR')}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          )}
         </div>
 
         <div className={styles.buttonGroup}>

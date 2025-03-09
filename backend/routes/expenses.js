@@ -1,4 +1,5 @@
 import express from 'express';
+import { Expense, Category } from '../models/index.js';
 
 const router = express.Router();
 
@@ -7,8 +8,7 @@ router.get('/', async (req, res) => {
     const expenses = await Expense.findAll({
       where: { user_id: req.user.id },
       include: [
-        { model: CreditCard, attributes: ['id', 'card_name'] },
-        { model: Category, attributes: ['id', 'category_name'] },
+        { model: Category, attributes: ['id', 'category_name'] }
       ],
     });
     res.json(expenses);
@@ -22,8 +22,7 @@ router.post('/', async (req, res) => {
   try {
     const expenseData = {
       ...req.body,
-      user_id: req.user.id,
-      credit_card_id: req.body.payment_method === 'pix' ? null : (req.body.credit_card_id || null),
+      user_id: req.user.id
     };
     const expense = await Expense.create(expenseData);
     res.status(201).json(expense);

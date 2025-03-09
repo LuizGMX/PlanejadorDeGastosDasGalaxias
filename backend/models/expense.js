@@ -19,49 +19,44 @@ export default (sequelize) => {
     },
     category_id: {
       type: DataTypes.INTEGER,
-      allowNull: false, // Mantido como NOT NULL
+      allowNull: false,
       references: {
         model: 'categories',
-        key: 'id',
-        name: 'fk_expense_category'
+        key: 'id'
       },
       onUpdate: 'CASCADE',
-      onDelete: 'NO ACTION' // Alterado de 'SET NULL'
-    },
-    subcategory_id: {
-      type: DataTypes.INTEGER,
-      allowNull: false, // Mantido como NOT NULL
-      references: {
-        model: 'subcategories',
-        key: 'id',
-        name: 'fk_expense_subcategory'
-      },
-      onUpdate: 'CASCADE',
-      onDelete: 'NO ACTION' // Alterado de 'SET NULL'
+      onDelete: 'NO ACTION'
     },
     bank_id: {
       type: DataTypes.INTEGER,
-      allowNull: false, // Mantido como NOT NULL
+      allowNull: false,
       references: {
         model: 'banks',
-        key: 'id',
-        name: 'fk_expense_bank'
+        key: 'id'
       },
       onUpdate: 'CASCADE',
-      onDelete: 'NO ACTION' // Alterado de 'SET NULL'
+      onDelete: 'NO ACTION'
     },
     amount: {
       type: DataTypes.DECIMAL(10, 2),
-      allowNull: false
+      allowNull: false,
+      validate: {
+        min: 0
+      }
     },
     description: {
       type: DataTypes.STRING,
       allowNull: false
     },
-    date: {
+    expense_date: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW
+    },
+    payment_method: {
+      type: DataTypes.ENUM('pix', 'card'),
+      allowNull: false,
+      defaultValue: 'card'
     }
   }, {
     timestamps: true,

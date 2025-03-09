@@ -1,4 +1,4 @@
-import { Category, SubCategory } from '../models/index.js';
+import { Category } from '../models/index.js';
 
 const categories = [
   {
@@ -100,21 +100,16 @@ const categories = [
 
 export const seedCategories = async () => {
   try {
-    for (const category of categories) {
-      const createdCategory = await Category.create({
-        name: category.name
-      });
+    const createdCategories = await Promise.all(
+      categories.map(category =>
+        Category.create({
+          category_name: category.name
+        })
+      )
+    );
 
-      await Promise.all(
-        category.subcategories.map(subcategoryName =>
-          SubCategory.create({
-            name: subcategoryName,
-            category_id: createdCategory.id
-          })
-        )
-      );
-    }
-    console.log('Categorias e subcategorias criadas com sucesso!');
+    console.log('Categorias criadas com sucesso!');
+    return createdCategories;
   } catch (error) {
     console.error('Erro ao criar categorias:', error);
     throw error;

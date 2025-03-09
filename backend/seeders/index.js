@@ -1,4 +1,5 @@
-import { Bank } from '../models/index.js';
+import { Bank, Category } from '../models/index.js';
+import { seedCategories } from './categorySeeder.js';
 
 const banks = [
   { name: 'Banco do Brasil', code: '001' },
@@ -13,7 +14,7 @@ const banks = [
   { name: 'PicPay', code: '380' }
 ];
 
-const seedDatabase = async () => {
+const seedBanks = async () => {
   try {
     // Verifica se já existem bancos
     const existingBanks = await Bank.findAll();
@@ -25,6 +26,26 @@ const seedDatabase = async () => {
     }
   } catch (error) {
     console.error('Erro ao criar bancos:', error);
+    throw error;
+  }
+};
+
+const seedDatabase = async () => {
+  try {
+    // Verifica se já existem categorias
+    const existingCategories = await Category.findAll();
+    if (existingCategories.length === 0) {
+      await seedCategories();
+    } else {
+      console.log('Categorias já existem no banco de dados.');
+    }
+
+    // Executa o seed de bancos
+    await seedBanks();
+
+    console.log('Todos os seeds foram executados com sucesso!');
+  } catch (error) {
+    console.error('Erro ao executar seeds:', error);
     throw error;
   }
 };
