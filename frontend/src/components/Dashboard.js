@@ -348,6 +348,48 @@ const Dashboard = () => {
 
           {data.expenses_by_category && data.expenses_by_category.length > 0 && (
             <div className={styles.chartsGrid}>
+              {renderChart('income-vs-expenses', 'Gastos vs. Renda',
+                <PieChart margin={{ top: 10, right: 30, left: 30, bottom: 20 }}>
+                  <Pie
+                    data={[
+                      { 
+                        name: 'Disponível', 
+                        value: Math.max(0, data.budget_info.remaining_budget)
+                      },
+                      { 
+                        name: 'Total Gasto', 
+                        value: data.budget_info.total_spent
+                      }
+                    ]}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    startAngle={90}
+                    endAngle={-270}
+                    label={({ name, percent }) => 
+                      `${name} (${(percent * 100).toFixed(0)}%)`
+                    }
+                  >
+                    <Cell fill="var(--primary-color)" />
+                    <Cell fill="var(--error-color)" />
+                  </Pie>
+                  <Tooltip 
+                    formatter={formatCurrency}
+                    contentStyle={{
+                      backgroundColor: 'var(--card-background)',
+                      border: '1px solid var(--border-color)',
+                      color: 'var(--text-color)'
+                    }}
+                    labelStyle={{ color: 'var(--text-color)' }}
+                  />
+                  <Legend 
+                    formatter={(value) => <span style={{ color: 'var(--text-color)' }}>{value}</span>}
+                  />
+                </PieChart>
+              )}
+
               {renderChart('timeline', 'Gastos ao Longo do Tempo',
                 <LineChart data={data.expenses_by_date} margin={{ top: 10, right: 30, left: 80, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
@@ -448,48 +490,6 @@ const Dashboard = () => {
                     ))}
                   </Bar>
                 </BarChart>
-              )}
-
-              {renderChart('income-vs-expenses', 'Gastos vs. Renda',
-                <PieChart margin={{ top: 10, right: 30, left: 30, bottom: 20 }}>
-                  <Pie
-                    data={[
-                      { 
-                        name: 'Disponível', 
-                        value: Math.max(0, data.budget_info.remaining_budget)
-                      },
-                      { 
-                        name: 'Total Gasto', 
-                        value: data.budget_info.total_spent
-                      }
-                    ]}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    startAngle={90}
-                    endAngle={-270}
-                    label={({ name, percent }) => 
-                      `${name} (${(percent * 100).toFixed(0)}%)`
-                    }
-                  >
-                    <Cell fill="var(--primary-color)" />
-                    <Cell fill="var(--error-color)" />
-                  </Pie>
-                  <Tooltip 
-                    formatter={formatCurrency}
-                    contentStyle={{
-                      backgroundColor: 'var(--card-background)',
-                      border: '1px solid var(--border-color)',
-                      color: 'var(--text-color)'
-                    }}
-                    labelStyle={{ color: 'var(--text-color)' }}
-                  />
-                  <Legend 
-                    formatter={(value) => <span style={{ color: 'var(--text-color)' }}>{value}</span>}
-                  />
-                </PieChart>
               )}
             </div>
           )}

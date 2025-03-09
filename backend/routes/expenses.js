@@ -189,10 +189,204 @@ router.get('/', authenticate, async (req, res) => {
   }
 });
 
+router.put('/:id', authenticate, async (req, res) => {
+  try {
+    const expense = await Expense.findOne({
+      where: { 
+        id: req.params.id,
+        user_id: req.user.id
+      }
+    });
+
+    if (!expense) {
+      return res.status(404).json({ message: 'Despesa não encontrada' });
+    }
+
+    // Validações básicas
+    const {
+      description,
+      amount,
+      category_id,
+      subcategory_id,
+      bank_id,
+      expense_date,
+      payment_method
+    } = req.body;
+
+    if (!description || amount === undefined || !category_id || !subcategory_id || !bank_id || !expense_date || !payment_method) {
+      return res.status(400).json({ message: 'Todos os campos são obrigatórios' });
+    }
+
+    // Garante que o valor é um número válido
+    const parsedAmount = Number(parseFloat(amount).toFixed(2));
+    if (isNaN(parsedAmount) || parsedAmount < 0) {
+      return res.status(400).json({ message: 'Valor inválido' });
+    }
+
+    // Atualiza a despesa
+    await expense.update({
+      description,
+      amount: parsedAmount,
+      category_id,
+      subcategory_id,
+      bank_id,
+      expense_date,
+      payment_method
+    });
+
+    res.json({ 
+      message: 'Despesa atualizada com sucesso',
+      expense
+    });
+  } catch (error) {
+    console.error('Erro ao atualizar despesa:', error);
+    res.status(500).json({ message: 'Erro ao atualizar despesa' });
+  }
+});
+
+router.delete('/installments', authenticate, async (req, res) => {
+  const transaction = await Expense.sequelize.transaction();
+
+  try {
+    const { installmentGroupId, deleteType, currentInstallment } = req.body;
+
+    if (!installmentGroupId || !deleteType || !currentInstallment) {
+      return res.status(400).json({ message: 'Parâmetros inválidos' });
+    }
+
+    // Busca todas as parcelas do grupo
+    const expenses = await Expense.findAll({
+      where: {
+        installment_group_id: installmentGroupId,
+        user_id: req.user.id
+      },
+      order: [['current_installment', 'ASC']],
+      transaction
+    });
+
+    if (!expenses.length) {
+      await transaction.rollback();
+      return res.status(404).json({ message: 'Parcelas não encontradas' });
+    }
+
+    // Define quais parcelas serão excluídas baseado no tipo de exclusão
+    let expensesToDelete;
+    switch (deleteType) {
+      case 'single':
+        expensesToDelete = expenses.filter(e => e.current_installment === currentInstallment);
+        break;
+      case 'forward':
+        expensesToDelete = expenses.filter(e => e.current_installment >= currentInstallment);
+        break;
+      case 'backward':
+        expensesToDelete = expenses.filter(e => e.current_installment <= currentInstallment);
+        break;
+      case 'all':
+        expensesToDelete = expenses;
+        break;
+      default:
+        await transaction.rollback();
+        return res.status(400).json({ message: 'Tipo de exclusão inválido' });
+    }
+
+    // Exclui as parcelas selecionadas
+    await Expense.destroy({
+      where: {
+        id: expensesToDelete.map(e => e.id),
+        user_id: req.user.id
+      },
+      transaction
+    });
+
+    // Se todas as parcelas foram excluídas, não precisa atualizar as restantes
+    if (deleteType === 'all') {
+      await transaction.commit();
+      return res.json({ 
+        message: 'Todas as parcelas foram excluídas com sucesso',
+        count: expensesToDelete.length
+      });
+    }
+
+    // Atualiza a descrição e o total de parcelas das parcelas restantes
+    const remainingExpenses = expenses.filter(e => !expensesToDelete.find(d => d.id === e.id));
+    if (remainingExpenses.length > 0) {
+      const newTotal = remainingExpenses.length;
+      for (let i = 0; i < remainingExpenses.length; i++) {
+        const expense = remainingExpenses[i];
+        await expense.update({
+          current_installment: i + 1,
+          total_installments: newTotal,
+          description: expense.description.replace(/\(\d+\/\d+\)/, `(${i + 1}/${newTotal})`)
+        }, { transaction });
+      }
+    }
+
+    await transaction.commit();
+    res.json({ 
+      message: 'Parcelas excluídas com sucesso',
+      count: expensesToDelete.length
+    });
+  } catch (error) {
+    await transaction.rollback();
+    console.error('Erro ao excluir parcelas:', error);
+    res.status(500).json({ message: 'Erro ao excluir parcelas' });
+  }
+});
+
+router.delete('/batch', authenticate, async (req, res) => {
+  const transaction = await Expense.sequelize.transaction();
+
+  try {
+    const { ids } = req.body;
+    
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ message: 'IDs inválidos' });
+    }
+
+    // Verifica se todas as despesas pertencem ao usuário
+    const expenses = await Expense.findAll({
+      where: {
+        id: ids,
+        user_id: req.user.id
+      }
+    });
+
+    if (expenses.length !== ids.length) {
+      await transaction.rollback();
+      return res.status(403).json({ 
+        message: 'Algumas despesas não foram encontradas ou você não tem permissão para excluí-las' 
+      });
+    }
+
+    // Exclui as despesas
+    await Expense.destroy({
+      where: {
+        id: ids,
+        user_id: req.user.id
+      },
+      transaction
+    });
+
+    await transaction.commit();
+    res.json({ 
+      message: 'Despesas excluídas com sucesso',
+      count: expenses.length
+    });
+  } catch (error) {
+    await transaction.rollback();
+    console.error('Erro ao excluir despesas:', error);
+    res.status(500).json({ message: 'Erro ao excluir despesas' });
+  }
+});
+
+// Rota para excluir uma única despesa (deve vir por último)
 router.delete('/:id', authenticate, async (req, res) => {
   try {
     const expense = await Expense.findOne({
-      where: { id: req.params.id, user_id: req.user.id }
+      where: { 
+        id: req.params.id,
+        user_id: req.user.id
+      }
     });
 
     if (!expense) {
@@ -204,27 +398,6 @@ router.delete('/:id', authenticate, async (req, res) => {
   } catch (error) {
     console.error('Erro ao excluir despesa:', error);
     res.status(500).json({ message: 'Erro ao excluir despesa' });
-  }
-});
-
-router.delete('/batch', authenticate, async (req, res) => {
-  try {
-    const { ids } = req.body;
-    if (!ids || !Array.isArray(ids)) {
-      return res.status(400).json({ message: 'IDs inválidos' });
-    }
-
-    await Expense.destroy({
-      where: {
-        id: ids,
-        user_id: req.user.id
-      }
-    });
-
-    res.json({ message: 'Despesas excluídas com sucesso' });
-  } catch (error) {
-    console.error('Erro ao excluir despesas:', error);
-    res.status(500).json({ message: 'Erro ao excluir despesas' });
   }
 });
 

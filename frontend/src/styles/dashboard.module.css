@@ -236,7 +236,7 @@
 }
 
 .overBudget {
-  color: var(--error-color) !important;
+  color: var(--text-color) !important;
 }
 
 .dailySpendingInfo {
