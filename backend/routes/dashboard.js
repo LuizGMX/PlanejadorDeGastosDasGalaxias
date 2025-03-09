@@ -8,18 +8,27 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   try {
     const { month, year, payment_method } = req.query;
-    const parsedMonth = parseInt(month) || new Date().getMonth() + 1;
-    const parsedYear = parseInt(year) || new Date().getFullYear();
-
     const whereClause = {
-      user_id: req.user.id,
-      expense_date: {
-        [Op.and]: [
-          Sequelize.where(Sequelize.fn('MONTH', Sequelize.col('expense_date')), parsedMonth),
-          Sequelize.where(Sequelize.fn('YEAR', Sequelize.col('expense_date')), parsedYear)
-        ]
-      }
+      user_id: req.user.id
     };
+
+    // Adiciona filtros de data apenas se não for 'all'
+    if (month !== 'all' && year !== 'all') {
+      const parsedMonth = parseInt(month) || new Date().getMonth() + 1;
+      const parsedYear = parseInt(year) || new Date().getFullYear();
+
+      whereClause.expense_date = {
+        [Op.and]: [
+          month !== 'all' ? Sequelize.where(Sequelize.fn('MONTH', Sequelize.col('expense_date')), parsedMonth) : {},
+          year !== 'all' ? Sequelize.where(Sequelize.fn('YEAR', Sequelize.col('expense_date')), parsedYear) : {}
+        ].filter(condition => Object.keys(condition).length > 0)
+      };
+
+      // Remove o filtro de data se não houver condições
+      if (whereClause.expense_date[Op.and].length === 0) {
+        delete whereClause.expense_date;
+      }
+    }
 
     if (payment_method) {
       whereClause.payment_method = payment_method;
@@ -42,8 +51,8 @@ router.get('/', async (req, res) => {
         suggestion: "Que tal começar a registrar suas despesas agora?",
         expenses_by_category: [],
         current_filters: {
-          month: parsedMonth,
-          year: parsedYear,
+          month: month,
+          year: year,
           payment_method
         }
       });
@@ -75,8 +84,8 @@ router.get('/', async (req, res) => {
       expenses_by_category: expensesByCategory,
       total_expenses: expenses.length,
       current_filters: {
-        month: parsedMonth,
-        year: parsedYear,
+        month: month,
+        year: year,
         payment_method
       }
     });

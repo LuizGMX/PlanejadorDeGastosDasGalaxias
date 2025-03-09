@@ -43,14 +43,21 @@ const Dashboard = () => {
     year: new Date().getFullYear()
   });
 
-  // Lista de anos para o filtro (últimos 5 anos)
-  const years = Array.from(
-    { length: 5 },
-    (_, i) => new Date().getFullYear() - i
-  );
+  // Lista de anos para o filtro (até 2050)
+  const years = [
+    { value: 'all', label: 'Todos' },
+    ...Array.from(
+      { length: 2050 - new Date().getFullYear() + 1 },
+      (_, i) => ({ 
+        value: new Date().getFullYear() + i,
+        label: (new Date().getFullYear() + i).toString()
+      })
+    )
+  ];
 
   // Lista de meses para o filtro
   const months = [
+    { value: 'all', label: 'Todos' },
     { value: 1, label: 'Janeiro' },
     { value: 2, label: 'Fevereiro' },
     { value: 3, label: 'Março' },
@@ -83,8 +90,8 @@ const Dashboard = () => {
     const fetchData = async () => {
       try {
         const queryParams = new URLSearchParams({
-          month: filters.month,
-          year: filters.year
+          month: filters.month === 'all' ? 'all' : filters.month,
+          year: filters.year === 'all' ? 'all' : filters.year
         }).toString();
         
         const response = await fetch(`/api/dashboard?${queryParams}`, {
@@ -188,7 +195,9 @@ const Dashboard = () => {
               className={styles.filterSelect}
             >
               {years.map(year => (
-                <option key={year} value={year}>{year}</option>
+                <option key={year.value} value={year.value}>
+                  {year.label}
+                </option>
               ))}
             </select>
           </div>
