@@ -22,14 +22,107 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', authenticate, async (req, res) => {
   try {
-    const expenseData = {
-      ...req.body,
-      user_id: req.user.id
-    };
-    const expense = await Expense.create(expenseData);
-    res.status(201).json(expense);
+    const {
+      description,
+      amount,
+      category_id,
+      subcategory_id,
+      bank_id,
+      first_installment_date,
+      payment_method,
+      has_installments,
+      current_installment,
+      total_installments
+    } = req.body;
+
+    // Validações básicas
+    if (!description || amount === undefined || !category_id || !subcategory_id || !bank_id || !first_installment_date || !payment_method) {
+      return res.status(400).json({ message: 'Todos os campos são obrigatórios' });
+    }
+
+    if (has_installments && (!current_installment || !total_installments)) {
+      return res.status(400).json({ message: 'Informações de parcelas incompletas' });
+    }
+
+    // Garante que o valor é um número válido
+    let parsedAmount = typeof amount === 'string' ? parseFloat(amount) : Number(amount);
+    parsedAmount = Number(parsedAmount.toFixed(2));
+
+    if (isNaN(parsedAmount) || parsedAmount < 0) {
+      return res.status(400).json({ 
+        message: 'Valor inválido',
+        received: amount,
+        parsed: parsedAmount,
+        details: 'O valor deve ser um número positivo'
+      });
+    }
+
+    const installmentGroupId = has_installments ? uuidv4() : null;
+    const expenses = [];
+
+    if (has_installments) {
+      // Usa a data da primeira parcela como base
+      const baseDate = new Date(first_installment_date);
+      
+      // Calcula o valor de cada parcela
+      const installmentAmount = Number((parsedAmount / total_installments).toFixed(2));
+      
+      // Calcula o ajuste necessário para a última parcela devido a arredondamentos
+      const roundingAdjustment = Number((parsedAmount - (installmentAmount * total_installments)).toFixed(2));
+      
+      console.log('Valores calculados:', {
+        valorTotal: parsedAmount,
+        valorParcela: installmentAmount,
+        ajuste: roundingAdjustment,
+        totalParcelas: total_installments
+      });
+
+      for (let i = 0; i < total_installments; i++) {
+        const installmentDate = new Date(baseDate);
+        installmentDate.setMonth(baseDate.getMonth() + i);
+
+        // Adiciona o ajuste de arredondamento na última parcela
+        const finalAmount = i === total_installments - 1 
+          ? installmentAmount + roundingAdjustment 
+          : installmentAmount;
+
+        expenses.push({
+          user_id: req.user.id,
+          description: `${description} (${i + 1}/${total_installments})`,
+          amount: finalAmount,
+          category_id,
+          subcategory_id,
+          bank_id,
+          expense_date: installmentDate,
+          payment_method,
+          has_installments: true,
+          current_installment: i + 1,
+          total_installments,
+          installment_group_id: installmentGroupId
+        });
+      }
+    } else {
+      expenses.push({
+        user_id: req.user.id,
+        description,
+        amount: parsedAmount,
+        category_id,
+        subcategory_id,
+        bank_id,
+        expense_date: first_installment_date,
+        payment_method,
+        has_installments: false
+      });
+    }
+
+    const createdExpenses = await Expense.bulkCreate(expenses);
+
+    res.status(201).json({ 
+      message: 'Despesa(s) criada(s) com sucesso',
+      expenses: createdExpenses
+    });
   } catch (error) {
     console.error('Erro ao adicionar despesa:', error);
     res.status(500).json({ message: 'Erro ao adicionar despesa' });
@@ -61,79 +154,6 @@ router.get('/subcategories/:categoryId', authenticate, async (req, res) => {
   } catch (error) {
     console.error('Erro ao listar subcategorias:', error);
     res.status(500).json({ message: 'Erro ao buscar subcategorias' });
-  }
-});
-
-router.post('/', authenticate, async (req, res) => {
-  try {
-    const {
-      description,
-      amount,
-      category_id,
-      subcategory_id,
-      bank_id,
-      expense_date,
-      payment_method,
-      has_installments,
-      current_installment,
-      total_installments
-    } = req.body;
-
-    // Validações
-    if (!description || !amount || !category_id || !subcategory_id || !bank_id || !expense_date || !payment_method) {
-      return res.status(400).json({ message: 'Todos os campos são obrigatórios' });
-    }
-
-    if (has_installments && (!current_installment || !total_installments)) {
-      return res.status(400).json({ message: 'Informações de parcelas incompletas' });
-    }
-
-    const installmentGroupId = has_installments ? uuidv4() : null;
-    const expenses = [];
-
-    if (has_installments) {
-      // Calcula a data base para as parcelas
-      const baseDate = new Date(expense_date);
-      const amountPerInstallment = parseFloat(amount) / parseInt(total_installments);
-
-      for (let i = 0; i < total_installments; i++) {
-        const installmentDate = new Date(baseDate);
-        installmentDate.setMonth(baseDate.getMonth() + i);
-
-        expenses.push({
-          user_id: req.user.id,
-          description: `${description} (${i + 1}/${total_installments})`,
-          amount: amountPerInstallment,
-          category_id,
-          subcategory_id,
-          bank_id,
-          expense_date: installmentDate,
-          payment_method,
-          has_installments: true,
-          current_installment: i + 1,
-          total_installments,
-          installment_group_id: installmentGroupId
-        });
-      }
-    } else {
-      expenses.push({
-        user_id: req.user.id,
-        description,
-        amount,
-        category_id,
-        subcategory_id,
-        bank_id,
-        expense_date,
-        payment_method,
-        has_installments: false
-      });
-    }
-
-    await Expense.bulkCreate(expenses);
-    res.status(201).json({ message: 'Despesa(s) criada(s) com sucesso' });
-  } catch (error) {
-    console.error('Erro ao adicionar despesa:', error);
-    res.status(500).json({ message: 'Erro ao adicionar despesa' });
   }
 });
 

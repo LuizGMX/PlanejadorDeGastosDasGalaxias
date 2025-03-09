@@ -17,7 +17,9 @@ export const authenticate = async (req, res, next) => {
     let user = await getCache(cacheKey);
     
     if (!user) {
-      user = await User.findByPk(decoded.userId);
+      user = await User.findByPk(decoded.userId, {
+        attributes: ['id', 'name', 'email', 'net_income', 'created_at', 'updated_at']
+      });
       if (user) {
         await setCache(cacheKey, user);
       }
@@ -27,7 +29,16 @@ export const authenticate = async (req, res, next) => {
       return res.status(401).json({ message: 'Usuário não encontrado' });
     }
 
-    req.user = user;
+    // Garante que todos os atributos necessários estão presentes
+    req.user = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      net_income: parseFloat(user.net_income || 0),
+      created_at: user.created_at,
+      updated_at: user.updated_at
+    };
+    
     next();
   } catch (error) {
     if (error.name === 'JsonWebTokenError') {

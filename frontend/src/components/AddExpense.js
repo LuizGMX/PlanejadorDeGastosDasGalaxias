@@ -4,6 +4,7 @@ import { AuthContext } from '../App';
 import styles from '../styles/shared.module.css';
 import { BsCreditCard2Front } from 'react-icons/bs';
 import { SiPix } from 'react-icons/si';
+import CurrencyInput from 'react-currency-input-field';
 
 const AddExpense = () => {
   const navigate = useNavigate();
@@ -15,7 +16,10 @@ const AddExpense = () => {
     category_id: '',
     subcategory_id: '',
     payment_method: 'card',
-    bank_id: ''
+    bank_id: '',
+    has_installments: false,
+    total_installments: 1,
+    current_installment: 1
   });
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
@@ -98,10 +102,26 @@ const AddExpense = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    if (name === 'total_installments') {
+      const totalParcelas = parseInt(value) || 1;
+      setFormData(prev => ({
+        ...prev,
+        [name]: totalParcelas,
+        current_installment: Math.min(prev.current_installment, totalParcelas)
+      }));
+    } else if (name === 'current_installment') {
+      const parcelaAtual = parseInt(value) || 1;
+      setFormData(prev => ({
+        ...prev,
+        [name]: Math.min(parcelaAtual, prev.total_installments)
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const handlePaymentMethod = (method) => {
@@ -114,11 +134,13 @@ const AddExpense = () => {
   const formatCurrency = (value) => {
     if (!value) return '';
     
-    // Remove tudo que não é número
-    value = value.replace(/\D/g, '');
+    // Converte para número se for string
+    const numericValue = typeof value === 'string' 
+      ? parseFloat(value.replace(/\D/g, '')) / 100
+      : value;
     
-    // Converte para número e divide por 100 para considerar centavos
-    const numericValue = parseFloat(value) / 100;
+    // Se não for um número válido, retorna vazio
+    if (isNaN(numericValue)) return '';
     
     // Formata o número para moeda brasileira
     return new Intl.NumberFormat('pt-BR', {
@@ -141,17 +163,54 @@ const AddExpense = () => {
     setSuccess('');
 
     try {
+      if (formData.has_installments) {
+        if (formData.current_installment > formData.total_installments) {
+          throw new Error('A parcela atual não pode ser maior que o total de parcelas');
+        }
+        if (formData.current_installment < 1) {
+          throw new Error('A parcela atual não pode ser menor que 1');
+        }
+        if (formData.total_installments < 2) {
+          throw new Error('O número total de parcelas deve ser pelo menos 2');
+        }
+      }
+
+      // Prepara os dados para envio
+      const baseDate = new Date(formData.date);
+      
+      // Garante que o valor total seja preservado
+      const totalAmount = formData.amount;
+      const installmentAmount = formData.has_installments 
+        ? totalAmount 
+        : formData.amount;
+
+      const dataToSend = {
+        ...formData,
+        amount: installmentAmount,
+        // Calcula a data da primeira parcela subtraindo os meses necessários
+        first_installment_date: formData.has_installments 
+          ? new Date(baseDate.setMonth(baseDate.getMonth() - (formData.current_installment - 1))).toISOString().split('T')[0]
+          : formData.date
+      };
+
+      console.log('Enviando dados:', {
+        valorTotal: totalAmount,
+        valorParcela: installmentAmount,
+        parcelas: formData.total_installments
+      });
+
       const response = await fetch('/api/expenses', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${auth.token}`
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(dataToSend)
       });
 
       if (!response.ok) {
-        throw new Error('Falha ao adicionar despesa');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Falha ao adicionar despesa');
       }
 
       setSuccess('Despesa adicionada com sucesso!');
@@ -159,7 +218,23 @@ const AddExpense = () => {
         navigate('/dashboard');
       }, 2000);
     } catch (err) {
-      setError('Erro ao adicionar despesa. Por favor, tente novamente.');
+      setError(err.message || 'Erro ao adicionar despesa. Por favor, tente novamente.');
+    }
+  };
+
+  const formatPluralText = (number, singular, plural) => {
+    return `${number} ${number === 1 ? singular : plural}`;
+  };
+
+  const getInstallmentMessage = (total, current) => {
+    if (current === 1) {
+      return `Serão criadas as próximas ${formatPluralText(total - 1, 'parcela', 'parcelas')} a partir desta data`;
+    } else if (current === total) {
+      return `${total - 1 === 1 ? 'Será criada' : 'Serão criadas'} ${formatPluralText(total - 1, 'parcela anterior', 'parcelas anteriores')} a esta data`;
+    } else {
+      const anteriores = current - 1;
+      const posteriores = total - current;
+      return `Além da parcela atual, ${anteriores + posteriores === 1 ? 'será criada' : 'serão criadas'} ${formatPluralText(anteriores, 'parcela anterior', 'parcelas anteriores')} e ${formatPluralText(posteriores, 'parcela posterior', 'parcelas posteriores')} a esta data`;
     }
   };
 
@@ -186,16 +261,83 @@ const AddExpense = () => {
 
           <div className={styles.inputGroup}>
             <label className={styles.label}>Valor</label>
-            <input
-              type="text"
+            <CurrencyInput
               name="amount"
-              value={formatCurrency(formData.amount)}
-              onChange={handleAmountChange}
-              className={styles.input}
               placeholder="R$ 0,00"
+              decimalsLimit={2}
+              prefix="R$ "
+              decimalSeparator=","
+              groupSeparator="."
+              value={formData.amount}
+              onValueChange={(value) => {
+                const numericValue = value ? parseFloat(value.replace(/\./g, '').replace(',', '.')) : '';
+                setFormData(prev => ({ ...prev, amount: numericValue }));
+              }}
+              className={styles.input}
               required
             />
           </div>
+
+          <div className={styles.inputGroup}>
+            <div className={styles.checkboxGroup}>
+              <input
+                type="checkbox"
+                id="has_installments"
+                name="has_installments"
+                checked={formData.has_installments}
+                onChange={(e) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    has_installments: e.target.checked,
+                    total_installments: e.target.checked ? prev.total_installments : 1
+                  }));
+                }}
+                className={styles.checkbox}
+              />
+              <label htmlFor="has_installments" className={styles.checkboxLabel}>
+                Parcelado
+              </label>
+            </div>
+          </div>
+
+          {formData.has_installments && (
+            <>
+              <div className={styles.inputGroup}>
+                <label className={styles.label}>Número de Parcelas</label>
+                <input
+                  type="number"
+                  name="total_installments"
+                  value={formData.total_installments}
+                  onChange={handleChange}
+                  min="2"
+                  max="24"
+                  className={styles.input}
+                  required={formData.has_installments}
+                />
+              </div>
+
+              <div className={styles.inputGroup}>
+                <label className={styles.label}>Qual parcela você está pagando?</label>
+                <input
+                  type="number"
+                  name="current_installment"
+                  value={formData.current_installment}
+                  onChange={handleChange}
+                  min="1"
+                  max={formData.total_installments}
+                  className={styles.input}
+                  required={formData.has_installments}
+                />
+                {formData.amount && formData.total_installments > 1 && (
+                  <small className={styles.installmentInfo}>
+                    {formData.total_installments}x de {formatCurrency(formData.amount / formData.total_installments)}
+                    <br />
+                    {getInstallmentMessage(formData.total_installments, formData.current_installment)}
+                  </small>
+                )}
+              </div>
+            </>
+          )}
 
           <div className={styles.inputGroup}>
             <label className={styles.label}>Data</label>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../App';
+import CurrencyInput from 'react-currency-input-field';
 import styles from '../styles/shared.module.css';
 
 const Login = () => {
@@ -88,8 +89,6 @@ const Login = () => {
       } else if (step === 'name') {
         setStep('income');
       } else if (step === 'income') {
-        setStep('banks');
-      } else if (step === 'banks') {
         await requestCode();
         setStep('code');
       } else if (step === 'code') {
@@ -196,15 +195,20 @@ const Login = () => {
             <h1 className={styles.title}>Qual sua renda líquida mensal?</h1>
             <div className={styles.inputGroup}>
               <label className={styles.label}>Renda Líquida</label>
-              <input
-                type="number"
+              <CurrencyInput
                 name="netIncome"
+                placeholder="R$ 0,00"
+                decimalsLimit={2}
+                prefix="R$ "
+                decimalSeparator=","
+                groupSeparator="."
                 value={formData.netIncome}
-                onChange={handleChange}
+                onValueChange={(value) => {
+                  // Converte o valor para número antes de salvar
+                  const numericValue = value ? parseFloat(value.replace(/\./g, '').replace(',', '.')) : '';
+                  setFormData(prev => ({ ...prev, netIncome: numericValue }));
+                }}
                 className={styles.input}
-                placeholder="Digite sua renda"
-                step="0.01"
-                min="0"
                 required
               />
             </div>
@@ -278,8 +282,7 @@ const Login = () => {
                   onClick={() => {
                     if (step === 'name') setStep('email');
                     if (step === 'income') setStep('name');
-                    if (step === 'banks') setStep('income');
-                    if (step === 'code') setStep(isNewUser ? 'banks' : 'email');
+                    if (step === 'code') setStep(isNewUser ? 'income' : 'email');
                   }}
                   className={`${styles.button} ${styles.secondary}`}
                 >

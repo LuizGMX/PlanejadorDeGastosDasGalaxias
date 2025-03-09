@@ -1,6 +1,6 @@
 import { Sequelize } from 'sequelize';
 import express from 'express';
-import { Expense, Category, SubCategory, Bank, Budget } from '../models/index.js';
+import { Expense, Category, SubCategory, Bank, Budget, User } from '../models/index.js';
 import { Op } from 'sequelize';
 
 const router = express.Router();
@@ -129,19 +129,19 @@ router.get('/', async (req, res) => {
         }
       });
 
-      if (budget) {
-        const remainingBudget = budget.amount - totalSpent;
-        const suggestedDailySpend = remainingDays > 0 ? remainingBudget / remainingDays : 0;
+      // Usa o net_income do usuário como orçamento total se não houver um orçamento específico
+      const totalBudget = budget ? budget.amount : req.user.net_income;
+      const remainingBudget = totalBudget - totalSpent;
+      const suggestedDailySpend = remainingDays > 0 ? remainingBudget / remainingDays : 0;
 
-        budgetInfo = {
-          total_budget: budget.amount,
-          total_spent: totalSpent,
-          remaining_budget: remainingBudget,
-          remaining_days: remainingDays,
-          suggested_daily_spend: suggestedDailySpend,
-          percentage_spent: (totalSpent / budget.amount) * 100
-        };
-      }
+      budgetInfo = {
+        total_budget: totalBudget,
+        total_spent: totalSpent,
+        remaining_budget: remainingBudget,
+        remaining_days: remainingDays,
+        suggested_daily_spend: suggestedDailySpend,
+        percentage_spent: (totalSpent / totalBudget) * 100
+      };
     }
 
     res.json({ 
@@ -154,6 +154,12 @@ router.get('/', async (req, res) => {
         month: month,
         year: year,
         payment_method
+      },
+      user: {
+        id: req.user.id,
+        name: req.user.name,
+        email: req.user.email,
+        net_income: req.user.net_income
       }
     });
   } catch (error) {

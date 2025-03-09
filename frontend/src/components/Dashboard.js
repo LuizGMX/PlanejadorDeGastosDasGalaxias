@@ -24,6 +24,7 @@ import {
   PolarGrid,
   PolarAngleAxis,
   PolarRadiusAxis,
+  ComposedChart,
 } from 'recharts';
 import styles from '../styles/dashboard.module.css';
 
@@ -109,6 +110,8 @@ const Dashboard = () => {
         }
 
         const responseData = await response.json();
+        console.log('Response data:', responseData); // Debug
+
         if (responseData.message && responseData.suggestion) {
           setNoExpensesMessage({ 
             message: responseData.message, 
@@ -117,9 +120,44 @@ const Dashboard = () => {
         } else {
           setNoExpensesMessage(null);
         }
-        setData(responseData);
+
+        // Calculando informações do orçamento baseado no net_income
+        const totalExpenses = responseData.expenses_by_date.reduce((sum, day) => sum + day.total, 0);
+        const netIncome = responseData.user?.net_income;
+        
+        console.log('Net Income:', netIncome); // Debug
+
+        if (!netIncome && netIncome !== 0) {
+          console.error('Net income não encontrado nos dados do usuário:', responseData.user);
+        }
+
+        const budget_info = {
+          total_budget: netIncome || 0,
+          total_spent: totalExpenses,
+          remaining_budget: (netIncome || 0) - totalExpenses,
+          percentage_spent: ((totalExpenses / (netIncome || 1)) * 100),
+          remaining_days: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() - new Date().getDate(),
+        };
+
+        // Calculando sugestão de gasto diário se houver dias restantes
+        if (budget_info.remaining_days > 0) {
+          budget_info.suggested_daily_spend = budget_info.remaining_budget / budget_info.remaining_days;
+        }
+
+        setData({
+          ...responseData,
+          budget_info
+        });
+        
+        console.log('Dashboard data:', {
+          net_income: netIncome,
+          expenses_by_date: responseData.expenses_by_date,
+          budget_info
+        });
+
         setLoading(false);
       } catch (err) {
+        console.error('Erro ao carregar dados:', err);
         setError(err.message);
         setLoading(false);
       }
@@ -144,7 +182,23 @@ const Dashboard = () => {
   };
 
   const formatDate = (date) => {
+    if (filters.month === 'all') {
+      const [year, month] = date.split('-');
+      return `${months.find(m => m.value === parseInt(month))?.label}/${year}`;
+    }
     return new Date(date).toLocaleDateString('pt-BR');
+  };
+
+  const formatPeriod = () => {
+    if (filters.month === 'all' && filters.year === 'all') {
+      return 'Todo o Período';
+    } else if (filters.month === 'all') {
+      return `Ano ${filters.year}`;
+    } else if (filters.year === 'all') {
+      return `${months.find(m => m.value === parseInt(filters.month))?.label}`;
+    } else {
+      return `${months.find(m => m.value === parseInt(filters.month))?.label} de ${filters.year}`;
+    }
   };
 
   const handleChartExpand = (chartId) => {
@@ -158,7 +212,7 @@ const Dashboard = () => {
         className={`${styles.chartContainer} ${isExpanded ? styles.expanded : ''}`}
       >
         <div className={styles.chartHeader}>
-          <h3>{title}</h3>
+          <h3>{title} - {formatPeriod()}</h3>
           <button 
             className={styles.expandButton}
             onClick={(e) => {
@@ -249,25 +303,45 @@ const Dashboard = () => {
                 </div>
                 <div className={styles.budgetStat}>
                   <span>Gasto até agora:</span>
-                  <strong>{formatCurrency(data.budget_info.total_spent)}</strong>
+                  <strong className={data.budget_info.percentage_spent > 100 ? styles.overBudget : ''}>
+                    {formatCurrency(data.budget_info.total_spent)}
+                  </strong>
                 </div>
                 <div className={styles.budgetStat}>
                   <span>Restante:</span>
-                  <strong>{formatCurrency(data.budget_info.remaining_budget)}</strong>
+                  <strong className={data.budget_info.remaining_budget < 0 ? styles.overBudget : ''}>
+                    {formatCurrency(data.budget_info.remaining_budget)}
+                  </strong>
                 </div>
                 {data.budget_info.remaining_days > 0 && (
                   <div className={styles.budgetStat}>
                     <span>Sugestão de gasto diário:</span>
-                    <strong>{formatCurrency(data.budget_info.suggested_daily_spend)}</strong>
+                    <strong className={data.budget_info.suggested_daily_spend < 0 ? styles.overBudget : ''}>
+                      {formatCurrency(data.budget_info.suggested_daily_spend)}
+                      <div className={styles.dailySpendingInfo}>
+                        {data.budget_info.suggested_daily_spend < 0 
+                          ? 'Orçamento já estourado para este mês'
+                          : 'por dia até o final do mês para manter-se dentro do orçamento'}
+                      </div>
+                    </strong>
                   </div>
                 )}
               </div>
               <div className={styles.budgetProgressBar}>
                 <div 
-                  className={styles.budgetProgress}
+                  className={`${styles.budgetProgress} ${
+                    data.budget_info.percentage_spent > 90 
+                      ? styles.dangerProgress 
+                      : data.budget_info.percentage_spent > 60 
+                        ? styles.warningProgress 
+                        : ''
+                  }`}
                   style={{ width: `${Math.min(data.budget_info.percentage_spent, 100)}%` }}
                 />
-                <span>{data.budget_info.percentage_spent.toFixed(1)}% utilizado</span>
+                <span className={data.budget_info.percentage_spent > 100 ? styles.overBudget : ''}>
+                  {data.budget_info.percentage_spent.toFixed(1)}% utilizado
+                  {data.budget_info.percentage_spent > 100 && ' (Orçamento Estourado)'}
+                </span>
               </div>
             </div>
           )}
@@ -376,24 +450,33 @@ const Dashboard = () => {
                 </BarChart>
               )}
 
-              {data.budget_info && filters.month !== 'all' && filters.year !== 'all' && renderChart('budget', 'Orçamento vs Gastos por Categoria',
-                <BarChart 
-                  data={data.expenses_by_category.map(cat => ({
-                    ...cat,
-                    budget: data.budget_info.categories_budget?.[cat.category_id] || 0
-                  }))}
-                  margin={{ top: 10, right: 30, left: 80, bottom: 20 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
-                  <XAxis 
-                    dataKey="category_name" 
-                    tick={{ fill: 'var(--text-color)' }}
-                  />
-                  <YAxis 
-                    tickFormatter={formatCurrency}
-                    tick={{ fill: 'var(--text-color)' }}
-                    width={80}
-                  />
+              {renderChart('income-vs-expenses', 'Gastos vs. Renda',
+                <PieChart margin={{ top: 10, right: 30, left: 30, bottom: 20 }}>
+                  <Pie
+                    data={[
+                      { 
+                        name: 'Disponível', 
+                        value: Math.max(0, data.budget_info.remaining_budget)
+                      },
+                      { 
+                        name: 'Total Gasto', 
+                        value: data.budget_info.total_spent
+                      }
+                    ]}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    startAngle={90}
+                    endAngle={-270}
+                    label={({ name, percent }) => 
+                      `${name} (${(percent * 100).toFixed(0)}%)`
+                    }
+                  >
+                    <Cell fill="var(--primary-color)" />
+                    <Cell fill="var(--error-color)" />
+                  </Pie>
                   <Tooltip 
                     formatter={formatCurrency}
                     contentStyle={{
@@ -403,10 +486,122 @@ const Dashboard = () => {
                     }}
                     labelStyle={{ color: 'var(--text-color)' }}
                   />
-                  <Legend formatter={(value) => <span style={{ color: 'var(--text-color)' }}>{value}</span>} />
-                  <Bar dataKey="total" name="Gasto" fill="var(--primary-color)" />
-                  <Bar dataKey="budget" name="Orçamento" fill="var(--error-color)" />
-                </BarChart>
+                  <Legend 
+                    formatter={(value) => <span style={{ color: 'var(--text-color)' }}>{value}</span>}
+                  />
+                </PieChart>
+              )}
+            </div>
+          )}
+
+          {data.budget_info && data.expenses_by_date && data.expenses_by_date.length > 0 && (
+            <div className={styles.chartsGrid}>
+              {renderChart('budget', 'Acompanhamento do Orçamento',
+                <ComposedChart 
+                  data={filters.month === 'all' 
+                    ? Object.entries(data.expenses_by_date.reduce((acc, day) => {
+                        const [year, month] = day.date.split('-');
+                        const key = `${year}-${month}`;
+                        if (!acc[key]) {
+                          acc[key] = {
+                            date: key,
+                            total: 0,
+                            accumulated: 0
+                          };
+                        }
+                        acc[key].total += day.total;
+                        return acc;
+                      }, {}))
+                      .map(([date, data]) => ({
+                        ...data,
+                        accumulated: data.total,
+                        budget: data.budget_info?.total_budget,
+                        overBudget: data.total > (data.budget_info?.total_budget || 0) ? data.total : null
+                      }))
+                      .sort((a, b) => new Date(a.date) - new Date(b.date))
+                    : data.expenses_by_date.map((day, index, arr) => {
+                        const accumulated = arr
+                          .slice(0, index + 1)
+                          .reduce((sum, d) => sum + d.total, 0);
+                        return {
+                          ...day,
+                          accumulated,
+                          budget: data.budget_info.total_budget,
+                          overBudget: accumulated > data.budget_info.total_budget ? accumulated : null
+                        };
+                      })
+                  }
+                  margin={{ top: 10, right: 30, left: 80, bottom: 20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+                  <XAxis 
+                    dataKey="date"
+                    tick={{ fill: 'var(--text-color)' }}
+                    tickFormatter={formatDate}
+                    angle={-45}
+                    textAnchor="end"
+                    height={70}
+                  />
+                  <YAxis 
+                    tickFormatter={formatCurrency}
+                    tick={{ fill: 'var(--text-color)' }}
+                    width={80}
+                  />
+                  <Tooltip 
+                    formatter={(value, name) => {
+                      switch(name) {
+                        case 'accumulated':
+                          return [formatCurrency(value), 'Gasto Acumulado'];
+                        case 'budget':
+                          return [formatCurrency(value), 'Orçamento'];
+                        case 'overBudget':
+                          return [formatCurrency(value), 'Acima do Orçamento'];
+                        default:
+                          return [formatCurrency(value), name];
+                      }
+                    }}
+                    contentStyle={{
+                      backgroundColor: 'var(--card-background)',
+                      border: '1px solid var(--border-color)',
+                      color: 'var(--text-color)'
+                    }}
+                    labelFormatter={formatDate}
+                    labelStyle={{ color: 'var(--text-color)' }}
+                  />
+                  <Legend formatter={(value) => {
+                    switch(value) {
+                      case 'accumulated':
+                        return <span style={{ color: 'var(--text-color)' }}>Gasto Acumulado</span>;
+                      case 'budget':
+                        return <span style={{ color: 'var(--text-color)' }}>Orçamento</span>;
+                      case 'overBudget':
+                        return <span style={{ color: 'var(--text-color)' }}>Acima do Orçamento</span>;
+                      default:
+                        return <span style={{ color: 'var(--text-color)' }}>{value}</span>;
+                    }
+                  }} />
+                  <Area 
+                    type="monotone" 
+                    dataKey="accumulated" 
+                    stroke="var(--primary-color)"
+                    fill="var(--primary-color)"
+                    fillOpacity={0.2}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="budget" 
+                    stroke="var(--text-secondary)"
+                    strokeDasharray="5 5"
+                    strokeWidth={2}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="overBudget"
+                    stroke="var(--error-color)"
+                    fill="var(--error-color)"
+                    fillOpacity={0.3}
+                  />
+                </ComposedChart>
               )}
             </div>
           )}
