@@ -1,5 +1,6 @@
 import { Bank, Category } from '../models/index.js';
 import { seedCategories } from './categorySeeder.js';
+import { seedSubCategories } from './subcategorySeeder.js';
 
 const banks = [
   { name: 'Banco do Brasil', code: '001' },
@@ -39,6 +40,9 @@ const seedDatabase = async () => {
     } else {
       console.log('Categorias já existem no banco de dados.');
     }
+
+    // Executa o seed de subcategorias
+    await seedSubCategories();
 
     // Executa o seed de bancos
     await seedBanks();

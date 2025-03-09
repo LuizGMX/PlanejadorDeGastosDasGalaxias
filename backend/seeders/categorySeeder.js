@@ -2,7 +2,7 @@ import { Category } from '../models/index.js';
 
 const categories = [
   {
-    name: 'Alimentação',
+    category_name: 'Alimentação',
     subcategories: [
       'Mercado',
       'Restaurantes',
@@ -11,7 +11,7 @@ const categories = [
     ]
   },
   {
-    name: 'Transporte',
+    category_name: 'Transporte',
     subcategories: [
       'Combustível',
       'Transporte Público',
@@ -21,7 +21,7 @@ const categories = [
     ]
   },
   {
-    name: 'Moradia',
+    category_name: 'Moradia',
     subcategories: [
       'Aluguel',
       'Condomínio',
@@ -32,7 +32,7 @@ const categories = [
     ]
   },
   {
-    name: 'Saúde',
+    category_name: 'Saúde',
     subcategories: [
       'Plano de Saúde',
       'Medicamentos',
@@ -42,7 +42,7 @@ const categories = [
     ]
   },
   {
-    name: 'Educação',
+    category_name: 'Educação',
     subcategories: [
       'Mensalidade',
       'Material Escolar',
@@ -51,7 +51,7 @@ const categories = [
     ]
   },
   {
-    name: 'Lazer',
+    category_name: 'Lazer',
     subcategories: [
       'Cinema/Teatro',
       'Shows',
@@ -61,7 +61,7 @@ const categories = [
     ]
   },
   {
-    name: 'Vestuário',
+    category_name: 'Vestuário',
     subcategories: [
       'Roupas',
       'Calçados',
@@ -70,7 +70,7 @@ const categories = [
     ]
   },
   {
-    name: 'Contas',
+    category_name: 'Contas',
     subcategories: [
       'Água',
       'Luz',
@@ -80,7 +80,7 @@ const categories = [
     ]
   },
   {
-    name: 'Impostos',
+    category_name: 'Impostos',
     subcategories: [
       'IR',
       'IPVA',
@@ -88,7 +88,7 @@ const categories = [
     ]
   },
   {
-    name: 'Outros',
+    category_name: 'Outros',
     subcategories: [
       'Presentes',
       'Doações',
@@ -103,7 +103,7 @@ export const seedCategories = async () => {
     const createdCategories = await Promise.all(
       categories.map(category =>
         Category.create({
-          category_name: category.name
+          category_name: category.category_name
         })
       )
     );

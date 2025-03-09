@@ -7,13 +7,19 @@ export default (sequelize) => {
       primaryKey: true,
       autoIncrement: true
     },
-    name: {
+    subcategory_name: {
       type: DataTypes.STRING,
       allowNull: false
     },
     category_id: {
       type: DataTypes.INTEGER,
-      allowNull: false
+      allowNull: false,
+      references: {
+        model: 'categories',
+        key: 'id'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'CASCADE'
     }
   }, {
     timestamps: true,

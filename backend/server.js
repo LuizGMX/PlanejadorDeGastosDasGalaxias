@@ -38,18 +38,14 @@ app.use(expressWinston.logger({
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100
+  windowMs: 1 * 60 * 1000, // 1 minuto
+  max: 100, // limite de 100 requisições por minuto
+  message: { message: 'Muitas requisições, tente novamente em alguns minutos.' },
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
-app.use(limiter);
-
-const authLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,
-  max: 5
-});
-
-app.use('/api/auth', authLimiter);
+app.use('/api/auth', limiter);
 
 // Middleware de tratamento de erros global
 app.use((err, req, res, next) => {
@@ -63,32 +59,43 @@ app.use((err, req, res, next) => {
 // Middleware de autenticação
 const authenticate = async (req, res, next) => {
   try {
+    console.log('Verificando autenticação...');
     const authHeader = req.headers.authorization;
     if (!authHeader) {
+      console.log('Token não fornecido');
       return res.status(401).json({ message: 'Token não fornecido' });
     }
 
+    console.log('Header de autenticação:', authHeader);
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('Token decodificado:', decoded);
     
     // Tenta buscar usuário do cache
     const cacheKey = `user:${decoded.userId}`;
     let user = await getCache(cacheKey);
     
     if (!user) {
+      console.log('Usuário não encontrado no cache, buscando no banco...');
       user = await db.User.findByPk(decoded.userId);
       if (user) {
         await setCache(cacheKey, user);
+        console.log('Usuário encontrado e armazenado no cache');
       }
+    } else {
+      console.log('Usuário encontrado no cache');
     }
 
     if (!user) {
+      console.log('Usuário não encontrado');
       return res.status(401).json({ message: 'Usuário não encontrado' });
     }
 
     req.user = user;
+    console.log('Autenticação bem-sucedida');
     next();
   } catch (error) {
+    console.error('Erro na autenticação:', error);
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({ message: 'Token inválido' });
     }
@@ -115,6 +122,12 @@ app.use('/api/dashboard', authenticate, dashboardRoutes);
 
 import banksRouter from './routes/banks.js';
 app.use('/api/bank', banksRouter);
+
+import userRouter from './routes/user.js';
+app.use('/api/user', authenticate, userRouter);
+
+import categoriesRouter from './routes/categories.js';
+app.use('/api/categories', categoriesRouter);
 
 const PORT = process.env.PORT || 5000;
 

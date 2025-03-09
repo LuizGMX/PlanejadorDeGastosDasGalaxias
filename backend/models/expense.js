@@ -27,6 +27,16 @@ export default (sequelize) => {
       onUpdate: 'CASCADE',
       onDelete: 'NO ACTION'
     },
+    subcategory_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: 'subcategories',
+        key: 'id'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'NO ACTION'
+    },
     bank_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -57,6 +67,24 @@ export default (sequelize) => {
       type: DataTypes.ENUM('pix', 'card'),
       allowNull: false,
       defaultValue: 'card'
+    },
+    has_installments: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false
+    },
+    current_installment: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
+    total_installments: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
+    installment_group_id: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      description: 'ID para agrupar despesas parceladas'
     }
   }, {
     timestamps: true,
