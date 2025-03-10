@@ -39,7 +39,7 @@ app.use(expressWinston.logger({
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minuto
-  max: 100, // limite de 100 requisições por minuto
+  max: 9999999999999999, // limite de 100 requisições por minuto
   message: { message: 'Muitas requisições, tente novamente em alguns minutos.' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -129,6 +129,15 @@ app.use('/api/user', authenticate, userRouter);
 import categoriesRouter from './routes/categories.js';
 app.use('/api/categories', authenticate, categoriesRouter);
 
+import fs from 'fs';
+
+// Logar o PID no console
+console.log('Process ID:', process.pid);
+
+// Opcional: salvar o PID em um arquivo
+fs.writeFileSync('pid.log', `Process ID: ${process.pid}\n`);
+
+
 const PORT = process.env.PORT || 5000;
 
 // Sincroniza o banco de dados e inicia o servidor
@@ -141,7 +150,10 @@ const startServer = async () => {
     console.log('Seed concluído');
 
     app.listen(PORT, () => {
+      console.log('=================================');
       console.log(`Servidor rodando na porta ${PORT}`);
+      console.log(`PID do processo: ${process.pid}`);
+      console.log('=================================');
     });
   } catch (error) {
     console.error('Erro ao iniciar servidor:', error);
