@@ -19,7 +19,8 @@ const Expenses = () => {
     years: [new Date().getFullYear()],
     category: 'all',
     paymentMethod: 'all',
-    hasInstallments: 'all'
+    hasInstallments: 'all',
+    description: ''
   });
   const [openFilter, setOpenFilter] = useState(null);
   const [deleteOptions, setDeleteOptions] = useState({
@@ -184,6 +185,9 @@ const Expenses = () => {
       }
       if (filters.hasInstallments !== 'all') {
         queryParams.append('has_installments', filters.hasInstallments === 'yes');
+      }
+      if (filters.description) {
+        queryParams.append('description', filters.description);
       }
 
       const response = await fetch(`/api/expenses?${queryParams}`, {
@@ -376,6 +380,8 @@ const Expenses = () => {
     } else if (type === 'hasInstallments') {
       const selectedOption = installmentOptions.find(o => o.value === filters.hasInstallments);
       return selectedOption ? selectedOption.label : 'Tipo de Despesa';
+    } else if (type === 'description') {
+      return filters.description;
     }
   };
 
@@ -406,6 +412,19 @@ const Expenses = () => {
       </div>
 
       <div className={styles.filters}>
+        <div className={styles.filterGroup}>
+          <div className={styles.searchField}>
+            <input
+              type="text"
+              placeholder="Buscar por descrição..."
+              value={filters.description}
+              onChange={(e) => handleFilterChange('description', e.target.value)}
+              className={styles.searchInput}
+            />
+            <span className="material-icons">search</span>
+          </div>
+        </div>
+
         <div className={styles.filterGroup}>
           <div 
             className={`${styles.modernSelect} ${openFilter === 'months' ? styles.active : ''}`}
@@ -647,75 +666,80 @@ const Expenses = () => {
       )}
 
       {expenses.length > 0 ? (
-        <div className={styles.tableContainer}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>
-                  <input
-                    type="checkbox"
-                    checked={selectedExpenses.length === expenses.filter(e => !e.has_installments).length}
-                    onChange={handleSelectAll}
-                  />
-                </th>
-                <th>Data</th>
-                <th>Descrição</th>
-                <th>Categoria</th>
-                <th>Subcategoria</th>
-                <th>Valor</th>
-                <th>Método</th>
-                <th>Parcelas</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {expenses.map(expense => (
-                <tr key={expense.id}>
-                  <td>
+        <>
+          <div className={styles.totalExpenses}>
+            <h3>Total de Despesas: {formatCurrency(expenses.reduce((sum, expense) => sum + Number(expense.amount), 0))}</h3>
+          </div>
+          <div className={styles.tableContainer}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>
                     <input
                       type="checkbox"
-                      checked={selectedExpenses.includes(expense.id)}
-                      onChange={(e) => handleSelectExpense(expense.id, e)}
-                      className={expense.has_installments ? styles.installmentCheckbox : ''}
+                      checked={selectedExpenses.length === expenses.filter(e => !e.has_installments).length}
+                      onChange={handleSelectAll}
                     />
-                  </td>
-                  <td>{formatDate(expense.expense_date)}</td>
-                  <td>{expense.description}</td>
-                  <td>{expense.Category?.category_name}</td>
-                  <td>{expense.SubCategory?.subcategory_name}</td>
-                  <td>{formatCurrency(expense.amount)}</td>
-                  <td>
-                    {expense.payment_method === 'card' ? (
-                      <span className="material-icons">credit_card</span>
-                    ) : (
-                      <span className="material-icons">pix</span>
-                    )}
-                  </td>
-                  <td>
-                    {expense.has_installments 
-                      ? `${expense.current_installment}/${expense.total_installments}`
-                      : '-'
-                    }
-                  </td>
-                  <td>
-                    <button
-                      className={styles.editButton}
-                      onClick={() => handleEditClick(expense)}
-                    >
-                      <span className="material-icons">edit</span>
-                    </button>
-                    <button
-                      className={styles.deleteButton}
-                      onClick={() => handleDeleteClick(expense)}
-                    >
-                      <span className="material-icons">delete_outline</span>
-                    </button>
-                  </td>
+                  </th>
+                  <th>Data</th>
+                  <th>Descrição</th>
+                  <th>Categoria</th>
+                  <th>Subcategoria</th>
+                  <th>Valor</th>
+                  <th>Método</th>
+                  <th>Parcelas</th>
+                  <th>Ações</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {expenses.map(expense => (
+                  <tr key={expense.id}>
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={selectedExpenses.includes(expense.id)}
+                        onChange={(e) => handleSelectExpense(expense.id, e)}
+                        className={expense.has_installments ? styles.installmentCheckbox : ''}
+                      />
+                    </td>
+                    <td>{formatDate(expense.expense_date)}</td>
+                    <td>{expense.description}</td>
+                    <td>{expense.Category?.category_name}</td>
+                    <td>{expense.SubCategory?.subcategory_name}</td>
+                    <td>{formatCurrency(expense.amount)}</td>
+                    <td>
+                      {expense.payment_method === 'card' ? (
+                        <span className="material-icons">credit_card</span>
+                      ) : (
+                        <span className="material-icons">pix</span>
+                      )}
+                    </td>
+                    <td>
+                      {expense.has_installments 
+                        ? `${expense.current_installment}/${expense.total_installments}`
+                        : '-'
+                      }
+                    </td>
+                    <td>
+                      <button
+                        className={styles.editButton}
+                        onClick={() => handleEditClick(expense)}
+                      >
+                        <span className="material-icons">edit</span>
+                      </button>
+                      <button
+                        className={styles.deleteButton}
+                        onClick={() => handleDeleteClick(expense)}
+                      >
+                        <span className="material-icons">delete_outline</span>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       ) : (
         <div className={styles.noData}>
           <p>Nenhuma despesa encontrada para o período selecionado.</p>

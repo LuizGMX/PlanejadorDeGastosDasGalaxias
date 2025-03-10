@@ -238,29 +238,26 @@ const EditExpenseForm = ({ expense, onUpdate, onCancel }) => {
             </div>
           )}
 
-          <div className={styles.paymentMethodGroup}>
-            <label className={styles.label}>Forma de Pagamento</label>
-            <div className={styles.paymentButtons}>
-              <button
-                type="button"
-                className={`${styles.paymentButton} ${formData.payment_method === 'card' ? styles.active : ''}`}
-                onClick={() => handlePaymentMethod('card')}
-              >
-                <BsCreditCard2Front size={24} className={styles.cardIcon} />
-                <span>Cartão</span>
-              </button>
-              <button
-                type="button"
-                className={`${styles.paymentButton} ${formData.payment_method === 'pix' ? styles.active : ''}`}
-                onClick={() => handlePaymentMethod('pix')}
-              >
-                <SiPix size={24} className={styles.pixIcon} />
-                <span>Pix</span>
-              </button>
-            </div>
+          <div className={styles.paymentMethodButtons}>
+            <button
+              type="button"
+              className={`${styles.paymentMethodButton} ${formData.payment_method === 'card' ? styles.active : ''}`}
+              onClick={() => handlePaymentMethod('card')}
+            >
+              <span className="material-icons">credit_card</span>
+              Cartão
+            </button>
+            <button
+              type="button"
+              className={`${styles.paymentMethodButton} ${formData.payment_method === 'pix' ? styles.active : ''}`}
+              onClick={() => handlePaymentMethod('pix')}
+            >
+              <span className="material-icons">pix</span>
+              PIX
+            </button>
           </div>
 
-          <div className={styles.modalButtons}>
+          <div className={styles.buttonGroup}>
             <button
               type="button"
               className={styles.cancelButton}
@@ -270,7 +267,7 @@ const EditExpenseForm = ({ expense, onUpdate, onCancel }) => {
             </button>
             <button
               type="submit"
-              className={styles.confirmButton}
+              className={styles.saveButton}
             >
               Salvar Alterações
             </button>

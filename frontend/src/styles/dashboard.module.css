@@ -146,6 +146,7 @@
   border: 1px solid var(--border-color);
   cursor: pointer;
   position: relative;
+  min-height: 300px;
 }
 
 .chartContainer.expanded {
@@ -335,8 +336,10 @@
     grid-template-columns: 1fr;
   }
 
-  .chartContainer {
-    min-height: 300px;
+  .chartContainer.expanded {
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
   }
 
   .filtersContainer {
@@ -357,12 +360,6 @@
 
   .budgetStats {
     grid-template-columns: 1fr;
-  }
-
-  .chartContainer.expanded {
-    width: 100vw;
-    height: 100vh;
-    border-radius: 0;
   }
 }
 
@@ -634,4 +631,10 @@
   background-color: var(--border-color);
   margin: 8px 0;
   opacity: 0.5;
+}
+
+@media (max-width: 1024px) {
+  .chartContainer {
+    grid-template-columns: 1fr;
+  }
 } 

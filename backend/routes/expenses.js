@@ -9,7 +9,7 @@ const router = express.Router();
 
 router.get('/', authenticate, async (req, res) => {
   try {
-    const { months, years, category_id, payment_method, has_installments } = req.query;
+    const { months, years, category_id, payment_method, has_installments, description } = req.query;
     const where = { user_id: req.user.id };
 
     // Filtro de meses e anos
@@ -50,7 +50,14 @@ router.get('/', authenticate, async (req, res) => {
 
     // Filtro de parcelas
     if (has_installments !== undefined && has_installments !== 'all') {
-      where.has_installments = has_installments === 'yes';
+      where.has_installments = has_installments === 'true' || has_installments === 'yes';
+    }
+
+    // Filtro de descrição
+    if (description) {
+      where.description = {
+        [Op.like]: `%${description}%`
+      };
     }
 
     console.log('Query where:', where); // Para debug

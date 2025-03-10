@@ -287,6 +287,92 @@ const Dashboard = () => {
     e.stopPropagation(); // Impede que o clique no checkbox feche o dropdown
   };
 
+  const processChartData = (data) => {
+    if (!data || !data.expenses) return null;
+
+    // Verifica se há mais de um ano nos dados
+    const years = new Set(data.expenses.map(exp => new Date(exp.date).getFullYear()));
+    const showByYear = years.size > 1;
+
+    // Dados para o gráfico de linha
+    const expensesByPeriod = data.expenses.reduce((acc, expense) => {
+      const date = new Date(expense.date);
+      const key = showByYear 
+        ? date.getFullYear().toString()
+        : date.toISOString().split('T')[0];
+
+      if (!acc[key]) {
+        acc[key] = 0;
+      }
+      acc[key] += Number(expense.amount);
+      return acc;
+    }, {});
+
+    // Ordena as chaves cronologicamente
+    const sortedKeys = Object.keys(expensesByPeriod).sort();
+
+    const lineChartData = {
+      labels: sortedKeys,
+      datasets: [{
+        label: 'Gastos',
+        data: sortedKeys.map(key => expensesByPeriod[key]),
+        borderColor: 'rgb(75, 192, 192)',
+        tension: 0.1
+      }]
+    };
+
+    // Configurações específicas para o gráfico de linha
+    const lineChartOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: {
+          type: showByYear ? 'category' : 'time',
+          time: showByYear ? undefined : {
+            unit: 'day'
+          }
+        },
+        y: {
+          beginAtZero: true
+        }
+      }
+    };
+
+    // Dados para o gráfico de pizza
+    const pieChartData = {
+      labels: data.categories.map(cat => cat.name),
+      datasets: [{
+        data: data.categories.map(cat => cat.amount),
+        backgroundColor: [
+          '#FF6384',
+          '#36A2EB',
+          '#FFCE56',
+          '#4BC0C0',
+          '#9966FF',
+          '#FF9F40'
+        ]
+      }]
+    };
+
+    // Configurações específicas para o gráfico de pizza
+    const pieChartOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'right'
+        }
+      }
+    };
+
+    return {
+      lineChartData,
+      lineChartOptions,
+      pieChartData,
+      pieChartOptions
+    };
+  };
+
   if (loading) return <div className={styles.loading}>Carregando...</div>;
   if (error) return <div className={styles.error}>{error}</div>;
 
@@ -758,6 +844,25 @@ const Dashboard = () => {
               )}
             </div>
           )}
+
+          {/* <div className={styles.chartContainer}>
+            <div className={styles.lineChart}>
+              <h3>Evolução de Gastos</h3>
+              {processChartData(data) && (
+                <div style={{ height: '400px' }}>
+                  <Line data={processChartData(data).lineChartData} options={processChartData(data).lineChartOptions} />
+                </div>
+              )}
+            </div>
+            <div className={styles.pieChart}>
+              <h3>Gastos por Categoria</h3>
+              {processChartData(data) && (
+                <div style={{ height: '400px' }}>
+                  <Pie data={processChartData(data).pieChartData} options={processChartData(data).pieChartOptions} />
+                </div>
+              )}
+            </div>
+          </div> */}
         </div>
       )}
     </div>
