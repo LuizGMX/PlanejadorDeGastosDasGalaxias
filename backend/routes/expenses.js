@@ -7,17 +7,67 @@ import { Sequelize } from 'sequelize';
 
 const router = express.Router();
 
-router.get('/', async (req, res) => {
+router.get('/', authenticate, async (req, res) => {
   try {
+    const { months, years, category_id, payment_method, has_installments } = req.query;
+    const where = { user_id: req.user.id };
+
+    // Filtro de meses e anos
+    const monthsArray = months ? (Array.isArray(months) ? months : months.split(',').map(Number)) : [];
+    const yearsArray = years ? (Array.isArray(years) ? years : years.split(',').map(Number)) : [];
+
+    if (monthsArray.length > 0 || yearsArray.length > 0) {
+      where[Op.and] = [];
+
+      if (monthsArray.length > 0) {
+        where[Op.and].push(
+          Sequelize.where(
+            Sequelize.fn('MONTH', Sequelize.col('expense_date')),
+            { [Op.in]: monthsArray }
+          )
+        );
+      }
+
+      if (yearsArray.length > 0) {
+        where[Op.and].push(
+          Sequelize.where(
+            Sequelize.fn('YEAR', Sequelize.col('expense_date')),
+            { [Op.in]: yearsArray }
+          )
+        );
+      }
+    }
+
+    // Filtro de categoria
+    if (category_id && category_id !== 'all') {
+      where.category_id = category_id;
+    }
+
+    // Filtro de método de pagamento
+    if (payment_method && payment_method !== 'all') {
+      where.payment_method = payment_method;
+    }
+
+    // Filtro de parcelas
+    if (has_installments !== undefined && has_installments !== 'all') {
+      where.has_installments = has_installments === 'yes';
+    }
+
+    console.log('Query where:', where); // Para debug
+
     const expenses = await Expense.findAll({
-      where: { user_id: req.user.id },
+      where,
       include: [
-        { model: Category, attributes: ['id', 'category_name'] }
+        { model: Category },
+        { model: SubCategory },
+        { model: Bank }
       ],
+      order: [['expense_date', 'DESC']]
     });
+
     res.json(expenses);
   } catch (error) {
-    console.error('Erro ao listar despesas:', error);
+    console.error('Erro ao buscar despesas:', error);
     res.status(500).json({ message: 'Erro ao buscar despesas' });
   }
 });
@@ -154,38 +204,6 @@ router.get('/subcategories/:categoryId', authenticate, async (req, res) => {
   } catch (error) {
     console.error('Erro ao listar subcategorias:', error);
     res.status(500).json({ message: 'Erro ao buscar subcategorias' });
-  }
-});
-
-router.get('/', authenticate, async (req, res) => {
-  try {
-    const { month, year, category_id } = req.query;
-    const whereClause = { user_id: req.user.id };
-
-    if (month && year) {
-      whereClause.expense_date = Sequelize.where(
-        Sequelize.fn('DATE_FORMAT', Sequelize.col('expense_date'), '%Y-%m'),
-        `${year}-${month.toString().padStart(2, '0')}`
-      );
-    }
-
-    if (category_id) {
-      whereClause.category_id = category_id;
-    }
-
-    const expenses = await Expense.findAll({
-      where: whereClause,
-      include: [
-        { model: Category, attributes: ['category_name'] },
-        { model: SubCategory, attributes: ['subcategory_name'] }
-      ],
-      order: [['expense_date', 'DESC']]
-    });
-
-    res.json(expenses);
-  } catch (error) {
-    console.error('Erro ao listar despesas:', error);
-    res.status(500).json({ message: 'Erro ao buscar despesas' });
   }
 });
 

@@ -2,78 +2,43 @@ import { Sequelize } from 'sequelize';
 import express from 'express';
 import { Expense, Category, SubCategory, Bank, Budget, User } from '../models/index.js';
 import { Op } from 'sequelize';
+import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
 
-router.get('/', async (req, res) => {
+router.get('/', authenticate, async (req, res) => {
   try {
-    const { month, year, payment_method } = req.query;
-    const whereClause = {
-      user_id: req.user.id
-    };
+    const { months, years } = req.query;
+    const where = { user_id: req.user.id };
 
-    // Adiciona filtros de data apenas se não for 'all'
-    if (month !== 'all' && year !== 'all') {
-      const parsedMonth = parseInt(month) || new Date().getMonth() + 1;
-      const parsedYear = parseInt(year) || new Date().getFullYear();
-
-      whereClause.expense_date = {
+    // Construindo a condição para múltiplos meses e anos
+    if (months?.length > 0 && years?.length > 0) {
+      where[Op.or] = years.map(year => ({
         [Op.and]: [
-          month !== 'all' ? Sequelize.where(Sequelize.fn('MONTH', Sequelize.col('expense_date')), parsedMonth) : {},
-          year !== 'all' ? Sequelize.where(Sequelize.fn('YEAR', Sequelize.col('expense_date')), parsedYear) : {}
-        ].filter(condition => Object.keys(condition).length > 0)
-      };
-
-      // Remove o filtro de data se não houver condições
-      if (whereClause.expense_date[Op.and].length === 0) {
-        delete whereClause.expense_date;
-      }
-    }
-
-    if (payment_method) {
-      whereClause.payment_method = payment_method;
+          Sequelize.where(Sequelize.fn('YEAR', Sequelize.col('expense_date')), year),
+          {
+            [Op.or]: months.map(month => 
+              Sequelize.where(Sequelize.fn('MONTH', Sequelize.col('expense_date')), month)
+            )
+          }
+        ]
+      }));
     }
 
     const expenses = await Expense.findAll({
-      where: whereClause,
+      where,
       include: [
-        { model: Category, as: 'Category' },
-        { model: SubCategory, as: 'SubCategory' },
-        { model: Bank, as: 'Bank' }
+        { model: Category },
+        { model: SubCategory },
+        { model: Bank }
       ],
-      order: [['expense_date', 'DESC']]
+      order: [['expense_date', 'ASC']]
     });
 
-    // Se não houver despesas, retorna uma mensagem amigável
-    if (!expenses || expenses.length === 0) {
-      return res.json({
-        message: "Você ainda não possui despesas cadastradas neste período!",
-        suggestion: "Que tal começar a registrar suas despesas agora?",
-        expenses_by_category: [],
-        expenses_by_date: [],
-        expenses_by_bank: [],
-        budget_info: null,
-        current_filters: {
-          month: month,
-          year: year,
-          payment_method
-        }
-      });
-    }
-
-    console.log(`Total de despesas encontradas: ${expenses.length}`);
-    if (expenses.length > 0) {
-      console.log('Primeira despesa:', {
-        id: expenses[0].id,
-        date: expenses[0].expense_date,
-        category: expenses[0].Category.category_name
-      });
-    }
-
-    // Agrupa despesas por categoria
+    // Processamento dos dados para o dashboard
     const expensesByCategory = expenses.reduce((acc, expense) => {
       const category = expense.Category.category_name;
-      const existing = acc.find((item) => item.category_name === category);
+      const existing = acc.find(item => item.category_name === category);
       if (existing) {
         existing.total += parseFloat(expense.amount);
       } else {
@@ -82,10 +47,9 @@ router.get('/', async (req, res) => {
       return acc;
     }, []);
 
-    // Agrupa despesas por data
     const expensesByDate = expenses.reduce((acc, expense) => {
       const date = expense.expense_date.toISOString().split('T')[0];
-      const existing = acc.find((item) => item.date === date);
+      const existing = acc.find(item => item.date === date);
       if (existing) {
         existing.total += parseFloat(expense.amount);
       } else {
@@ -94,11 +58,10 @@ router.get('/', async (req, res) => {
       return acc;
     }, []).sort((a, b) => new Date(a.date) - new Date(b.date));
 
-    // Agrupa despesas por banco
     const expensesByBank = expenses.reduce((acc, expense) => {
       if (!expense.Bank) return acc;
       const bank = expense.Bank.name;
-      const existing = acc.find((item) => item.bank_name === bank);
+      const existing = acc.find(item => item.bank_name === bank);
       if (existing) {
         existing.total += parseFloat(expense.amount);
       } else {
@@ -107,54 +70,27 @@ router.get('/', async (req, res) => {
       return acc;
     }, []);
 
-    // Calcula informações de orçamento se mês e ano específicos
-    let budgetInfo = null;
-    if (month !== 'all' && year !== 'all') {
-      const parsedMonth = parseInt(month);
-      const parsedYear = parseInt(year);
-      const today = new Date();
-      const lastDayOfMonth = new Date(parsedYear, parsedMonth, 0).getDate();
-      const remainingDays = parsedMonth === today.getMonth() + 1 && parsedYear === today.getFullYear()
-        ? lastDayOfMonth - today.getDate()
-        : 0;
+    // Calculando informações de orçamento
+    const totalExpenses = expenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
+    const netIncome = req.user.net_income || 0;
+    const budget_info = {
+      total_budget: netIncome,
+      total_spent: totalExpenses,
+      remaining_budget: netIncome - totalExpenses,
+      percentage_spent: ((totalExpenses / (netIncome || 1)) * 100),
+      remaining_days: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() - new Date().getDate()
+    };
 
-      const totalSpent = expenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
-
-      // Busca o orçamento do usuário (você precisará criar esta tabela e relacionamento)
-      const budget = await Budget.findOne({
-        where: {
-          user_id: req.user.id,
-          month: parsedMonth,
-          year: parsedYear
-        }
-      });
-
-      // Usa o net_income do usuário como orçamento total se não houver um orçamento específico
-      const totalBudget = budget ? budget.amount : req.user.net_income;
-      const remainingBudget = totalBudget - totalSpent;
-      const suggestedDailySpend = remainingDays > 0 ? remainingBudget / remainingDays : 0;
-
-      budgetInfo = {
-        total_budget: totalBudget,
-        total_spent: totalSpent,
-        remaining_budget: remainingBudget,
-        remaining_days: remainingDays,
-        suggested_daily_spend: suggestedDailySpend,
-        percentage_spent: (totalSpent / totalBudget) * 100
-      };
+    if (budget_info.remaining_days > 0) {
+      budget_info.suggested_daily_spend = budget_info.remaining_budget / budget_info.remaining_days;
     }
 
-    res.json({ 
+    res.json({
       expenses_by_category: expensesByCategory,
       expenses_by_date: expensesByDate,
       expenses_by_bank: expensesByBank,
-      budget_info: budgetInfo,
+      budget_info,
       total_expenses: expenses.length,
-      current_filters: {
-        month: month,
-        year: year,
-        payment_method
-      },
       user: {
         id: req.user.id,
         name: req.user.name,
@@ -163,8 +99,8 @@ router.get('/', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Erro ao buscar dashboard:', error);
-    res.status(500).json({ message: 'Erro ao buscar dados do dashboard' });
+    console.error('Erro ao carregar dados do dashboard:', error);
+    res.status(500).json({ message: 'Erro ao carregar dados do dashboard' });
   }
 });
   

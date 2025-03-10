@@ -14,16 +14,28 @@ const Expenses = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState(null);
   const [editingExpense, setEditingExpense] = useState(null);
-  const [filter, setFilter] = useState({
-    month: new Date().getMonth() + 1,
-    year: new Date().getFullYear()
+  const [filters, setFilters] = useState({
+    months: [new Date().getMonth() + 1],
+    years: [new Date().getFullYear()],
+    category: 'all',
+    paymentMethod: 'all',
+    hasInstallments: 'all'
   });
+  const [openFilter, setOpenFilter] = useState(null);
   const [deleteOptions, setDeleteOptions] = useState({
-    type: 'single', // 'single', 'forward', 'backward', 'all'
+    type: 'single',
     installmentGroupId: null
   });
   const [showInstallmentMessage, setShowInstallmentMessage] = useState(false);
   const [messagePosition, setMessagePosition] = useState({ x: 0, y: 0 });
+
+  const years = Array.from(
+    { length: 5 },
+    (_, i) => ({
+      value: new Date().getFullYear() - i,
+      label: (new Date().getFullYear() - i).toString()
+    })
+  );
 
   const months = [
     { value: 1, label: 'Janeiro' },
@@ -40,47 +52,157 @@ const Expenses = () => {
     { value: 12, label: 'Dezembro' }
   ];
 
-  const years = Array.from(
-    { length: 5 },
-    (_, i) => new Date().getFullYear() - i
-  );
+  const paymentMethods = [
+    { value: 'all', label: 'Todos os Métodos' },
+    { value: 'card', label: 'Cartão' },
+    { value: 'pix', label: 'PIX' }
+  ];
+
+  const installmentOptions = [
+    { value: 'all', label: 'Todas as Despesas' },
+    { value: 'yes', label: 'Apenas Parceladas' },
+    { value: 'no', label: 'Apenas Não Parceladas' }
+  ];
+
+  const [categories, setCategories] = useState([
+    { value: 'all', label: 'Todas as Categorias' }
+  ]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('/api/categories', {
+          headers: {
+            'Authorization': `Bearer ${auth.token}`
+          }
+        });
+        if (!response.ok) throw new Error('Falha ao carregar categorias');
+        const data = await response.json();
+        setCategories([
+          { value: 'all', label: 'Todas as Categorias' },
+          ...data.map(cat => ({
+            value: cat.id,
+            label: cat.category_name
+          }))
+        ]);
+      } catch (err) {
+        console.error('Erro ao carregar categorias:', err);
+      }
+    };
+    fetchCategories();
+  }, [auth.token]);
 
   useEffect(() => {
     fetchExpenses();
-  }, [auth.token, filter]);
+  }, [auth.token, filters]);
 
-  const fetchExpenses = async () => {
-    try {
-      const queryParams = new URLSearchParams({
-        month: filter.month,
-        year: filter.year
-      }).toString();
-
-      const response = await fetch(`/api/expenses?${queryParams}`, {
-        headers: {
-          'Authorization': `Bearer ${auth.token}`
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const dropdowns = document.querySelectorAll(`.${styles.modernSelect}`);
+      let clickedOutside = true;
+      
+      dropdowns.forEach(dropdown => {
+        if (dropdown.contains(event.target)) {
+          clickedOutside = false;
         }
       });
 
-      if (!response.ok) {
-        throw new Error('Falha ao carregar despesas');
+      if (clickedOutside) {
+        setOpenFilter(null);
       }
+    };
 
-      const data = await response.json();
-      setExpenses(data);
-      setLoading(false);
-    } catch (err) {
-      setError('Erro ao carregar despesas. Por favor, tente novamente.');
-      setLoading(false);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const handleFilterClick = (filterType) => {
+    setOpenFilter(openFilter === filterType ? null : filterType);
+  };
+
+  const handleCheckboxClick = (e) => {
+    e.stopPropagation();
+  };
+
+  const handleFilterChange = (type, value) => {
+    if (type === 'months' || type === 'years') {
+      if (value === 'all') {
+        setFilters(prev => ({
+          ...prev,
+          [type]: prev[type].length === (type === 'months' ? months.length : years.length) 
+            ? [] 
+            : type === 'months' 
+              ? months.map(m => m.value) 
+              : years.map(y => y.value)
+        }));
+      } else {
+        setFilters(prev => {
+          const newValues = prev[type].includes(value)
+            ? prev[type].filter(item => item !== value)
+            : [...prev[type], value];
+
+          const totalItems = type === 'months' ? months.length : years.length;
+          if (newValues.length === totalItems - 1) {
+            return {
+              ...prev,
+              [type]: type === 'months' 
+                ? months.map(m => m.value)
+                : years.map(y => y.value)
+            };
+          }
+
+          return {
+            ...prev,
+            [type]: newValues
+          };
+        });
+      }
+    } else {
+      setFilters(prev => ({
+        ...prev,
+        [type]: value
+      }));
     }
   };
 
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilter(prev => ({
-      ...prev,
-      [name]: value
-    }));
+  const fetchExpenses = async () => {
+    try {
+      const queryParams = new URLSearchParams();
+      
+      // Adiciona meses e anos como arrays
+      filters.months.forEach(month => queryParams.append('months[]', month));
+      filters.years.forEach(year => queryParams.append('years[]', year));
+      
+      // Adiciona outros filtros
+      if (filters.category !== 'all') {
+        queryParams.append('category_id', filters.category);
+      }
+      if (filters.paymentMethod !== 'all') {
+        queryParams.append('payment_method', filters.paymentMethod);
+      }
+      if (filters.hasInstallments !== 'all') {
+        queryParams.append('has_installments', filters.hasInstallments === 'yes');
+      }
+
+      const response = await fetch(`/api/expenses?${queryParams}`, {
+          headers: {
+            'Authorization': `Bearer ${auth.token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Falha ao carregar despesas');
+        }
+
+        const data = await response.json();
+        setExpenses(data);
+      setLoading(false);
+      } catch (err) {
+        setError('Erro ao carregar despesas. Por favor, tente novamente.');
+        setLoading(false);
+      }
   };
 
   const formatCurrency = (value) => {
@@ -222,6 +344,41 @@ const Expenses = () => {
     }
   };
 
+  const formatSelectedPeriod = (type) => {
+    if (type === 'months') {
+      if (filters.months.length === 0) return 'Selecione os meses';
+      if (filters.months.length === months.length) return 'Todos os meses';
+      if (filters.months.length === 1) {
+        return months.find(m => m.value === filters.months[0])?.label;
+      }
+      if (filters.months.length > 3) {
+        return `${filters.months.length} meses selecionados`;
+      }
+      return filters.months
+        .map(m => months.find(month => month.value === m)?.label)
+        .join(', ');
+    } else if (type === 'years') {
+      if (filters.years.length === 0) return 'Selecione os anos';
+      if (filters.years.length === years.length) return 'Todos os anos';
+      if (filters.years.length === 1) {
+        return filters.years[0].toString();
+      }
+      if (filters.years.length > 3) {
+        return `${filters.years.length} anos selecionados`;
+      }
+      return filters.years.join(', ');
+    } else if (type === 'category') {
+      const selectedCategory = categories.find(c => c.value === filters.category);
+      return selectedCategory ? selectedCategory.label : 'Categoria';
+    } else if (type === 'paymentMethod') {
+      const selectedMethod = paymentMethods.find(m => m.value === filters.paymentMethod);
+      return selectedMethod ? selectedMethod.label : 'Método de Pagamento';
+    } else if (type === 'hasInstallments') {
+      const selectedOption = installmentOptions.find(o => o.value === filters.hasInstallments);
+      return selectedOption ? selectedOption.label : 'Tipo de Despesa';
+    }
+  };
+
   if (loading) {
     return (
       <div className={styles.container}>
@@ -250,33 +407,231 @@ const Expenses = () => {
 
       <div className={styles.filters}>
         <div className={styles.filterGroup}>
-          <label>Mês</label>
-          <select
-            name="month"
-            value={filter.month}
-            onChange={handleFilterChange}
-            className={styles.select}
+          <div 
+            className={`${styles.modernSelect} ${openFilter === 'months' ? styles.active : ''}`}
+            onClick={() => handleFilterClick('months')}
           >
+            <div className={styles.modernSelectHeader}>
+              <span>{formatSelectedPeriod('months')}</span>
+              <span className={`material-icons ${styles.arrow}`}>
+                {openFilter === 'months' ? 'expand_less' : 'expand_more'}
+              </span>
+            </div>
+            {openFilter === 'months' && (
+              <div className={styles.modernSelectDropdown} onClick={e => e.stopPropagation()}>
+                <label 
+                  key="all-months"
+                  className={styles.modernCheckboxLabel}
+                  onClick={handleCheckboxClick}
+                >
+                  <div className={styles.modernCheckbox}>
+                    <input
+                      type="checkbox"
+                      checked={filters.months.length === months.length}
+                      onChange={() => handleFilterChange('months', 'all')}
+                      className={styles.hiddenCheckbox}
+                    />
+                    <div className={styles.customCheckbox}>
+                      <span className="material-icons">check</span>
+                    </div>
+                  </div>
+                  <span><strong>Todos os Meses</strong></span>
+                </label>
+                <div className={styles.divider}></div>
             {months.map(month => (
-              <option key={month.value} value={month.value}>
-                {month.label}
-              </option>
-            ))}
-          </select>
+                  <label 
+                    key={month.value} 
+                    className={styles.modernCheckboxLabel}
+                    onClick={handleCheckboxClick}
+                  >
+                    <div className={styles.modernCheckbox}>
+                      <input
+                        type="checkbox"
+                        checked={filters.months.includes(month.value)}
+                        onChange={() => handleFilterChange('months', month.value)}
+                        className={styles.hiddenCheckbox}
+                      />
+                      <div className={styles.customCheckbox}>
+                        <span className="material-icons">check</span>
+                      </div>
+                    </div>
+                    <span>{month.label}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className={styles.filterGroup}>
-          <label>Ano</label>
-          <select
-            name="year"
-            value={filter.year}
-            onChange={handleFilterChange}
-            className={styles.select}
+          <div 
+            className={`${styles.modernSelect} ${openFilter === 'years' ? styles.active : ''}`}
+            onClick={() => handleFilterClick('years')}
           >
+            <div className={styles.modernSelectHeader}>
+              <span>{formatSelectedPeriod('years')}</span>
+              <span className={`material-icons ${styles.arrow}`}>
+                {openFilter === 'years' ? 'expand_less' : 'expand_more'}
+              </span>
+            </div>
+            {openFilter === 'years' && (
+              <div className={styles.modernSelectDropdown} onClick={e => e.stopPropagation()}>
+                <label 
+                  key="all-years"
+                  className={styles.modernCheckboxLabel}
+                  onClick={handleCheckboxClick}
+                >
+                  <div className={styles.modernCheckbox}>
+                    <input
+                      type="checkbox"
+                      checked={filters.years.length === years.length}
+                      onChange={() => handleFilterChange('years', 'all')}
+                      className={styles.hiddenCheckbox}
+                    />
+                    <div className={styles.customCheckbox}>
+                      <span className="material-icons">check</span>
+                    </div>
+                  </div>
+                  <span><strong>Todos os Anos</strong></span>
+                </label>
+                <div className={styles.divider}></div>
             {years.map(year => (
-              <option key={year} value={year}>{year}</option>
-            ))}
-          </select>
+                  <label 
+                    key={year.value} 
+                    className={styles.modernCheckboxLabel}
+                    onClick={handleCheckboxClick}
+                  >
+                    <div className={styles.modernCheckbox}>
+                      <input
+                        type="checkbox"
+                        checked={filters.years.includes(year.value)}
+                        onChange={() => handleFilterChange('years', year.value)}
+                        className={styles.hiddenCheckbox}
+                      />
+                      <div className={styles.customCheckbox}>
+                        <span className="material-icons">check</span>
+                      </div>
+                    </div>
+                    <span>{year.label}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className={styles.filterGroup}>
+          <div 
+            className={`${styles.modernSelect} ${openFilter === 'category' ? styles.active : ''}`}
+            onClick={() => handleFilterClick('category')}
+          >
+            <div className={styles.modernSelectHeader}>
+              <span>{formatSelectedPeriod('category')}</span>
+              <span className={`material-icons ${styles.arrow}`}>
+                {openFilter === 'category' ? 'expand_less' : 'expand_more'}
+              </span>
+            </div>
+            {openFilter === 'category' && (
+              <div className={styles.modernSelectDropdown} onClick={e => e.stopPropagation()}>
+                {categories.map(category => (
+                  <label 
+                    key={category.value} 
+                    className={styles.modernCheckboxLabel}
+                    onClick={handleCheckboxClick}
+                  >
+                    <div className={styles.modernCheckbox}>
+                      <input
+                        type="radio"
+                        checked={filters.category === category.value}
+                        onChange={() => handleFilterChange('category', category.value)}
+                        className={styles.hiddenCheckbox}
+                      />
+                      <div className={styles.customCheckbox}>
+                        <span className="material-icons">check</span>
+                      </div>
+                    </div>
+                    <span>{category.label}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className={styles.filterGroup}>
+          <div 
+            className={`${styles.modernSelect} ${openFilter === 'paymentMethod' ? styles.active : ''}`}
+            onClick={() => handleFilterClick('paymentMethod')}
+          >
+            <div className={styles.modernSelectHeader}>
+              <span>{formatSelectedPeriod('paymentMethod')}</span>
+              <span className={`material-icons ${styles.arrow}`}>
+                {openFilter === 'paymentMethod' ? 'expand_less' : 'expand_more'}
+              </span>
+            </div>
+            {openFilter === 'paymentMethod' && (
+              <div className={styles.modernSelectDropdown} onClick={e => e.stopPropagation()}>
+                {paymentMethods.map(method => (
+                  <label 
+                    key={method.value} 
+                    className={styles.modernCheckboxLabel}
+                    onClick={handleCheckboxClick}
+                  >
+                    <div className={styles.modernCheckbox}>
+                      <input
+                        type="radio"
+                        checked={filters.paymentMethod === method.value}
+                        onChange={() => handleFilterChange('paymentMethod', method.value)}
+                        className={styles.hiddenCheckbox}
+                      />
+                      <div className={styles.customCheckbox}>
+                        <span className="material-icons">check</span>
+                      </div>
+                    </div>
+                    <span>{method.label}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className={styles.filterGroup}>
+          <div 
+            className={`${styles.modernSelect} ${openFilter === 'hasInstallments' ? styles.active : ''}`}
+            onClick={() => handleFilterClick('hasInstallments')}
+          >
+            <div className={styles.modernSelectHeader}>
+              <span>{formatSelectedPeriod('hasInstallments')}</span>
+              <span className={`material-icons ${styles.arrow}`}>
+                {openFilter === 'hasInstallments' ? 'expand_less' : 'expand_more'}
+              </span>
+            </div>
+            {openFilter === 'hasInstallments' && (
+              <div className={styles.modernSelectDropdown} onClick={e => e.stopPropagation()}>
+                {installmentOptions.map(option => (
+                  <label 
+                    key={option.value} 
+                    className={styles.modernCheckboxLabel}
+                    onClick={handleCheckboxClick}
+                  >
+                    <div className={styles.modernCheckbox}>
+                      <input
+                        type="radio"
+                        checked={filters.hasInstallments === option.value}
+                        onChange={() => handleFilterChange('hasInstallments', option.value)}
+                        className={styles.hiddenCheckbox}
+                      />
+                      <div className={styles.customCheckbox}>
+                        <span className="material-icons">check</span>
+                      </div>
+                    </div>
+                    <span>{option.label}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

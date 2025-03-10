@@ -44,25 +44,22 @@ const Dashboard = () => {
   });
   const [noExpensesMessage, setNoExpensesMessage] = useState(null);
   const [filters, setFilters] = useState({
-    month: new Date().getMonth() + 1,
-    year: new Date().getFullYear()
+    months: [new Date().getMonth() + 1],
+    years: [new Date().getFullYear()]
   });
+  const [openFilter, setOpenFilter] = useState(null);
 
-  // Lista de anos para o filtro (até 2050)
-  const years = [
-    { value: 'all', label: 'Todos' },
-    ...Array.from(
-      { length: 2050 - new Date().getFullYear() + 1 },
-      (_, i) => ({ 
-        value: new Date().getFullYear() + i,
-        label: (new Date().getFullYear() + i).toString()
-      })
-    )
-  ];
+  // Lista de anos para o filtro
+  const years = Array.from(
+    { length: 5 },
+    (_, i) => ({
+      value: new Date().getFullYear() - i,
+      label: (new Date().getFullYear() - i).toString()
+    })
+  );
 
   // Lista de meses para o filtro
   const months = [
-    { value: 'all', label: 'Todos' },
     { value: 1, label: 'Janeiro' },
     { value: 2, label: 'Fevereiro' },
     { value: 3, label: 'Março' },
@@ -94,10 +91,9 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const queryParams = new URLSearchParams({
-          month: filters.month === 'all' ? 'all' : filters.month,
-          year: filters.year === 'all' ? 'all' : filters.year
-        }).toString();
+        const queryParams = new URLSearchParams();
+        filters.months.forEach(month => queryParams.append('months[]', month));
+        filters.years.forEach(year => queryParams.append('years[]', year));
         
         const response = await fetch(`/api/dashboard?${queryParams}`, {
           headers: {
@@ -166,12 +162,62 @@ const Dashboard = () => {
     fetchData();
   }, [auth.token, filters]);
 
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters(prev => ({
-      ...prev,
-      [name]: value
-    }));
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const dropdowns = document.querySelectorAll(`.${styles.modernSelect}`);
+      let clickedOutside = true;
+      
+      dropdowns.forEach(dropdown => {
+        if (dropdown.contains(event.target)) {
+          clickedOutside = false;
+        }
+      });
+
+      if (clickedOutside) {
+        setOpenFilter(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const handleFilterChange = (type, value) => {
+    if (value === 'all') {
+      // Se "Todos" foi selecionado
+      setFilters(prev => ({
+        ...prev,
+        [type]: prev[type].length === (type === 'months' ? months.length : years.length) 
+          ? [] // Se todos já estavam selecionados, desmarca todos
+          : type === 'months' 
+            ? months.map(m => m.value) 
+            : years.map(y => y.value)
+      }));
+    } else {
+      setFilters(prev => {
+        const newValues = prev[type].includes(value)
+          ? prev[type].filter(item => item !== value)
+          : [...prev[type], value];
+
+        // Verifica se todos os itens foram selecionados manualmente
+        const totalItems = type === 'months' ? months.length : years.length;
+        if (newValues.length === totalItems - 1) {
+          return {
+            ...prev,
+            [type]: type === 'months' 
+              ? months.map(m => m.value)
+              : years.map(y => y.value)
+          };
+        }
+
+        return {
+          ...prev,
+          [type]: newValues
+        };
+      });
+    }
   };
 
   const formatCurrency = (value) => {
@@ -190,14 +236,17 @@ const Dashboard = () => {
   };
 
   const formatPeriod = () => {
-    if (filters.month === 'all' && filters.year === 'all') {
-      return 'Todo o Período';
-    } else if (filters.month === 'all') {
-      return `Ano ${filters.year}`;
-    } else if (filters.year === 'all') {
-      return `${months.find(m => m.value === parseInt(filters.month))?.label}`;
+    const selectedMonths = filters.months.map(m => months.find(month => month.value === m)?.label).join(', ');
+    const selectedYears = filters.years.join(', ');
+
+    if (filters.months.length === 0 && filters.years.length === 0) {
+      return 'Nenhum período selecionado';
+    } else if (filters.months.length === 0) {
+      return `Anos: ${selectedYears}`;
+    } else if (filters.years.length === 0) {
+      return `Meses: ${selectedMonths}`;
     } else {
-      return `${months.find(m => m.value === parseInt(filters.month))?.label} de ${filters.year}`;
+      return `${selectedMonths} de ${selectedYears}`;
     }
   };
 
@@ -230,6 +279,14 @@ const Dashboard = () => {
     );
   };
 
+  const handleFilterClick = (filterType) => {
+    setOpenFilter(openFilter === filterType ? null : filterType);
+  };
+
+  const handleCheckboxClick = (e) => {
+    e.stopPropagation(); // Impede que o clique no checkbox feche o dropdown
+  };
+
   if (loading) return <div className={styles.loading}>Carregando...</div>;
   if (error) return <div className={styles.error}>{error}</div>;
 
@@ -254,8 +311,8 @@ const Dashboard = () => {
               className={styles.backButton}
               onClick={() => {
                 setFilters({
-                  month: new Date().getMonth() + 1,
-                  year: new Date().getFullYear()
+                  months: [new Date().getMonth() + 1],
+                  years: [new Date().getFullYear()]
                 });
               }}
             >
@@ -266,31 +323,119 @@ const Dashboard = () => {
       ) : (
         <div>
           <div className={styles.filtersContainer}>
-            <select
-              name="month"
-              value={filters.month}
-              onChange={handleFilterChange}
-              className={styles.filterSelect}
-            >
-              {months.map(month => (
-                <option key={month.value} value={month.value}>
-                  {month.label}
-                </option>
-              ))}
-            </select>
+            <div className={styles.filterGroup}>
+              <div 
+                className={`${styles.modernSelect} ${openFilter === 'months' ? styles.active : ''}`}
+                onClick={() => handleFilterClick('months')}
+              >
+                <div className={styles.modernSelectHeader}>
+                  <span>Meses Selecionados ({filters.months.length})</span>
+                  <span className={`material-icons ${styles.arrow}`}>
+                    {openFilter === 'months' ? 'expand_less' : 'expand_more'}
+                  </span>
+                </div>
+                {openFilter === 'months' && (
+                  <div className={styles.modernSelectDropdown} onClick={e => e.stopPropagation()}>
+                    <label 
+                      key="all-months"
+                      className={styles.modernCheckboxLabel}
+                      onClick={handleCheckboxClick}
+                    >
+                      <div className={styles.modernCheckbox}>
+                        <input
+                          type="checkbox"
+                          checked={filters.months.length === months.length}
+                          onChange={() => handleFilterChange('months', 'all')}
+                          className={styles.hiddenCheckbox}
+                        />
+                        <div className={styles.customCheckbox}>
+                          <span className="material-icons">check</span>
+                        </div>
+                      </div>
+                      <span><strong>Todos os Meses</strong></span>
+                    </label>
+                    <div className={styles.divider}></div>
+                    {months.map(month => (
+                      <label 
+                        key={month.value} 
+                        className={styles.modernCheckboxLabel}
+                        onClick={handleCheckboxClick}
+                      >
+                        <div className={styles.modernCheckbox}>
+                          <input
+                            type="checkbox"
+                            checked={filters.months.includes(month.value)}
+                            onChange={() => handleFilterChange('months', month.value)}
+                            className={styles.hiddenCheckbox}
+                          />
+                          <div className={styles.customCheckbox}>
+                            <span className="material-icons">check</span>
+                          </div>
+                        </div>
+                        <span>{month.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
 
-            <select
-              name="year"
-              value={filters.year}
-              onChange={handleFilterChange}
-              className={styles.filterSelect}
-            >
-              {years.map(year => (
-                <option key={year.value} value={year.value}>
-                  {year.label}
-                </option>
-              ))}
-            </select>
+            <div className={styles.filterGroup}>
+              <div 
+                className={`${styles.modernSelect} ${openFilter === 'years' ? styles.active : ''}`}
+                onClick={() => handleFilterClick('years')}
+              >
+                <div className={styles.modernSelectHeader}>
+                  <span>Anos Selecionados ({filters.years.length})</span>
+                  <span className={`material-icons ${styles.arrow}`}>
+                    {openFilter === 'years' ? 'expand_less' : 'expand_more'}
+                  </span>
+                </div>
+                {openFilter === 'years' && (
+                  <div className={styles.modernSelectDropdown} onClick={e => e.stopPropagation()}>
+                    <label 
+                      key="all-years"
+                      className={styles.modernCheckboxLabel}
+                      onClick={handleCheckboxClick}
+                    >
+                      <div className={styles.modernCheckbox}>
+                        <input
+                          type="checkbox"
+                          checked={filters.years.length === years.length}
+                          onChange={() => handleFilterChange('years', 'all')}
+                          className={styles.hiddenCheckbox}
+                        />
+                        <div className={styles.customCheckbox}>
+                          <span className="material-icons">check</span>
+                        </div>
+                      </div>
+                      <span><strong>Todos os Anos</strong></span>
+                    </label>
+                    <div className={styles.divider}></div>
+                    {years.map(year => (
+                      <label 
+                        key={year.value} 
+                        className={styles.modernCheckboxLabel}
+                        onClick={handleCheckboxClick}
+                      >
+                        <div className={styles.modernCheckbox}>
+                          <input
+                            type="checkbox"
+                            checked={filters.years.includes(year.value)}
+                            onChange={() => handleFilterChange('years', year.value)}
+                            className={styles.hiddenCheckbox}
+                          />
+                          <div className={styles.customCheckbox}>
+                            <span className="material-icons">check</span>
+                          </div>
+                        </div>
+                        <span>{year.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           {data.budget_info && filters.month !== 'all' && filters.year !== 'all' && (
@@ -391,7 +536,7 @@ const Dashboard = () => {
               )}
 
               {renderChart('timeline', 'Gastos ao Longo do Tempo',
-                <LineChart data={data.expenses_by_date} margin={{ top: 10, right: 30, left: 80, bottom: 20 }}>
+                <LineChart data={data.expenses_by_date} margin={{ top: 10, right: 30, left: 80, bottom: 50 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
                   <XAxis 
                     dataKey="date"
@@ -399,7 +544,9 @@ const Dashboard = () => {
                     tickFormatter={formatDate}
                     angle={-45}
                     textAnchor="end"
-                    height={70}
+                    height={100}
+                    interval={0}
+                    padding={{ left: 20, right: 20 }}
                   />
                   <YAxis 
                     tickFormatter={formatCurrency}
@@ -418,12 +565,16 @@ const Dashboard = () => {
                   />
                   <Legend 
                     formatter={(value) => <span style={{ color: 'var(--text-color)' }}>Total Gasto</span>}
+                    verticalAlign="top"
+                    height={36}
                   />
                   <Line 
                     type="monotone" 
                     dataKey="total" 
                     stroke="var(--primary-color)" 
                     strokeWidth={2}
+                    dot={{ fill: 'var(--primary-color)', r: 4 }}
+                    activeDot={{ r: 6, fill: 'var(--primary-color)' }}
                   />
                 </LineChart>
               )}
@@ -540,7 +691,9 @@ const Dashboard = () => {
                     tickFormatter={formatDate}
                     angle={-45}
                     textAnchor="end"
-                    height={70}
+                    height={100}
+                    interval={0}
+                    padding={{ left: 20, right: 20 }}
                   />
                   <YAxis 
                     tickFormatter={formatCurrency}
