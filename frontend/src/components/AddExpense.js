@@ -258,7 +258,10 @@ const AddExpense = () => {
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.inputGroup}>
-            <label className={styles.label}>Descrição</label>
+            <label className={styles.label}>
+              <span className="material-icons">description</span>
+              Descrição
+            </label>
             <input
               type="text"
               name="description"
@@ -270,7 +273,10 @@ const AddExpense = () => {
           </div>
 
           <div className={styles.inputGroup}>
-            <label className={styles.label}>Valor</label>
+            <label className={styles.label}>
+              <span className="material-icons">attach_money</span>
+              Valor
+            </label>
             <CurrencyInput
               name="amount"
               placeholder="R$ 0,00"
@@ -318,7 +324,10 @@ const AddExpense = () => {
               {formData.has_installments && (
                 <div className={styles.optionContent}>
                   <div className={styles.inputGroup}>
-                    <label className={styles.label}>Número de Parcelas</label>
+                    <label className={styles.label}>
+                      
+                      Número de Parcelas
+                    </label>
                     <input
                       type="number"
                       name="total_installments"
@@ -332,7 +341,10 @@ const AddExpense = () => {
                   </div>
 
                   <div className={styles.inputGroup}>
-                    <label className={styles.label}>Qual parcela você está pagando?</label>
+                    <label className={styles.label}>
+                      
+                      Qual parcela você está pagando?
+                    </label>
                     <input
                       type="number"
                       name="current_installment"
@@ -384,7 +396,10 @@ const AddExpense = () => {
               {formData.is_recurring && (
                 <div className={styles.optionContent}>
                   <div className={styles.inputGroup}>
-                    <label className={styles.label}>Data Final da Recorrência</label>
+                    <label className={styles.label}>
+                      
+                      Data Final da Recorrência
+                    </label>
                     <input
                       type="date"
                       name="end_date"
@@ -409,7 +424,10 @@ const AddExpense = () => {
           </div>
 
           <div className={styles.inputGroup}>
-            <label className={styles.label}>Data</label>
+            <label className={styles.label}>
+              <span className="material-icons">calendar_today</span>
+              Data
+            </label>
             <input
               type="date"
               name="date"
@@ -421,7 +439,10 @@ const AddExpense = () => {
           </div>
 
           <div className={styles.inputGroup}>
-            <label className={styles.label}>Categoria</label>
+            <label className={styles.label}>
+              <span className="material-icons">category</span>
+              Categoria
+            </label>
             <select
               name="category_id"
               value={formData.category_id}
@@ -440,7 +461,10 @@ const AddExpense = () => {
 
           {subcategories.length > 0 && (
             <div className={styles.inputGroup}>
-              <label className={styles.label}>Subcategoria</label>
+              <label className={styles.label}>
+                <span className="material-icons">sell</span>
+                Subcategoria
+              </label>
               <select
                 name="subcategory_id"
                 value={formData.subcategory_id}
@@ -460,7 +484,10 @@ const AddExpense = () => {
 
           {banks.length > 0 && (
             <div className={styles.inputGroup}>
-              <label className={styles.label}>Banco</label>
+              <label className={styles.label}>
+                <span className="material-icons">account_balance</span>
+                Banco
+              </label>
               <select
                 name="bank_id"
                 value={formData.bank_id}
@@ -479,7 +506,10 @@ const AddExpense = () => {
           )}
 
           <div className={styles.paymentMethodGroup}>
-            <label className={styles.label}>Forma de Pagamento</label>
+            <label className={styles.label}>
+              <span className="material-icons">payments</span>
+              Forma de Pagamento
+            </label>
             <div className={styles.paymentButtons}>
               <button
                 type="button"

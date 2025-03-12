@@ -72,6 +72,14 @@
   font-size: 14px;
   font-weight: 500;
   color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.label .material-icons {
+  font-size: 18px;
+  color: var(--primary-color);
 }
 
 .input {
