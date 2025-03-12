@@ -1,0 +1,10 @@
+---
+description: NEVER CHANGE THE CSS WHEN ITS NOT SPLICIT ASKED TO
+globs: 
+alwaysApply: true
+---
+
+# Your rule content
+
+- You can @ files here
+- You can use markdown but dont have to

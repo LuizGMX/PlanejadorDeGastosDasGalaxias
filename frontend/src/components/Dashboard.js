@@ -117,21 +117,21 @@ const Dashboard = () => {
           setNoExpensesMessage(null);
         }
 
-        // Calculando informações do orçamento baseado no net_income
+        // Calculando informações do orçamento baseado no total_income
         const totalExpenses = responseData.expenses_by_date.reduce((sum, day) => sum + day.total, 0);
-        const netIncome = responseData.user?.net_income;
+        const totalIncome = responseData.user?.total_income;
         
-        console.log('Net Income:', netIncome); // Debug
+        console.log('Net Income:', totalIncome); // Debug
 
-        if (!netIncome && netIncome !== 0) {
+        if (!totalIncome && totalIncome !== 0) {
           console.error('Net income não encontrado nos dados do usuário:', responseData.user);
         }
 
         const budget_info = {
-          total_budget: netIncome || 0,
+          total_budget: totalIncome || 0,
           total_spent: totalExpenses,
-          remaining_budget: (netIncome || 0) - totalExpenses,
-          percentage_spent: ((totalExpenses / (netIncome || 1)) * 100),
+          remaining_budget: (totalIncome || 0) - totalExpenses,
+          percentage_spent: ((totalExpenses / (totalIncome || 1)) * 100),
           remaining_days: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() - new Date().getDate(),
         };
 
@@ -146,7 +146,7 @@ const Dashboard = () => {
         });
         
         console.log('Dashboard data:', {
-          net_income: netIncome,
+          total_income: totalIncome,
           expenses_by_date: responseData.expenses_by_date,
           budget_info
         });

@@ -20,7 +20,7 @@ const AddIncome = () => {
     setError('');
 
     try {
-      const response = await fetch('/api/incomes', {
+      const response = await fetch('/api/income', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

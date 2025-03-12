@@ -37,6 +37,10 @@ router.get('/', authenticate, async (req, res) => {
       }));
     }
 
+    // Buscar o usuário para obter o net_income
+    const user = await User.findByPk(req.user.id);
+    const net_income = user ? parseFloat(user.net_income || 0) : 0;
+
     const [expenses, incomes] = await Promise.all([
       Expense.findAll({
         where: whereExpense,
@@ -57,6 +61,26 @@ router.get('/', authenticate, async (req, res) => {
         order: [['date', 'ASC']]
       })
     ]);
+
+    // Calculando o total de incomes
+    const totalIncomes = incomes.reduce((sum, income) => {
+      const parsedAmount = parseFloat(income.amount);
+      console.log('Processando income:', { 
+        original: income.amount, 
+        parsed: parsedAmount 
+      });
+      return sum + parsedAmount;
+    }, 0);
+    
+    // Orçamento total é a soma dos incomes + net_income
+    const totalBudget = totalIncomes + net_income;
+
+    console.log('Debug valores do orçamento:', {
+      totalIncomes,
+      net_income,
+      totalBudget,
+      incomes: incomes.map(i => ({ amount: i.amount, parsed: parseFloat(i.amount) }))
+    });
 
     // Processamento dos dados para o dashboard
     const expensesByCategory = expenses.reduce((acc, expense) => {
@@ -129,12 +153,12 @@ router.get('/', authenticate, async (req, res) => {
 
     // Calculando informações de orçamento
     const totalExpenses = expenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
-    const totalIncomes = incomes.reduce((sum, income) => sum + parseFloat(income.amount), 0);
     const budget_info = {
+      total_budget: totalBudget,
       total_spent: totalExpenses,
       total_income: totalIncomes,
-      balance: totalIncomes - totalExpenses,
-      percentage_spent: ((totalExpenses / (totalIncomes || 1)) * 100),
+      balance: totalBudget - totalExpenses,
+      percentage_spent: ((totalExpenses / (totalBudget || 1)) * 100),
       remaining_days: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() - new Date().getDate()
     };
 
@@ -155,7 +179,9 @@ router.get('/', authenticate, async (req, res) => {
       user: {
         id: req.user.id,
         name: req.user.name,
-        email: req.user.email
+        email: req.user.email,
+        net_income: net_income,
+        total_income: totalIncomes
       }
     });
   } catch (error) {

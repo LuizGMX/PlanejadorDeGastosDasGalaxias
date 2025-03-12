@@ -35,7 +35,7 @@ export default (sequelize) => {
       get() {
         const value = this.getDataValue('amount');
         if (value === null || value === undefined) return 0;
-        return Number(Number(value).toFixed(2));
+        return Number(parseFloat(value).toFixed(2));
       },
       set(value) {
         if (value === null || value === undefined) {
