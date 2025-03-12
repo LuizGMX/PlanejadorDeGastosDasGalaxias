@@ -118,9 +118,7 @@ const Dashboard = () => {
         }
 
          // Calculando informações do orçamento baseado no total_income
-         const totalExpenses = responseData.expenses_by_date
-           .filter(expense => expense.Category?.type === 'expense')
-           .reduce((sum, day) => sum + day.total, 0);
+         const totalExpenses = responseData.total_expenses;
          const totalIncome = responseData.user?.total_income;
          
          console.log('Net Income:', totalIncome); // Debug

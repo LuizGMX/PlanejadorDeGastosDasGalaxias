@@ -9,7 +9,7 @@ const router = express.Router();
 
 router.get('/', authenticate, async (req, res) => {
   try {
-    const { months, years, category_id, payment_method, has_installments, description } = req.query;
+    const { months, years, category_id, payment_method, has_installments, description, is_recurring } = req.query;
     const where = { user_id: req.user.id };
 
     // Filtro de meses e anos
@@ -53,6 +53,11 @@ router.get('/', authenticate, async (req, res) => {
       where.has_installments = has_installments === 'true' || has_installments === 'yes';
     }
 
+    // Filtro de recorrência
+    if (is_recurring !== undefined && is_recurring !== '') {
+      where.is_recurring = is_recurring === 'true';
+    }
+
     // Filtro de descrição
     if (description) {
       where.description = {
@@ -60,7 +65,7 @@ router.get('/', authenticate, async (req, res) => {
       };
     }
 
-    console.log('Query where:', where); // Para debug
+    console.log('Query where:', where);
 
     const expenses = await Expense.findAll({
       where,

@@ -180,8 +180,8 @@ router.get('/', authenticate, async (req, res) => {
       expenses_by_bank: expensesByBank,
       incomes_by_bank: incomesByBank,
       budget_info,
-      total_expenses: expenses.length,
-      total_incomes: incomes.length,
+      total_expenses: totalExpenses,
+      total_incomes: totalIncomes,
       user: {
         id: req.user.id,
         name: req.user.name,

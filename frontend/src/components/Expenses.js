@@ -20,7 +20,8 @@ const Expenses = () => {
     category: 'all',
     paymentMethod: 'all',
     hasInstallments: 'all',
-    description: ''
+    description: '',
+    is_recurring: ''
   });
   const [openFilter, setOpenFilter] = useState(null);
   const [deleteOptions, setDeleteOptions] = useState({
@@ -405,6 +406,7 @@ const Expenses = () => {
           className={styles.addButton}
           onClick={() => navigate('/add-expense')}
         >
+          {/* <span className="material-icons">add</span> */}
           Adicionar Despesa
         </button>
       </div>
@@ -601,6 +603,19 @@ const Expenses = () => {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+
+        <div className={styles.filterRow}>
+          <div className={styles.filterGroup}>
+            <button
+              className={`${styles.recurringButton} ${filters.is_recurring === 'true' ? styles.active : ''}`}
+              onClick={() => handleFilterChange('is_recurring', filters.is_recurring === 'true' ? '' : 'true')}
+              title="Mostrar apenas despesas recorrentes"
+            >
+              <span className="material-icons">sync</span>
+              Recorrentes
+            </button>
           </div>
         </div>
 

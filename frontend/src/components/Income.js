@@ -158,7 +158,7 @@ const Income = () => {
           className={styles.addButton}
           onClick={() => navigate('/add-income')}
         >
-          <span className="material-icons">add</span>
+          
           Adicionar Receita
         </button>
       </div>
@@ -234,7 +234,7 @@ const Income = () => {
 
         <div className={styles.filterGroup}>
           <button
-            className={styles.filterButton}
+            className={`${styles.filterButton} ${filters.category_id ? styles.active : ''}`}
             onClick={() => handleFilterClick('categories')}
           >
             <span>
@@ -270,44 +270,17 @@ const Income = () => {
           )}
         </div>
 
-        <div className={styles.filterGroup}>
-          <button
-            className={styles.filterButton}
-            onClick={() => handleFilterClick('recurring')}
-          >
-            <span>
-              Recorrência: {filters.is_recurring === ''
-                ? 'Todas'
-                : filters.is_recurring === 'true'
-                ? 'Recorrentes'
-                : 'Não Recorrentes'}
-            </span>
-            <span className="material-icons">
-              {openFilter === 'recurring' ? 'expand_less' : 'expand_more'}
-            </span>
-          </button>
-          {openFilter === 'recurring' && (
-            <div className={styles.filterDropdown}>
-              <label className={styles.filterOption}>
-                <input
-                  type="radio"
-                  checked={filters.is_recurring === ''}
-                  onChange={() => handleFilterChange('is_recurring', '')}
-                />
-                Todas
-              </label>
-              {metadata.filters.recurring.map(option => (
-                <label key={option.id} className={styles.filterOption}>
-                  <input
-                    type="radio"
-                    checked={filters.is_recurring === option.id}
-                    onChange={() => handleFilterChange('is_recurring', option.id)}
-                  />
-                  {option.name} ({option.count})
-                </label>
-              ))}
-            </div>
-          )}
+        <div className={styles.filterRow}>
+          <div className={styles.filterGroup}>
+            <button
+              className={`${styles.recurringButton} ${filters.is_recurring === 'true' ? styles.active : ''}`}
+              onClick={() => handleFilterChange('is_recurring', filters.is_recurring === 'true' ? '' : 'true')}
+              title="Mostrar apenas receitas recorrentes"
+            >
+              <span className="material-icons">sync</span>
+              Recorrentes
+            </button>
+          </div>
         </div>
       </div>
 
@@ -327,21 +300,17 @@ const Income = () => {
           <tbody>
             {incomes.map(income => (
               <tr key={income.id}>
+                <td>{income.description}</td>
+                <td>{formatCurrency(income.amount)}</td>
+                <td>{formatDate(income.date)}</td>
                 <td>
-                  {income.description}
+                  {income.Category?.category_name || '-'}
                   {income.recurring_info && (
-                    <span 
-                      className={styles.recurringBadge}
-                      title={income.recurring_info.badge.tooltip}
-                    >
+                    <span className={styles.badge} title={income.recurring_info.badge.tooltip}>
                       <span className="material-icons">sync</span>
-                      {income.recurring_info.badge.text}
                     </span>
                   )}
                 </td>
-                <td>{formatCurrency(income.amount)}</td>
-                <td>{formatDate(income.date)}</td>
-                <td>{income.Category?.category_name || '-'}</td>
                 <td>{income.SubCategory?.subcategory_name || '-'}</td>
                 <td>{income.Bank?.name || '-'}</td>
                 <td>
