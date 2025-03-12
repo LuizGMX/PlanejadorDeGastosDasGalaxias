@@ -18,15 +18,18 @@
   font-size: 2rem;
 }
 
-.filters {
+.filtersContainer {
+  margin-bottom: 2rem;
+}
+
+.filterRow {
   display: flex;
   gap: 1rem;
-  margin-bottom: 2rem;
-  flex-wrap: wrap;
-  background-color: var(--card-background);
-  padding: 1rem;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
+  margin-bottom: 1rem;
+}
+
+.filterRow:last-child {
+  margin-bottom: 0;
 }
 
 .filterGroup {
@@ -43,7 +46,7 @@
 .modernSelect {
   position: relative;
   width: 100%;
-  background-color: var(--input-background);
+  background-color: var(--card-background);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   cursor: pointer;
@@ -56,7 +59,7 @@
 
 .modernSelect.active {
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.2);
+  box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.1);
 }
 
 .modernSelectHeader {
@@ -65,6 +68,7 @@
   align-items: center;
   padding: 0.75rem 1rem;
   color: var(--text-color);
+  font-size: 0.95rem;
 }
 
 .modernSelectHeader span {
@@ -501,45 +505,57 @@
 
 .searchField {
   position: relative;
-  width: 300px;
+  width: 100%;
 }
 
 .searchInput {
   width: 100%;
-  padding: 8px 12px;
-  padding-right: 40px;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  font-size: 14px;
-  transition: all 0.3s ease;
+  padding: 0.75rem 1rem;
+  padding-right: 2.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--card-background);
+  color: var(--text-color);
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
 }
 
 .searchInput:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.1);
+  box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.1);
 }
 
 .searchField .material-icons {
   position: absolute;
-  right: 12px;
+  right: 0.75rem;
   top: 50%;
   transform: translateY(-50%);
-  color: #757575;
-  pointer-events: none;
+  color: var(--text-secondary);
+  font-size: 1.2rem;
 }
 
 .totalExpenses {
-  margin: 20px 0;
-  padding: 15px;
-  background-color: #f8f9fa;
+  background-color: var(--card-background);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  padding: 1rem 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .totalExpenses h3 {
   margin: 0;
+  color: var(--text-color);
+  font-size: 1.1rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.totalExpenses h3::before {
+  content: "attach_money";
+  font-family: "Material Icons";
   color: var(--primary-color);
-  font-size: 1.2rem;
-  font-weight: 600;
+  font-size: 1.4rem;
 } 

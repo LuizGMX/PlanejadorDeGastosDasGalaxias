@@ -409,247 +409,219 @@ const Expenses = () => {
     <div className={styles.container}>
       <div className={styles.header}>
         <h1>Minhas Despesas</h1>
+        <button
+          className={styles.addButton}
+          onClick={() => navigate('/add-expense')}
+        >
+          Adicionar Despesa
+        </button>
       </div>
 
-      <div className={styles.filters}>
-        <div className={styles.filterGroup}>
-          <div className={styles.searchField}>
-            <input
-              type="text"
-              placeholder="Buscar por descrição..."
-              value={filters.description}
-              onChange={(e) => handleFilterChange('description', e.target.value)}
-              className={styles.searchInput}
-            />
-            <span className="material-icons">search</span>
-          </div>
-        </div>
-
-        <div className={styles.filterGroup}>
-          <div 
-            className={`${styles.modernSelect} ${openFilter === 'months' ? styles.active : ''}`}
-            onClick={() => handleFilterClick('months')}
-          >
-            <div className={styles.modernSelectHeader}>
-              <span>{formatSelectedPeriod('months')}</span>
-              <span className={`material-icons ${styles.arrow}`}>
-                {openFilter === 'months' ? 'expand_less' : 'expand_more'}
-              </span>
-            </div>
-            {openFilter === 'months' && (
-              <div className={styles.modernSelectDropdown} onClick={e => e.stopPropagation()}>
-                <label 
-                  key="all-months"
-                  className={styles.modernCheckboxLabel}
-                  onClick={handleCheckboxClick}
-                >
-                  <div className={styles.modernCheckbox}>
-                    <input
-                      type="checkbox"
-                      checked={filters.months.length === months.length}
-                      onChange={() => handleFilterChange('months', 'all')}
-                      className={styles.hiddenCheckbox}
-                    />
-                    <div className={styles.customCheckbox}>
-                      <span className="material-icons">check</span>
-                    </div>
-                  </div>
-                  <span><strong>Todos os Meses</strong></span>
-                </label>
-                <div className={styles.divider}></div>
-            {months.map(month => (
+      <div className={styles.filtersContainer}>
+        <div className={styles.filterRow}>
+          <div className={styles.filterGroup}>
+            <div 
+              className={`${styles.modernSelect} ${openFilter === 'months' ? styles.active : ''}`}
+              onClick={() => handleFilterClick('months')}
+            >
+              <div className={styles.modernSelectHeader}>
+                <span>{formatSelectedPeriod('months')}</span>
+                <span className={`material-icons ${styles.arrow}`}>
+                  {openFilter === 'months' ? 'expand_less' : 'expand_more'}
+                </span>
+              </div>
+              {openFilter === 'months' && (
+                <div className={styles.modernSelectDropdown} onClick={e => e.stopPropagation()}>
                   <label 
-                    key={month.value} 
+                    key="all-months"
                     className={styles.modernCheckboxLabel}
                     onClick={handleCheckboxClick}
                   >
                     <div className={styles.modernCheckbox}>
                       <input
                         type="checkbox"
-                        checked={filters.months.includes(month.value)}
-                        onChange={() => handleFilterChange('months', month.value)}
+                        checked={filters.months.length === months.length}
+                        onChange={() => handleFilterChange('months', 'all')}
                         className={styles.hiddenCheckbox}
                       />
                       <div className={styles.customCheckbox}>
                         <span className="material-icons">check</span>
                       </div>
                     </div>
-                    <span>{month.label}</span>
+                    <span><strong>Todos os Meses</strong></span>
                   </label>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className={styles.filterGroup}>
-          <div 
-            className={`${styles.modernSelect} ${openFilter === 'years' ? styles.active : ''}`}
-            onClick={() => handleFilterClick('years')}
-          >
-            <div className={styles.modernSelectHeader}>
-              <span>{formatSelectedPeriod('years')}</span>
-              <span className={`material-icons ${styles.arrow}`}>
-                {openFilter === 'years' ? 'expand_less' : 'expand_more'}
-              </span>
+                  <div className={styles.divider}></div>
+                  {months.map(month => (
+                    <label 
+                      key={month.value} 
+                      className={styles.modernCheckboxLabel}
+                      onClick={handleCheckboxClick}
+                    >
+                      <div className={styles.modernCheckbox}>
+                        <input
+                          type="checkbox"
+                          checked={filters.months.includes(month.value)}
+                          onChange={() => handleFilterChange('months', month.value)}
+                          className={styles.hiddenCheckbox}
+                        />
+                        <div className={styles.customCheckbox}>
+                          <span className="material-icons">check</span>
+                        </div>
+                      </div>
+                      <span>{month.label}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
             </div>
-            {openFilter === 'years' && (
-              <div className={styles.modernSelectDropdown} onClick={e => e.stopPropagation()}>
-                <label 
-                  key="all-years"
-                  className={styles.modernCheckboxLabel}
-                  onClick={handleCheckboxClick}
-                >
-                  <div className={styles.modernCheckbox}>
-                    <input
-                      type="checkbox"
-                      checked={filters.years.length === years.length}
-                      onChange={() => handleFilterChange('years', 'all')}
-                      className={styles.hiddenCheckbox}
-                    />
-                    <div className={styles.customCheckbox}>
-                      <span className="material-icons">check</span>
-                    </div>
-                  </div>
-                  <span><strong>Todos os Anos</strong></span>
-                </label>
-                <div className={styles.divider}></div>
-            {years.map(year => (
+          </div>
+
+          <div className={styles.filterGroup}>
+            <div 
+              className={`${styles.modernSelect} ${openFilter === 'years' ? styles.active : ''}`}
+              onClick={() => handleFilterClick('years')}
+            >
+              <div className={styles.modernSelectHeader}>
+                <span>{formatSelectedPeriod('years')}</span>
+                <span className={`material-icons ${styles.arrow}`}>
+                  {openFilter === 'years' ? 'expand_less' : 'expand_more'}
+                </span>
+              </div>
+              {openFilter === 'years' && (
+                <div className={styles.modernSelectDropdown} onClick={e => e.stopPropagation()}>
                   <label 
-                    key={year.value} 
+                    key="all-years"
                     className={styles.modernCheckboxLabel}
                     onClick={handleCheckboxClick}
                   >
                     <div className={styles.modernCheckbox}>
                       <input
                         type="checkbox"
-                        checked={filters.years.includes(year.value)}
-                        onChange={() => handleFilterChange('years', year.value)}
+                        checked={filters.years.length === years.length}
+                        onChange={() => handleFilterChange('years', 'all')}
                         className={styles.hiddenCheckbox}
                       />
                       <div className={styles.customCheckbox}>
                         <span className="material-icons">check</span>
                       </div>
                     </div>
-                    <span>{year.label}</span>
+                    <span><strong>Todos os Anos</strong></span>
                   </label>
-                ))}
-              </div>
-            )}
+                  <div className={styles.divider}></div>
+                  {years.map(year => (
+                    <label 
+                      key={year.value} 
+                      className={styles.modernCheckboxLabel}
+                      onClick={handleCheckboxClick}
+                    >
+                      <div className={styles.modernCheckbox}>
+                        <input
+                          type="checkbox"
+                          checked={filters.years.includes(year.value)}
+                          onChange={() => handleFilterChange('years', year.value)}
+                          className={styles.hiddenCheckbox}
+                        />
+                        <div className={styles.customCheckbox}>
+                          <span className="material-icons">check</span>
+                        </div>
+                      </div>
+                      <span>{year.label}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        <div className={styles.filterGroup}>
-          <div 
-            className={`${styles.modernSelect} ${openFilter === 'category' ? styles.active : ''}`}
-            onClick={() => handleFilterClick('category')}
-          >
-            <div className={styles.modernSelectHeader}>
-              <span>{formatSelectedPeriod('category')}</span>
-              <span className={`material-icons ${styles.arrow}`}>
-                {openFilter === 'category' ? 'expand_less' : 'expand_more'}
-              </span>
-            </div>
-            {openFilter === 'category' && (
-              <div className={styles.modernSelectDropdown} onClick={e => e.stopPropagation()}>
-                {categories.map(category => (
-                  <label 
-                    key={category.value} 
-                    className={styles.modernCheckboxLabel}
-                    onClick={handleCheckboxClick}
-                  >
-                    <div className={styles.modernCheckbox}>
-                      <input
-                        type="radio"
-                        checked={filters.category === category.value}
-                        onChange={() => handleFilterChange('category', category.value)}
-                        className={styles.hiddenCheckbox}
-                      />
-                      <div className={styles.customCheckbox}>
-                        <span className="material-icons">check</span>
-                      </div>
-                    </div>
-                    <span>{category.label}</span>
-                  </label>
-                ))}
+        <div className={styles.filterRow}>
+          <div className={styles.filterGroup}>
+            <div 
+              className={`${styles.modernSelect} ${openFilter === 'category' ? styles.active : ''}`}
+              onClick={() => handleFilterClick('category')}
+            >
+              <div className={styles.modernSelectHeader}>
+                <span>{formatSelectedPeriod('category')}</span>
+                <span className={`material-icons ${styles.arrow}`}>
+                  {openFilter === 'category' ? 'expand_less' : 'expand_more'}
+                </span>
               </div>
-            )}
+              {openFilter === 'category' && (
+                <div className={styles.modernSelectDropdown} onClick={e => e.stopPropagation()}>
+                  {categories.map(category => (
+                    <label 
+                      key={category.value} 
+                      className={styles.modernCheckboxLabel}
+                      onClick={handleCheckboxClick}
+                    >
+                      <div className={styles.modernCheckbox}>
+                        <input
+                          type="radio"
+                          checked={filters.category === category.value}
+                          onChange={() => handleFilterChange('category', category.value)}
+                          className={styles.hiddenCheckbox}
+                        />
+                        <div className={styles.customCheckbox}>
+                          <span className="material-icons">check</span>
+                        </div>
+                      </div>
+                      <span>{category.label}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
 
-        <div className={styles.filterGroup}>
-          <div 
-            className={`${styles.modernSelect} ${openFilter === 'paymentMethod' ? styles.active : ''}`}
-            onClick={() => handleFilterClick('paymentMethod')}
-          >
-            <div className={styles.modernSelectHeader}>
-              <span>{formatSelectedPeriod('paymentMethod')}</span>
-              <span className={`material-icons ${styles.arrow}`}>
-                {openFilter === 'paymentMethod' ? 'expand_less' : 'expand_more'}
-              </span>
-            </div>
-            {openFilter === 'paymentMethod' && (
-              <div className={styles.modernSelectDropdown} onClick={e => e.stopPropagation()}>
-                {paymentMethods.map(method => (
-                  <label 
-                    key={method.value} 
-                    className={styles.modernCheckboxLabel}
-                    onClick={handleCheckboxClick}
-                  >
-                    <div className={styles.modernCheckbox}>
-                      <input
-                        type="radio"
-                        checked={filters.paymentMethod === method.value}
-                        onChange={() => handleFilterChange('paymentMethod', method.value)}
-                        className={styles.hiddenCheckbox}
-                      />
-                      <div className={styles.customCheckbox}>
-                        <span className="material-icons">check</span>
-                      </div>
-                    </div>
-                    <span>{method.label}</span>
-                  </label>
-                ))}
+          <div className={styles.filterGroup}>
+            <div 
+              className={`${styles.modernSelect} ${openFilter === 'paymentMethod' ? styles.active : ''}`}
+              onClick={() => handleFilterClick('paymentMethod')}
+            >
+              <div className={styles.modernSelectHeader}>
+                <span>{formatSelectedPeriod('paymentMethod')}</span>
+                <span className={`material-icons ${styles.arrow}`}>
+                  {openFilter === 'paymentMethod' ? 'expand_less' : 'expand_more'}
+                </span>
               </div>
-            )}
+              {openFilter === 'paymentMethod' && (
+                <div className={styles.modernSelectDropdown} onClick={e => e.stopPropagation()}>
+                  {paymentMethods.map(method => (
+                    <label 
+                      key={method.value} 
+                      className={styles.modernCheckboxLabel}
+                      onClick={handleCheckboxClick}
+                    >
+                      <div className={styles.modernCheckbox}>
+                        <input
+                          type="radio"
+                          checked={filters.paymentMethod === method.value}
+                          onChange={() => handleFilterChange('paymentMethod', method.value)}
+                          className={styles.hiddenCheckbox}
+                        />
+                        <div className={styles.customCheckbox}>
+                          <span className="material-icons">check</span>
+                        </div>
+                      </div>
+                      <span>{method.label}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
 
-        <div className={styles.filterGroup}>
-          <div 
-            className={`${styles.modernSelect} ${openFilter === 'hasInstallments' ? styles.active : ''}`}
-            onClick={() => handleFilterClick('hasInstallments')}
-          >
-            <div className={styles.modernSelectHeader}>
-              <span>{formatSelectedPeriod('hasInstallments')}</span>
-              <span className={`material-icons ${styles.arrow}`}>
-                {openFilter === 'hasInstallments' ? 'expand_less' : 'expand_more'}
-              </span>
+          <div className={styles.filterGroup}>
+            <div className={styles.searchField}>
+              <input
+                type="text"
+                placeholder="Buscar por descrição..."
+                value={filters.description}
+                onChange={(e) => handleFilterChange('description', e.target.value)}
+                className={styles.searchInput}
+              />
+              <span className="material-icons">search</span>
             </div>
-            {openFilter === 'hasInstallments' && (
-              <div className={styles.modernSelectDropdown} onClick={e => e.stopPropagation()}>
-                {installmentOptions.map(option => (
-                  <label 
-                    key={option.value} 
-                    className={styles.modernCheckboxLabel}
-                    onClick={handleCheckboxClick}
-                  >
-                    <div className={styles.modernCheckbox}>
-                      <input
-                        type="radio"
-                        checked={filters.hasInstallments === option.value}
-                        onChange={() => handleFilterChange('hasInstallments', option.value)}
-                        className={styles.hiddenCheckbox}
-                      />
-                      <div className={styles.customCheckbox}>
-                        <span className="material-icons">check</span>
-                      </div>
-                    </div>
-                    <span>{option.label}</span>
-                  </label>
-                ))}
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -742,7 +714,7 @@ const Expenses = () => {
         </>
       ) : (
         <div className={styles.noData}>
-          <p>Nenhuma despesa encontrada para o período selecionado.</p>
+          <p>Nenhuma despesa encontrada para os filtros selecionados.</p>
         </div>
       )}
 
@@ -753,44 +725,28 @@ const Expenses = () => {
             {expenseToDelete?.has_installments ? (
               <>
                 <p>Como deseja excluir esta despesa parcelada?</p>
-                <div className={styles.installmentOptions}>
+                <div className={styles.modalOptions}>
                   <label>
                     <input
                       type="radio"
-                      name="deleteType"
                       checked={deleteOptions.type === 'single'}
-                      onChange={() => setDeleteOptions(prev => ({ ...prev, type: 'single' }))}
+                      onChange={() => setDeleteOptions({ ...deleteOptions, type: 'single' })}
                     />
-                    Apenas esta parcela ({expenseToDelete.current_installment}/{expenseToDelete.total_installments})
+                    Apenas esta parcela
                   </label>
-                  {expenseToDelete.current_installment < expenseToDelete.total_installments && (
-                    <label>
-                      <input
-                        type="radio"
-                        name="deleteType"
-                        checked={deleteOptions.type === 'forward'}
-                        onChange={() => setDeleteOptions(prev => ({ ...prev, type: 'forward' }))}
-                      />
-                      Esta e todas as próximas parcelas
-                    </label>
-                  )}
-                  {expenseToDelete.current_installment > 1 && (
-                    <label>
-                      <input
-                        type="radio"
-                        name="deleteType"
-                        checked={deleteOptions.type === 'backward'}
-                        onChange={() => setDeleteOptions(prev => ({ ...prev, type: 'backward' }))}
-                      />
-                      Esta e todas as parcelas anteriores
-                    </label>
-                  )}
                   <label>
                     <input
                       type="radio"
-                      name="deleteType"
+                      checked={deleteOptions.type === 'future'}
+                      onChange={() => setDeleteOptions({ ...deleteOptions, type: 'future' })}
+                    />
+                    Esta e próximas parcelas
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
                       checked={deleteOptions.type === 'all'}
-                      onChange={() => setDeleteOptions(prev => ({ ...prev, type: 'all' }))}
+                      onChange={() => setDeleteOptions({ ...deleteOptions, type: 'all' })}
                     />
                     Todas as parcelas
                   </label>
@@ -799,27 +755,24 @@ const Expenses = () => {
             ) : (
               <p>
                 {expenseToDelete
-                  ? `Tem certeza que deseja excluir a despesa "${expenseToDelete.description}"?`
-                  : `Tem certeza que deseja excluir ${selectedExpenses.length} ${
-                      selectedExpenses.length === 1 ? 'despesa' : 'despesas'
-                    }?`
-              }
+                  ? 'Tem certeza que deseja excluir esta despesa?'
+                  : `Tem certeza que deseja excluir ${selectedExpenses.length} despesas selecionadas?`}
               </p>
             )}
             <div className={styles.modalButtons}>
               <button
-                className={styles.cancelButton}
                 onClick={() => {
                   setShowDeleteModal(false);
                   setExpenseToDelete(null);
                   setDeleteOptions({ type: 'single', installmentGroupId: null });
                 }}
+                className={styles.cancelButton}
               >
                 Cancelar
               </button>
               <button
-                className={styles.confirmButton}
                 onClick={handleDelete}
+                className={styles.confirmButton}
               >
                 Confirmar
               </button>
@@ -831,25 +784,10 @@ const Expenses = () => {
       {editingExpense && (
         <EditExpenseForm
           expense={editingExpense}
-          onUpdate={handleUpdate}
+          onSave={handleUpdate}
           onCancel={() => setEditingExpense(null)}
         />
       )}
-
-      <div className={styles.buttonGroup}>
-        <button
-          className={styles.button}
-          onClick={() => navigate('/add-expense')}
-        >
-          Adicionar Despesa
-        </button>
-        <button
-          className={`${styles.button} ${styles.secondary}`}
-          onClick={() => navigate('/dashboard')}
-        >
-          Voltar para Dashboard
-        </button>
-      </div>
 
       {showInstallmentMessage && (
         <div 
