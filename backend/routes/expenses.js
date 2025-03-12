@@ -91,7 +91,9 @@ router.post('/', authenticate, async (req, res) => {
       payment_method,
       has_installments,
       current_installment,
-      total_installments
+      total_installments,
+      is_recurring,
+      end_date
     } = req.body;
 
     // Validações básicas
@@ -101,6 +103,10 @@ router.post('/', authenticate, async (req, res) => {
 
     if (has_installments && (!current_installment || !total_installments)) {
       return res.status(400).json({ message: 'Informações de parcelas incompletas' });
+    }
+
+    if (is_recurring && !end_date) {
+      return res.status(400).json({ message: 'Data final é obrigatória para despesas recorrentes' });
     }
 
     // Garante que o valor é um número válido
@@ -117,30 +123,86 @@ router.post('/', authenticate, async (req, res) => {
     }
 
     const installmentGroupId = has_installments ? uuidv4() : null;
+    const recurringGroupId = is_recurring ? uuidv4() : null;
     const expenses = [];
 
-    if (has_installments) {
-      // Usa a data da primeira parcela como base
+    if (is_recurring) {
+      const startDate = new Date(first_installment_date);
+      const endDate = new Date(end_date);
+      const maxDate = new Date(startDate);
+      maxDate.setFullYear(maxDate.getFullYear() + 10);
+
+      if (endDate > maxDate) {
+        return res.status(400).json({ 
+          message: 'O período de recorrência não pode ser maior que 10 anos'
+        });
+      }
+
+      let currentDate = new Date(startDate);
+      while (currentDate <= endDate) {
+        if (has_installments) {
+          // Se for recorrente e parcelado, cria as parcelas para cada mês
+          const monthInstallmentGroupId = uuidv4();
+          const installmentAmount = Number((parsedAmount / total_installments).toFixed(2));
+          const roundingAdjustment = Number((parsedAmount - (installmentAmount * total_installments)).toFixed(2));
+
+          for (let i = 0; i < total_installments; i++) {
+            const installmentDate = new Date(currentDate);
+            installmentDate.setMonth(currentDate.getMonth() + i);
+
+            const finalAmount = i === total_installments - 1 
+              ? installmentAmount + roundingAdjustment 
+              : installmentAmount;
+
+            expenses.push({
+              user_id: req.user.id,
+              description: `${description} (${i + 1}/${total_installments})`,
+              amount: finalAmount,
+              category_id,
+              subcategory_id,
+              bank_id,
+              expense_date: installmentDate,
+              payment_method,
+              has_installments: true,
+              current_installment: i + 1,
+              total_installments,
+              installment_group_id: monthInstallmentGroupId,
+              is_recurring: true,
+              end_date,
+              recurring_group_id: recurringGroupId
+            });
+          }
+        } else {
+          // Se for apenas recorrente, cria uma despesa para cada mês
+          expenses.push({
+            user_id: req.user.id,
+            description,
+            amount: parsedAmount,
+            category_id,
+            subcategory_id,
+            bank_id,
+            expense_date: currentDate,
+            payment_method,
+            has_installments: false,
+            is_recurring: true,
+            end_date,
+            recurring_group_id: recurringGroupId
+          });
+        }
+
+        // Avança para o próximo mês
+        currentDate = new Date(currentDate.setMonth(currentDate.getMonth() + 1));
+      }
+    } else if (has_installments) {
+      // Se for apenas parcelado (não recorrente)
       const baseDate = new Date(first_installment_date);
-      
-      // Calcula o valor de cada parcela
       const installmentAmount = Number((parsedAmount / total_installments).toFixed(2));
-      
-      // Calcula o ajuste necessário para a última parcela devido a arredondamentos
       const roundingAdjustment = Number((parsedAmount - (installmentAmount * total_installments)).toFixed(2));
-      
-      console.log('Valores calculados:', {
-        valorTotal: parsedAmount,
-        valorParcela: installmentAmount,
-        ajuste: roundingAdjustment,
-        totalParcelas: total_installments
-      });
 
       for (let i = 0; i < total_installments; i++) {
         const installmentDate = new Date(baseDate);
         installmentDate.setMonth(baseDate.getMonth() + i);
 
-        // Adiciona o ajuste de arredondamento na última parcela
         const finalAmount = i === total_installments - 1 
           ? installmentAmount + roundingAdjustment 
           : installmentAmount;
@@ -161,6 +223,7 @@ router.post('/', authenticate, async (req, res) => {
         });
       }
     } else {
+      // Despesa simples (não recorrente, não parcelada)
       expenses.push({
         user_id: req.user.id,
         description,
@@ -215,6 +278,8 @@ router.get('/subcategories/:categoryId', authenticate, async (req, res) => {
 });
 
 router.put('/:id', authenticate, async (req, res) => {
+  const transaction = await Expense.sequelize.transaction();
+
   try {
     const expense = await Expense.findOne({
       where: { 
@@ -224,6 +289,7 @@ router.put('/:id', authenticate, async (req, res) => {
     });
 
     if (!expense) {
+      await transaction.rollback();
       return res.status(404).json({ message: 'Despesa não encontrada' });
     }
 
@@ -235,35 +301,67 @@ router.put('/:id', authenticate, async (req, res) => {
       subcategory_id,
       bank_id,
       expense_date,
-      payment_method
+      payment_method,
+      update_future
     } = req.body;
 
     if (!description || amount === undefined || !category_id || !subcategory_id || !bank_id || !expense_date || !payment_method) {
+      await transaction.rollback();
       return res.status(400).json({ message: 'Todos os campos são obrigatórios' });
     }
 
     // Garante que o valor é um número válido
     const parsedAmount = Number(parseFloat(amount).toFixed(2));
     if (isNaN(parsedAmount) || parsedAmount < 0) {
+      await transaction.rollback();
       return res.status(400).json({ message: 'Valor inválido' });
     }
 
-    // Atualiza a despesa
-    await expense.update({
-      description,
-      amount: parsedAmount,
-      category_id,
-      subcategory_id,
-      bank_id,
-      expense_date,
-      payment_method
-    });
+    // Se a despesa for recorrente e o usuário quiser atualizar as futuras
+    if (expense.is_recurring && expense.recurring_group_id && update_future === true) {
+      const currentDate = new Date(expense.expense_date);
+      await Expense.update(
+        {
+          description,
+          amount: parsedAmount,
+          category_id,
+          subcategory_id,
+          bank_id,
+          payment_method,
+          is_recurring: req.body.is_recurring
+        },
+        {
+          where: {
+            recurring_group_id: expense.recurring_group_id,
+            expense_date: {
+              [Op.gte]: currentDate
+            },
+            user_id: req.user.id
+          },
+          transaction
+        }
+      );
+    } else {
+      // Atualiza apenas a despesa selecionada
+      await expense.update({
+        description,
+        amount: parsedAmount,
+        category_id,
+        subcategory_id,
+        bank_id,
+        expense_date,
+        payment_method,
+        is_recurring: req.body.is_recurring
+      }, { transaction });
+    }
 
+    await transaction.commit();
     res.json({ 
       message: 'Despesa atualizada com sucesso',
       expense
     });
   } catch (error) {
+    await transaction.rollback();
     console.error('Erro ao atualizar despesa:', error);
     res.status(500).json({ message: 'Erro ao atualizar despesa' });
   }
@@ -406,6 +504,8 @@ router.delete('/batch', authenticate, async (req, res) => {
 
 // Rota para excluir uma única despesa (deve vir por último)
 router.delete('/:id', authenticate, async (req, res) => {
+  const transaction = await Expense.sequelize.transaction();
+
   try {
     const expense = await Expense.findOne({
       where: { 
@@ -415,12 +515,40 @@ router.delete('/:id', authenticate, async (req, res) => {
     });
 
     if (!expense) {
+      await transaction.rollback();
       return res.status(404).json({ message: 'Despesa não encontrada' });
     }
 
-    await expense.destroy();
+    // Se a despesa for recorrente, pergunta se quer excluir todas as recorrências futuras
+    if (expense.is_recurring && expense.recurring_group_id) {
+      const { delete_future } = req.query;
+      
+      if (delete_future === 'true') {
+        // Exclui todas as despesas futuras do mesmo grupo
+        const currentDate = new Date(expense.expense_date);
+        await Expense.destroy({
+          where: {
+            recurring_group_id: expense.recurring_group_id,
+            expense_date: {
+              [Op.gte]: currentDate
+            },
+            user_id: req.user.id
+          },
+          transaction
+        });
+      } else {
+        // Exclui apenas a despesa selecionada
+        await expense.destroy({ transaction });
+      }
+    } else {
+      // Se não for recorrente, exclui normalmente
+      await expense.destroy({ transaction });
+    }
+
+    await transaction.commit();
     res.json({ message: 'Despesa excluída com sucesso' });
   } catch (error) {
+    await transaction.rollback();
     console.error('Erro ao excluir despesa:', error);
     res.status(500).json({ message: 'Erro ao excluir despesa' });
   }

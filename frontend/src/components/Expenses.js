@@ -253,72 +253,62 @@ const Expenses = () => {
     });
   };
 
-  const handleDeleteClick = (expense = null) => {
-    if (expense?.has_installments) {
+  const handleDeleteClick = (expense) => {
+    if (expense.is_recurring) {
+      setExpenseToDelete(expense);
       setDeleteOptions({
-        type: 'single',
+        type: 'recurring',
+        delete_future: false
+      });
+      setShowDeleteModal(true);
+    } else if (expense.has_installments) {
+      setExpenseToDelete(expense);
+      setDeleteOptions({
+        type: 'installment',
         installmentGroupId: expense.installment_group_id
       });
-      setExpenseToDelete(expense);
       setShowDeleteModal(true);
-      return;
-    }
-
-    if (expense) {
+    } else {
       setExpenseToDelete(expense);
+      setDeleteOptions({
+        type: 'single'
+      });
+      setShowDeleteModal(true);
     }
-    setShowDeleteModal(true);
   };
 
   const handleDelete = async () => {
     try {
-      let url;
-      let body;
-      let method = 'DELETE';
-      let headers = {
-        'Authorization': `Bearer ${auth.token}`,
-        'Content-Type': 'application/json'
-      };
+      let url = `/api/expenses/${expenseToDelete.id}`;
+      const queryParams = new URLSearchParams();
 
-      if (expenseToDelete) {
-        if (expenseToDelete.has_installments) {
-          url = '/api/expenses/installments';
-          body = {
-            installmentGroupId: expenseToDelete.installment_group_id,
-            deleteType: deleteOptions.type,
-            currentInstallment: expenseToDelete.current_installment
-          };
-        } else {
-          url = `/api/expenses/${expenseToDelete.id}`;
-          body = null;
-        }
-      } else {
-        url = '/api/expenses/batch';
-        body = { ids: selectedExpenses };
+      if (deleteOptions.type === 'recurring' && deleteOptions.delete_future) {
+        queryParams.append('delete_future', 'true');
+      } else if (deleteOptions.type === 'installment' && deleteOptions.deleteAllInstallments) {
+        queryParams.append('delete_all_installments', 'true');
+      }
+
+      if (queryParams.toString()) {
+        url += `?${queryParams.toString()}`;
       }
 
       const response = await fetch(url, {
-        method,
-        headers,
-        body: body ? JSON.stringify(body) : undefined
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${auth.token}`
+        }
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Falha ao excluir despesa(s)');
+        throw new Error('Falha ao excluir despesa');
       }
-
-      const responseData = await response.json();
-      console.log('Resposta da exclusão:', responseData);
 
       setShowDeleteModal(false);
       setExpenseToDelete(null);
-      setSelectedExpenses([]);
-      setDeleteOptions({ type: 'single', installmentGroupId: null });
+      setDeleteOptions({ type: 'single' });
       await fetchExpenses();
     } catch (err) {
-      console.error('Erro na exclusão:', err);
-      setError(err.message || 'Erro ao excluir despesa(s). Por favor, tente novamente.');
+      setError('Erro ao excluir despesa. Por favor, tente novamente.');
     }
   };
 
@@ -722,59 +712,65 @@ const Expenses = () => {
         <div className={styles.modal}>
           <div className={styles.modalContent}>
             <h2>Confirmar Exclusão</h2>
-            {expenseToDelete?.has_installments ? (
+            
+            {deleteOptions.type === 'recurring' ? (
               <>
-                <p>Como deseja excluir esta despesa parcelada?</p>
-                <div className={styles.modalOptions}>
-                  <label>
-                    <input
-                      type="radio"
-                      checked={deleteOptions.type === 'single'}
-                      onChange={() => setDeleteOptions({ ...deleteOptions, type: 'single' })}
-                    />
-                    Apenas esta parcela
+                <p>Esta é uma despesa recorrente. O que você deseja fazer?</p>
+                <div className={styles.checkboxGroup}>
+                  <input
+                    type="checkbox"
+                    id="delete_future"
+                    checked={deleteOptions.delete_future}
+                    onChange={(e) => setDeleteOptions(prev => ({
+                      ...prev,
+                      delete_future: e.target.checked
+                    }))}
+                    className={styles.checkbox}
+                  />
+                  <label htmlFor="delete_future" className={styles.checkboxLabel}>
+                    Excluir também todas as ocorrências futuras
                   </label>
-                  <label>
-                    <input
-                      type="radio"
-                      checked={deleteOptions.type === 'future'}
-                      onChange={() => setDeleteOptions({ ...deleteOptions, type: 'future' })}
-                    />
-                    Esta e próximas parcelas
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      checked={deleteOptions.type === 'all'}
-                      onChange={() => setDeleteOptions({ ...deleteOptions, type: 'all' })}
-                    />
-                    Todas as parcelas
+                </div>
+              </>
+            ) : deleteOptions.type === 'installment' ? (
+              <>
+                <p>Esta despesa faz parte de um parcelamento. O que você deseja fazer?</p>
+                <div className={styles.checkboxGroup}>
+                  <input
+                    type="checkbox"
+                    id="delete_all_installments"
+                    checked={deleteOptions.deleteAllInstallments}
+                    onChange={(e) => setDeleteOptions(prev => ({
+                      ...prev,
+                      deleteAllInstallments: e.target.checked
+                    }))}
+                    className={styles.checkbox}
+                  />
+                  <label htmlFor="delete_all_installments" className={styles.checkboxLabel}>
+                    Excluir todas as parcelas
                   </label>
                 </div>
               </>
             ) : (
-              <p>
-                {expenseToDelete
-                  ? 'Tem certeza que deseja excluir esta despesa?'
-                  : `Tem certeza que deseja excluir ${selectedExpenses.length} despesas selecionadas?`}
-              </p>
+              <p>Tem certeza que deseja excluir esta despesa?</p>
             )}
-            <div className={styles.modalButtons}>
+
+            <div className={styles.buttonGroup}>
+              <button
+                onClick={handleDelete}
+                className={styles.deleteButton}
+              >
+                Confirmar
+              </button>
               <button
                 onClick={() => {
                   setShowDeleteModal(false);
                   setExpenseToDelete(null);
-                  setDeleteOptions({ type: 'single', installmentGroupId: null });
+                  setDeleteOptions({ type: 'single' });
                 }}
                 className={styles.cancelButton}
               >
                 Cancelar
-              </button>
-              <button
-                onClick={handleDelete}
-                className={styles.confirmButton}
-              >
-                Confirmar
               </button>
             </div>
           </div>

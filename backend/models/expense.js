@@ -111,6 +111,20 @@ export default (sequelize) => {
       type: DataTypes.UUID,
       allowNull: true,
       description: 'ID para agrupar despesas parceladas'
+    },
+    is_recurring: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false
+    },
+    end_date: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
+    recurring_group_id: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      description: 'ID para agrupar despesas recorrentes'
     }
   }, {
     timestamps: true,

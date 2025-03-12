@@ -14,7 +14,9 @@ const EditExpenseForm = ({ expense, onUpdate, onCancel }) => {
     category_id: expense.category_id,
     subcategory_id: expense.subcategory_id,
     payment_method: expense.payment_method,
-    bank_id: expense.bank_id
+    bank_id: expense.bank_id,
+    update_future: false,
+    is_recurring: expense.is_recurring
   });
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
@@ -95,37 +97,37 @@ const EditExpenseForm = ({ expense, onUpdate, onCancel }) => {
   }, [formData.category_id, auth.token]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
-    }));
-  };
-
-  const handlePaymentMethod = (method) => {
-    setFormData(prev => ({
-      ...prev,
-      payment_method: method
+      [name]: type === 'checkbox' ? checked : value
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-
     try {
-      // Validações básicas
-      if (!formData.description || !formData.amount || !formData.category_id || !formData.subcategory_id || !formData.bank_id) {
-        throw new Error('Todos os campos são obrigatórios');
+      const response = await fetch(`/api/expenses/${expense.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${auth.token}`
+        },
+        body: JSON.stringify({
+          ...formData,
+          expense_date: formData.date,
+          is_recurring: formData.is_recurring
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao atualizar despesa');
       }
 
-      // Chama a função de atualização passada como prop
-      await onUpdate({
-        ...expense,
-        ...formData
-      });
+      const data = await response.json();
+      onUpdate(data.expense);
     } catch (err) {
-      setError(err.message || 'Erro ao atualizar despesa. Por favor, tente novamente.');
+      setError(err.message);
     }
   };
 
@@ -133,9 +135,7 @@ const EditExpenseForm = ({ expense, onUpdate, onCancel }) => {
     <div className={styles.modal}>
       <div className={styles.modalContent}>
         <h2>Editar Despesa</h2>
-        
         {error && <p className={styles.error}>{error}</p>}
-
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.inputGroup}>
             <label className={styles.label}>Descrição</label>
@@ -179,6 +179,25 @@ const EditExpenseForm = ({ expense, onUpdate, onCancel }) => {
               required
             />
           </div>
+
+          {expense.is_recurring && (
+            <div className={styles.checkboxGroup}>
+              <input
+                type="checkbox"
+                id="update_future"
+                name="update_future"
+                checked={formData.update_future}
+                onChange={handleChange}
+                className={styles.checkbox}
+              />
+              <label htmlFor="update_future" className={styles.checkboxLabel}>
+                Atualizar despesas futuras
+              </label>
+              <small className={styles.helperText}>
+                Marque esta opção para atualizar todas as ocorrências futuras desta despesa recorrente
+              </small>
+            </div>
+          )}
 
           <div className={styles.inputGroup}>
             <label className={styles.label}>Categoria</label>
@@ -238,38 +257,34 @@ const EditExpenseForm = ({ expense, onUpdate, onCancel }) => {
             </div>
           )}
 
-          <div className={styles.paymentMethodButtons}>
-            <button
-              type="button"
-              className={`${styles.paymentMethodButton} ${formData.payment_method === 'card' ? styles.active : ''}`}
-              onClick={() => handlePaymentMethod('card')}
-            >
-              <span className="material-icons">credit_card</span>
-              Cartão
-            </button>
-            <button
-              type="button"
-              className={`${styles.paymentMethodButton} ${formData.payment_method === 'pix' ? styles.active : ''}`}
-              onClick={() => handlePaymentMethod('pix')}
-            >
-              <span className="material-icons">pix</span>
-              PIX
-            </button>
+          <div className={styles.paymentMethodGroup}>
+            <label className={styles.label}>Forma de Pagamento</label>
+            <div className={styles.paymentButtons}>
+              <button
+                type="button"
+                className={`${styles.paymentButton} ${formData.payment_method === 'card' ? styles.active : ''}`}
+                onClick={() => setFormData(prev => ({ ...prev, payment_method: 'card' }))}
+              >
+                <BsCreditCard2Front size={24} className={styles.cardIcon} />
+                <span>Cartão</span>
+              </button>
+              <button
+                type="button"
+                className={`${styles.paymentButton} ${formData.payment_method === 'pix' ? styles.active : ''}`}
+                onClick={() => setFormData(prev => ({ ...prev, payment_method: 'pix' }))}
+              >
+                <SiPix size={24} className={styles.pixIcon} />
+                <span>Pix</span>
+              </button>
+            </div>
           </div>
 
           <div className={styles.buttonGroup}>
-            <button
-              type="button"
-              className={styles.cancelButton}
-              onClick={onCancel}
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className={styles.saveButton}
-            >
+            <button type="submit" className={styles.submitButton}>
               Salvar Alterações
+            </button>
+            <button type="button" onClick={onCancel} className={styles.cancelButton}>
+              Cancelar
             </button>
           </div>
         </form>

@@ -19,7 +19,9 @@ const AddExpense = () => {
     bank_id: '',
     has_installments: false,
     total_installments: 1,
-    current_installment: 1
+    current_installment: 1,
+    is_recurring: false,
+    end_date: ''
   });
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
@@ -175,6 +177,17 @@ const AddExpense = () => {
         }
       }
 
+      if (formData.is_recurring && formData.end_date) {
+        const startDate = new Date(formData.date);
+        const endDate = new Date(formData.end_date);
+        const maxDate = new Date(startDate);
+        maxDate.setFullYear(maxDate.getFullYear() + 10);
+
+        if (endDate > maxDate) {
+          throw new Error('O período de recorrência não pode ser maior que 10 anos');
+        }
+      }
+
       // Prepara os dados para envio
       const baseDate = new Date(formData.date);
       
@@ -193,12 +206,6 @@ const AddExpense = () => {
           : formData.date
       };
 
-      console.log('Enviando dados:', {
-        valorTotal: totalAmount,
-        valorParcela: installmentAmount,
-        parcelas: formData.total_installments
-      });
-
       const response = await fetch('/api/expenses', {
         method: 'POST',
         headers: {
@@ -215,7 +222,7 @@ const AddExpense = () => {
 
       setSuccess('Despesa adicionada com sucesso!');
       setTimeout(() => {
-        navigate('/dashboard');
+        navigate('/expenses');
       }, 2000);
     } catch (err) {
       setError(err.message || 'Erro ao adicionar despesa. Por favor, tente novamente.');
@@ -350,6 +357,49 @@ const AddExpense = () => {
               required
             />
           </div>
+
+          <div className={styles.checkboxGroup}>
+            <input
+              type="checkbox"
+              id="is_recurring"
+              name="is_recurring"
+              checked={formData.is_recurring}
+              onChange={(e) => {
+                setFormData(prev => ({
+                  ...prev,
+                  is_recurring: e.target.checked,
+                  end_date: e.target.checked ? prev.end_date : ''
+                }));
+              }}
+              className={styles.checkbox}
+            />
+            <label htmlFor="is_recurring" className={styles.checkboxLabel}>
+              Gasto Recorrente
+            </label>
+          </div>
+
+          {formData.is_recurring && (
+            <div className={styles.inputGroup}>
+              <label className={styles.label}>Data Final da Recorrência</label>
+              <input
+                type="date"
+                name="end_date"
+                value={formData.end_date}
+                onChange={handleChange}
+                className={styles.input}
+                required
+                min={formData.date}
+                max={(() => {
+                  const maxDate = new Date(formData.date);
+                  maxDate.setFullYear(maxDate.getFullYear() + 10);
+                  return maxDate.toISOString().split('T')[0];
+                })()}
+              />
+              <small className={styles.helperText}>
+                O período de recorrência não pode ser maior que 10 anos
+              </small>
+            </div>
+          )}
 
           <div className={styles.inputGroup}>
             <label className={styles.label}>Categoria</label>
