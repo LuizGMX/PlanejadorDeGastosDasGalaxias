@@ -40,6 +40,10 @@ const Dashboard = () => {
     years: [new Date().getFullYear()]
   });
   const [openFilter, setOpenFilter] = useState(null);
+  const [availablePeriods, setAvailablePeriods] = useState({
+    years: [],
+    months: []
+  });
 
   // Lista de anos para o filtro
   const years = Array.from(
@@ -160,6 +164,29 @@ const Dashboard = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  useEffect(() => {
+    const fetchAvailablePeriods = async () => {
+      try {
+        const response = await fetch('/api/dashboard/available-periods', {
+          headers: {
+            'Authorization': `Bearer ${auth.token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Falha ao carregar períodos disponíveis');
+        }
+
+        const data = await response.json();
+        setAvailablePeriods(data);
+      } catch (err) {
+        console.error('Erro ao buscar períodos disponíveis:', err);
+      }
+    };
+
+    fetchAvailablePeriods();
+  }, [auth.token]);
 
   const handleFilterChange = (type, value) => {
     if (value === 'all') {
@@ -350,6 +377,36 @@ const Dashboard = () => {
     };
   };
 
+  const formatSelectedMonths = () => {
+    if (filters.months.length === 0) return 'Nenhum mês selecionado';
+    if (filters.months.length === months.length) return 'Todos os meses';
+    
+    const selectedMonthsLabels = filters.months
+      .map(monthValue => months.find(m => m.value === monthValue)?.label)
+      .filter(Boolean);
+
+    if (selectedMonthsLabels.length <= 2) {
+      return selectedMonthsLabels.join(', ');
+    }
+    
+    return `${selectedMonthsLabels[0]}, ${selectedMonthsLabels[1]} +${selectedMonthsLabels.length - 2}`;
+  };
+
+  const formatSelectedYears = () => {
+    if (filters.years.length === 0) return 'Nenhum ano selecionado';
+    if (filters.years.length === years.length) return 'Todos os anos';
+    
+    const selectedYearsLabels = filters.years
+      .map(yearValue => years.find(y => y.value === yearValue)?.label)
+      .filter(Boolean);
+
+    if (selectedYearsLabels.length <= 2) {
+      return selectedYearsLabels.join(', ');
+    }
+    
+    return `${selectedYearsLabels[0]}, ${selectedYearsLabels[1]} +${selectedYearsLabels.length - 2}`;
+  };
+
   if (loading) return <div className={styles.loading}>Carregando...</div>;
   if (error) return <div className={styles.error}>{error}</div>;
 
@@ -392,7 +449,7 @@ const Dashboard = () => {
                 onClick={() => handleFilterClick('months')}
               >
                 <div className={styles.modernSelectHeader}>
-                  <span>Meses Selecionados ({filters.months.length})</span>
+                  <span>{formatSelectedMonths()}</span>
                   <span className={`material-icons ${styles.arrow}`}>
                     {openFilter === 'months' ? 'expand_less' : 'expand_more'}
                   </span>
@@ -449,7 +506,7 @@ const Dashboard = () => {
                 onClick={() => handleFilterClick('years')}
               >
                 <div className={styles.modernSelectHeader}>
-                  <span>Anos Selecionados ({filters.years.length})</span>
+                  <span>{formatSelectedYears()}</span>
                   <span className={`material-icons ${styles.arrow}`}>
                     {openFilter === 'years' ? 'expand_less' : 'expand_more'}
                   </span>
@@ -518,7 +575,7 @@ const Dashboard = () => {
                 <div className={styles.budgetStat}>
                   <span>Restante:</span>
                   <strong className={data.budget_info.remaining_budget < 0 ? styles.overBudget : ''}>
-                    {formatCurrency(data.budget_info.remaining_budget)}
+                    {formatCurrency(data.budget_info.total_budget - data.budget_info.total_spent)}
                   </strong>
                 </div>
                 {data.budget_info.remaining_days > 0 && (
@@ -561,7 +618,7 @@ const Dashboard = () => {
                     data={[
                       {
                         name: 'Disponível',
-                        value: Math.max(0, data.budget_info.remaining_budget)
+                        value: Math.max(0, data.budget_info.total_budget - data.budget_info.total_spent)
                       },
                       {
                         name: 'Total Gasto',

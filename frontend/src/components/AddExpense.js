@@ -12,7 +12,7 @@ const AddExpense = () => {
   const [formData, setFormData] = useState({
     description: '',
     amount: '',
-    date: new Date().toISOString().split('T')[0],
+    date: new Date().toLocaleDateString('en-CA'),
     category_id: '',
     subcategory_id: '',
     payment_method: 'card',
@@ -118,6 +118,26 @@ const AddExpense = () => {
         ...prev,
         [name]: Math.min(parcelaAtual, prev.total_installments)
       }));
+    } else if (name === 'date' || name === 'end_date') {
+      // Remove qualquer caractere que não seja número
+      const cleanValue = value.replace(/[^\d]/g, '');
+      
+      // Se o valor limpo tiver 8 dígitos, formata como YYYY-MM-DD
+      if (cleanValue.length === 8) {
+        const year = cleanValue.substring(0, 4);
+        const month = cleanValue.substring(4, 6);
+        const day = cleanValue.substring(6, 8);
+        setFormData(prev => ({
+          ...prev,
+          [name]: `${year}-${month}-${day}`
+        }));
+      } else {
+        // Se não tiver 8 dígitos, mantém o valor como está
+        setFormData(prev => ({
+          ...prev,
+          [name]: value
+        }));
+      }
     } else {
       setFormData(prev => ({
         ...prev,
@@ -165,6 +185,26 @@ const AddExpense = () => {
     setSuccess('');
 
     try {
+      // Validação das datas
+      const expenseDate = new Date(formData.date);
+      if (isNaN(expenseDate.getTime())) {
+        throw new Error('A data da despesa é inválida');
+      }
+
+      if (formData.is_recurring && formData.end_date) {
+        const endDate = new Date(formData.end_date);
+        if (isNaN(endDate.getTime())) {
+          throw new Error('A data final da recorrência é inválida');
+        }
+
+        const maxDate = new Date(expenseDate);
+        maxDate.setFullYear(maxDate.getFullYear() + 10);
+
+        if (endDate > maxDate) {
+          throw new Error('O período de recorrência não pode ser maior que 10 anos');
+        }
+      }
+
       if (formData.has_installments) {
         if (formData.current_installment > formData.total_installments) {
           throw new Error('A parcela atual não pode ser maior que o total de parcelas');
@@ -174,17 +214,6 @@ const AddExpense = () => {
         }
         if (formData.total_installments < 2) {
           throw new Error('O número total de parcelas deve ser pelo menos 2');
-        }
-      }
-
-      if (formData.is_recurring && formData.end_date) {
-        const startDate = new Date(formData.date);
-        const endDate = new Date(formData.end_date);
-        const maxDate = new Date(startDate);
-        maxDate.setFullYear(maxDate.getFullYear() + 10);
-
-        if (endDate > maxDate) {
-          throw new Error('O período de recorrência não pode ser maior que 10 anos');
         }
       }
 
@@ -407,11 +436,30 @@ const AddExpense = () => {
                       onChange={handleChange}
                       className={styles.input}
                       required
-                      min={formData.date}
+                      min={(() => {
+                        try {
+                          const date = new Date(formData.date);
+                          return !isNaN(date.getTime()) ? formData.date : new Date().toLocaleDateString('en-CA');
+                        } catch {
+                          return new Date().toLocaleDateString('en-CA');
+                        }
+                      })()}
                       max={(() => {
-                        const maxDate = new Date(formData.date);
-                        maxDate.setFullYear(maxDate.getFullYear() + 10);
-                        return maxDate.toISOString().split('T')[0];
+                        try {
+                          const date = new Date(formData.date);
+                          if (!isNaN(date.getTime())) {
+                            const maxDate = new Date(date);
+                            maxDate.setFullYear(maxDate.getFullYear() + 10);
+                            return maxDate.toLocaleDateString('en-CA');
+                          }
+                          const today = new Date();
+                          today.setFullYear(today.getFullYear() + 10);
+                          return today.toLocaleDateString('en-CA');
+                        } catch {
+                          const today = new Date();
+                          today.setFullYear(today.getFullYear() + 10);
+                          return today.toLocaleDateString('en-CA');
+                        }
                       })()}
                     />
                     <small className={styles.helperText}>
