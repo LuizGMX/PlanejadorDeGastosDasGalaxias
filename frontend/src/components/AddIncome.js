@@ -130,7 +130,7 @@ const AddIncome = () => {
 
       setSuccess('Receita adicionada com sucesso!');
       setTimeout(() => {
-        navigate('/incomes');
+        navigate('/income');
       }, 2000);
     } catch (err) {
       setError(err.message || 'Erro ao adicionar receita. Por favor, tente novamente.');

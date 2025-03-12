@@ -58,6 +58,15 @@ export default (sequelize) => {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW
+    },
+    is_recurring: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false
+    },
+    recurring_group_id: {
+      type: DataTypes.UUID,
+      allowNull: true
     }
   }, {
     timestamps: true,

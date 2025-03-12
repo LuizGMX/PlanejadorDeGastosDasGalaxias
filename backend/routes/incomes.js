@@ -3,12 +3,10 @@ const router = express.Router();
 import { Income, Category, SubCategory, Bank } from '../models/index.js';
 import { v4 as uuidv4 } from 'uuid';
 import { Op } from 'sequelize';
-import authenticateToken from '../middleware/authenticateToken.js';
 import { authenticate } from '../middleware/auth.js';
 import { Sequelize } from 'sequelize';
 
-// Middleware de autenticação para todas as rotas
-router.use(authenticateToken);
+
 
 // Listar todas as receitas do usuário
 router.get('/', authenticate, async (req, res) => {
@@ -49,6 +47,8 @@ router.get('/', authenticate, async (req, res) => {
       };
     }
 
+    console.log('Filtros aplicados:', where);
+
     const incomes = await Income.findAll({
       where,
       include: [
@@ -59,6 +59,10 @@ router.get('/', authenticate, async (req, res) => {
       order: [['date', 'DESC']]
     });
 
+    console.log('Total de receitas encontradas:', incomes.length);
+    console.log('Receitas recorrentes:', incomes.filter(i => i.is_recurring).length);
+    console.log('Receitas não recorrentes:', incomes.filter(i => !i.is_recurring).length);
+
     res.json(incomes);
   } catch (error) {
     console.error('Erro ao buscar receitas:', error);
@@ -67,7 +71,7 @@ router.get('/', authenticate, async (req, res) => {
 });
 
 // Adicionar nova receita
-router.post('/', async (req, res) => {
+router.post('/', authenticate, async (req, res) => {
   const t = await Income.sequelize.transaction();
 
   try {
@@ -78,15 +82,12 @@ router.post('/', async (req, res) => {
       category_id,
       subcategory_id,
       bank_id,
-      payment_method,
       is_recurring,
-      end_date,
-      has_installments,
-      total_installments
+      end_date
     } = req.body;
 
     // Validações básicas
-    if (!description || !amount || !date || !category_id || !bank_id || !payment_method) {
+    if (!description || !amount || !date || !category_id || !bank_id) {
       throw new Error('Campos obrigatórios faltando');
     }
 
@@ -111,78 +112,63 @@ router.post('/', async (req, res) => {
       }
     }
 
-    // Se tiver parcelas, precisa do número total de parcelas
-    if (has_installments && !total_installments) {
-      throw new Error('Número total de parcelas é obrigatório para receitas parceladas');
-    }
-
     const recurring_group_id = is_recurring ? uuidv4() : null;
-    const installment_group_id = has_installments ? uuidv4() : null;
+    let createdIncome;
 
     if (is_recurring) {
       // Criar receitas recorrentes mensais
       const startDate = new Date(date);
       const endDate = new Date(end_date);
       const currentDate = new Date(startDate);
+      const createdIncomes = [];
 
       while (currentDate <= endDate) {
-        await Income.create({
+        const income = await Income.create({
           description,
           amount,
           date: new Date(currentDate),
           category_id,
           subcategory_id,
           bank_id,
-          payment_method,
           user_id: req.user.id,
           is_recurring,
           recurring_group_id
         }, { transaction: t });
 
+        createdIncomes.push(income);
         currentDate.setMonth(currentDate.getMonth() + 1);
       }
-    } else if (has_installments) {
-      // Criar receitas parceladas
-      const amountPerInstallment = amount / total_installments;
-      const startDate = new Date(date);
-
-      for (let i = 0; i < total_installments; i++) {
-        const installmentDate = new Date(startDate);
-        installmentDate.setMonth(startDate.getMonth() + i);
-
-        await Income.create({
-          description: `${description} (${i + 1}/${total_installments})`,
-          amount: amountPerInstallment,
-          date: installmentDate,
-          category_id,
-          subcategory_id,
-          bank_id,
-          payment_method,
-          user_id: req.user.id,
-          has_installments: true,
-          current_installment: i + 1,
-          total_installments,
-          installment_group_id
-        }, { transaction: t });
-      }
+      createdIncome = createdIncomes[0]; // Pega a primeira receita criada
     } else {
       // Criar receita única
-      await Income.create({
+      createdIncome = await Income.create({
         description,
         amount,
         date,
         category_id,
         subcategory_id,
         bank_id,
-        payment_method,
         user_id: req.user.id,
-        is_recurring: false,
-        has_installments: false
+        is_recurring: false
       }, { transaction: t });
     }
 
     await t.commit();
-    res.status(201).json({ message: 'Receita adicionada com sucesso' });
+
+    // Busca a receita criada com seus relacionamentos
+    const incomeWithRelations = await Income.findOne({
+      where: { id: createdIncome.id },
+      include: [
+        { model: Category },
+        { model: SubCategory },
+        { model: Bank }
+      ]
+    });
+
+    res.status(201).json({ 
+      message: 'Receita adicionada com sucesso',
+      income: incomeWithRelations
+    });
   } catch (error) {
     await t.rollback();
     res.status(400).json({ message: error.message });
@@ -201,7 +187,6 @@ router.put('/:id', async (req, res) => {
       category_id,
       subcategory_id,
       bank_id,
-      payment_method,
       update_future
     } = req.body;
 
@@ -217,7 +202,7 @@ router.put('/:id', async (req, res) => {
     }
 
     // Validações básicas
-    if (!description || !amount || !date || !category_id || !bank_id || !payment_method) {
+    if (!description || !amount || !date || !category_id || !bank_id) {
       throw new Error('Campos obrigatórios faltando');
     }
 
@@ -233,35 +218,13 @@ router.put('/:id', async (req, res) => {
           amount,
           category_id,
           subcategory_id,
-          bank_id,
-          payment_method
+          bank_id
         },
         {
           where: {
             recurring_group_id: income.recurring_group_id,
             date: {
               [Op.gte]: date
-            }
-          },
-          transaction: t
-        }
-      );
-    } else if (income.has_installments && update_future) {
-      // Atualizar todas as parcelas futuras
-      await Income.update(
-        {
-          description: description.replace(/\s*\(\d+\/\d+\)$/, '') + ` (${income.current_installment}/${income.total_installments})`,
-          amount,
-          category_id,
-          subcategory_id,
-          bank_id,
-          payment_method
-        },
-        {
-          where: {
-            installment_group_id: income.installment_group_id,
-            current_installment: {
-              [Op.gte]: income.current_installment
             }
           },
           transaction: t
@@ -276,8 +239,7 @@ router.put('/:id', async (req, res) => {
           date,
           category_id,
           subcategory_id,
-          bank_id,
-          payment_method
+          bank_id
         },
         { transaction: t }
       );
@@ -292,11 +254,11 @@ router.put('/:id', async (req, res) => {
 });
 
 // Excluir receita
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authenticate, async (req, res) => {
   const t = await Income.sequelize.transaction();
 
   try {
-    const { delete_future } = req.query;
+    const { delete_future, delete_all } = req.query;
     const income = await Income.findOne({
       where: {
         id: req.params.id,
@@ -308,35 +270,40 @@ router.delete('/:id', async (req, res) => {
       throw new Error('Receita não encontrada');
     }
 
-    if (income.is_recurring && delete_future === 'true') {
-      // Excluir todas as receitas futuras do mesmo grupo
-      await Income.destroy({
-        where: {
-          recurring_group_id: income.recurring_group_id,
-          date: {
-            [Op.gte]: income.date
-          }
-        },
-        transaction: t
-      });
-    } else if (income.has_installments && delete_future === 'true') {
-      // Excluir todas as parcelas futuras
-      await Income.destroy({
-        where: {
-          installment_group_id: income.installment_group_id,
-          current_installment: {
-            [Op.gte]: income.current_installment
-          }
-        },
-        transaction: t
-      });
+    if (income.is_recurring) {
+      if (delete_all === 'true') {
+        // Excluir todas as receitas do grupo
+        await Income.destroy({
+          where: {
+            recurring_group_id: income.recurring_group_id
+          },
+          transaction: t
+        });
+      } else if (delete_future === 'true') {
+        // Excluir todas as receitas futuras do mesmo grupo (incluindo a atual)
+        await Income.destroy({
+          where: {
+            recurring_group_id: income.recurring_group_id,
+            date: {
+              [Op.gte]: income.date
+            }
+          },
+          transaction: t
+        });
+      } else {
+        // Excluir apenas a receita selecionada
+        await income.destroy({ transaction: t });
+      }
     } else {
-      // Excluir apenas a receita selecionada
+      // Se não for recorrente, exclui apenas a receita selecionada
       await income.destroy({ transaction: t });
     }
 
     await t.commit();
-    res.json({ message: 'Receita excluída com sucesso' });
+    res.json({ 
+      message: 'Receita excluída com sucesso',
+      isRecurring: income.is_recurring 
+    });
   } catch (error) {
     await t.rollback();
     res.status(400).json({ message: error.message });
@@ -357,6 +324,7 @@ router.get('/categories', authenticate, async (req, res) => {
         [SubCategory, 'subcategory_name', 'ASC']
       ]
     });
+    console.log(categories);
     res.json(categories);
   } catch (error) {
     console.error('Erro ao listar categorias:', error);

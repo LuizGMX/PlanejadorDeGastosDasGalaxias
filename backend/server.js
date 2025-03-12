@@ -129,6 +129,9 @@ app.use('/api/user', authenticate, userRouter);
 import categoriesRouter from './routes/categories.js';
 app.use('/api/categories', authenticate, categoriesRouter);
 
+import incomesRouter from './routes/incomes.js';
+app.use('/api/incomes', authenticate, incomesRouter); 
+
 import fs from 'fs';
 
 // Logar o PID no console
