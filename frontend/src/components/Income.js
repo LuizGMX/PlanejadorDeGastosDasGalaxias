@@ -131,22 +131,70 @@ const Income = () => {
       }
 
       const response = await fetch(`/api/incomes?${queryParams}`, {
-          headers: {
-            'Authorization': `Bearer ${auth.token}`
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error('Falha ao carregar receitas');
+        headers: {
+          'Authorization': `Bearer ${auth.token}`
         }
+      });
 
-        const data = await response.json();
-        setIncomes(data);
-        setLoading(false);
-      } catch (err) {
-        setError('Erro ao carregar receitas. Por favor, tente novamente.');
-        setLoading(false);
+      if (!response.ok) {
+        throw new Error('Falha ao carregar receitas');
       }
+
+      const data = await response.json();
+      setIncomes(data);
+      setLoading(false);
+    } catch (err) {
+      setError('Erro ao carregar receitas. Por favor, tente novamente.');
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      const idsToDelete = incomeToDelete ? [incomeToDelete.id] : selectedIncomes;
+      
+      const response = await fetch('/api/incomes', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${auth.token}`
+        },
+        body: JSON.stringify({ ids: idsToDelete })
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao excluir receitas');
+      }
+
+      setShowDeleteModal(false);
+      setIncomeToDelete(null);
+      setSelectedIncomes([]);
+      fetchIncomes();
+    } catch (err) {
+      setError('Erro ao excluir receitas. Por favor, tente novamente.');
+    }
+  };
+
+  const handleUpdate = async (updatedIncome) => {
+    try {
+      const response = await fetch(`/api/incomes/${updatedIncome.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${auth.token}`
+        },
+        body: JSON.stringify(updatedIncome)
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao atualizar receita');
+      }
+
+      setEditingIncome(null);
+      fetchIncomes();
+    } catch (err) {
+      setError('Erro ao atualizar receita. Por favor, tente novamente.');
+    }
   };
 
   const formatCurrency = (value) => {
@@ -185,68 +233,6 @@ const Income = () => {
     setShowDeleteModal(true);
   };
 
-  const handleDelete = async () => {
-    try {
-      let endpoint;
-      let body;
-
-      if (incomeToDelete) {
-        endpoint = `/api/incomes/${incomeToDelete.id}`;
-      } else {
-        endpoint = '/api/incomes/batch';
-        body = { ids: selectedIncomes };
-      }
-
-      const response = await fetch(endpoint, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${auth.token}`,
-          'Content-Type': 'application/json'
-        },
-        ...(body && { body: JSON.stringify(body) })
-      });
-
-      if (!response.ok) {
-        throw new Error('Falha ao excluir receita(s)');
-      }
-
-      await fetchIncomes();
-      setShowDeleteModal(false);
-      setIncomeToDelete(null);
-      setSelectedIncomes([]);
-    } catch (err) {
-      console.error('Erro ao excluir:', err);
-      setError('Erro ao excluir receita(s). Por favor, tente novamente.');
-    }
-  };
-
-  const handleEditClick = (income) => {
-    setEditingIncome(income);
-  };
-
-  const handleUpdate = async (updatedIncome) => {
-    try {
-      const response = await fetch(`/api/incomes/${updatedIncome.id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${auth.token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(updatedIncome)
-      });
-
-      if (!response.ok) {
-        throw new Error('Falha ao atualizar receita');
-      }
-
-      setEditingIncome(null);
-      await fetchIncomes();
-    } catch (err) {
-      console.error('Erro ao atualizar:', err);
-      setError('Erro ao atualizar receita. Por favor, tente novamente.');
-    }
-  };
-
   const formatSelectedPeriod = (type) => {
     const selected = filters[type];
     const options = type === 'months' ? months : years;
@@ -274,7 +260,7 @@ const Income = () => {
         </button>
       </div>
 
-      <div className={styles.filters}>
+      <div className={styles.filterRow}>
         <div className={styles.modernSelect} onClick={() => handleFilterClick('months')}>
           <span>Mês: {formatSelectedPeriod('months')}</span>
           {openFilter === 'months' && (
@@ -362,9 +348,12 @@ const Income = () => {
                   checked={selectedIncomes.length === incomes.length && incomes.length > 0}
                 />
               </th>
-              <th>Data</th>
               <th>Descrição</th>
               <th>Valor</th>
+              <th>Data</th>
+              <th>Categoria</th>
+              <th>Subcategoria</th>
+              <th>Banco</th>
               <th>Ações</th>
             </tr>
           </thead>
@@ -378,21 +367,24 @@ const Income = () => {
                     onChange={() => handleSelectIncome(income.id)}
                   />
                 </td>
-                <td>{formatDate(income.date)}</td>
                 <td>{income.description}</td>
                 <td>{formatCurrency(income.amount)}</td>
+                <td>{formatDate(income.date)}</td>
+                <td>{income.Category?.category_name || '-'}</td>
+                <td>{income.SubCategory?.subcategory_name || '-'}</td>
+                <td>{income.Bank?.name || '-'}</td>
                 <td>
                   <button
-                    onClick={() => handleEditClick(income)}
+                    onClick={() => setEditingIncome(income)}
                     className={styles.editButton}
                   >
-                    Editar
+                    <span className="material-icons">edit</span>
                   </button>
                   <button
                     onClick={() => handleDeleteClick(income)}
                     className={styles.deleteButton}
                   >
-                    Excluir
+                    <span className="material-icons">delete</span>
                   </button>
                 </td>
               </tr>

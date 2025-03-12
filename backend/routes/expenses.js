@@ -253,7 +253,15 @@ router.get('/categories', authenticate, async (req, res) => {
   try {
     console.log('Buscando categorias...');
     const categories = await Category.findAll({
-      attributes: ['id', 'category_name'],
+      where: { type: 'expense' },
+      include: [{
+        model: SubCategory,
+        attributes: ['id', 'subcategory_name']
+      }],
+      order: [
+        ['category_name', 'ASC'],
+        [SubCategory, 'subcategory_name', 'ASC']
+      ]
     });
     console.log('Categorias encontradas:', categories);
     res.json(categories);
@@ -265,6 +273,17 @@ router.get('/categories', authenticate, async (req, res) => {
 
 router.get('/subcategories/:categoryId', authenticate, async (req, res) => {
   try {
+    const category = await Category.findOne({
+      where: { 
+        id: req.params.categoryId,
+        type: 'expense'
+      }
+    });
+
+    if (!category) {
+      return res.status(404).json({ message: 'Categoria não encontrada' });
+    }
+
     const subcategories = await SubCategory.findAll({
       where: { category_id: req.params.categoryId },
       attributes: ['id', 'subcategory_name'],

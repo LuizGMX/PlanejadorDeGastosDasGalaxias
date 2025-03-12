@@ -72,24 +72,26 @@ const Expenses = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch('/api/categories', {
+        const response = await fetch('/api/expenses/categories', {
           headers: {
             'Authorization': `Bearer ${auth.token}`
           }
         });
-        if (!response.ok) throw new Error('Falha ao carregar categorias');
+
+        if (!response.ok) {
+          throw new Error('Falha ao carregar categorias');
+        }
+
         const data = await response.json();
-        setCategories([
-          { value: 'all', label: 'Todas as Categorias' },
-          ...data.map(cat => ({
-            value: cat.id,
-            label: cat.category_name
-          }))
-        ]);
+        setCategories(data.map(category => ({
+          value: category.id,
+          label: category.category_name
+        })));
       } catch (err) {
-        console.error('Erro ao carregar categorias:', err);
+        setError('Erro ao carregar categorias. Por favor, tente novamente.');
       }
     };
+
     fetchCategories();
   }, [auth.token]);
 
@@ -676,9 +678,9 @@ const Expenses = () => {
                         <span className="material-icons">pix</span>
                       )}
                       {expense.is_recurring && (
-                        <span className={`${styles.badge} ${styles.recurring}`} title="Despesa Recorrente">
+                        // <span className={`${styles.badge} ${styles.recurring}`} title="Despesa Recorrente">
                           <span className="material-icons">sync</span>
-                        </span>
+                        // </span>
                       )}
                     </td>
                     <td>

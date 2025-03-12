@@ -45,7 +45,10 @@ router.get('/', authenticate, async (req, res) => {
       Expense.findAll({
         where: whereExpense,
         include: [
-          { model: Category },
+          { 
+            model: Category,
+            where: { type: 'expense' }
+          },
           { model: SubCategory },
           { model: Bank }
         ],
@@ -54,7 +57,10 @@ router.get('/', authenticate, async (req, res) => {
       Income.findAll({
         where: whereIncome,
         include: [
-          { model: Category },
+          { 
+            model: Category,
+            where: { type: 'income' }
+          },
           { model: SubCategory },
           { model: Bank }
         ],

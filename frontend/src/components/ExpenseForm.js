@@ -30,7 +30,7 @@ const ExpenseForm = () => {
     const fetchData = async () => {
       try {
         console.log('Iniciando busca de dados...');
-        const categoriesResponse = await fetch('/api/categories', {
+        const categoriesResponse = await fetch('/api/expenses/categories', {
           headers: {
             'Authorization': `Bearer ${auth.token}`,
             'Content-Type': 'application/json'
@@ -53,6 +53,34 @@ const ExpenseForm = () => {
 
     fetchData();
   }, [auth.token]);
+
+  useEffect(() => {
+    if (formData.category_id) {
+      const fetchSubcategories = async () => {
+        try {
+          const response = await fetch(`/api/expenses/subcategories/${formData.category_id}`, {
+            headers: {
+              'Authorization': `Bearer ${auth.token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Erro ao carregar subcategorias');
+          }
+          const data = await response.json();
+          setSubcategories(data);
+        } catch (err) {
+          console.error('Erro ao carregar subcategorias:', err);
+          setError(err.message);
+        }
+      };
+
+      fetchSubcategories();
+    } else {
+      setSubcategories([]);
+    }
+  }, [formData.category_id, auth.token]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

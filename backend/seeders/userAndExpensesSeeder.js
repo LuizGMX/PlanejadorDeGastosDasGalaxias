@@ -45,6 +45,7 @@ export const seedUserAndExpenses = async () => {
     // Buscar todas as categorias com suas subcategorias e bancos
     const [categoriesWithSubs, banks] = await Promise.all([
       Category.findAll({
+        where: { type: 'expense' },
         include: [{
           model: SubCategory,
           required: true

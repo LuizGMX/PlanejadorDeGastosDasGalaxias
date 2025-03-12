@@ -32,7 +32,7 @@ const AddExpense = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch('/api/categories', {
+        const response = await fetch('/api/expenses/categories', {
           headers: {
             'Authorization': `Bearer ${auth.token}`
           }
@@ -79,7 +79,7 @@ const AddExpense = () => {
     if (formData.category_id) {
       const fetchSubcategories = async () => {
         try {
-          const response = await fetch(`/api/categories/${formData.category_id}/subcategories`, {
+          const response = await fetch(`/api/expenses/subcategories/${formData.category_id}`, {
             headers: {
               'Authorization': `Bearer ${auth.token}`
             }

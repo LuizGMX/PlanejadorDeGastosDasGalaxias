@@ -117,39 +117,41 @@ const Dashboard = () => {
           setNoExpensesMessage(null);
         }
 
-        // Calculando informações do orçamento baseado no total_income
-        const totalExpenses = responseData.expenses_by_date.reduce((sum, day) => sum + day.total, 0);
-        const totalIncome = responseData.user?.total_income;
-        
-        console.log('Net Income:', totalIncome); // Debug
-
-        if (!totalIncome && totalIncome !== 0) {
-          console.error('Net income não encontrado nos dados do usuário:', responseData.user);
-        }
-
-        const budget_info = {
-          total_budget: totalIncome || 0,
-          total_spent: totalExpenses,
-          remaining_budget: (totalIncome || 0) - totalExpenses,
-          percentage_spent: ((totalExpenses / (totalIncome || 1)) * 100),
-          remaining_days: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() - new Date().getDate(),
-        };
-
-        // Calculando sugestão de gasto diário se houver dias restantes
-        if (budget_info.remaining_days > 0) {
-          budget_info.suggested_daily_spend = budget_info.remaining_budget / budget_info.remaining_days;
-        }
-
-        setData({
-          ...responseData,
-          budget_info
-        });
-        
-        console.log('Dashboard data:', {
-          total_income: totalIncome,
-          expenses_by_date: responseData.expenses_by_date,
-          budget_info
-        });
+         // Calculando informações do orçamento baseado no total_income
+         const totalExpenses = responseData.expenses_by_date
+           .filter(expense => expense.Category?.type === 'expense')
+           .reduce((sum, day) => sum + day.total, 0);
+         const totalIncome = responseData.user?.total_income;
+         
+         console.log('Net Income:', totalIncome); // Debug
+ 
+         if (!totalIncome && totalIncome !== 0) {
+           console.error('Net income não encontrado nos dados do usuário:', responseData.user);
+         }
+ 
+         const budget_info = {
+           total_budget: totalIncome || 0,
+           total_spent: totalExpenses,
+           remaining_budget: (totalIncome || 0) - totalExpenses,
+           percentage_spent: ((totalExpenses / (totalIncome || 1)) * 100),
+           remaining_days: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() - new Date().getDate(),
+         };
+ 
+         // Calculando sugestão de gasto diário se houver dias restantes
+         if (budget_info.remaining_days > 0) {
+           budget_info.suggested_daily_spend = budget_info.remaining_budget / budget_info.remaining_days;
+         }
+ 
+         setData({
+           ...responseData,
+           budget_info
+         });
+         
+         console.log('Dashboard data:', {
+           total_income: totalIncome,
+           expenses_by_date: responseData.expenses_by_date,
+           budget_info
+         });
 
         setLoading(false);
       } catch (err) {

@@ -15,6 +15,11 @@ export default (sequelize) => {
       type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: false
+    },
+    type: {
+      type: DataTypes.ENUM('expense', 'income'),
+      allowNull: false,
+      defaultValue: 'expense'
     }
   }, {
     timestamps: true,

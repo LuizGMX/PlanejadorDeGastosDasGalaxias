@@ -103,7 +103,8 @@ export const seedCategories = async () => {
     const createdCategories = await Promise.all(
       categories.map(category =>
         Category.create({
-          category_name: category.category_name
+          category_name: category.category_name,
+          type: 'expense'
         })
       )
     );
