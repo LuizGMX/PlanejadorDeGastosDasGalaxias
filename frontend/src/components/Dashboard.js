@@ -8,12 +8,7 @@ import {
   Pie,
   BarChart,
   Bar,
-  AreaChart,
   Area,
-  RadarChart,
-  Radar,
-  ScatterChart,
-  Scatter,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -21,9 +16,6 @@ import {
   Legend,
   ResponsiveContainer,
   Cell,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
   ComposedChart,
 } from 'recharts';
 import styles from '../styles/dashboard.module.css';
@@ -99,7 +91,7 @@ const Dashboard = () => {
         const queryParams = new URLSearchParams();
         filters.months.forEach(month => queryParams.append('months[]', month));
         filters.years.forEach(year => queryParams.append('years[]', year));
-        
+
         const response = await fetch(`/api/dashboard?${queryParams}`, {
           headers: {
             'Authorization': `Bearer ${auth.token}`
@@ -114,48 +106,28 @@ const Dashboard = () => {
         console.log('Response data:', responseData); // Debug
 
         if (responseData.message && responseData.suggestion) {
-          setNoExpensesMessage({ 
-            message: responseData.message, 
-            suggestion: responseData.suggestion 
+          setNoExpensesMessage({
+            message: responseData.message,
+            suggestion: responseData.suggestion
           });
         } else {
           setNoExpensesMessage(null);
         }
 
-         // Calculando informações do orçamento baseado no total_income
-         const totalExpenses = responseData.total_expenses;
-         const totalIncome = responseData.user?.total_income;
-         
-         console.log('Net Income:', totalIncome); // Debug
- 
-         if (!totalIncome && totalIncome !== 0) {
-           console.error('Net income não encontrado nos dados do usuário:', responseData.user);
-         }
- 
-         const budget_info = {
-           total_budget: totalIncome || 0,
-           total_spent: totalExpenses,
-           remaining_budget: (totalIncome || 0) - totalExpenses,
-           percentage_spent: ((totalExpenses / (totalIncome || 1)) * 100),
-           remaining_days: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() - new Date().getDate(),
-         };
- 
-         // Calculando sugestão de gasto diário se houver dias restantes
-         if (budget_info.remaining_days > 0) {
-           budget_info.suggested_daily_spend = budget_info.remaining_budget / budget_info.remaining_days;
-         }
- 
-         setData({
-           ...responseData,
-           budget_info
-         });
-         
-         console.log('Dashboard data:', {
-           total_income: totalIncome,
-           expenses_by_date: responseData.expenses_by_date,
-           budget_info
-         });
+        // Calculando informações do orçamento baseado no total_income e net_income
+        const totalExpenses = responseData.total_expenses;
+        const totalIncome = responseData.budget_info.total_income;
+        const netIncome = responseData.budget_info.net_income;
+        const totalBudget = responseData.budget_info.total_budget;
 
+        console.log('Orçamento:', {
+          totalIncome,
+          netIncome,
+          totalBudget,
+          totalExpenses
+        });
+
+        setData(responseData);
         setLoading(false);
       } catch (err) {
         console.error('Erro ao carregar dados:', err);
@@ -171,7 +143,7 @@ const Dashboard = () => {
     const handleClickOutside = (event) => {
       const dropdowns = document.querySelectorAll(`.${styles.modernSelect}`);
       let clickedOutside = true;
-      
+
       dropdowns.forEach(dropdown => {
         if (dropdown.contains(event.target)) {
           clickedOutside = false;
@@ -194,10 +166,10 @@ const Dashboard = () => {
       // Se "Todos" foi selecionado
       setFilters(prev => ({
         ...prev,
-        [type]: prev[type].length === (type === 'months' ? months.length : years.length) 
+        [type]: prev[type].length === (type === 'months' ? months.length : years.length)
           ? [] // Se todos já estavam selecionados, desmarca todos
-          : type === 'months' 
-            ? months.map(m => m.value) 
+          : type === 'months'
+            ? months.map(m => m.value)
             : years.map(y => y.value)
       }));
     } else {
@@ -211,7 +183,7 @@ const Dashboard = () => {
         if (newValues.length === totalItems - 1) {
           return {
             ...prev,
-            [type]: type === 'months' 
+            [type]: type === 'months'
               ? months.map(m => m.value)
               : years.map(y => y.value)
           };
@@ -262,12 +234,12 @@ const Dashboard = () => {
   const renderChart = (chartId, title, chartComponent) => {
     const isExpanded = expandedChart === chartId;
     return (
-      <div 
+      <div
         className={`${styles.chartContainer} ${isExpanded ? styles.expanded : ''}`}
       >
         <div className={styles.chartHeader}>
           <h3>{title} - {formatPeriod()}</h3>
-          <button 
+          <button
             className={styles.expandButton}
             onClick={(e) => {
               e.stopPropagation();
@@ -302,7 +274,7 @@ const Dashboard = () => {
     // Dados para o gráfico de linha
     const expensesByPeriod = data.expenses.reduce((acc, expense) => {
       const date = new Date(expense.date);
-      const key = showByYear 
+      const key = showByYear
         ? date.getFullYear().toString()
         : date.toISOString().split('T')[0];
 
@@ -392,13 +364,13 @@ const Dashboard = () => {
           <h2>{noExpensesMessage.message}</h2>
           <p>{noExpensesMessage.suggestion}</p>
           <div className={styles.buttonGroup}>
-            <button 
+            <button
               className={styles.addFirstExpenseButton}
               onClick={() => navigate('/add-expense')}
             >
               Adicionar Primeira Despesa
             </button>
-            <button 
+            <button
               className={styles.backButton}
               onClick={() => {
                 setFilters({
@@ -415,7 +387,7 @@ const Dashboard = () => {
         <div>
           <div className={styles.filtersContainer}>
             <div className={styles.filterGroup}>
-              <div 
+              <div
                 className={`${styles.modernSelect} ${openFilter === 'months' ? styles.active : ''}`}
                 onClick={() => handleFilterClick('months')}
               >
@@ -427,7 +399,7 @@ const Dashboard = () => {
                 </div>
                 {openFilter === 'months' && (
                   <div className={styles.modernSelectDropdown} onClick={e => e.stopPropagation()}>
-                    <label 
+                    <label
                       key="all-months"
                       className={styles.modernCheckboxLabel}
                       onClick={handleCheckboxClick}
@@ -447,8 +419,8 @@ const Dashboard = () => {
                     </label>
                     <div className={styles.divider}></div>
                     {months.map(month => (
-                      <label 
-                        key={month.value} 
+                      <label
+                        key={month.value}
                         className={styles.modernCheckboxLabel}
                         onClick={handleCheckboxClick}
                       >
@@ -472,7 +444,7 @@ const Dashboard = () => {
             </div>
 
             <div className={styles.filterGroup}>
-              <div 
+              <div
                 className={`${styles.modernSelect} ${openFilter === 'years' ? styles.active : ''}`}
                 onClick={() => handleFilterClick('years')}
               >
@@ -484,7 +456,7 @@ const Dashboard = () => {
                 </div>
                 {openFilter === 'years' && (
                   <div className={styles.modernSelectDropdown} onClick={e => e.stopPropagation()}>
-                    <label 
+                    <label
                       key="all-years"
                       className={styles.modernCheckboxLabel}
                       onClick={handleCheckboxClick}
@@ -504,8 +476,8 @@ const Dashboard = () => {
                     </label>
                     <div className={styles.divider}></div>
                     {years.map(year => (
-                      <label 
-                        key={year.value} 
+                      <label
+                        key={year.value}
                         className={styles.modernCheckboxLabel}
                         onClick={handleCheckboxClick}
                       >
@@ -555,7 +527,7 @@ const Dashboard = () => {
                     <strong className={data.budget_info.suggested_daily_spend < 0 ? styles.overBudget : ''}>
                       {formatCurrency(data.budget_info.suggested_daily_spend)}
                       <div className={styles.dailySpendingInfo}>
-                        {data.budget_info.suggested_daily_spend < 0 
+                        {data.budget_info.suggested_daily_spend < 0
                           ? 'Orçamento já estourado para este mês'
                           : 'por dia até o final do mês para manter-se dentro do orçamento'}
                       </div>
@@ -564,14 +536,13 @@ const Dashboard = () => {
                 )}
               </div>
               <div className={styles.budgetProgressBar}>
-                <div 
-                  className={`${styles.budgetProgress} ${
-                    data.budget_info.percentage_spent > 90 
-                      ? styles.dangerProgress 
-                      : data.budget_info.percentage_spent > 60 
-                        ? styles.warningProgress 
+                <div
+                  className={`${styles.budgetProgress} ${data.budget_info.percentage_spent > 90
+                      ? styles.dangerProgress
+                      : data.budget_info.percentage_spent > 60
+                        ? styles.warningProgress
                         : ''
-                  }`}
+                    }`}
                   style={{ width: `${Math.min(data.budget_info.percentage_spent, 100)}%` }}
                 />
                 <span className={data.budget_info.percentage_spent > 100 ? styles.overBudget : ''}>
@@ -588,12 +559,12 @@ const Dashboard = () => {
                 <PieChart margin={{ top: 10, right: 30, left: 30, bottom: 20 }}>
                   <Pie
                     data={[
-                      { 
-                        name: 'Disponível', 
+                      {
+                        name: 'Disponível',
                         value: Math.max(0, data.budget_info.remaining_budget)
                       },
-                      { 
-                        name: 'Total Gasto', 
+                      {
+                        name: 'Total Gasto',
                         value: data.budget_info.total_spent
                       }
                     ]}
@@ -604,14 +575,14 @@ const Dashboard = () => {
                     outerRadius={80}
                     startAngle={90}
                     endAngle={-270}
-                    label={({ name, percent }) => 
+                    label={({ name, percent }) =>
                       `${name} (${(percent * 100).toFixed(0)}%)`
                     }
                   >
                     <Cell fill="var(--primary-color)" />
                     <Cell fill="var(--error-color)" />
                   </Pie>
-                  <Tooltip 
+                  <Tooltip
                     formatter={formatCurrency}
                     contentStyle={{
                       backgroundColor: 'var(--card-background)',
@@ -620,7 +591,7 @@ const Dashboard = () => {
                     }}
                     labelStyle={{ color: 'var(--text-color)' }}
                   />
-                  <Legend 
+                  <Legend
                     formatter={(value) => <span style={{ color: 'var(--text-color)' }}>{value}</span>}
                   />
                 </PieChart>
@@ -629,7 +600,7 @@ const Dashboard = () => {
               {renderChart('timeline', 'Gastos ao Longo do Tempo',
                 <LineChart data={data.expenses_by_date} margin={{ top: 10, right: 30, left: 80, bottom: 50 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
-                  <XAxis 
+                  <XAxis
                     dataKey="date"
                     tick={{ fill: 'var(--text-color)' }}
                     tickFormatter={formatDate}
@@ -639,12 +610,12 @@ const Dashboard = () => {
                     interval={0}
                     padding={{ left: 20, right: 20 }}
                   />
-                  <YAxis 
+                  <YAxis
                     tickFormatter={formatCurrency}
                     tick={{ fill: 'var(--text-color)' }}
                     width={80}
                   />
-                  <Tooltip 
+                  <Tooltip
                     formatter={formatCurrency}
                     labelFormatter={formatDate}
                     contentStyle={{
@@ -654,15 +625,15 @@ const Dashboard = () => {
                     }}
                     labelStyle={{ color: 'var(--text-color)' }}
                   />
-                  <Legend 
+                  <Legend
                     formatter={(value) => <span style={{ color: 'var(--text-color)' }}>Total Gasto</span>}
                     verticalAlign="top"
                     height={36}
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="total" 
-                    stroke="var(--primary-color)" 
+                  <Line
+                    type="monotone"
+                    dataKey="total"
+                    stroke="var(--primary-color)"
                     strokeWidth={2}
                     dot={{ fill: 'var(--primary-color)', r: 4 }}
                     activeDot={{ r: 6, fill: 'var(--primary-color)' }}
@@ -679,7 +650,7 @@ const Dashboard = () => {
                     cx="50%"
                     cy="50%"
                     outerRadius={80}
-                    label={({ category_name, percent }) => 
+                    label={({ category_name, percent }) =>
                       `${category_name} (${(percent * 100).toFixed(0)}%)`
                     }
                   >
@@ -687,7 +658,7 @@ const Dashboard = () => {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip 
+                  <Tooltip
                     formatter={formatCurrency}
                     contentStyle={{
                       backgroundColor: 'var(--card-background)',
@@ -696,7 +667,7 @@ const Dashboard = () => {
                     }}
                     labelStyle={{ color: 'var(--text-color)' }}
                   />
-                  <Legend 
+                  <Legend
                     formatter={(value) => <span style={{ color: 'var(--text-color)' }}>{value}</span>}
                   />
                 </PieChart>
@@ -705,16 +676,16 @@ const Dashboard = () => {
               {renderChart('banks', 'Gastos por Banco',
                 <BarChart data={data.expenses_by_bank} margin={{ top: 10, right: 30, left: 80, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
-                  <XAxis 
-                    dataKey="bank_name" 
+                  <XAxis
+                    dataKey="bank_name"
                     tick={{ fill: 'var(--text-color)' }}
                   />
-                  <YAxis 
+                  <YAxis
                     tickFormatter={formatCurrency}
                     tick={{ fill: 'var(--text-color)' }}
                     width={80}
                   />
-                  <Tooltip 
+                  <Tooltip
                     formatter={formatCurrency}
                     contentStyle={{
                       backgroundColor: 'var(--card-background)',
@@ -723,7 +694,7 @@ const Dashboard = () => {
                     }}
                     labelStyle={{ color: 'var(--text-color)' }}
                   />
-                  <Legend 
+                  <Legend
                     formatter={(value) => <span style={{ color: 'var(--text-color)' }}>Total por Banco</span>}
                   />
                   <Bar dataKey="total" fill="var(--primary-color)">
@@ -739,21 +710,21 @@ const Dashboard = () => {
           {data.budget_info && data.expenses_by_date && data.expenses_by_date.length > 0 && (
             <div className={styles.chartsGrid}>
               {renderChart('budget', 'Acompanhamento do Orçamento',
-                <ComposedChart 
-                  data={filters.month === 'all' 
+                <ComposedChart
+                  data={filters.month === 'all'
                     ? Object.entries(data.expenses_by_date.reduce((acc, day) => {
-                        const [year, month] = day.date.split('-');
-                        const key = `${year}-${month}`;
-                        if (!acc[key]) {
-                          acc[key] = {
-                            date: key,
-                            total: 0,
-                            accumulated: 0
-                          };
-                        }
-                        acc[key].total += day.total;
-                        return acc;
-                      }, {}))
+                      const [year, month] = day.date.split('-');
+                      const key = `${year}-${month}`;
+                      if (!acc[key]) {
+                        acc[key] = {
+                          date: key,
+                          total: 0,
+                          accumulated: 0
+                        };
+                      }
+                      acc[key].total += day.total;
+                      return acc;
+                    }, {}))
                       .map(([date, data]) => ({
                         ...data,
                         accumulated: data.total,
@@ -762,21 +733,21 @@ const Dashboard = () => {
                       }))
                       .sort((a, b) => new Date(a.date) - new Date(b.date))
                     : data.expenses_by_date.map((day, index, arr) => {
-                        const accumulated = arr
-                          .slice(0, index + 1)
-                          .reduce((sum, d) => sum + d.total, 0);
-                        return {
-                          ...day,
-                          accumulated,
-                          budget: data.budget_info.total_budget,
-                          overBudget: accumulated > data.budget_info.total_budget ? accumulated : null
-                        };
-                      })
+                      const accumulated = arr
+                        .slice(0, index + 1)
+                        .reduce((sum, d) => sum + d.total, 0);
+                      return {
+                        ...day,
+                        accumulated,
+                        budget: data.budget_info.total_budget,
+                        overBudget: accumulated > data.budget_info.total_budget ? accumulated : null
+                      };
+                    })
                   }
                   margin={{ top: 10, right: 30, left: 80, bottom: 20 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
-                  <XAxis 
+                  <XAxis
                     dataKey="date"
                     tick={{ fill: 'var(--text-color)' }}
                     tickFormatter={formatDate}
@@ -786,14 +757,14 @@ const Dashboard = () => {
                     interval={0}
                     padding={{ left: 20, right: 20 }}
                   />
-                  <YAxis 
+                  <YAxis
                     tickFormatter={formatCurrency}
                     tick={{ fill: 'var(--text-color)' }}
                     width={80}
                   />
-                  <Tooltip 
+                  <Tooltip
                     formatter={(value, name) => {
-                      switch(name) {
+                      switch (name) {
                         case 'accumulated':
                           return [formatCurrency(value), 'Gasto Acumulado'];
                         case 'budget':
@@ -813,7 +784,7 @@ const Dashboard = () => {
                     labelStyle={{ color: 'var(--text-color)' }}
                   />
                   <Legend formatter={(value) => {
-                    switch(value) {
+                    switch (value) {
                       case 'accumulated':
                         return <span style={{ color: 'var(--text-color)' }}>Gasto Acumulado</span>;
                       case 'budget':
@@ -824,16 +795,16 @@ const Dashboard = () => {
                         return <span style={{ color: 'var(--text-color)' }}>{value}</span>;
                     }
                   }} />
-                  <Area 
-                    type="monotone" 
-                    dataKey="accumulated" 
+                  <Area
+                    type="monotone"
+                    dataKey="accumulated"
                     stroke="var(--primary-color)"
                     fill="var(--primary-color)"
                     fillOpacity={0.2}
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="budget" 
+                  <Line
+                    type="monotone"
+                    dataKey="budget"
                     stroke="var(--text-secondary)"
                     strokeDasharray="5 5"
                     strokeWidth={2}

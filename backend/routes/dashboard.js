@@ -71,11 +71,7 @@ router.get('/', authenticate, async (req, res) => {
     // Calculando o total de incomes
     const totalIncomes = incomes.reduce((sum, income) => {
       const parsedAmount = parseFloat(income.amount);
-      console.log('Processando income:', { 
-        original: income.amount, 
-        parsed: parsedAmount 
-      });
-      return sum + parsedAmount;
+      return sum + (isNaN(parsedAmount) ? 0 : parsedAmount);
     }, 0);
     
     // Orçamento total é a soma dos incomes + net_income
@@ -158,11 +154,16 @@ router.get('/', authenticate, async (req, res) => {
     }, []);
 
     // Calculando informações de orçamento
-    const totalExpenses = expenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
+    const totalExpenses = expenses.reduce((sum, expense) => {
+      const parsedAmount = parseFloat(expense.amount);
+      return sum + (isNaN(parsedAmount) ? 0 : parsedAmount);
+    }, 0);
+
     const budget_info = {
       total_budget: totalBudget,
       total_spent: totalExpenses,
       total_income: totalIncomes,
+      net_income: net_income,
       balance: totalBudget - totalExpenses,
       percentage_spent: ((totalExpenses / (totalBudget || 1)) * 100),
       remaining_days: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() - new Date().getDate()

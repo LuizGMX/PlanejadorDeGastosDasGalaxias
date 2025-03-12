@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../App';
 import styles from '../styles/sidebar.module.css';
 import { BsGraphUp, BsListUl, BsPlusCircle, BsDoorOpen, BsCashCoin, BsCashStack, BsChevronDown, BsUpload } from 'react-icons/bs';
+import logo from '../assets/logo.svg';
 
 const Sidebar = () => {
   const navigate = useNavigate();
@@ -71,7 +72,7 @@ const Sidebar = () => {
   return (
     <div className={styles.sidebar}>
       <div className={styles.logo}>
-        <h2>PGG</h2>
+        <img src={logo} alt="Logo do Planejador de Gastos das Galáxias" className={styles.logoImage} />
         <p>Planejador de Gastos das Galáxias</p>
       </div>
 

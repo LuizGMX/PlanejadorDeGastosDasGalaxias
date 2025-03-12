@@ -2,7 +2,9 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../App';
 import CurrencyInput from 'react-currency-input-field';
-import styles from '../styles/shared.module.css';
+import styles from '../styles/login.module.css';
+import logo from '../assets/logo.svg';
+import { BsEnvelope, BsPerson, BsCurrencyDollar, BsShieldLock } from 'react-icons/bs';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -154,18 +156,23 @@ const Login = () => {
       case 'email':
         return (
           <>
-            <h1 className={styles.title}>Bem-vindo!</h1>
-            <div className={styles.inputGroup}>
-              <label className={styles.label}>E-mail</label>
+            <div className={styles.loginHeader}>
+              <h1 className={styles.loginTitle}>Bem-vindo!</h1>
+              <p className={styles.loginSubtitle}>
+                Entre com seu e-mail para começar a planejar seus gastos de forma intergaláctica
+              </p>
+            </div>
+            <div className={styles.inputWrapper}>
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className={styles.input}
+                className={styles.loginInput}
                 placeholder="Digite seu e-mail"
                 required
               />
+              <BsEnvelope className={styles.inputIcon} />
             </div>
           </>
         );
@@ -173,18 +180,23 @@ const Login = () => {
       case 'name':
         return (
           <>
-            <h1 className={styles.title}>Como podemos te chamar?</h1>
-            <div className={styles.inputGroup}>
-              <label className={styles.label}>Nome</label>
+            <div className={styles.loginHeader}>
+              <h1 className={styles.loginTitle}>Como podemos te chamar?</h1>
+              <p className={styles.loginSubtitle}>
+                Nos diga seu nome para personalizar sua experiência
+              </p>
+            </div>
+            <div className={styles.inputWrapper}>
               <input
                 type="text"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                className={styles.input}
+                className={styles.loginInput}
                 placeholder="Digite seu nome"
                 required
               />
+              <BsPerson className={styles.inputIcon} />
             </div>
           </>
         );
@@ -192,9 +204,13 @@ const Login = () => {
       case 'income':
         return (
           <>
-            <h1 className={styles.title}>Qual sua renda líquida mensal?</h1>
-            <div className={styles.inputGroup}>
-              <label className={styles.label}>Renda Líquida</label>
+            <div className={styles.loginHeader}>
+              <h1 className={styles.loginTitle}>Qual sua renda mensal?</h1>
+              <p className={styles.loginSubtitle}>
+                Esta informação nos ajudará a personalizar seu planejamento financeiro
+              </p>
+            </div>
+            <div className={styles.inputWrapper}>
               <CurrencyInput
                 name="netIncome"
                 placeholder="R$ 0,00"
@@ -204,13 +220,13 @@ const Login = () => {
                 groupSeparator="."
                 value={formData.netIncome}
                 onValueChange={(value) => {
-                  // Converte o valor para número antes de salvar
                   const numericValue = value ? parseFloat(value.replace(/\./g, '').replace(',', '.')) : '';
                   setFormData(prev => ({ ...prev, netIncome: numericValue }));
                 }}
-                className={styles.input}
+                className={styles.loginInput}
                 required
               />
+              <BsCurrencyDollar className={styles.inputIcon} />
             </div>
           </>
         );
@@ -238,21 +254,23 @@ const Login = () => {
       case 'code':
         return (
           <>
-            <h1 className={styles.title}>Digite o código de verificação</h1>
-            <p className={styles.subtitle}>
-              Enviamos um código para {formData.email}
-            </p>
-            <div className={styles.inputGroup}>
-              <label className={styles.label}>Código</label>
+            <div className={styles.loginHeader}>
+              <h1 className={styles.loginTitle}>Digite o código</h1>
+              <p className={styles.loginSubtitle}>
+                Enviamos um código de verificação para {formData.email}
+              </p>
+            </div>
+            <div className={styles.inputWrapper}>
               <input
                 type="text"
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
-                className={styles.input}
+                className={styles.loginInput}
                 placeholder="Digite o código"
                 maxLength={6}
                 required
               />
+              <BsShieldLock className={styles.inputIcon} />
             </div>
           </>
         );
@@ -263,16 +281,16 @@ const Login = () => {
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.loginContainer}>
-        <div className={styles.loginIllustration}>
-          {/* Aqui você pode adicionar a ilustração do astronauta */}
-        </div>
-        <div className={`${styles.card} ${styles.fadeIn}`}>
+    <div className={styles.loginContainer}>
+      <div className={styles.loginIllustration}>
+        <img src={logo} alt="Logo do Planejador de Gastos das Galáxias" className={styles.logo} />
+      </div>
+      <div className={styles.formContainer}>
+        <div className={styles.loginCard}>
           {error && <p className={styles.error}>{error}</p>}
           {success && <p className={styles.success}>{success}</p>}
 
-          <form onSubmit={handleSubmit} className={styles.form}>
+          <form onSubmit={handleSubmit}>
             {renderStep()}
 
             <div className={styles.buttonGroup}>
@@ -284,12 +302,12 @@ const Login = () => {
                     if (step === 'income') setStep('name');
                     if (step === 'code') setStep(isNewUser ? 'income' : 'email');
                   }}
-                  className={`${styles.button} ${styles.secondary}`}
+                  className={`${styles.loginButton} ${styles.secondary}`}
                 >
                   Voltar
                 </button>
               )}
-              <button type="submit" className={styles.button}>
+              <button type="submit" className={styles.loginButton}>
                 {step === 'code' ? 'Verificar' : 'Próximo'}
               </button>
             </div>
