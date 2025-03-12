@@ -1,6 +1,6 @@
 import { Sequelize } from 'sequelize';
 import express from 'express';
-import { Expense, Category, SubCategory, Bank, Budget, User } from '../models/index.js';
+import { Expense, Income, Category, SubCategory, Bank, Budget, User } from '../models/index.js';
 import { Op } from 'sequelize';
 import { authenticate } from '../middleware/auth.js';
 
@@ -9,11 +9,12 @@ const router = express.Router();
 router.get('/', authenticate, async (req, res) => {
   try {
     const { months, years } = req.query;
-    const where = { user_id: req.user.id };
+    const whereExpense = { user_id: req.user.id };
+    const whereIncome = { user_id: req.user.id };
 
     // Construindo a condição para múltiplos meses e anos
     if (months?.length > 0 && years?.length > 0) {
-      where[Op.or] = years.map(year => ({
+      whereExpense[Op.or] = years.map(year => ({
         [Op.and]: [
           Sequelize.where(Sequelize.fn('YEAR', Sequelize.col('expense_date')), year),
           {
@@ -23,17 +24,39 @@ router.get('/', authenticate, async (req, res) => {
           }
         ]
       }));
+
+      whereIncome[Op.or] = years.map(year => ({
+        [Op.and]: [
+          Sequelize.where(Sequelize.fn('YEAR', Sequelize.col('date')), year),
+          {
+            [Op.or]: months.map(month => 
+              Sequelize.where(Sequelize.fn('MONTH', Sequelize.col('date')), month)
+            )
+          }
+        ]
+      }));
     }
 
-    const expenses = await Expense.findAll({
-      where,
-      include: [
-        { model: Category },
-        { model: SubCategory },
-        { model: Bank }
-      ],
-      order: [['expense_date', 'ASC']]
-    });
+    const [expenses, incomes] = await Promise.all([
+      Expense.findAll({
+        where: whereExpense,
+        include: [
+          { model: Category },
+          { model: SubCategory },
+          { model: Bank }
+        ],
+        order: [['expense_date', 'ASC']]
+      }),
+      Income.findAll({
+        where: whereIncome,
+        include: [
+          { model: Category },
+          { model: SubCategory },
+          { model: Bank }
+        ],
+        order: [['date', 'ASC']]
+      })
+    ]);
 
     // Processamento dos dados para o dashboard
     const expensesByCategory = expenses.reduce((acc, expense) => {
@@ -47,6 +70,17 @@ router.get('/', authenticate, async (req, res) => {
       return acc;
     }, []);
 
+    const incomesByCategory = incomes.reduce((acc, income) => {
+      const category = income.Category.category_name;
+      const existing = acc.find(item => item.category_name === category);
+      if (existing) {
+        existing.total += parseFloat(income.amount);
+      } else {
+        acc.push({ category_name: category, total: parseFloat(income.amount) });
+      }
+      return acc;
+    }, []);
+
     const expensesByDate = expenses.reduce((acc, expense) => {
       const date = expense.expense_date.toISOString().split('T')[0];
       const existing = acc.find(item => item.date === date);
@@ -54,6 +88,17 @@ router.get('/', authenticate, async (req, res) => {
         existing.total += parseFloat(expense.amount);
       } else {
         acc.push({ date, total: parseFloat(expense.amount) });
+      }
+      return acc;
+    }, []).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    const incomesByDate = incomes.reduce((acc, income) => {
+      const date = income.date.toISOString().split('T')[0];
+      const existing = acc.find(item => item.date === date);
+      if (existing) {
+        existing.total += parseFloat(income.amount);
+      } else {
+        acc.push({ date, total: parseFloat(income.amount) });
       }
       return acc;
     }, []).sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -70,32 +115,47 @@ router.get('/', authenticate, async (req, res) => {
       return acc;
     }, []);
 
+    const incomesByBank = incomes.reduce((acc, income) => {
+      if (!income.Bank) return acc;
+      const bank = income.Bank.name;
+      const existing = acc.find(item => item.bank_name === bank);
+      if (existing) {
+        existing.total += parseFloat(income.amount);
+      } else {
+        acc.push({ bank_name: bank, total: parseFloat(income.amount) });
+      }
+      return acc;
+    }, []);
+
     // Calculando informações de orçamento
     const totalExpenses = expenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
-    const netIncome = req.user.net_income || 0;
+    const totalIncomes = incomes.reduce((sum, income) => sum + parseFloat(income.amount), 0);
     const budget_info = {
-      total_budget: netIncome,
       total_spent: totalExpenses,
-      remaining_budget: netIncome - totalExpenses,
-      percentage_spent: ((totalExpenses / (netIncome || 1)) * 100),
+      total_income: totalIncomes,
+      balance: totalIncomes - totalExpenses,
+      percentage_spent: ((totalExpenses / (totalIncomes || 1)) * 100),
       remaining_days: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() - new Date().getDate()
     };
 
     if (budget_info.remaining_days > 0) {
-      budget_info.suggested_daily_spend = budget_info.remaining_budget / budget_info.remaining_days;
+      budget_info.suggested_daily_spend = budget_info.balance / budget_info.remaining_days;
     }
 
     res.json({
       expenses_by_category: expensesByCategory,
+      incomes_by_category: incomesByCategory,
       expenses_by_date: expensesByDate,
+      incomes_by_date: incomesByDate,
       expenses_by_bank: expensesByBank,
+      incomes_by_bank: incomesByBank,
       budget_info,
       total_expenses: expenses.length,
+      total_incomes: incomes.length,
       user: {
         id: req.user.id,
         name: req.user.name,
-        email: req.user.email,
-        net_income: req.user.net_income
+        email: req.user.email
       }
     });
   } catch (error) {
@@ -105,12 +165,15 @@ router.get('/', authenticate, async (req, res) => {
 });
   
 router.get('/category-summary', async (req, res) => {
-  const { start_date, end_date } = req.query;
+  const { start_date, end_date, type } = req.query;
   try {
-    const summary = await Expense.findAll({
+    const Model = type === 'income' ? Income : Expense;
+    const dateField = type === 'income' ? 'income_date' : 'expense_date';
+
+    const summary = await Model.findAll({
       where: {
         user_id: req.user.id,
-        expense_date: { [Sequelize.Op.between]: [start_date, end_date] },
+        [dateField]: { [Sequelize.Op.between]: [start_date, end_date] },
       },
       attributes: [
         'category_id',
@@ -122,7 +185,7 @@ router.get('/category-summary', async (req, res) => {
 
     if (!summary || summary.length === 0) {
       return res.json({
-        message: "Não há despesas registradas para este período.",
+        message: `Não há ${type === 'income' ? 'ganhos' : 'despesas'} registrados para este período.`,
         data: []
       });
     }
@@ -135,13 +198,16 @@ router.get('/category-summary', async (req, res) => {
 });
 
 router.get('/period-summary', async (req, res) => {
-  const { period } = req.query; // 'month' ou 'year'
+  const { period, type } = req.query; // 'month' ou 'year'
   try {
+    const Model = type === 'income' ? Income : Expense;
+    const dateField = type === 'income' ? 'income_date' : 'expense_date';
     const groupBy = period === 'month' ? 'MONTH' : 'YEAR';
-    const summary = await Expense.findAll({
+
+    const summary = await Model.findAll({
       where: { user_id: req.user.id },
       attributes: [
-        [Sequelize.fn(groupBy, Sequelize.col('expense_date')), 'period'],
+        [Sequelize.fn(groupBy, Sequelize.col(dateField)), 'period'],
         [Sequelize.fn('SUM', Sequelize.col('amount')), 'total'],
       ],
       group: ['period'],
@@ -150,7 +216,7 @@ router.get('/period-summary', async (req, res) => {
 
     if (!summary || summary.length === 0) {
       return res.json({
-        message: "Não há despesas registradas para este período.",
+        message: `Não há ${type === 'income' ? 'ganhos' : 'despesas'} registrados para este período.`,
         data: []
       });
     }
@@ -163,19 +229,23 @@ router.get('/period-summary', async (req, res) => {
 });
 
 router.get('/available-periods', async (req, res) => {
+  const { type } = req.query;
   try {
+    const Model = type === 'income' ? Income : Expense;
+    const dateField = type === 'income' ? 'income_date' : 'expense_date';
+
     // Busca anos disponíveis
-    const years = await Expense.findAll({
+    const years = await Model.findAll({
       where: { user_id: req.user.id },
       attributes: [
-        [Sequelize.fn('DISTINCT', Sequelize.fn('YEAR', Sequelize.col('expense_date'))), 'year']
+        [Sequelize.fn('DISTINCT', Sequelize.fn('YEAR', Sequelize.col(dateField))), 'year']
       ],
-      order: [[Sequelize.fn('YEAR', Sequelize.col('expense_date')), 'DESC']]
+      order: [[Sequelize.fn('YEAR', Sequelize.col(dateField)), 'DESC']]
     });
 
     if (!years || years.length === 0) {
       return res.json({
-        message: "Você ainda não possui despesas cadastradas.",
+        message: `Você ainda não possui ${type === 'income' ? 'ganhos' : 'despesas'} cadastrados.`,
         years: [],
         months: []
       });
@@ -186,15 +256,15 @@ router.get('/available-periods', async (req, res) => {
     let months = [];
     
     if (year) {
-      months = await Expense.findAll({
+      months = await Model.findAll({
         where: {
           user_id: req.user.id,
-          expense_date: Sequelize.where(Sequelize.fn('YEAR', Sequelize.col('expense_date')), year)
+          [dateField]: Sequelize.where(Sequelize.fn('YEAR', Sequelize.col(dateField)), year)
         },
         attributes: [
-          [Sequelize.fn('DISTINCT', Sequelize.fn('MONTH', Sequelize.col('expense_date'))), 'month']
+          [Sequelize.fn('DISTINCT', Sequelize.fn('MONTH', Sequelize.col(dateField))), 'month']
         ],
-        order: [[Sequelize.fn('MONTH', Sequelize.col('expense_date')), 'ASC']]
+        order: [[Sequelize.fn('MONTH', Sequelize.col(dateField)), 'ASC']]
       });
     }
 

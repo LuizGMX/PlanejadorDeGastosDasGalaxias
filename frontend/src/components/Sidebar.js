@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../App';
 import styles from '../styles/sidebar.module.css';
-import { BsGraphUp, BsListUl, BsPlusCircle, BsDoorOpen } from 'react-icons/bs';
+import { BsGraphUp, BsListUl, BsPlusCircle, BsDoorOpen, BsCashCoin, BsCashStack } from 'react-icons/bs';
 
 const Sidebar = () => {
   const navigate = useNavigate();
@@ -29,6 +29,16 @@ const Sidebar = () => {
       label: 'Adicionar Despesa',
       path: '/add-expense',
       icon: <BsPlusCircle size={20} />
+    },
+    {
+      label: 'Lista de Receitas',
+      path: '/income',
+      icon: <BsCashCoin size={20} />
+    },
+    {
+      label: 'Adicionar Receita',
+      path: '/add-income',
+      icon: <BsCashStack size={20} />
     }
   ];
 

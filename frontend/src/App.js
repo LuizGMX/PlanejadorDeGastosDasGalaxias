@@ -6,6 +6,8 @@ import Expenses from './components/Expenses';
 import AddExpense from './components/AddExpense';
 import Profile from './components/Profile';
 import Layout from './components/Layout';
+import Income from './components/Income';
+import AddIncome from './components/AddIncome';
 
 export const AuthContext = createContext();
 
@@ -58,6 +60,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/income"
+            element={
+              <ProtectedRoute>
+                <Income />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/add-income"
+            element={
+              <ProtectedRoute>
+                <AddIncome />
               </ProtectedRoute>
             }
           />

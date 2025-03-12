@@ -2,6 +2,7 @@ import { Bank, Category } from '../models/index.js';
 import { seedCategories } from './categorySeeder.js';
 import { seedSubCategories } from './subcategorySeeder.js';
 import { seedUserAndExpenses } from './userAndExpensesSeeder.js';
+import { seedUserAndIncomes } from './userAndIncomesSeeder.js';
 
 const banks = [
   { name: 'Banco do Brasil', code: '001' },
@@ -50,6 +51,9 @@ const seedDatabase = async () => {
 
     // Executa o seed de usuário e despesas
     await seedUserAndExpenses();
+
+    // Executa o seed de ganhos
+    await seedUserAndIncomes();
 
     console.log('Todos os seeds foram executados com sucesso!');
   } catch (error) {
