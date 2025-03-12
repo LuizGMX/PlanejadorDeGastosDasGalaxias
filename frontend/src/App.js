@@ -8,6 +8,7 @@ import Profile from './components/Profile';
 import Layout from './components/Layout';
 import Income from './components/Income';
 import AddIncome from './components/AddIncome';
+import SpreadsheetUpload from './components/SpreadsheetUpload';
 
 export const AuthContext = createContext();
 
@@ -76,6 +77,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <AddIncome />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/upload-spreadsheet"
+            element={
+              <ProtectedRoute>
+                <SpreadsheetUpload />
               </ProtectedRoute>
             }
           />

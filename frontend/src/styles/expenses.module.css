@@ -624,4 +624,33 @@
 .recurring {
   background-color: var(--primary-color);
   color: white;
-} 
+}
+
+/* Botão de recorrência */
+.recurringButton {
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  color: var(--text-color);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+}
+
+.recurringButton:hover {
+  border-color: var(--primary-color);
+  background-color: var(--input-background);
+}
+
+.recurringButton.active {
+  border-color: var(--primary-color);
+  background-color: rgba(0, 255, 133, 0.1);
+  color: var(--primary-color);
+}
+
+.recurringButton .material-icons {
+  font-size: 18px;
+}

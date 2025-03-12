@@ -263,7 +263,7 @@ const Income = () => {
                     checked={filters.category_id === category.id}
                     onChange={() => handleFilterChange('category_id', category.id)}
                   />
-                  {category.name}
+                  {category_name}
                 </label>
               ))}
             </div>

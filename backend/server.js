@@ -11,6 +11,7 @@ import { getCache, setCache } from './config/cache.js';
 import jwt from 'jsonwebtoken';
 import db from './models/index.js';
 import seedDatabase from './seeders/index.js';
+import spreadsheetRoutes from './routes/spreadsheetRoutes.js';
 
 dotenv.config();
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -21,10 +22,10 @@ const app = express();
 app.use(helmet());
 app.use(express.json());
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? process.env.FRONTEND_URL 
-    : 'http://localhost:3000',
-  credentials: true
+  origin: 'http://localhost:3000',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // Logging
@@ -131,6 +132,9 @@ app.use('/api/categories', authenticate, categoriesRouter);
 
 import incomesRouter from './routes/incomes.js';
 app.use('/api/incomes', authenticate, incomesRouter); 
+
+// Nova rota para upload de planilha
+app.use('/api/spreadsheet', authenticate, spreadsheetRoutes);
 
 import fs from 'fs';
 

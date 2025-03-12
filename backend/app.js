@@ -8,12 +8,23 @@ import incomeRoutes from './routes/incomes.js';
 import dashboardRoutes from './routes/dashboard.js';
 import bankRoutes from './routes/bank.js';
 import budgetRoutes from './routes/budgets.js';
+import spreadsheetRoutes from './routes/spreadsheetRoutes.js';
 
 const app = express();
 
 // Middlewares
 app.use(cors());
 app.use(express.json());
+
+// Criar diretório de uploads se não existir
+import { mkdirSync } from 'fs';
+try {
+  mkdirSync('./uploads');
+} catch (err) {
+  if (err.code !== 'EEXIST') {
+    console.error('Erro ao criar diretório de uploads:', err);
+  }
+}
 
 // Rotas
 app.use('/api/auth', authRoutes);
@@ -23,6 +34,7 @@ app.use('/api/incomes', incomeRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/bank', bankRoutes);
 app.use('/api/budgets', budgetRoutes);
+app.use('/api/spreadsheet', spreadsheetRoutes);
 
 // Tratamento de erros
 app.use((err, req, res, next) => {

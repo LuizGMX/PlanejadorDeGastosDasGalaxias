@@ -2,7 +2,7 @@ import React, { useContext, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../App';
 import styles from '../styles/sidebar.module.css';
-import { BsGraphUp, BsListUl, BsPlusCircle, BsDoorOpen, BsCashCoin, BsCashStack, BsChevronDown } from 'react-icons/bs';
+import { BsGraphUp, BsListUl, BsPlusCircle, BsDoorOpen, BsCashCoin, BsCashStack, BsChevronDown, BsUpload } from 'react-icons/bs';
 
 const Sidebar = () => {
   const navigate = useNavigate();
@@ -52,7 +52,12 @@ const Sidebar = () => {
           icon: <BsPlusCircle size={18} />
         }
       ]
-    }
+    },
+    // {
+    //   label: 'Importar Planilha',
+    //   path: '/upload-spreadsheet',
+    //   icon: <BsUpload size={20} />
+    // }
   ];
 
   const handleMenuClick = (item) => {
