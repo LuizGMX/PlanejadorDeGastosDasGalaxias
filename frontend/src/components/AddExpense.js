@@ -235,6 +235,9 @@ const AddExpense = () => {
 
   const getInstallmentMessage = (total, current) => {
     if (current === 1) {
+      if (total - 1 === 1) {
+        return `Será criada uma outra parcela (a última), além da parcela atual`;
+      }
       return `Serão criadas as próximas ${formatPluralText(total - 1, 'parcela', 'parcelas')} a partir desta data`;
     } else if (current === total) {
       return `${total - 1 === 1 ? 'Será criada' : 'Serão criadas'} ${formatPluralText(total - 1, 'parcela anterior', 'parcelas anteriores')} a esta data`;
@@ -285,66 +288,125 @@ const AddExpense = () => {
             />
           </div>
 
-          <div className={styles.inputGroup}>
-            <div className={styles.checkboxGroup}>
-              <input
-                type="checkbox"
-                id="has_installments"
-                name="has_installments"
-                checked={formData.has_installments}
-                onChange={(e) => {
-                  setFormData(prev => ({
-                    ...prev,
-                    has_installments: e.target.checked,
-                    total_installments: e.target.checked ? prev.total_installments : 1
-                  }));
-                }}
-                className={styles.checkbox}
-              />
-              <label htmlFor="has_installments" className={styles.checkboxLabel}>
-                Parcelado
-              </label>
+          <div className={styles.paymentOptions}>
+            <div className={`${styles.paymentOption} ${formData.has_installments ? styles.active : ''}`}>
+              <div className={styles.optionHeader} onClick={() => {
+                setFormData(prev => ({
+                  ...prev,
+                  has_installments: !prev.has_installments,
+                  is_recurring: false,
+                  total_installments: !prev.has_installments ? 2 : 1
+                }));
+              }}>
+                <div className={styles.checkboxWrapper}>
+                  <input
+                    type="checkbox"
+                    id="has_installments"
+                    name="has_installments"
+                    checked={formData.has_installments}
+                    onChange={() => {}}
+                    className={styles.checkbox}
+                  />
+                  <span className={styles.checkmark}></span>
+                </div>
+                <label htmlFor="has_installments" className={styles.optionLabel}>
+                  <span className="material-icons">payments</span>
+                  Parcelado
+                </label>
+              </div>
+
+              {formData.has_installments && (
+                <div className={styles.optionContent}>
+                  <div className={styles.inputGroup}>
+                    <label className={styles.label}>Número de Parcelas</label>
+                    <input
+                      type="number"
+                      name="total_installments"
+                      value={formData.total_installments}
+                      onChange={handleChange}
+                      min="2"
+                      max="24"
+                      className={styles.input}
+                      required={formData.has_installments}
+                    />
+                  </div>
+
+                  <div className={styles.inputGroup}>
+                    <label className={styles.label}>Qual parcela você está pagando?</label>
+                    <input
+                      type="number"
+                      name="current_installment"
+                      value={formData.current_installment}
+                      onChange={handleChange}
+                      min="1"
+                      max={formData.total_installments}
+                      className={styles.input}
+                      required={formData.has_installments}
+                    />
+                    {formData.amount && formData.total_installments > 1 && (
+                      <small className={styles.installmentInfo}>
+                        {formData.total_installments}x de {formatCurrency(formData.amount / formData.total_installments)}
+                        <br />
+                        {getInstallmentMessage(formData.total_installments, formData.current_installment)}
+                      </small>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className={`${styles.paymentOption} ${formData.is_recurring ? styles.active : ''}`}>
+              <div className={styles.optionHeader} onClick={() => {
+                setFormData(prev => ({
+                  ...prev,
+                  is_recurring: !prev.is_recurring,
+                  has_installments: false,
+                  total_installments: 1
+                }));
+              }}>
+                <div className={styles.checkboxWrapper}>
+                  <input
+                    type="checkbox"
+                    id="is_recurring"
+                    name="is_recurring"
+                    checked={formData.is_recurring}
+                    onChange={() => {}}
+                    className={styles.checkbox}
+                  />
+                  <span className={styles.checkmark}></span>
+                </div>
+                <label htmlFor="is_recurring" className={styles.optionLabel}>
+                  <span className="material-icons">sync</span>
+                  Recorrente
+                </label>
+              </div>
+
+              {formData.is_recurring && (
+                <div className={styles.optionContent}>
+                  <div className={styles.inputGroup}>
+                    <label className={styles.label}>Data Final da Recorrência</label>
+                    <input
+                      type="date"
+                      name="end_date"
+                      value={formData.end_date}
+                      onChange={handleChange}
+                      className={styles.input}
+                      required
+                      min={formData.date}
+                      max={(() => {
+                        const maxDate = new Date(formData.date);
+                        maxDate.setFullYear(maxDate.getFullYear() + 10);
+                        return maxDate.toISOString().split('T')[0];
+                      })()}
+                    />
+                    <small className={styles.helperText}>
+                      O período de recorrência não pode ser maior que 10 anos
+                    </small>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-
-          {formData.has_installments && (
-            <>
-              <div className={styles.inputGroup}>
-                <label className={styles.label}>Número de Parcelas</label>
-                <input
-                  type="number"
-                  name="total_installments"
-                  value={formData.total_installments}
-                  onChange={handleChange}
-                  min="2"
-                  max="24"
-                  className={styles.input}
-                  required={formData.has_installments}
-                />
-              </div>
-
-              <div className={styles.inputGroup}>
-                <label className={styles.label}>Qual parcela você está pagando?</label>
-                <input
-                  type="number"
-                  name="current_installment"
-                  value={formData.current_installment}
-                  onChange={handleChange}
-                  min="1"
-                  max={formData.total_installments}
-                  className={styles.input}
-                  required={formData.has_installments}
-                />
-                {formData.amount && formData.total_installments > 1 && (
-                  <small className={styles.installmentInfo}>
-                    {formData.total_installments}x de {formatCurrency(formData.amount / formData.total_installments)}
-                    <br />
-                    {getInstallmentMessage(formData.total_installments, formData.current_installment)}
-                  </small>
-                )}
-              </div>
-            </>
-          )}
 
           <div className={styles.inputGroup}>
             <label className={styles.label}>Data</label>
@@ -357,49 +419,6 @@ const AddExpense = () => {
               required
             />
           </div>
-
-          <div className={styles.checkboxGroup}>
-            <input
-              type="checkbox"
-              id="is_recurring"
-              name="is_recurring"
-              checked={formData.is_recurring}
-              onChange={(e) => {
-                setFormData(prev => ({
-                  ...prev,
-                  is_recurring: e.target.checked,
-                  end_date: e.target.checked ? prev.end_date : ''
-                }));
-              }}
-              className={styles.checkbox}
-            />
-            <label htmlFor="is_recurring" className={styles.checkboxLabel}>
-              Gasto Recorrente
-            </label>
-          </div>
-
-          {formData.is_recurring && (
-            <div className={styles.inputGroup}>
-              <label className={styles.label}>Data Final da Recorrência</label>
-              <input
-                type="date"
-                name="end_date"
-                value={formData.end_date}
-                onChange={handleChange}
-                className={styles.input}
-                required
-                min={formData.date}
-                max={(() => {
-                  const maxDate = new Date(formData.date);
-                  maxDate.setFullYear(maxDate.getFullYear() + 10);
-                  return maxDate.toISOString().split('T')[0];
-                })()}
-              />
-              <small className={styles.helperText}>
-                O período de recorrência não pode ser maior que 10 anos
-              </small>
-            </div>
-          )}
 
           <div className={styles.inputGroup}>
             <label className={styles.label}>Categoria</label>

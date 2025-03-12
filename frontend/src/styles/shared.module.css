@@ -807,4 +807,117 @@
     overflow-x: auto;
     white-space: nowrap;
   }
+}
+
+.paymentOptions {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.paymentOption {
+  flex: 1;
+  background-color: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.paymentOption.active {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 1px var(--primary-color);
+}
+
+.optionHeader {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.optionHeader:hover {
+  background-color: var(--hover-color);
+}
+
+.checkboxWrapper {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  margin-right: 12px;
+}
+
+.checkboxWrapper input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.checkmark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 20px;
+  width: 20px;
+  background-color: var(--input-background);
+  border: 2px solid var(--border-color);
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.checkboxWrapper input[type="checkbox"]:checked ~ .checkmark {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+  left: 6px;
+  top: 2px;
+  width: 4px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.checkboxWrapper input[type="checkbox"]:checked ~ .checkmark:after {
+  display: block;
+}
+
+.checkboxWrapper input[type="checkbox"]:disabled ~ .checkmark {
+  background-color: var(--border-color);
+  border-color: var(--border-color);
+  cursor: not-allowed;
+}
+
+.optionLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-color);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.optionLabel .material-icons {
+  color: var(--primary-color);
+  font-size: 1.2rem;
+}
+
+.optionContent {
+  padding: 1rem;
+  border-top: 1px solid var(--border-color);
+  background-color: var(--input-background);
+}
+
+@media (max-width: 768px) {
+  .paymentOptions {
+    flex-direction: column;
+  }
 } 

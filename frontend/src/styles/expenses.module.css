@@ -257,10 +257,10 @@
 
 .table th,
 .table td {
-  padding: 1rem;
+  padding: 12px;
   text-align: left;
   border-bottom: 1px solid var(--border-color);
-  color: var(--text-color);
+  vertical-align: middle;
 }
 
 .table th {
@@ -605,4 +605,23 @@
   font-family: inherit;
   color: inherit;
   font-size: 1.1rem;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+  border-radius: 12px;
+  padding: 2px 4px;
+  font-size: 12px;
+}
+
+.badge .material-icons {
+  font-size: 14px;
+}
+
+.recurring {
+  background-color: var(--primary-color);
+  color: white;
 } 

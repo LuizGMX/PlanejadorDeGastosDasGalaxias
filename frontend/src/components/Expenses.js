@@ -675,6 +675,11 @@ const Expenses = () => {
                       ) : (
                         <span className="material-icons">pix</span>
                       )}
+                      {expense.is_recurring && (
+                        <span className={`${styles.badge} ${styles.recurring}`} title="Despesa Recorrente">
+                          <span className="material-icons">sync</span>
+                        </span>
+                      )}
                     </td>
                     <td>
                       {expense.has_installments 
