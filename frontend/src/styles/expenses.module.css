@@ -10,6 +10,9 @@
 
 .header {
   margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .header h1 {
@@ -18,23 +21,99 @@
   font-size: 2rem;
 }
 
+.addButton {
+  background-color: var(--card-background);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.addButton::before {
+  content: "add";
+  font-family: "Material Icons";
+  font-size: 1.2rem;
+  color: var(--primary-color);
+}
+
+.addButton:hover {
+  background-color: var(--hover-color);
+  border-color: var(--primary-color);
+}
+
 .filtersContainer {
   margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .filterRow {
   display: flex;
   gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.filterRow:last-child {
-  margin-bottom: 0;
 }
 
 .filterGroup {
   flex: 1;
   min-width: 200px;
+}
+
+.searchRow {
+  display: flex;
+  gap: 1rem;
+}
+
+.searchField {
+  flex: 1;
+  position: relative;
+  background-color: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  transition: all 0.2s ease;
+}
+
+.searchField:focus-within {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.1);
+}
+
+.searchInput {
+  width: 100%;
+  padding: 0.75rem 0;
+  border: none;
+  background: transparent;
+  color: var(--text-color);
+  font-size: 0.95rem;
+}
+
+.searchInput:focus {
+  outline: none;
+}
+
+.searchField .material-icons {
+  color: var(--text-secondary);
+  font-size: 1.2rem;
+  margin-right: 0.5rem;
+}
+
+.filters {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  background-color: var(--card-background);
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
 }
 
 .filterGroup label {
@@ -46,7 +125,7 @@
 .modernSelect {
   position: relative;
   width: 100%;
-  background-color: var(--card-background);
+  background-color: var(--input-background);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   cursor: pointer;
@@ -59,7 +138,7 @@
 
 .modernSelect.active {
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.1);
+  box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.2);
 }
 
 .modernSelectHeader {
@@ -68,7 +147,6 @@
   align-items: center;
   padding: 0.75rem 1rem;
   color: var(--text-color);
-  font-size: 0.95rem;
 }
 
 .modernSelectHeader span {
@@ -501,38 +579,6 @@
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-.searchField {
-  position: relative;
-  width: 100%;
-}
-
-.searchInput {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  padding-right: 2.5rem;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  background-color: var(--card-background);
-  color: var(--text-color);
-  font-size: 0.95rem;
-  transition: all 0.2s ease;
-}
-
-.searchInput:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.1);
-}
-
-.searchField .material-icons {
-  position: absolute;
-  right: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-secondary);
-  font-size: 1.2rem;
 }
 
 .totalExpenses {

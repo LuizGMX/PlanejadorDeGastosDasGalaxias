@@ -610,18 +610,18 @@ const Expenses = () => {
               )}
             </div>
           </div>
+        </div>
 
-          <div className={styles.filterGroup}>
-            <div className={styles.searchField}>
-              <input
-                type="text"
-                placeholder="Buscar por descrição..."
-                value={filters.description}
-                onChange={(e) => handleFilterChange('description', e.target.value)}
-                className={styles.searchInput}
-              />
-              <span className="material-icons">search</span>
-            </div>
+        <div className={styles.searchRow}>
+          <div className={styles.searchField}>
+            <span className="material-icons">search</span>
+            <input
+              type="text"
+              placeholder="Buscar por descrição..."
+              value={filters.description}
+              onChange={(e) => handleFilterChange('description', e.target.value)}
+              className={styles.searchInput}
+            />
           </div>
         </div>
       </div>
