@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../App';
-import styles from '../styles/expenses.module.css';
+import styles from '../styles/income.module.css';
 import EditIncomeForm from './EditIncomeForm';
 
 const Income = () => {
   const navigate = useNavigate();
   const { auth } = useContext(AuthContext);
-  const [incomes, setIncomes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
+  const [incomes, setIncomes] = useState([]);
   const [selectedIncomes, setSelectedIncomes] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [incomeToDelete, setIncomeToDelete] = useState(null);
@@ -17,10 +17,19 @@ const Income = () => {
   const [filters, setFilters] = useState({
     months: [new Date().getMonth() + 1],
     years: [new Date().getFullYear()],
-    description: ''
+    description: '',
+    category_id: '',
+    is_recurring: ''
   });
   const [openFilter, setOpenFilter] = useState(null);
+  const [metadata, setMetadata] = useState({
+    filters: {
+      categories: [],
+      recurring: []
+    }
+  });
 
+  // Lista de anos para o filtro
   const years = Array.from(
     { length: 5 },
     (_, i) => ({
@@ -29,6 +38,7 @@ const Income = () => {
     })
   );
 
+  // Lista de meses para o filtro
   const months = [
     { value: 1, label: 'Janeiro' },
     { value: 2, label: 'Fevereiro' },
@@ -46,78 +56,7 @@ const Income = () => {
 
   useEffect(() => {
     fetchIncomes();
-  }, [auth.token, filters]);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      const dropdowns = document.querySelectorAll(`.${styles.modernSelect}`);
-      let clickedOutside = true;
-      
-      dropdowns.forEach(dropdown => {
-        if (dropdown.contains(event.target)) {
-          clickedOutside = false;
-        }
-      });
-
-      if (clickedOutside) {
-        setOpenFilter(null);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  const handleFilterClick = (filterType) => {
-    setOpenFilter(openFilter === filterType ? null : filterType);
-  };
-
-  const handleCheckboxClick = (e) => {
-    e.stopPropagation();
-  };
-
-  const handleFilterChange = (type, value) => {
-    if (type === 'months' || type === 'years') {
-      if (value === 'all') {
-        setFilters(prev => ({
-          ...prev,
-          [type]: prev[type].length === (type === 'months' ? months.length : years.length) 
-            ? [] 
-            : type === 'months' 
-              ? months.map(m => m.value) 
-              : years.map(y => y.value)
-        }));
-      } else {
-        setFilters(prev => {
-          const newValues = prev[type].includes(value)
-            ? prev[type].filter(item => item !== value)
-            : [...prev[type], value];
-
-          const totalItems = type === 'months' ? months.length : years.length;
-          if (newValues.length === totalItems - 1) {
-            return {
-              ...prev,
-              [type]: type === 'months' 
-                ? months.map(m => m.value)
-                : years.map(y => y.value)
-            };
-          }
-
-          return {
-            ...prev,
-            [type]: newValues
-          };
-        });
-      }
-    } else {
-      setFilters(prev => ({
-        ...prev,
-        [type]: value
-      }));
-    }
-  };
+  }, [filters]);
 
   const fetchIncomes = async () => {
     try {
@@ -128,6 +67,14 @@ const Income = () => {
       
       if (filters.description) {
         queryParams.append('description', filters.description);
+      }
+
+      if (filters.category_id) {
+        queryParams.append('category_id', filters.category_id);
+      }
+
+      if (filters.is_recurring !== '') {
+        queryParams.append('is_recurring', filters.is_recurring);
       }
 
       const response = await fetch(`/api/incomes?${queryParams}`, {
@@ -141,7 +88,8 @@ const Income = () => {
       }
 
       const data = await response.json();
-      setIncomes(data);
+      setIncomes(data.incomes);
+      setMetadata(data.metadata);
       setLoading(false);
     } catch (err) {
       setError('Erro ao carregar receitas. Por favor, tente novamente.');
@@ -149,88 +97,31 @@ const Income = () => {
     }
   };
 
-  const handleDelete = async () => {
-    try {
-      const idsToDelete = incomeToDelete ? [incomeToDelete.id] : selectedIncomes;
-      
-      const response = await fetch('/api/incomes', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${auth.token}`
-        },
-        body: JSON.stringify({ ids: idsToDelete })
+  const handleFilterClick = (filterType) => {
+    setOpenFilter(openFilter === filterType ? null : filterType);
+  };
+
+  const handleFilterChange = (type, value) => {
+    if (type === 'months' || type === 'years') {
+      setFilters(prev => {
+        const currentValues = prev[type];
+        let newValues;
+
+        if (value === 'all') {
+          newValues = currentValues.length === (type === 'months' ? months.length : years.length)
+            ? []
+            : (type === 'months' ? months.map(m => m.value) : years.map(y => y.value));
+        } else {
+          newValues = currentValues.includes(value)
+            ? currentValues.filter(v => v !== value)
+            : [...currentValues, value];
+        }
+
+        return { ...prev, [type]: newValues };
       });
-
-      if (!response.ok) {
-        throw new Error('Falha ao excluir receitas');
-      }
-
-      setShowDeleteModal(false);
-      setIncomeToDelete(null);
-      setSelectedIncomes([]);
-      fetchIncomes();
-    } catch (err) {
-      setError('Erro ao excluir receitas. Por favor, tente novamente.');
-    }
-  };
-
-  const handleUpdate = async (updatedIncome) => {
-    try {
-      const response = await fetch(`/api/incomes/${updatedIncome.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${auth.token}`
-        },
-        body: JSON.stringify(updatedIncome)
-      });
-
-      if (!response.ok) {
-        throw new Error('Falha ao atualizar receita');
-      }
-
-      setEditingIncome(null);
-      fetchIncomes();
-    } catch (err) {
-      setError('Erro ao atualizar receita. Por favor, tente novamente.');
-    }
-  };
-
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
-  };
-
-  const handleSelectAll = (e) => {
-    if (e.target.checked) {
-      setSelectedIncomes(incomes.map(income => income.id));
     } else {
-      setSelectedIncomes([]);
+      setFilters(prev => ({ ...prev, [type]: value }));
     }
-  };
-
-  const handleSelectIncome = (id) => {
-    setSelectedIncomes(prev => {
-      if (prev.includes(id)) {
-        return prev.filter(incomeId => incomeId !== id);
-      } else {
-        return [...prev, id];
-      }
-    });
-  };
-
-  const handleDeleteClick = (income = null) => {
-    if (income) {
-      setIncomeToDelete(income);
-    }
-    setShowDeleteModal(true);
   };
 
   const formatSelectedPeriod = (type) => {
@@ -245,6 +136,17 @@ const Income = () => {
       .join(', ');
   };
 
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('pt-BR');
+  };
+
   if (loading) return <div className={styles.loading}>Carregando...</div>;
   if (error) return <div className={styles.error}>{error}</div>;
 
@@ -256,31 +158,38 @@ const Income = () => {
           className={styles.addButton}
           onClick={() => navigate('/add-income')}
         >
+          <span className="material-icons">add</span>
           Adicionar Receita
         </button>
       </div>
 
-      <div className={styles.filterRow}>
-        <div className={styles.modernSelect} onClick={() => handleFilterClick('months')}>
-          <span>Mês: {formatSelectedPeriod('months')}</span>
+      <div className={styles.filtersContainer}>
+        <div className={styles.filterGroup}>
+          <button
+            className={styles.filterButton}
+            onClick={() => handleFilterClick('months')}
+          >
+            <span>Mês: {formatSelectedPeriod('months')}</span>
+            <span className="material-icons">
+              {openFilter === 'months' ? 'expand_less' : 'expand_more'}
+            </span>
+          </button>
           {openFilter === 'months' && (
-            <div className={styles.dropdown}>
-              <label>
+            <div className={styles.filterDropdown}>
+              <label className={styles.filterOption}>
                 <input
                   type="checkbox"
                   checked={filters.months.length === months.length}
                   onChange={() => handleFilterChange('months', 'all')}
-                  onClick={handleCheckboxClick}
                 />
                 Todos
               </label>
               {months.map(month => (
-                <label key={month.value}>
+                <label key={month.value} className={styles.filterOption}>
                   <input
                     type="checkbox"
                     checked={filters.months.includes(month.value)}
                     onChange={() => handleFilterChange('months', month.value)}
-                    onClick={handleCheckboxClick}
                   />
                   {month.label}
                 </label>
@@ -289,26 +198,32 @@ const Income = () => {
           )}
         </div>
 
-        <div className={styles.modernSelect} onClick={() => handleFilterClick('years')}>
-          <span>Ano: {formatSelectedPeriod('years')}</span>
+        <div className={styles.filterGroup}>
+          <button
+            className={styles.filterButton}
+            onClick={() => handleFilterClick('years')}
+          >
+            <span>Ano: {formatSelectedPeriod('years')}</span>
+            <span className="material-icons">
+              {openFilter === 'years' ? 'expand_less' : 'expand_more'}
+            </span>
+          </button>
           {openFilter === 'years' && (
-            <div className={styles.dropdown}>
-              <label>
+            <div className={styles.filterDropdown}>
+              <label className={styles.filterOption}>
                 <input
                   type="checkbox"
                   checked={filters.years.length === years.length}
                   onChange={() => handleFilterChange('years', 'all')}
-                  onClick={handleCheckboxClick}
                 />
                 Todos
               </label>
               {years.map(year => (
-                <label key={year.value}>
+                <label key={year.value} className={styles.filterOption}>
                   <input
                     type="checkbox"
                     checked={filters.years.includes(year.value)}
                     onChange={() => handleFilterChange('years', year.value)}
-                    onClick={handleCheckboxClick}
                   />
                   {year.label}
                 </label>
@@ -317,37 +232,89 @@ const Income = () => {
           )}
         </div>
 
-        <input
-          type="text"
-          placeholder="Buscar por descrição..."
-          value={filters.description}
-          onChange={(e) => handleFilterChange('description', e.target.value)}
-          className={styles.searchInput}
-        />
-      </div>
-
-      {selectedIncomes.length > 0 && (
-        <div className={styles.batchActions}>
+        <div className={styles.filterGroup}>
           <button
-            onClick={() => handleDeleteClick()}
-            className={styles.deleteButton}
+            className={styles.filterButton}
+            onClick={() => handleFilterClick('categories')}
           >
-            Excluir Selecionados ({selectedIncomes.length})
+            <span>
+              Categoria: {filters.category_id 
+                ? metadata.filters.categories.find(c => c.id === filters.category_id)?.name 
+                : 'Todas'}
+            </span>
+            <span className="material-icons">
+              {openFilter === 'categories' ? 'expand_less' : 'expand_more'}
+            </span>
           </button>
+          {openFilter === 'categories' && (
+            <div className={styles.filterDropdown}>
+              <label className={styles.filterOption}>
+                <input
+                  type="radio"
+                  checked={!filters.category_id}
+                  onChange={() => handleFilterChange('category_id', '')}
+                />
+                Todas
+              </label>
+              {metadata.filters.categories.map(category => (
+                <label key={category.id} className={styles.filterOption}>
+                  <input
+                    type="radio"
+                    checked={filters.category_id === category.id}
+                    onChange={() => handleFilterChange('category_id', category.id)}
+                  />
+                  {category.name}
+                </label>
+              ))}
+            </div>
+          )}
         </div>
-      )}
+
+        <div className={styles.filterGroup}>
+          <button
+            className={styles.filterButton}
+            onClick={() => handleFilterClick('recurring')}
+          >
+            <span>
+              Recorrência: {filters.is_recurring === ''
+                ? 'Todas'
+                : filters.is_recurring === 'true'
+                ? 'Recorrentes'
+                : 'Não Recorrentes'}
+            </span>
+            <span className="material-icons">
+              {openFilter === 'recurring' ? 'expand_less' : 'expand_more'}
+            </span>
+          </button>
+          {openFilter === 'recurring' && (
+            <div className={styles.filterDropdown}>
+              <label className={styles.filterOption}>
+                <input
+                  type="radio"
+                  checked={filters.is_recurring === ''}
+                  onChange={() => handleFilterChange('is_recurring', '')}
+                />
+                Todas
+              </label>
+              {metadata.filters.recurring.map(option => (
+                <label key={option.id} className={styles.filterOption}>
+                  <input
+                    type="radio"
+                    checked={filters.is_recurring === option.id}
+                    onChange={() => handleFilterChange('is_recurring', option.id)}
+                  />
+                  {option.name} ({option.count})
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
 
       <div className={styles.tableContainer}>
         <table className={styles.table}>
           <thead>
             <tr>
-              <th>
-                <input
-                  type="checkbox"
-                  onChange={handleSelectAll}
-                  checked={selectedIncomes.length === incomes.length && incomes.length > 0}
-                />
-              </th>
               <th>Descrição</th>
               <th>Valor</th>
               <th>Data</th>
@@ -361,31 +328,42 @@ const Income = () => {
             {incomes.map(income => (
               <tr key={income.id}>
                 <td>
-                  <input
-                    type="checkbox"
-                    checked={selectedIncomes.includes(income.id)}
-                    onChange={() => handleSelectIncome(income.id)}
-                  />
+                  {income.description}
+                  {income.recurring_info && (
+                    <span 
+                      className={styles.recurringBadge}
+                      title={income.recurring_info.badge.tooltip}
+                    >
+                      <span className="material-icons">sync</span>
+                      {income.recurring_info.badge.text}
+                    </span>
+                  )}
                 </td>
-                <td>{income.description}</td>
                 <td>{formatCurrency(income.amount)}</td>
                 <td>{formatDate(income.date)}</td>
                 <td>{income.Category?.category_name || '-'}</td>
                 <td>{income.SubCategory?.subcategory_name || '-'}</td>
                 <td>{income.Bank?.name || '-'}</td>
                 <td>
-                  <button
-                    onClick={() => setEditingIncome(income)}
-                    className={styles.editButton}
-                  >
-                    <span className="material-icons">edit</span>
-                  </button>
-                  <button
-                    onClick={() => handleDeleteClick(income)}
-                    className={styles.deleteButton}
-                  >
-                    <span className="material-icons">delete</span>
-                  </button>
+                  <div className={styles.actionButtons}>
+                    <button
+                      onClick={() => setEditingIncome(income)}
+                      className={styles.editButton}
+                      title="Editar"
+                    >
+                      <span className="material-icons">edit</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIncomeToDelete(income);
+                        setShowDeleteModal(true);
+                      }}
+                      className={styles.deleteButton}
+                      title="Excluir"
+                    >
+                      <span className="material-icons">delete</span>
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -397,28 +375,73 @@ const Income = () => {
         <div className={styles.modal}>
           <div className={styles.modalContent}>
             <h2>Confirmar Exclusão</h2>
-            <p>
-              {incomeToDelete
-                ? 'Tem certeza que deseja excluir esta receita?'
-                : `Tem certeza que deseja excluir ${selectedIncomes.length} receitas selecionadas?`}
-            </p>
-            <div className={styles.modalButtons}>
-              <button
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setIncomeToDelete(null);
-                }}
-                className={styles.cancelButton}
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleDelete}
-                className={styles.confirmButton}
-              >
-                Confirmar
-              </button>
-            </div>
+            {incomeToDelete?.recurring_info ? (
+              <>
+                <p>Esta é uma receita recorrente. Como deseja proceder?</p>
+                <div className={styles.modalButtons}>
+                  <button
+                    onClick={() => {
+                      handleDelete(incomeToDelete.id);
+                      setShowDeleteModal(false);
+                    }}
+                    className={styles.deleteButton}
+                  >
+                    Excluir apenas esta
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleDelete(incomeToDelete.id, true);
+                      setShowDeleteModal(false);
+                    }}
+                    className={styles.deleteButton}
+                  >
+                    Excluir esta e futuras
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleDelete(incomeToDelete.id, false, true);
+                      setShowDeleteModal(false);
+                    }}
+                    className={styles.deleteButton}
+                  >
+                    Excluir todas
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowDeleteModal(false);
+                      setIncomeToDelete(null);
+                    }}
+                    className={styles.cancelButton}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p>Tem certeza que deseja excluir esta receita?</p>
+                <div className={styles.modalButtons}>
+                  <button
+                    onClick={() => {
+                      setShowDeleteModal(false);
+                      setIncomeToDelete(null);
+                    }}
+                    className={styles.cancelButton}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleDelete(incomeToDelete.id);
+                      setShowDeleteModal(false);
+                    }}
+                    className={styles.deleteButton}
+                  >
+                    Confirmar
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

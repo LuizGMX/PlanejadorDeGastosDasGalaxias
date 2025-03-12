@@ -1,10 +1,18 @@
 ---
-description: NEVER CHANGE THE CSS WHEN ITS NOT SPLICIT ASKED TO
+description: rules hehehe
 globs: 
 alwaysApply: true
 ---
 
 # Your rule content
+NEVER CHANGE THE CSS WHEN ITS NOT SPLICIT ASKED TO
+NEVER CHANGE THE CSS
+Always respond in portuguese
+Never use migrations
+Always review my whole code base
+Always make the changes on backend and frontend and in the models and seeders and routes
+Always confirm that you running based on the rules - make it the first thing you do - and call me Luizão
+NEVER CHANGE THE CSS
 
 - You can @ files here
 - You can use markdown but dont have to

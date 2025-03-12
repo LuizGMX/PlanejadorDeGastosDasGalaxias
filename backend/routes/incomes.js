@@ -11,7 +11,7 @@ import { Sequelize } from 'sequelize';
 // Listar todas as receitas do usuário
 router.get('/', authenticate, async (req, res) => {
   try {
-    const { months, years, description } = req.query;
+    const { months, years, description, category_id, is_recurring } = req.query;
     const where = { user_id: req.user.id };
 
     // Filtro de meses e anos
@@ -19,7 +19,7 @@ router.get('/', authenticate, async (req, res) => {
     const yearsArray = years ? (Array.isArray(years) ? years : years.split(',').map(Number)) : [];
 
     if (monthsArray.length > 0 || yearsArray.length > 0) {
-      where[Op.and] = [];
+      where[Op.and] = where[Op.and] || [];
 
       if (monthsArray.length > 0) {
         where[Op.and].push(
@@ -47,23 +47,98 @@ router.get('/', authenticate, async (req, res) => {
       };
     }
 
+    // Filtro de categoria
+    if (category_id) {
+      where.category_id = category_id;
+    }
+
+    // Filtro de recorrência
+    if (is_recurring !== undefined) {
+      where.is_recurring = is_recurring === 'true';
+    }
+
     console.log('Filtros aplicados:', where);
 
+    // Buscar todas as receitas
     const incomes = await Income.findAll({
       where,
       include: [
-        { model: Category },
-        { model: SubCategory },
-        { model: Bank }
+        { 
+          model: Category,
+          attributes: ['id', 'category_name', 'type']
+        },
+        { 
+          model: SubCategory,
+          attributes: ['id', 'subcategory_name']
+        },
+        { 
+          model: Bank,
+          attributes: ['id', 'name']
+        }
       ],
       order: [['date', 'DESC']]
     });
 
-    console.log('Total de receitas encontradas:', incomes.length);
-    console.log('Receitas recorrentes:', incomes.filter(i => i.is_recurring).length);
-    console.log('Receitas não recorrentes:', incomes.filter(i => !i.is_recurring).length);
+    // Buscar metadados para os filtros
+    const [categories, totalRecurring, totalNonRecurring] = await Promise.all([
+      Category.findAll({
+        where: { type: 'income' },
+        attributes: ['id', 'category_name'],
+        order: [['category_name', 'ASC']]
+      }),
+      Income.count({
+        where: { 
+          user_id: req.user.id,
+          is_recurring: true
+        }
+      }),
+      Income.count({
+        where: { 
+          user_id: req.user.id,
+          is_recurring: false
+        }
+      })
+    ]);
 
-    res.json(incomes);
+    // Adiciona informação de recorrência para o frontend
+    const incomesWithRecurring = incomes.map(income => {
+      const plainIncome = income.get({ plain: true });
+      return {
+        ...plainIncome,
+        recurring_info: income.is_recurring ? {
+          is_recurring: true,
+          recurring_group_id: income.recurring_group_id,
+          badge: {
+            text: 'Recorrente',
+            tooltip: 'Esta receita faz parte de um grupo de receitas recorrentes'
+          }
+        } : null
+      };
+    });
+
+    console.log('Total de receitas encontradas:', incomesWithRecurring.length);
+    console.log('Receitas recorrentes:', incomesWithRecurring.filter(i => i.is_recurring).length);
+    console.log('Receitas não recorrentes:', incomesWithRecurring.filter(i => !i.is_recurring).length);
+
+    res.json({
+      incomes: incomesWithRecurring,
+      metadata: {
+        filters: {
+          categories: categories.map(c => ({
+            id: c.id,
+            name: c.category_name
+          })),
+          recurring: [
+            { id: 'true', name: 'Recorrente', count: totalRecurring },
+            { id: 'false', name: 'Não Recorrente', count: totalNonRecurring }
+          ]
+        },
+        totals: {
+          recurring: totalRecurring,
+          nonRecurring: totalNonRecurring
+        }
+      }
+    });
   } catch (error) {
     console.error('Erro ao buscar receitas:', error);
     res.status(500).json({ message: 'Erro ao buscar receitas' });
