@@ -76,16 +76,21 @@ const Dashboard = () => {
 
   // Cores para os gráficos
   const COLORS = [
-    'var(--primary-color)',
-    'var(--gradient-end)',
-    'var(--success-color)',
-    'var(--error-color)',
-    '#8B8D97',
-    '#4A4B53',
-    '#6A6B73',
-    '#3A3B43',
-    '#5A5B63',
-    '#2A2B33'
+    '#FF6B6B',  // Vermelho coral
+    '#4ECDC4',  // Turquesa
+    '#45B7D1',  // Azul celeste
+    '#96CEB4',  // Verde menta
+    '#FFEEAD',  // Amarelo pastel
+    '#D4A5A5',  // Rosa antigo
+    '#9B5DE5',  // Roxo vibrante
+    '#F15BB5',  // Rosa chiclete
+    '#00BBF9',  // Azul elétrico
+    '#00F5D4',  // Verde água
+    '#FEE440',  // Amarelo vivo
+    '#FF99C8',  // Rosa suave
+    '#A8E6CF',  // Verde suave
+    '#FDFFAB',  // Amarelo claro
+    '#FFB3BA'   // Rosa claro
   ];
 
   useEffect(() => {

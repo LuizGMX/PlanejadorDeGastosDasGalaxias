@@ -1,6 +1,7 @@
 import express from 'express';
 import { Category, SubCategory } from '../models/index.js';
 import { authenticate } from '../middleware/auth.js';
+import { literal } from 'sequelize';
 
 const router = express.Router();
 
@@ -15,7 +16,9 @@ router.get('/', authenticate, async (req, res) => {
         attributes: ['id', 'subcategory_name']
       }],
       order: [
+        [literal("category_name = 'Outros' ASC")],
         ['category_name', 'ASC'],
+        [SubCategory, literal("subcategory_name = 'Outros' ASC")],
         [SubCategory, 'subcategory_name', 'ASC']
       ]
     });
@@ -45,10 +48,41 @@ router.get('/:categoryId/subcategories', authenticate, async (req, res) => {
         model: Category,
         attributes: ['category_name']
       }],
-      order: [['subcategory_name', 'ASC']]
+      order: [
+        [literal("subcategory_name = 'Outros' ASC")],
+        ['subcategory_name', 'ASC']
+      ]
     });
 
     console.log('Subcategorias encontradas:', subcategories);
+    res.json(subcategories);
+  } catch (error) {
+    console.error('Erro ao listar subcategorias:', error);
+    res.status(500).json({ message: 'Erro ao buscar subcategorias' });
+  }
+});
+
+router.get('/subcategories/:categoryId', authenticate, async (req, res) => {
+  try {
+    const category = await Category.findOne({
+      where: { 
+        id: req.params.categoryId,
+        type: 'expense'
+      }
+    });
+
+    if (!category) {
+      return res.status(404).json({ message: 'Categoria não encontrada' });
+    }
+
+    const subcategories = await SubCategory.findAll({
+      where: { category_id: req.params.categoryId },
+      attributes: ['id', 'subcategory_name'],
+      order: [
+        [literal("subcategory_name = 'Outros' ASC")],
+        ['subcategory_name', 'ASC']
+      ]
+    });
     res.json(subcategories);
   } catch (error) {
     console.error('Erro ao listar subcategorias:', error);

@@ -7,7 +7,12 @@ const categories = [
       'Mercado',
       'Restaurantes',
       'Delivery',
-      'Lanches'
+      'Lanches',
+      'Padaria',
+      'Café',
+      'Bebidas',
+      'Feira/Hortifruti',
+      'Outros'
     ]
   },
   {
@@ -17,7 +22,11 @@ const categories = [
       'Transporte Público',
       'Uber/99/Táxi',
       'Manutenção',
-      'Estacionamento'
+      'Estacionamento',
+      'Pedágio',
+      'Seguro Veicular',
+      'Documentação',
+      'Outros'
     ]
   },
   {
@@ -28,7 +37,12 @@ const categories = [
       'IPTU',
       'Manutenção',
       'Mobília',
-      'Decoração'
+      'Decoração',
+      'Eletrodomésticos',
+      'Reforma',
+      'Seguro Residencial',
+      'Material de Limpeza',
+      'Outros'
     ]
   },
   {
@@ -38,7 +52,13 @@ const categories = [
       'Medicamentos',
       'Consultas',
       'Exames',
-      'Academia'
+      'Academia',
+      'Dentista',
+      'Terapia',
+      'Suplementos',
+      'Farmácia',
+      'Vacinas',
+      'Outros'
     ]
   },
   {
@@ -47,7 +67,14 @@ const categories = [
       'Mensalidade',
       'Material Escolar',
       'Cursos',
-      'Livros'
+      'Livros',
+      'Idiomas',
+      'Pós-graduação',
+      'Certificações',
+      'Workshops',
+      'Material Didático',
+      'Equipamentos',
+      'Outros'
     ]
   },
   {
@@ -57,7 +84,15 @@ const categories = [
       'Shows',
       'Viagens',
       'Hobbies',
-      'Streaming'
+      'Streaming',
+      'Jogos',
+      'Esportes',
+      'Bares',
+      'Festas',
+      'Parques',
+      'Música',
+      'Assinaturas',
+      'Outros'
     ]
   },
   {
@@ -66,7 +101,13 @@ const categories = [
       'Roupas',
       'Calçados',
       'Acessórios',
-      'Lavanderia'
+      'Lavanderia',
+      'Roupas Íntimas',
+      'Roupas Esportivas',
+      'Roupas Sociais',
+      'Bolsas/Carteiras',
+      'Joias/Bijuterias',
+      'Outros'
     ]
   },
   {
@@ -76,7 +117,13 @@ const categories = [
       'Luz',
       'Internet',
       'Telefone',
-      'TV por Assinatura'
+      'TV por Assinatura',
+      'Gás',
+      'Celular',
+      'Streaming',
+      'Assinaturas Digitais',
+      'Seguros',
+      'Outros'
     ]
   },
   {
@@ -84,7 +131,71 @@ const categories = [
     subcategories: [
       'IR',
       'IPVA',
-      'Outros Impostos'
+      'IPTU',
+      'ISS',
+      'Taxas Municipais',
+      'Taxas Estaduais',
+      'Taxas Federais',
+      'Impostos Profissionais',
+      'Outros'
+    ]
+  },
+  {
+    category_name: 'Compras',
+    subcategories: [
+      'Eletrônicos',
+      'Informática',
+      'Celulares',
+      'Eletrodomésticos',
+      'Móveis',
+      'Decoração',
+      'Presentes',
+      'Papelaria',
+      'Cosméticos',
+      'Ferramentas',
+      'Outros'
+    ]
+  },
+  {
+    category_name: 'Pets',
+    subcategories: [
+      'Ração',
+      'Veterinário',
+      'Medicamentos',
+      'Banho/Tosa',
+      'Acessórios',
+      'Brinquedos',
+      'Petshop',
+      'Vacinas',
+      'Outros'
+    ]
+  },
+  {
+    category_name: 'Cuidados Pessoais',
+    subcategories: [
+      'Cabelereiro',
+      'Manicure/Pedicure',
+      'Produtos de Beleza',
+      'Cosméticos',
+      'Perfumes',
+      'Spa',
+      'Tratamentos Estéticos',
+      'Higiene Pessoal',
+      'Outros'
+    ]
+  },
+  {
+    category_name: 'Tecnologia',
+    subcategories: [
+      'Hardware',
+      'Software',
+      'Aplicativos',
+      'Jogos',
+      'Acessórios',
+      'Serviços Cloud',
+      'Manutenção',
+      'Equipamentos',
+      'Outros'
     ]
   },
   {
@@ -93,13 +204,25 @@ const categories = [
       'Presentes',
       'Doações',
       'Imprevistos',
-      'Diversos'
+      'Empréstimos',
+      'Multas',
+      'Taxas Bancárias',
+      'Investimentos',
+      'Diversos',
+      'Outros'
     ]
   }
 ];
 
 export const seedCategories = async () => {
   try {
+    // Verifica se já existem categorias
+    const existingCategories = await Category.findAll();
+    if (existingCategories.length > 0) {
+      console.log('Categorias já existem no banco de dados.');
+      return;
+    }
+
     const createdCategories = await Promise.all(
       categories.map(category =>
         Category.create({

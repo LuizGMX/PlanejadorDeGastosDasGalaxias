@@ -4,6 +4,7 @@ import { authenticate } from '../middleware/auth.js';
 import { v4 as uuidv4 } from 'uuid';
 import { Op } from 'sequelize';
 import { Sequelize } from 'sequelize';
+import { literal } from 'sequelize';
 
 const router = express.Router();
 
@@ -264,7 +265,9 @@ router.get('/categories', authenticate, async (req, res) => {
         attributes: ['id', 'subcategory_name']
       }],
       order: [
+        [literal("category_name = 'Outros' ASC")],
         ['category_name', 'ASC'],
+        [SubCategory, literal("subcategory_name = 'Outros' ASC")],
         [SubCategory, 'subcategory_name', 'ASC']
       ]
     });
@@ -292,7 +295,10 @@ router.get('/subcategories/:categoryId', authenticate, async (req, res) => {
     const subcategories = await SubCategory.findAll({
       where: { category_id: req.params.categoryId },
       attributes: ['id', 'subcategory_name'],
-      order: [['subcategory_name', 'ASC']]
+      order: [
+        [literal("subcategory_name = 'Outros' ASC")],
+        ['subcategory_name', 'ASC']
+      ]
     });
     res.json(subcategories);
   } catch (error) {

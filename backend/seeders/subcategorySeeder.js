@@ -6,6 +6,10 @@ const subcategories = {
     'Restaurantes',
     'Delivery',
     'Lanches',
+    'Padaria',
+    'Café',
+    'Bebidas',
+    'Feira/Hortifruti',
     'Outros'
   ],
   'Transporte': [
@@ -14,6 +18,9 @@ const subcategories = {
     'Uber/99/Táxi',
     'Manutenção',
     'Estacionamento',
+    'Pedágio',
+    'Seguro Veicular',
+    'Documentação',
     'Outros'
   ],
   'Moradia': [
@@ -23,6 +30,10 @@ const subcategories = {
     'Manutenção',
     'Mobília',
     'Decoração',
+    'Eletrodomésticos',
+    'Reforma',
+    'Seguro Residencial',
+    'Material de Limpeza',
     'Outros'
   ],
   'Saúde': [
@@ -31,6 +42,11 @@ const subcategories = {
     'Consultas',
     'Exames',
     'Academia',
+    'Dentista',
+    'Terapia',
+    'Suplementos',
+    'Farmácia',
+    'Vacinas',
     'Outros'
   ],
   'Educação': [
@@ -38,6 +54,12 @@ const subcategories = {
     'Material Escolar',
     'Cursos',
     'Livros',
+    'Idiomas',
+    'Pós-graduação',
+    'Certificações',
+    'Workshops',
+    'Material Didático',
+    'Equipamentos',
     'Outros'
   ],
   'Lazer': [
@@ -46,6 +68,13 @@ const subcategories = {
     'Viagens',
     'Hobbies',
     'Streaming',
+    'Jogos',
+    'Esportes',
+    'Bares',
+    'Festas',
+    'Parques',
+    'Música',
+    'Assinaturas',
     'Outros'
   ],
   'Vestuário': [
@@ -53,6 +82,11 @@ const subcategories = {
     'Calçados',
     'Acessórios',
     'Lavanderia',
+    'Roupas Íntimas',
+    'Roupas Esportivas',
+    'Roupas Sociais',
+    'Bolsas/Carteiras',
+    'Joias/Bijuterias',
     'Outros'
   ],
   'Contas': [
@@ -61,18 +95,80 @@ const subcategories = {
     'Internet',
     'Telefone',
     'TV por Assinatura',
+    'Gás',
+    'Celular',
+    'Streaming',
+    'Assinaturas Digitais',
+    'Seguros',
     'Outros'
   ],
   'Impostos': [
     'IR',
     'IPVA',
-    'Outros Impostos'
+    'IPTU',
+    'ISS',
+    'Taxas Municipais',
+    'Taxas Estaduais',
+    'Taxas Federais',
+    'Impostos Profissionais',
+    'Outros'
+  ],
+  'Compras': [
+    'Eletrônicos',
+    'Informática',
+    'Celulares',
+    'Eletrodomésticos',
+    'Móveis',
+    'Decoração',
+    'Presentes',
+    'Papelaria',
+    'Cosméticos',
+    'Ferramentas',
+    'Outros'
+  ],
+  'Pets': [
+    'Ração',
+    'Veterinário',
+    'Medicamentos',
+    'Banho/Tosa',
+    'Acessórios',
+    'Brinquedos',
+    'Petshop',
+    'Vacinas',
+    'Outros'
+  ],
+  'Cuidados Pessoais': [
+    'Cabelereiro',
+    'Manicure/Pedicure',
+    'Produtos de Beleza',
+    'Cosméticos',
+    'Perfumes',
+    'Spa',
+    'Tratamentos Estéticos',
+    'Higiene Pessoal',
+    'Outros'
+  ],
+  'Tecnologia': [
+    'Hardware',
+    'Software',
+    'Aplicativos',
+    'Jogos',
+    'Acessórios',
+    'Serviços Cloud',
+    'Manutenção',
+    'Equipamentos',
+    'Outros'
   ],
   'Outros': [
     'Presentes',
     'Doações',
     'Imprevistos',
-    'Diversos'
+    'Diversos',
+    'Empréstimos',
+    'Multas',
+    'Taxas Bancárias',
+    'Investimentos',
+    'Outros'
   ]
 };
 
@@ -86,21 +182,21 @@ export const seedSubCategories = async () => {
     }
 
     // Busca todas as categorias
-    const categories = await Category.findAll();
+    const categories = await Category.findAll({
+      where: { type: 'expense' }
+    });
     
     // Para cada categoria, cria suas subcategorias
     for (const category of categories) {
-      const categorySubcategories = subcategories[category.category_name];
-      if (categorySubcategories) {
-        await Promise.all(
-          categorySubcategories.map(subcategoryName =>
-            SubCategory.create({
-              subcategory_name: subcategoryName,
-              category_id: category.id
-            })
-          )
-        );
-      }
+      const categorySubcategories = subcategories[category.category_name] || [];
+      await Promise.all(
+        categorySubcategories.map(subcategoryName =>
+          SubCategory.create({
+            subcategory_name: subcategoryName,
+            category_id: category.id
+          })
+        )
+      );
     }
 
     console.log('Subcategorias criadas com sucesso!');
