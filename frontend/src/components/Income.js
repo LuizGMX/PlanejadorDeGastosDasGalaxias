@@ -28,6 +28,7 @@ const Income = () => {
       recurring: []
     }
   });
+  const [deleteOption, setDeleteOption] = useState(null);
 
   // Lista de anos para o filtro
   const years = Array.from(
@@ -383,11 +384,50 @@ const Income = () => {
             {incomeToDelete?.is_recurring ? (
               <>
                 <p>Como você deseja excluir esta receita recorrente?</p>
+                <div className={styles.deleteOptions}>
+                  <div className={styles.deleteOption}>
+                    <input
+                      type="checkbox"
+                      id="delete-single"
+                      checked={deleteOption === 'single'}
+                      onChange={() => setDeleteOption('single')}
+                    />
+                    <label htmlFor="delete-single">Apenas esta</label>
+                  </div>
+                  <div className={styles.deleteOption}>
+                    <input
+                      type="checkbox"
+                      id="delete-future"
+                      checked={deleteOption === 'future'}
+                      onChange={() => setDeleteOption('future')}
+                    />
+                    <label htmlFor="delete-future">Esta e futuras</label>
+                  </div>
+                  <div className={styles.deleteOption}>
+                    <input
+                      type="checkbox"
+                      id="delete-past"
+                      checked={deleteOption === 'past'}
+                      onChange={() => setDeleteOption('past')}
+                    />
+                    <label htmlFor="delete-past">Esta e passadas</label>
+                  </div>
+                  <div className={styles.deleteOption}>
+                    <input
+                      type="checkbox"
+                      id="delete-all"
+                      checked={deleteOption === 'all'}
+                      onChange={() => setDeleteOption('all')}
+                    />
+                    <label htmlFor="delete-all">Todas</label>
+                  </div>
+                </div>
                 <div className={styles.modalButtons}>
                   <button
                     onClick={() => {
                       setShowDeleteModal(false);
                       setIncomeToDelete(null);
+                      setDeleteOption(null);
                     }}
                     className={styles.cancelButton}
                   >
@@ -395,39 +435,26 @@ const Income = () => {
                   </button>
                   <button
                     onClick={() => {
-                      handleDelete(incomeToDelete.id);
+                      switch (deleteOption) {
+                        case 'single':
+                          handleDelete(incomeToDelete.id);
+                          break;
+                        case 'future':
+                          handleDelete(incomeToDelete.id, true);
+                          break;
+                        case 'past':
+                          handleDelete(incomeToDelete.id, false, true);
+                          break;
+                        case 'all':
+                          handleDelete(incomeToDelete.id, false, false, true);
+                          break;
+                      }
                       setShowDeleteModal(false);
                     }}
                     className={styles.deleteButton}
+                    disabled={!deleteOption}
                   >
-                    Apenas esta
-                  </button>
-                  <button
-                    onClick={() => {
-                      handleDelete(incomeToDelete.id, true);
-                      setShowDeleteModal(false);
-                    }}
-                    className={styles.deleteButton}
-                  >
-                    Esta e futuras
-                  </button>
-                  <button
-                    onClick={() => {
-                      handleDelete(incomeToDelete.id, false, true);
-                      setShowDeleteModal(false);
-                    }}
-                    className={styles.deleteButton}
-                  >
-                    Esta e passadas
-                  </button>
-                  <button
-                    onClick={() => {
-                      handleDelete(incomeToDelete.id, false, false, true);
-                      setShowDeleteModal(false);
-                    }}
-                    className={styles.deleteButton}
-                  >
-                    Todas
+                    Excluir
                   </button>
                 </div>
               </>
@@ -451,7 +478,7 @@ const Income = () => {
                     }}
                     className={styles.deleteButton}
                   >
-                    Confirmar
+                    Excluir
                   </button>
                 </div>
               </>

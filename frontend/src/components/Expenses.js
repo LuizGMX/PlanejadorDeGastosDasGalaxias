@@ -30,6 +30,7 @@ const Expenses = () => {
   });
   const [showInstallmentMessage, setShowInstallmentMessage] = useState(false);
   const [messagePosition, setMessagePosition] = useState({ x: 0, y: 0 });
+  const [deleteOption, setDeleteOption] = useState(null);
 
   const years = Array.from(
     { length: 5 },
@@ -767,16 +768,54 @@ const Expenses = () => {
         <div className={styles.modal}>
           <div className={styles.modalContent}>
             <h2>Confirmar Exclusão</h2>
-            
             {deleteOptions.type === 'recurring' ? (
               <>
                 <p>Como você deseja excluir esta despesa recorrente?</p>
+                <div className={styles.deleteOptions}>
+                  <div className={styles.deleteOption}>
+                    <input
+                      type="checkbox"
+                      id="delete-single"
+                      checked={deleteOption === 'single'}
+                      onChange={() => setDeleteOption('single')}
+                    />
+                    <label htmlFor="delete-single">Apenas esta</label>
+                  </div>
+                  <div className={styles.deleteOption}>
+                    <input
+                      type="checkbox"
+                      id="delete-future"
+                      checked={deleteOption === 'future'}
+                      onChange={() => setDeleteOption('future')}
+                    />
+                    <label htmlFor="delete-future">Esta e futuras</label>
+                  </div>
+                  <div className={styles.deleteOption}>
+                    <input
+                      type="checkbox"
+                      id="delete-past"
+                      checked={deleteOption === 'past'}
+                      onChange={() => setDeleteOption('past')}
+                    />
+                    <label htmlFor="delete-past">Esta e passadas</label>
+                  </div>
+                  <div className={styles.deleteOption}>
+                    <input
+                      type="checkbox"
+                      id="delete-all"
+                      checked={deleteOption === 'all'}
+                      onChange={() => setDeleteOption('all')}
+                    />
+                    <label htmlFor="delete-all">Todas</label>
+                  </div>
+                </div>
                 <div className={styles.modalButtons}>
                   <button
                     onClick={() => {
                       setShowDeleteModal(false);
                       setExpenseToDelete(null);
                       setDeleteOptions({ type: 'single' });
+                      setDeleteOption(null);
                     }}
                     className={styles.cancelButton}
                   >
@@ -784,51 +823,59 @@ const Expenses = () => {
                   </button>
                   <button
                     onClick={() => {
-                      setDeleteOptions(prev => ({ ...prev, delete_future: false, delete_past: false, delete_all: false }));
+                      switch (deleteOption) {
+                        case 'single':
+                          setDeleteOptions(prev => ({ ...prev, delete_future: false, delete_past: false, delete_all: false }));
+                          break;
+                        case 'future':
+                          setDeleteOptions(prev => ({ ...prev, delete_future: true, delete_past: false, delete_all: false }));
+                          break;
+                        case 'past':
+                          setDeleteOptions(prev => ({ ...prev, delete_future: false, delete_past: true, delete_all: false }));
+                          break;
+                        case 'all':
+                          setDeleteOptions(prev => ({ ...prev, delete_future: false, delete_past: false, delete_all: true }));
+                          break;
+                      }
                       handleDelete();
                     }}
                     className={styles.deleteButton}
+                    disabled={!deleteOption}
                   >
-                    Apenas esta
-                  </button>
-                  <button
-                    onClick={() => {
-                      setDeleteOptions(prev => ({ ...prev, delete_future: true, delete_past: false, delete_all: false }));
-                      handleDelete();
-                    }}
-                    className={styles.deleteButton}
-                  >
-                    Esta e futuras
-                  </button>
-                  <button
-                    onClick={() => {
-                      setDeleteOptions(prev => ({ ...prev, delete_future: false, delete_past: true, delete_all: false }));
-                      handleDelete();
-                    }}
-                    className={styles.deleteButton}
-                  >
-                    Esta e passadas
-                  </button>
-                  <button
-                    onClick={() => {
-                      setDeleteOptions(prev => ({ ...prev, delete_future: false, delete_past: false, delete_all: true }));
-                      handleDelete();
-                    }}
-                    className={styles.deleteButton}
-                  >
-                    Todas
+                    Excluir
                   </button>
                 </div>
               </>
             ) : deleteOptions.type === 'installment' ? (
               <>
                 <p>Como você deseja excluir esta despesa parcelada?</p>
+                <div className={styles.deleteOptions}>
+                  <div className={styles.deleteOption}>
+                    <input
+                      type="checkbox"
+                      id="delete-single-installment"
+                      checked={deleteOption === 'single'}
+                      onChange={() => setDeleteOption('single')}
+                    />
+                    <label htmlFor="delete-single-installment">Apenas esta parcela</label>
+                  </div>
+                  <div className={styles.deleteOption}>
+                    <input
+                      type="checkbox"
+                      id="delete-all-installments"
+                      checked={deleteOption === 'all'}
+                      onChange={() => setDeleteOption('all')}
+                    />
+                    <label htmlFor="delete-all-installments">Todas as parcelas</label>
+                  </div>
+                </div>
                 <div className={styles.modalButtons}>
                   <button
                     onClick={() => {
                       setShowDeleteModal(false);
                       setExpenseToDelete(null);
                       setDeleteOptions({ type: 'single' });
+                      setDeleteOption(null);
                     }}
                     className={styles.cancelButton}
                   >
@@ -836,21 +883,16 @@ const Expenses = () => {
                   </button>
                   <button
                     onClick={() => {
-                      setDeleteOptions(prev => ({ ...prev, deleteAllInstallments: false }));
+                      setDeleteOptions(prev => ({ 
+                        ...prev, 
+                        deleteAllInstallments: deleteOption === 'all' 
+                      }));
                       handleDelete();
                     }}
                     className={styles.deleteButton}
+                    disabled={!deleteOption}
                   >
-                    Apenas esta parcela
-                  </button>
-                  <button
-                    onClick={() => {
-                      setDeleteOptions(prev => ({ ...prev, deleteAllInstallments: true }));
-                      handleDelete();
-                    }}
-                    className={styles.deleteButton}
-                  >
-                    Todas as parcelas
+                    Excluir
                   </button>
                 </div>
               </>
@@ -872,7 +914,7 @@ const Expenses = () => {
                     onClick={handleDelete}
                     className={styles.deleteButton}
                   >
-                    Confirmar
+                    Excluir
                   </button>
                 </div>
               </>

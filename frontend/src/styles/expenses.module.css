@@ -396,113 +396,155 @@
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
+  width: 100%;
+  height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  backdrop-filter: blur(5px);
 }
 
 .modalContent {
-  background-color: var(--card-background);
+  background-color: var(--background-color);
   padding: 2rem;
   border-radius: 12px;
-  width: 90%;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
   max-width: 500px;
-  border: 1px solid var(--border-color);
+  width: 90%;
+  z-index: 1001;
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .modalContent h2 {
   color: var(--text-color);
-  margin-bottom: 1rem;
   font-size: 1.5rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
 }
 
 .modalContent p {
   color: var(--text-secondary);
-  margin-bottom: 2rem;
-  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.deleteOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 1.5rem 0;
+}
+
+.deleteOption {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-color);
+  background-color: var(--card-background);
+  border: 1px solid var(--border-color);
+}
+
+.deleteOption:hover {
+  border-color: var(--primary-color);
+  background-color: var(--input-background);
+}
+
+.deleteOption.selected {
+  border-color: var(--error-color);
+  background-color: rgba(255, 59, 48, 0.1);
+}
+
+.deleteOption input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--error-color);
+  cursor: pointer;
+}
+
+.deleteOption label {
+  cursor: pointer;
+  font-size: 0.95rem;
+  user-select: none;
+  flex: 1;
 }
 
 .modalButtons {
   display: flex;
-  gap: 1rem;
+  gap: 0.75rem;
   justify-content: flex-end;
+  margin-top: 1.5rem;
 }
 
-.cancelButton,
-.confirmButton {
-  padding: 0.75rem 1.5rem;
-  border: none;
+.modalButtons button {
+  padding: 0.75rem 1.25rem;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 0.95rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  border: none;
+  min-width: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
-.cancelButton {
+.modalButtons .cancelButton {
   background-color: var(--input-background);
   color: var(--text-color);
   border: 1px solid var(--border-color);
 }
 
-.cancelButton:hover {
-  background-color: var(--border-color);
+.modalButtons .cancelButton:hover {
+  background-color: var(--hover-color);
+  transform: translateY(-1px);
 }
 
-.confirmButton {
+.modalButtons .deleteButton {
   background-color: var(--error-color);
   color: white;
 }
 
-.confirmButton:hover {
-  background-color: #ff5252;
+.modalButtons .deleteButton:hover {
+  background-color: var(--error-color-dark);
+  transform: translateY(-1px);
 }
 
-/* Responsividade */
 @media (max-width: 768px) {
-  .container {
-    padding: 1rem;
-  }
-
-  .filters {
-    flex-direction: column;
-  }
-
-  .select {
-    width: 100%;
-  }
-
-  .table {
-    font-size: 0.9rem;
-  }
-
-  .table th,
-  .table td {
-    padding: 0.75rem;
-  }
-
-  .buttonGroup {
-    flex-direction: column;
-  }
-
-  .button {
-    width: 100%;
-  }
-
   .modalContent {
-    margin: 1rem;
     padding: 1.5rem;
+    margin: 1rem;
+    width: calc(100% - 2rem);
+  }
+
+  .deleteOption {
+    padding: 0.75rem;
   }
 
   .modalButtons {
     flex-direction: column;
   }
 
-  .cancelButton,
-  .confirmButton {
+  .modalButtons button {
     width: 100%;
   }
 }

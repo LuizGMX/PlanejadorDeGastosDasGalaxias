@@ -75,8 +75,7 @@ const Sidebar = () => {
   return (
     <div className={styles.sidebar}>
       <div className={styles.logo}>
-        <img src={logo} alt="Logo do Planejador de Gastos das Galáxias" className={styles.logoImage} />
-        <p>Planejador de Gastos das Galáxias</p>
+        <img src={logo} alt="Logo do Planejador de Gastos das Galáxias" className={styles.logoImage} />        
       </div>
 
       <nav className={styles.menu}>
