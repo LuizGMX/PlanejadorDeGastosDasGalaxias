@@ -1,6 +1,11 @@
 .container {
   padding: 2rem;
-  color: var(--text-color);
+  background-color: var(--card-background);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  margin: 0 auto;
+  border: 1px solid var(--border-color);
+  max-width: 1200px;
 }
 
 .header {
@@ -416,12 +421,20 @@
 }
 
 .searchField {
+  flex: 1;
+  position: relative;
+  background-color: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
   display: flex;
   align-items: center;
-  background-color: var(--background-light);
-  border-radius: 8px;
-  padding: 0.5rem 1rem;
-  flex: 1;
+  padding: 0 1rem;
+  transition: all 0.2s ease;
+}
+
+.searchField:focus-within {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.1);
 }
 
 .searchField span {
@@ -430,12 +443,22 @@
 }
 
 .searchInput {
-  border: none;
-  background: none;
-  outline: none;
   width: 100%;
-  font-size: 1rem;
-  color: var(--text-primary);
+  padding: 0.75rem 0;
+  border: none;
+  background: transparent;
+  color: var(--text-color);
+  font-size: 0.95rem;
+}
+
+.searchInput:focus {
+  outline: none;
+}
+
+.searchField .material-icons {
+  color: var(--text-secondary);
+  font-size: 1.2rem;
+  margin-right: 0.5rem;
 }
 
 .successMessage {
