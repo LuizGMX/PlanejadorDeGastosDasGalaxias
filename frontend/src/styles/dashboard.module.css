@@ -1,3 +1,23 @@
+:root {
+  --primary-color: #00FF85;
+  --secondary-color: #1A1B23;
+  --background-color: #13141B;
+  --card-background: #1A1B23;
+  --text-color: #FFFFFF;
+  --text-secondary: #8B8D97;
+  --error-color: #FF6B6B;
+  --success-color: #51CF66;
+  --border-color: #2A2B33;
+  --hover-color: #00E676;
+  --input-background: #2A2B33;
+  --gradient-start: #00FF85;
+  --gradient-end: #80FFB9;
+}
+
+.title {
+  color: var(--primary-color) !important;
+}
+
 .dashboardContainer {
   padding: 2rem;
   max-width: 1200px;
@@ -45,7 +65,8 @@
   justify-content: center;
 }
 
-.addFirstExpenseButton, .backButton {
+.addFirstExpenseButton,
+.backButton {
   padding: 1rem 2rem;
   border: none;
   border-radius: 8px;
@@ -332,7 +353,8 @@
     flex-direction: column;
   }
 
-  .addFirstExpenseButton, .backButton {
+  .addFirstExpenseButton,
+  .backButton {
     width: 100%;
   }
 
@@ -347,6 +369,7 @@
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -539,12 +562,12 @@
   transition: all 0.2s ease;
 }
 
-.hiddenCheckbox:checked + .customCheckbox {
+.hiddenCheckbox:checked+.customCheckbox {
   background-color: var(--primary-color);
   border-color: var(--primary-color);
 }
 
-.hiddenCheckbox:checked + .customCheckbox span {
+.hiddenCheckbox:checked+.customCheckbox span {
   opacity: 1;
   transform: scale(1);
 }
@@ -572,6 +595,7 @@
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -599,6 +623,7 @@
     from {
       transform: translateY(100%);
     }
+
     to {
       transform: translateY(0);
     }
@@ -674,4 +699,4 @@
 
 .trendStat strong.negative {
   color: var(--error-color);
-} 
+}

@@ -244,8 +244,7 @@ router.get('/bank-balance-trend', authenticate, async (req, res) => {
     const endDate = new Date();
     endDate.setMonth(endDate.getMonth() + projectionMonths);
 
-    const [recurringExpenses, recurringIncomes, nonRecurringExpenses, nonRecurringIncomes, user] = await Promise.all([
-      // Busca despesas recorrentes
+    const [recurringExpenses, recurringIncomes, user] = await Promise.all([
       Expense.findAll({
         where: {
           user_id: req.user.id,
@@ -258,7 +257,6 @@ router.get('/bank-balance-trend', authenticate, async (req, res) => {
         },
         include: [{ model: Category }, { model: Bank }]
       }),
-      // Busca receitas recorrentes
       Income.findAll({
         where: {
           user_id: req.user.id,
@@ -268,24 +266,6 @@ router.get('/bank-balance-trend', authenticate, async (req, res) => {
             { end_date: { [Op.gte]: startDate } },
             { end_date: null }
           ]
-        },
-        include: [{ model: Category }, { model: Bank }]
-      }),
-      // Busca despesas não recorrentes
-      Expense.findAll({
-        where: {
-          user_id: req.user.id,
-          is_recurring: false,
-          expense_date: { [Op.between]: [startDate, endDate] }
-        },
-        include: [{ model: Category }, { model: Bank }]
-      }),
-      // Busca receitas não recorrentes
-      Income.findAll({
-        where: {
-          user_id: req.user.id,
-          is_recurring: false,
-          date: { [Op.between]: [startDate, endDate] }
         },
         include: [{ model: Category }, { model: Bank }]
       }),
@@ -296,69 +276,50 @@ router.get('/bank-balance-trend', authenticate, async (req, res) => {
     const projectionData = [];
     let currentBalance = 0;
 
+    // Adiciona o saldo inicial
+    projectionData.push({
+      date: startDate.toISOString().split('T')[0],
+      balance: 0,
+      expenses: 0,
+      incomes: 0
+    });
+
     for (let i = 0; i < projectionMonths; i++) {
       const currentDate = new Date(startDate);
       currentDate.setMonth(currentDate.getMonth() + i + 1);
-      const currentMonthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-      const currentMonthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
 
-      // Calcula despesas recorrentes do mês
-      const monthlyRecurringExpenses = recurringExpenses.reduce((total, expense) => {
-        const expenseStartDate = new Date(expense.start_date);
-        const expenseEndDate = expense.end_date ? new Date(expense.end_date) : null;
+      const monthlyExpenses = recurringExpenses.reduce((total, expense) => {
+        const expenseDate = new Date(expense.start_date);
+        const isActive = currentDate.getMonth() === expenseDate.getMonth() && 
+                        currentDate.getFullYear() === expenseDate.getFullYear();
         
-        const isActive = currentDate >= expenseStartDate && 
-                        (!expenseEndDate || currentDate <= expenseEndDate);
-        
-        if (isActive) {
+        // Se a despesa é recorrente e está ativa no mês atual
+        if (isActive && expense.is_recurring) {
           return total + parseFloat(expense.amount || 0);
         }
         return total;
       }, 0);
 
-      // Calcula receitas recorrentes do mês
-      const monthlyRecurringIncomes = recurringIncomes.reduce((total, income) => {
-        const incomeStartDate = new Date(income.start_date);
-        const incomeEndDate = income.end_date ? new Date(income.end_date) : null;
+      const monthlyIncomes = recurringIncomes.reduce((total, income) => {
+        const incomeDate = new Date(income.start_date);
+        const isActive = currentDate.getMonth() === incomeDate.getMonth() && 
+                        currentDate.getFullYear() === incomeDate.getFullYear();
         
-        const isActive = currentDate >= incomeStartDate && 
-                        (!incomeEndDate || currentDate <= incomeEndDate);
-        
-        if (isActive) {
+        // Se a receita é recorrente e está ativa no mês atual
+        if (isActive && income.is_recurring) {
           return total + parseFloat(income.amount || 0);
         }
         return total;
       }, 0);
 
-      // Calcula despesas não recorrentes do mês
-      const monthlyNonRecurringExpenses = nonRecurringExpenses.reduce((total, expense) => {
-        const expenseDate = new Date(expense.expense_date);
-        if (expenseDate >= currentMonthStart && expenseDate <= currentMonthEnd) {
-          return total + parseFloat(expense.amount || 0);
-        }
-        return total;
-      }, 0);
-
-      // Calcula receitas não recorrentes do mês
-      const monthlyNonRecurringIncomes = nonRecurringIncomes.reduce((total, income) => {
-        const incomeDate = new Date(income.date);
-        if (incomeDate >= currentMonthStart && incomeDate <= currentMonthEnd) {
-          return total + parseFloat(income.amount || 0);
-        }
-        return total;
-      }, 0);
-
-      // Calcula totais do mês
-      const monthlyTotalExpenses = monthlyRecurringExpenses + monthlyNonRecurringExpenses;
-      const monthlyTotalIncomes = monthlyRecurringIncomes + monthlyNonRecurringIncomes + monthlyNetIncome;
-      const monthlyBalance = monthlyTotalIncomes - monthlyTotalExpenses;
+      const monthlyBalance = monthlyIncomes + monthlyNetIncome - monthlyExpenses;
       currentBalance += monthlyBalance;
 
       projectionData.push({
         date: currentDate.toISOString().split('T')[0],
         balance: currentBalance,
-        expenses: monthlyTotalExpenses,
-        incomes: monthlyTotalIncomes
+        expenses: monthlyExpenses,
+        incomes: monthlyIncomes + monthlyNetIncome
       });
     }
 
@@ -367,18 +328,7 @@ router.get('/bank-balance-trend', authenticate, async (req, res) => {
     const totalProjectedIncomes = projectionData.reduce((total, data) => total + data.incomes, 0);
     const finalBalance = totalProjectedIncomes - totalProjectedExpenses;
 
-    console.log('Dados de Projeção:', {
-      recurringExpenses: recurringExpenses.map(e => ({
-        description: e.description,
-        amount: e.amount,
-        start_date: e.start_date,
-        end_date: e.end_date
-      })),
-      nonRecurringExpenses: nonRecurringExpenses.map(e => ({
-        description: e.description,
-        amount: e.amount,
-        expense_date: e.expense_date
-      })),
+    console.log('AQUI:', {
       projectionData,
       summary: {
         totalProjectedExpenses,

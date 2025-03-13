@@ -556,7 +556,7 @@ const Dashboard = () => {
   return (
     <div className={styles.dashboardContainer}>
       <div className={styles.header}>
-        <h1>Dashboard</h1>
+        <h1 className={styles.title}>Dashboard</h1>
       </div>
 
       {noExpensesMessage ? (

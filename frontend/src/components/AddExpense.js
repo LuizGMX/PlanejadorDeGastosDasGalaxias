@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../App';
 import styles from '../styles/shared.module.css';
-import { BsCreditCard2Front } from 'react-icons/bs';
+import { BsCreditCard2Front, BsPlusCircle } from 'react-icons/bs';
 import { SiPix } from 'react-icons/si';
 import CurrencyInput from 'react-currency-input-field';
 import addExpenseStyles from '../styles/addExpense.module.css';
@@ -277,7 +277,10 @@ const AddExpense = () => {
   return (
     <div className={styles.container}>
       <div className={`${styles.card} ${styles.fadeIn}`}>
-        <h1 className={styles.title}>Adicionar Despesa</h1>
+        
+          
+        
+        <h1 className={styles.title}><BsPlusCircle size={24} className={styles.icon} /> Adicionar Despesa</h1>
 
         {error && <p className={styles.error}>{error}</p>}
         {success && (

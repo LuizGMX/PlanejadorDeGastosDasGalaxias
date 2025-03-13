@@ -4,6 +4,7 @@ import { AuthContext } from '../App';
 import styles from '../styles/addIncome.module.css';
 import sharedStyles from '../styles/shared.module.css';
 import CurrencyInput from 'react-currency-input-field';
+import { BsPlusCircle } from 'react-icons/bs';
 
 const AddIncome = () => {
   const navigate = useNavigate();
@@ -147,7 +148,7 @@ const AddIncome = () => {
   return (
     <div className={styles.container}>
       <div className={`${styles.card} ${styles.fadeIn}`}>
-        <h1 className={styles.title}>Adicionar Receita</h1>
+        <h1 className={styles.title}><BsPlusCircle size={24} className={styles.icon} /> Adicionar Receita</h1>
 
         {error && <p className={styles.error}>{error}</p>}
         {success && (

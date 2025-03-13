@@ -481,7 +481,7 @@ const Expenses = () => {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h1>Minhas Despesas</h1>
+        <h1 className={styles.title}>Minhas Despesas</h1>
         <button
           className={styles.addButton}
           onClick={() => navigate('/add-expense')}
