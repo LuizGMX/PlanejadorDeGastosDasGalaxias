@@ -47,6 +47,22 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
   };
 
   const formatCurrency = (value) => {
+    const absValue = Math.abs(value);
+    if (absValue >= 1000000) {
+      return `${(value / 1000000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}M`;
+    } else if (absValue >= 1000) {
+      return `${(value / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}k`;
+    }
+    return value.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+  };
+
+  const formatFullCurrency = (value) => {
+    const absValue = Math.abs(value);
+    if (absValue >= 1000000) {
+      return `R$ ${(value / 1000000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} milhões`;
+    } else if (absValue >= 1000) {
+      return `R$ ${(value / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mil`;
+    }
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
@@ -63,7 +79,14 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
   if (!data) return <div>Nenhum dado encontrado</div>;
 
   return (
-    <div style={containerStyle}>
+    <div style={{ 
+      ...containerStyle,
+      padding: '20px',
+      backgroundColor: 'var(--background)',
+      borderRadius: '12px',
+      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+      marginBottom: '20px'
+    }}>
       {showTitle && <h3>Tendência de Saldo Bancário</h3>}
       {showControls && (
         <div className={styles.controls}>
@@ -79,9 +102,44 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
           </label>
         </div>
       )}
+
+<div className={styles.summary} style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        padding: '20px',
+        backgroundColor: 'var(--card-background)',
+        borderRadius: '8px',
+        marginTop: '20px'
+      }}>
+        <div className={styles.summaryItem} style={{ textAlign: 'center' }}>
+          <span style={{ display: 'block', marginBottom: '5px', color: 'var(--text-color)' }}>Receitas Projetadas</span>
+          <strong style={{ color: 'var(--success-color)', fontSize: '1.2em' }}>
+            {formatFullCurrency(data.summary.totalProjectedIncomes)}
+          </strong>
+        </div>
+        <div className={styles.summaryItem} style={{ textAlign: 'center' }}>
+          <span style={{ display: 'block', marginBottom: '5px', color: 'var(--text-color)' }}>Despesas Projetadas</span>
+          <strong style={{ color: 'var(--error-color)', fontSize: '1.2em' }}>
+            {formatFullCurrency(data.summary.totalProjectedExpenses)}
+          </strong>
+        </div>
+        <div className={styles.summaryItem} style={{ textAlign: 'center' }}>
+          <span style={{ display: 'block', marginBottom: '5px', color: 'var(--text-color)' }}>Saldo Final</span>
+          <strong style={{ 
+            color: data.summary.finalBalance >= 0 ? 'var(--success-color)' : 'var(--error-color)', 
+            fontSize: '1.2em'
+          }}>
+            {formatFullCurrency(data.summary.finalBalance)}
+          </strong>
+        </div>
+      </div>
       <div style={{ width: '100%', height }}>
         <ResponsiveContainer>
-          <ComposedChart data={data.projectionData} margin={{ top: 10, right: 30, left: 80, bottom: 20 }}>
+          <ComposedChart 
+            data={data.projectionData} 
+            margin={{ top: 20, right: 30, left: 80, bottom: 20 }}
+            style={{ backgroundColor: 'var(--card-background)', padding: '20px', borderRadius: '8px' }}
+          >
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
             <XAxis
               dataKey="date"
@@ -94,31 +152,63 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
               padding={{ left: 20, right: 20 }}
             />
             <YAxis
-              tickFormatter={formatCurrency}
+              tickFormatter={(value) => `${formatCurrency(value)}`}
               tick={{ fill: 'var(--text-color)' }}
               width={80}
-              domain={['dataMin', 'dataMax']}
+              domain={[0, 'dataMax']}
+              ticks={(() => {
+                // Pega todos os valores únicos do dataset
+                const allValues = [...new Set(
+                  data.projectionData.flatMap(d => [d.balance, d.expenses, d.incomes])
+                    .filter(v => v !== null && v !== undefined)
+                )];
+
+                // Encontra o maior valor
+                const maxValue = Math.max(...allValues);
+                
+                // Calcula o ponto médio para x=0
+                const midPoint = maxValue / 2;
+
+                // Pega todos os pontos de início das séries
+                const startPoints = [
+                  data.projectionData[0]?.balance,
+                  data.projectionData[0]?.expenses,
+                  data.projectionData[0]?.incomes
+                ].filter(v => v !== null && v !== undefined);
+
+                // Combina todos os pontos necessários
+                const points = [
+                  maxValue, // Maior valor sempre primeiro
+                  ...startPoints, // Pontos de início das séries
+                  midPoint // Ponto médio em x=0
+                ];
+
+                // Remove duplicatas e ordena em ordem decrescente
+                return [...new Set(points)].sort((a, b) => b - a);
+              })()}
             />
             <Tooltip
               formatter={(value, name) => {
+                const formattedValue = formatFullCurrency(value);
                 switch (name) {
                   case 'balance':
-                    return [formatCurrency(value), 'Saldo'];
+                    return [formattedValue, 'Saldo'];
                   case 'expenses':
-                    return [formatCurrency(value), 'Despesas'];
+                    return [formattedValue, 'Despesas'];
                   case 'incomes':
-                    return [formatCurrency(value), 'Receitas'];
+                    return [formattedValue, 'Receitas'];
                   default:
-                    return [formatCurrency(value), name];
+                    return [formattedValue, name];
                 }
               }}
               contentStyle={{
                 backgroundColor: 'var(--card-background)',
                 border: '1px solid var(--border-color)',
-                color: 'var(--text-color)'
+                color: 'var(--text-color)',
+                padding: '10px'
               }}
               labelFormatter={formatDate}
-              labelStyle={{ color: 'var(--text-color)' }}
+              labelStyle={{ color: 'var(--text-color)', marginBottom: '5px' }}
             />
             <Legend
               formatter={(value) => {
@@ -166,22 +256,6 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
             />
           </ComposedChart>
         </ResponsiveContainer>
-      </div>
-      <div className={styles.summary}>
-        <div className={styles.summaryItem}>
-          <span>Total de Receitas Projetadas:</span>
-          <strong>{formatCurrency(data.summary.totalProjectedIncomes)}</strong>
-        </div>
-        <div className={styles.summaryItem}>
-          <span>Total de Despesas Projetadas:</span>
-          <strong>{formatCurrency(data.summary.totalProjectedExpenses)}</strong>
-        </div>
-        <div className={styles.summaryItem}>
-          <span>Saldo Final Projetado:</span>
-          <strong className={data.summary.finalBalance >= 0 ? styles.positive : styles.negative}>
-            {formatCurrency(data.summary.finalBalance)}
-          </strong>
-        </div>
       </div>
     </div>
   );
