@@ -18,7 +18,6 @@ import {
   Cell,
   ComposedChart,
 } from 'recharts';
-import { BsArrowsAngleExpand, BsArrowsAngleContract } from 'react-icons/bs';
 import styles from '../styles/dashboard.module.css';
   
 const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300, containerStyle = {} }) => {
@@ -99,7 +98,7 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
         <div className={styles.controls}>
           <label>
             Período:
-            <select value={months} onChange={(e) => setMonths(Number(e.target.value))}>
+            <select className={styles.modernSelect } value={months} onChange={(e) => setMonths(Number(e.target.value))}>
               <option value={3}>3 meses</option>
               <option value={6}>6 meses</option>
               <option value={12}>12 meses</option>

@@ -57,11 +57,6 @@ const Sidebar = () => {
         }
       ]
     },
-    {
-      label: 'Tendência de Saldo',
-      path: '/bank-balance-trend',
-      icon: <BsBank size={20} />
-    },
     // {
     //   label: 'Importar Planilha',
     //   path: '/upload-spreadsheet',
