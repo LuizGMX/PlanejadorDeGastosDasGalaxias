@@ -287,16 +287,18 @@ const Expenses = () => {
       const queryParams = new URLSearchParams();
 
       if (deleteOptions.type === 'recurring') {
-        if (deleteOptions.delete_future) {
-          queryParams.append('delete_future', 'true');
+        switch (deleteOption) {
+          case 'future':
+            queryParams.append('delete_future', 'true');
+            break;
+          case 'past':
+            queryParams.append('delete_past', 'true');
+            break;
+          case 'all':
+            queryParams.append('delete_all', 'true');
+            break;
         }
-        if (deleteOptions.delete_past) {
-          queryParams.append('delete_past', 'true');
-        }
-        if (deleteOptions.delete_all) {
-          queryParams.append('delete_all', 'true');
-        }
-      } else if (deleteOptions.type === 'installment' && deleteOptions.deleteAllInstallments) {
+      } else if (deleteOptions.type === 'installment' && deleteOption === 'all') {
         queryParams.append('delete_all_installments', 'true');
       }
 
@@ -315,9 +317,13 @@ const Expenses = () => {
         throw new Error('Falha ao excluir despesa');
       }
 
+      // Limpa os estados do modal
       setShowDeleteModal(false);
       setExpenseToDelete(null);
       setDeleteOptions({ type: 'single' });
+      setDeleteOption(null);
+
+      // Recarrega a lista de despesas
       await fetchExpenses();
     } catch (err) {
       setError('Erro ao excluir despesa. Por favor, tente novamente.');

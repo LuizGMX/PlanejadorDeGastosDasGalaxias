@@ -153,14 +153,16 @@ const Income = () => {
       let url = `/api/incomes/${id}`;
       const queryParams = new URLSearchParams();
 
-      if (deleteFuture) {
-        queryParams.append('delete_future', 'true');
-      }
-      if (deletePast) {
-        queryParams.append('delete_past', 'true');
-      }
-      if (deleteAll) {
-        queryParams.append('delete_all', 'true');
+      switch (deleteOption) {
+        case 'future':
+          queryParams.append('delete_future', 'true');
+          break;
+        case 'past':
+          queryParams.append('delete_past', 'true');
+          break;
+        case 'all':
+          queryParams.append('delete_all', 'true');
+          break;
       }
 
       if (queryParams.toString()) {
@@ -178,7 +180,13 @@ const Income = () => {
         throw new Error('Falha ao excluir receita');
       }
 
-      setIncomes(incomes.filter(income => income.id !== id));
+      // Limpa os estados do modal
+      setShowDeleteModal(false);
+      setIncomeToDelete(null);
+      setDeleteOption(null);
+
+      // Recarrega a lista de receitas
+      await fetchIncomes();
     } catch (err) {
       setError('Erro ao excluir receita. Por favor, tente novamente.');
     }
@@ -440,16 +448,15 @@ const Income = () => {
                           handleDelete(incomeToDelete.id);
                           break;
                         case 'future':
-                          handleDelete(incomeToDelete.id, true);
+                          handleDelete(incomeToDelete.id);
                           break;
                         case 'past':
-                          handleDelete(incomeToDelete.id, false, true);
+                          handleDelete(incomeToDelete.id);
                           break;
                         case 'all':
-                          handleDelete(incomeToDelete.id, false, false, true);
+                          handleDelete(incomeToDelete.id);
                           break;
                       }
-                      setShowDeleteModal(false);
                     }}
                     className={styles.deleteButton}
                     disabled={!deleteOption}
@@ -472,10 +479,7 @@ const Income = () => {
                     Cancelar
                   </button>
                   <button
-                    onClick={() => {
-                      handleDelete(incomeToDelete.id);
-                      setShowDeleteModal(false);
-                    }}
+                    onClick={() => handleDelete(incomeToDelete.id)}
                     className={styles.deleteButton}
                   >
                     Excluir
