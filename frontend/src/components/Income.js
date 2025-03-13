@@ -14,6 +14,9 @@ const Income = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [incomeToDelete, setIncomeToDelete] = useState(null);
   const [editingIncome, setEditingIncome] = useState(null);
+  const [deleteSuccess, setDeleteSuccess] = useState(null);
+  const [showInstallmentMessage, setShowInstallmentMessage] = useState(false);
+  const [messagePosition, setMessagePosition] = useState({ x: 0, y: 0 });
   const [filters, setFilters] = useState({
     months: [new Date().getMonth() + 1],
     years: [new Date().getFullYear()],
@@ -148,7 +151,40 @@ const Income = () => {
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
-  const handleDelete = async (id, deleteFuture = false, deletePast = false, deleteAll = false) => {
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      const nonRecurringIncomes = incomes
+        .filter(income => !income.is_recurring)
+        .map(income => income.id);
+      setSelectedIncomes(nonRecurringIncomes);
+    } else {
+      setSelectedIncomes([]);
+    }
+  };
+
+  const handleSelectIncome = (id, event) => {
+    const income = incomes.find(i => i.id === id);
+    if (income?.is_recurring) {
+      const rect = event.target.getBoundingClientRect();
+      setMessagePosition({
+        x: rect.left,
+        y: rect.bottom + window.scrollY + 5
+      });
+      setShowInstallmentMessage(true);
+      setTimeout(() => setShowInstallmentMessage(false), 3000);
+      return;
+    }
+
+    setSelectedIncomes(prev => {
+      if (prev.includes(id)) {
+        return prev.filter(incomeId => incomeId !== id);
+      } else {
+        return [...prev, id];
+      }
+    });
+  };
+
+  const handleDelete = async (id) => {
     try {
       let url = `/api/incomes/${id}`;
       const queryParams = new URLSearchParams();
@@ -180,10 +216,23 @@ const Income = () => {
         throw new Error('Falha ao excluir receita');
       }
 
+      const data = await response.json();
+
       // Limpa os estados do modal
       setShowDeleteModal(false);
       setIncomeToDelete(null);
       setDeleteOption(null);
+
+      // Mostra mensagem de sucesso
+      setDeleteSuccess({
+        message: data.message,
+        count: data.count || 1
+      });
+
+      // Remove a mensagem após 3 segundos
+      setTimeout(() => {
+        setDeleteSuccess(null);
+      }, 3000);
 
       // Recarrega a lista de receitas
       await fetchIncomes();
@@ -209,6 +258,12 @@ const Income = () => {
       </div>
 
       <div className={styles.filtersContainer}>
+        {deleteSuccess && (
+          <div className={styles.successMessage}>
+            {deleteSuccess.message} {deleteSuccess.count > 1 ? `(${deleteSuccess.count} itens)` : ''}
+          </div>
+        )}
+
         <div className={styles.filterGroup}>
           <button
             className={styles.filterButton}
@@ -315,24 +370,50 @@ const Income = () => {
           )}
         </div>
 
-        <div className={styles.filterRow}>
-          <div className={styles.filterGroup}>
-            <button
-              className={`${styles.recurringButton} ${filters.is_recurring === 'true' ? styles.active : ''}`}
-              onClick={() => handleFilterChange('is_recurring', filters.is_recurring === 'true' ? '' : 'true')}
-              title="Mostrar apenas receitas recorrentes"
-            >
-              <span className="material-icons">sync</span>
-              Recorrentes
-            </button>
+        <div className={styles.searchRow}>
+          <div className={styles.searchField}>
+            <span className="material-icons">search</span>
+            <input
+              type="text"
+              placeholder="Buscar por descrição..."
+              value={filters.description}
+              onChange={(e) => handleFilterChange('description', e.target.value)}
+              className={styles.searchInput}
+            />
           </div>
+          <button
+            className={`${styles.recurringButton} ${filters.is_recurring === 'true' ? styles.active : ''}`}
+            onClick={() => handleFilterChange('is_recurring', filters.is_recurring === 'true' ? '' : 'true')}
+            title="Mostrar apenas receitas recorrentes"
+          >
+            <span className="material-icons">sync</span>
+            Recorrentes
+          </button>
         </div>
       </div>
+
+      {selectedIncomes.length > 0 && (
+        <div className={styles.bulkActions}>
+          <button
+            className={styles.deleteButton}
+            onClick={() => handleDeleteClick()}
+          >
+            Excluir {selectedIncomes.length} {selectedIncomes.length === 1 ? 'item selecionado' : 'itens selecionados'}
+          </button>
+        </div>
+      )}
 
       <div className={styles.tableContainer}>
         <table className={styles.table}>
           <thead>
             <tr>
+              <th>
+                <input
+                  type="checkbox"
+                  checked={selectedIncomes.length === incomes.filter(i => !i.is_recurring).length}
+                  onChange={handleSelectAll}
+                />
+              </th>
               <th>Descrição</th>
               <th>Valor</th>
               <th>Data</th>
@@ -345,6 +426,14 @@ const Income = () => {
           <tbody>
             {incomes.map(income => (
               <tr key={income.id}>
+                <td>
+                  <input
+                    type="checkbox"
+                    checked={selectedIncomes.includes(income.id)}
+                    onChange={(e) => handleSelectIncome(income.id, e)}
+                    className={income.is_recurring ? styles.recurringCheckbox : ''}
+                  />
+                </td>
                 <td>{income.description}</td>
                 <td>{formatCurrency(income.amount)}</td>
                 <td>{formatDate(income.date)}</td>
@@ -384,6 +473,20 @@ const Income = () => {
           </tbody>
         </table>
       </div>
+
+      {showInstallmentMessage && (
+        <div 
+          className={styles.installmentMessage}
+          style={{
+            position: 'absolute',
+            left: messagePosition.x,
+            top: messagePosition.y
+          }}
+        >
+          Para excluir receitas recorrentes, use o botão
+          <span className="material-icons" style={{ verticalAlign: 'middle', marginLeft: '4px' }}>delete_outline</span>
+        </div>
+      )}
 
       {showDeleteModal && (
         <div className={styles.modal}>
@@ -445,14 +548,8 @@ const Income = () => {
                     onClick={() => {
                       switch (deleteOption) {
                         case 'single':
-                          handleDelete(incomeToDelete.id);
-                          break;
                         case 'future':
-                          handleDelete(incomeToDelete.id);
-                          break;
                         case 'past':
-                          handleDelete(incomeToDelete.id);
-                          break;
                         case 'all':
                           handleDelete(incomeToDelete.id);
                           break;

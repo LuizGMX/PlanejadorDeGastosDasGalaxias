@@ -333,7 +333,7 @@ router.delete('/:id', authenticate, async (req, res) => {
   const t = await Income.sequelize.transaction();
 
   try {
-    const { delete_future, delete_all } = req.query;
+    const { delete_future, delete_past, delete_all } = req.query;
     const income = await Income.findOne({
       where: {
         id: req.params.id,
@@ -350,7 +350,8 @@ router.delete('/:id', authenticate, async (req, res) => {
         // Excluir todas as receitas do grupo
         await Income.destroy({
           where: {
-            recurring_group_id: income.recurring_group_id
+            recurring_group_id: income.recurring_group_id,
+            user_id: req.user.id
           },
           transaction: t
         });
@@ -359,8 +360,21 @@ router.delete('/:id', authenticate, async (req, res) => {
         await Income.destroy({
           where: {
             recurring_group_id: income.recurring_group_id,
+            user_id: req.user.id,
             date: {
               [Op.gte]: income.date
+            }
+          },
+          transaction: t
+        });
+      } else if (delete_past === 'true') {
+        // Excluir todas as receitas passadas do mesmo grupo (incluindo a atual)
+        await Income.destroy({
+          where: {
+            recurring_group_id: income.recurring_group_id,
+            user_id: req.user.id,
+            date: {
+              [Op.lte]: income.date
             }
           },
           transaction: t

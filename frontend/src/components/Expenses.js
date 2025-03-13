@@ -14,6 +14,7 @@ const Expenses = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState(null);
   const [editingExpense, setEditingExpense] = useState(null);
+  const [deleteSuccess, setDeleteSuccess] = useState(null);
   const [filters, setFilters] = useState({
     months: [new Date().getMonth() + 1],
     years: [new Date().getFullYear()],
@@ -193,6 +194,9 @@ const Expenses = () => {
       if (filters.description) {
         queryParams.append('description', filters.description);
       }
+      if (filters.is_recurring !== '') {
+        queryParams.append('is_recurring', filters.is_recurring);
+      }
 
       const response = await fetch(`/api/expenses?${queryParams}`, {
           headers: {
@@ -206,7 +210,7 @@ const Expenses = () => {
 
         const data = await response.json();
         setExpenses(data);
-      setLoading(false);
+        setLoading(false);
       } catch (err) {
         setError('Erro ao carregar despesas. Por favor, tente novamente.');
         setLoading(false);
@@ -317,11 +321,24 @@ const Expenses = () => {
         throw new Error('Falha ao excluir despesa');
       }
 
+      const data = await response.json();
+
       // Limpa os estados do modal
       setShowDeleteModal(false);
       setExpenseToDelete(null);
       setDeleteOptions({ type: 'single' });
       setDeleteOption(null);
+
+      // Mostra mensagem de sucesso
+      setDeleteSuccess({
+        message: data.message,
+        count: data.count || 1
+      });
+
+      // Remove a mensagem após 3 segundos
+      setTimeout(() => {
+        setDeleteSuccess(null);
+      }, 3000);
 
       // Recarrega a lista de despesas
       await fetchExpenses();
@@ -429,6 +446,12 @@ const Expenses = () => {
           Adicionar Despesa
         </button>
       </div>
+
+      {deleteSuccess && (
+        <div className={styles.successMessage}>
+          {deleteSuccess.message} {deleteSuccess.count > 1 ? `(${deleteSuccess.count} itens)` : ''}
+        </div>
+      )}
 
       <div className={styles.filtersContainer}>
         <div className={styles.filterRow}>
