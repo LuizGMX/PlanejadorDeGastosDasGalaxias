@@ -9,7 +9,6 @@ import Layout from './components/Layout';
 import Income from './components/Income';
 import AddIncome from './components/AddIncome';
 import SpreadsheetUpload from './components/SpreadsheetUpload';
-import BankBalanceTrend from './components/BankBalanceTrend';
 import Sidebar from './components/Sidebar';
 import styles from './styles/app.module.css';
 
@@ -97,11 +96,6 @@ function App() {
           <Route path="/upload-spreadsheet" element={
             <PrivateRoute>
               <SpreadsheetUpload />
-            </PrivateRoute>
-          } />
-          <Route path="/bank-balance-trend" element={
-            <PrivateRoute>
-              <BankBalanceTrend />
             </PrivateRoute>
           } />
           <Route path="*" element={<Navigate to={auth.token ? "/dashboard" : "/login"} />} />
