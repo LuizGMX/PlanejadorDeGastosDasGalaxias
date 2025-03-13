@@ -171,13 +171,6 @@ const AddExpense = () => {
     }).format(numericValue);
   };
 
-  const handleAmountChange = (e) => {
-    const value = e.target.value.replace(/\D/g, '');
-    setFormData(prev => ({
-      ...prev,
-      amount: value
-    }));
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -203,6 +196,9 @@ const AddExpense = () => {
         if (endDate > maxDate) {
           throw new Error('O período de recorrência não pode ser maior que 10 anos');
         }
+
+        // Inclui a data inicial na criação da despesa recorrente
+        formData.start_date = formData.date;
       }
 
       if (formData.has_installments) {
@@ -309,15 +305,14 @@ const AddExpense = () => {
             <CurrencyInput
               name="amount"
               placeholder="R$ 0,00"
-              decimalsLimit={2}
-              prefix="R$ "
-              decimalSeparator=","
-              groupSeparator="."
               value={formData.amount}
               onValueChange={(value) => {
-                const numericValue = value ? parseFloat(value.replace(/\./g, '').replace(',', '.')) : '';
-                setFormData(prev => ({ ...prev, amount: numericValue }));
+                setFormData(prev => ({
+                  ...prev,
+                  amount: value || ''
+                }));
               }}
+              intlConfig={{ locale: 'pt-BR', currency: 'BRL' }}
               className={styles.input}
               required
             />
@@ -354,7 +349,7 @@ const AddExpense = () => {
                 <div className={styles.optionContent}>
                   <div className={styles.inputGroup}>
                     <label className={styles.label}>
-                      
+                      <span className="material-icons">format_list_numbered</span>
                       Número de Parcelas
                     </label>
                     <input
@@ -371,7 +366,7 @@ const AddExpense = () => {
 
                   <div className={styles.inputGroup}>
                     <label className={styles.label}>
-                      
+                      <span className="material-icons">filter_1</span>
                       Qual parcela você está pagando?
                     </label>
                     <input
@@ -402,7 +397,8 @@ const AddExpense = () => {
                   ...prev,
                   is_recurring: !prev.is_recurring,
                   has_installments: false,
-                  total_installments: 1
+                  total_installments: 1,
+                  date: !prev.is_recurring ? '' : new Date().toLocaleDateString('en-CA')
                 }));
               }}>
                 <div className={styles.checkboxWrapper}>
@@ -426,7 +422,21 @@ const AddExpense = () => {
                 <div className={styles.optionContent}>
                   <div className={styles.inputGroup}>
                     <label className={styles.label}>
-                      
+                      <span className="material-icons">event</span>
+                      Data de Início da Recorrência
+                    </label>
+                    <input
+                      type="date"
+                      name="date"
+                      value={formData.date}
+                      onChange={handleChange}
+                      className={styles.input}
+                      required
+                    />
+                  </div>
+                  <div className={styles.inputGroup}>
+                    <label className={styles.label}>
+                      <span className="material-icons">event_busy</span>
                       Data Final da Recorrência
                     </label>
                     <input
@@ -435,31 +445,12 @@ const AddExpense = () => {
                       value={formData.end_date}
                       onChange={handleChange}
                       className={styles.input}
-                      required
-                      min={(() => {
-                        try {
-                          const date = new Date(formData.date);
-                          return !isNaN(date.getTime()) ? formData.date : new Date().toLocaleDateString('en-CA');
-                        } catch {
-                          return new Date().toLocaleDateString('en-CA');
-                        }
-                      })()}
+                      min={formData.date || new Date().toLocaleDateString('en-CA')}
                       max={(() => {
-                        try {
-                          const date = new Date(formData.date);
-                          if (!isNaN(date.getTime())) {
-                            const maxDate = new Date(date);
-                            maxDate.setFullYear(maxDate.getFullYear() + 10);
-                            return maxDate.toLocaleDateString('en-CA');
-                          }
-                          const today = new Date();
-                          today.setFullYear(today.getFullYear() + 10);
-                          return today.toLocaleDateString('en-CA');
-                        } catch {
-                          const today = new Date();
-                          today.setFullYear(today.getFullYear() + 10);
-                          return today.toLocaleDateString('en-CA');
-                        }
+                        const date = formData.date ? new Date(formData.date) : new Date();
+                        const maxDate = new Date(date);
+                        maxDate.setFullYear(maxDate.getFullYear() + 10);
+                        return maxDate.toLocaleDateString('en-CA');
                       })()}
                     />
                     <small className={styles.helperText}>
@@ -471,20 +462,22 @@ const AddExpense = () => {
             </div>
           </div>
 
-          <div className={styles.inputGroup}>
-            <label className={styles.label}>
-              <span className="material-icons">calendar_today</span>
-              Data
-            </label>
-            <input
-              type="date"
-              name="date"
-              value={formData.date}
-              onChange={handleChange}
-              className={styles.input}
-              required
-            />
-          </div>
+          {!formData.is_recurring && !formData.has_installments && (
+            <div className={styles.inputGroup}>
+              <label className={styles.label}>
+                <span className="material-icons">calendar_today</span>
+                Data
+              </label>
+              <input
+                type="date"
+                name="date"
+                value={formData.date}
+                onChange={handleChange}
+                className={styles.input}
+                required
+              />
+            </div>
+          )}
 
           <div className={styles.inputGroup}>
             <label className={styles.label}>

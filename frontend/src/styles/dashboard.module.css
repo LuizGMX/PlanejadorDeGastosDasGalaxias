@@ -638,4 +638,62 @@
   .chartContainer {
     grid-template-columns: 1fr;
   }
+}
+
+.trendControls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background-color: var(--card-background);
+  border-radius: 0.5rem;
+}
+
+.trendSelect {
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.25rem;
+  background-color: var(--background);
+  color: var(--text-color);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.trendSelect:hover {
+  border-color: var(--primary-color);
+}
+
+.trendSummary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background-color: var(--card-background);
+  border-radius: 0.5rem;
+}
+
+.trendStat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.trendStat span {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.trendStat strong {
+  font-size: 1.1rem;
+  color: var(--text-color);
+}
+
+.trendStat strong.positive {
+  color: var(--success-color);
+}
+
+.trendStat strong.negative {
+  color: var(--error-color);
 } 

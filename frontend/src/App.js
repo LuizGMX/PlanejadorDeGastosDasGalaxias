@@ -31,7 +31,7 @@ function App() {
     <AuthContext.Provider value={{ auth, setAuth }}>
       <Router>
         <Routes>
-          <Route path="/login" element={<Login />} />
+          <Route path="/login" element={auth.token ? <Navigate to="/dashboard" /> : <Login />} />
           <Route
             path="/dashboard"
             element={
@@ -88,7 +88,8 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="/" element={<Navigate to="/login" />} />
+          <Route path="/" element={<Navigate to={auth.token ? "/dashboard" : "/login"} />} />
+          <Route path="*" element={<Navigate to={auth.token ? "/dashboard" : "/login"} />} />
         </Routes>
       </Router>
     </AuthContext.Provider>

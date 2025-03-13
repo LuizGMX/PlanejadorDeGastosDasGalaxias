@@ -9,11 +9,17 @@ import dashboardRoutes from './routes/dashboard.js';
 import bankRoutes from './routes/bank.js';
 import budgetRoutes from './routes/budgets.js';
 import spreadsheetRoutes from './routes/spreadsheetRoutes.js';
+import subcategoryRoutes from './routes/subcategories.js';
+import userRoutes from './routes/users.js';
 
 const app = express();
 
 // Middlewares
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:5000',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
 // Criar diretório de uploads se não existir
@@ -35,6 +41,8 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/bank', bankRoutes);
 app.use('/api/budgets', budgetRoutes);
 app.use('/api/spreadsheet', spreadsheetRoutes);
+app.use('/api/subcategories', subcategoryRoutes);
+app.use('/api/users', userRoutes);
 
 // Tratamento de erros
 app.use((err, req, res, next) => {

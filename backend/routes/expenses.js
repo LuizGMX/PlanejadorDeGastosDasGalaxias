@@ -145,7 +145,7 @@ router.post('/', authenticate, async (req, res) => {
       }
 
       let currentDate = new Date(startDate);
-      while (currentDate <= endDate) {
+      do {
         if (has_installments) {
           // Se for recorrente e parcelado, cria as parcelas para cada mês
           const monthInstallmentGroupId = uuidv4();
@@ -174,6 +174,7 @@ router.post('/', authenticate, async (req, res) => {
               total_installments,
               installment_group_id: monthInstallmentGroupId,
               is_recurring: true,
+              start_date: startDate,
               end_date,
               recurring_group_id: recurringGroupId
             });
@@ -191,6 +192,7 @@ router.post('/', authenticate, async (req, res) => {
             payment_method,
             has_installments: false,
             is_recurring: true,
+            start_date: startDate,
             end_date,
             recurring_group_id: recurringGroupId
           });
@@ -198,7 +200,7 @@ router.post('/', authenticate, async (req, res) => {
 
         // Avança para o próximo mês
         currentDate = new Date(currentDate.setMonth(currentDate.getMonth() + 1));
-      }
+      } while (currentDate <= endDate);
     } else if (has_installments) {
       // Se for apenas parcelado (não recorrente)
       const baseDate = new Date(first_installment_date);
@@ -549,12 +551,21 @@ router.delete('/:id', authenticate, async (req, res) => {
       return res.status(404).json({ message: 'Despesa não encontrada' });
     }
 
-    // Se a despesa for recorrente, pergunta se quer excluir todas as recorrências futuras
+    // Se a despesa for recorrente, verifica as opções de deleção
     if (expense.is_recurring && expense.recurring_group_id) {
-      const { delete_future } = req.query;
+      const { delete_future, delete_past, delete_all } = req.query;
       
-      if (delete_future === 'true') {
-        // Exclui todas as despesas futuras do mesmo grupo
+      if (delete_all === 'true') {
+        // Exclui todas as despesas do grupo
+        await Expense.destroy({
+          where: {
+            recurring_group_id: expense.recurring_group_id,
+            user_id: req.user.id
+          },
+          transaction
+        });
+      } else if (delete_future === 'true') {
+        // Exclui todas as despesas futuras do mesmo grupo (incluindo a atual)
         const currentDate = new Date(expense.expense_date);
         await Expense.destroy({
           where: {
@@ -566,12 +577,34 @@ router.delete('/:id', authenticate, async (req, res) => {
           },
           transaction
         });
+      } else if (delete_past === 'true') {
+        // Exclui todas as despesas passadas do mesmo grupo (incluindo a atual)
+        const currentDate = new Date(expense.expense_date);
+        await Expense.destroy({
+          where: {
+            recurring_group_id: expense.recurring_group_id,
+            expense_date: {
+              [Op.lte]: currentDate
+            },
+            user_id: req.user.id
+          },
+          transaction
+        });
       } else {
         // Exclui apenas a despesa selecionada
         await expense.destroy({ transaction });
       }
+    } else if (expense.has_installments && expense.installment_group_id && req.query.delete_all_installments === 'true') {
+      // Se for parcelada e quiser excluir todas as parcelas
+      await Expense.destroy({
+        where: {
+          installment_group_id: expense.installment_group_id,
+          user_id: req.user.id
+        },
+        transaction
+      });
     } else {
-      // Se não for recorrente, exclui normalmente
+      // Se não for recorrente nem parcelada, ou se quiser excluir apenas a selecionada
       await expense.destroy({ transaction });
     }
 

@@ -121,6 +121,10 @@ export default (sequelize) => {
       type: DataTypes.DATE,
       allowNull: true
     },
+    start_date: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
     recurring_group_id: {
       type: DataTypes.UUID,
       allowNull: true,

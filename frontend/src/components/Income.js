@@ -147,6 +147,42 @@ const Income = () => {
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
+  const handleDelete = async (id, deleteFuture = false, deletePast = false, deleteAll = false) => {
+    try {
+      let url = `/api/incomes/${id}`;
+      const queryParams = new URLSearchParams();
+
+      if (deleteFuture) {
+        queryParams.append('delete_future', 'true');
+      }
+      if (deletePast) {
+        queryParams.append('delete_past', 'true');
+      }
+      if (deleteAll) {
+        queryParams.append('delete_all', 'true');
+      }
+
+      if (queryParams.toString()) {
+        url += `?${queryParams.toString()}`;
+      }
+
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${auth.token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao excluir receita');
+      }
+
+      setIncomes(incomes.filter(income => income.id !== id));
+    } catch (err) {
+      setError('Erro ao excluir receita. Por favor, tente novamente.');
+    }
+  };
+
   if (loading) return <div className={styles.loading}>Carregando...</div>;
   if (error) return <div className={styles.error}>{error}</div>;
 
@@ -344,37 +380,10 @@ const Income = () => {
         <div className={styles.modal}>
           <div className={styles.modalContent}>
             <h2>Confirmar Exclusão</h2>
-            {incomeToDelete?.recurring_info ? (
+            {incomeToDelete?.is_recurring ? (
               <>
-                <p>Esta é uma receita recorrente. Como deseja proceder?</p>
+                <p>Como você deseja excluir esta receita recorrente?</p>
                 <div className={styles.modalButtons}>
-                  <button
-                    onClick={() => {
-                      handleDelete(incomeToDelete.id);
-                      setShowDeleteModal(false);
-                    }}
-                    className={styles.deleteButton}
-                  >
-                    Excluir apenas esta
-                  </button>
-                  <button
-                    onClick={() => {
-                      handleDelete(incomeToDelete.id, true);
-                      setShowDeleteModal(false);
-                    }}
-                    className={styles.deleteButton}
-                  >
-                    Excluir esta e futuras
-                  </button>
-                  <button
-                    onClick={() => {
-                      handleDelete(incomeToDelete.id, false, true);
-                      setShowDeleteModal(false);
-                    }}
-                    className={styles.deleteButton}
-                  >
-                    Excluir todas
-                  </button>
                   <button
                     onClick={() => {
                       setShowDeleteModal(false);
@@ -383,6 +392,42 @@ const Income = () => {
                     className={styles.cancelButton}
                   >
                     Cancelar
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleDelete(incomeToDelete.id);
+                      setShowDeleteModal(false);
+                    }}
+                    className={styles.deleteButton}
+                  >
+                    Apenas esta
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleDelete(incomeToDelete.id, true);
+                      setShowDeleteModal(false);
+                    }}
+                    className={styles.deleteButton}
+                  >
+                    Esta e futuras
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleDelete(incomeToDelete.id, false, true);
+                      setShowDeleteModal(false);
+                    }}
+                    className={styles.deleteButton}
+                  >
+                    Esta e passadas
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleDelete(incomeToDelete.id, false, false, true);
+                      setShowDeleteModal(false);
+                    }}
+                    className={styles.deleteButton}
+                  >
+                    Todas
                   </button>
                 </div>
               </>

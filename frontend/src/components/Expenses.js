@@ -285,8 +285,16 @@ const Expenses = () => {
       let url = `/api/expenses/${expenseToDelete.id}`;
       const queryParams = new URLSearchParams();
 
-      if (deleteOptions.type === 'recurring' && deleteOptions.delete_future) {
-        queryParams.append('delete_future', 'true');
+      if (deleteOptions.type === 'recurring') {
+        if (deleteOptions.delete_future) {
+          queryParams.append('delete_future', 'true');
+        }
+        if (deleteOptions.delete_past) {
+          queryParams.append('delete_past', 'true');
+        }
+        if (deleteOptions.delete_all) {
+          queryParams.append('delete_all', 'true');
+        }
       } else if (deleteOptions.type === 'installment' && deleteOptions.deleteAllInstallments) {
         queryParams.append('delete_all_installments', 'true');
       }
@@ -341,40 +349,44 @@ const Expenses = () => {
     }
   };
 
-  const formatSelectedPeriod = (type) => {
-    if (type === 'months') {
-      if (filters.months.length === 0) return 'Selecione os meses';
-      if (filters.months.length === months.length) return 'Todos os meses';
-      if (filters.months.length === 1) {
-        return months.find(m => m.value === filters.months[0])?.label;
-      }
-      if (filters.months.length > 3) {
-        return `${filters.months.length} meses selecionados`;
-      }
-      return filters.months
-        .map(m => months.find(month => month.value === m)?.label)
-        .join(', ');
-    } else if (type === 'years') {
-      if (filters.years.length === 0) return 'Selecione os anos';
-      if (filters.years.length === years.length) return 'Todos os anos';
-      if (filters.years.length === 1) {
-        return filters.years[0].toString();
-      }
-      if (filters.years.length > 3) {
-        return `${filters.years.length} anos selecionados`;
-      }
-      return filters.years.join(', ');
-    } else if (type === 'category') {
-      const selectedCategory = categories.find(c => c.value === filters.category);
-      return selectedCategory ? selectedCategory.label : 'Categoria';
-    } else if (type === 'paymentMethod') {
-      const selectedMethod = paymentMethods.find(m => m.value === filters.paymentMethod);
-      return selectedMethod ? selectedMethod.label : 'Método de Pagamento';
-    } else if (type === 'hasInstallments') {
-      const selectedOption = installmentOptions.find(o => o.value === filters.hasInstallments);
-      return selectedOption ? selectedOption.label : 'Tipo de Despesa';
-    } else if (type === 'description') {
-      return filters.description;
+  const formatSelectedPeriod = (filterType) => {
+    switch (filterType) {
+      case 'category':
+        if (!filters.category) return 'Todas as categorias';
+        const selectedCategory = categories.find(c => c.value === filters.category);
+        return selectedCategory ? selectedCategory.label : 'Todas as categorias';
+      case 'months':
+        if (filters.months.length === 0) return 'Selecione os meses';
+        if (filters.months.length === months.length) return 'Todos os meses';
+        if (filters.months.length === 1) {
+          return months.find(m => m.value === filters.months[0])?.label;
+        }
+        if (filters.months.length > 3) {
+          return `${filters.months.length} meses selecionados`;
+        }
+        return filters.months
+          .map(m => months.find(month => month.value === m)?.label)
+          .join(', ');
+      case 'years':
+        if (filters.years.length === 0) return 'Selecione os anos';
+        if (filters.years.length === years.length) return 'Todos os anos';
+        if (filters.years.length === 1) {
+          return filters.years[0].toString();
+        }
+        if (filters.years.length > 3) {
+          return `${filters.years.length} anos selecionados`;
+        }
+        return filters.years.join(', ');
+      case 'paymentMethod':
+        const selectedMethod = paymentMethods.find(m => m.value === filters.paymentMethod);
+        return selectedMethod ? selectedMethod.label : 'Método de Pagamento';
+      case 'hasInstallments':
+        const selectedOption = installmentOptions.find(o => o.value === filters.hasInstallments);
+        return selectedOption ? selectedOption.label : 'Tipo de Despesa';
+      case 'description':
+        return filters.description;
+      default:
+        return 'Selecione um filtro';
     }
   };
 
@@ -419,7 +431,7 @@ const Expenses = () => {
               onClick={() => handleFilterClick('months')}
             >
               <div className={styles.modernSelectHeader}>
-                <span>{formatSelectedPeriod('months')}</span>
+                <span>Mês: {formatSelectedPeriod('months')}</span>
                 <span className={`material-icons ${styles.arrow}`}>
                   {openFilter === 'months' ? 'expand_less' : 'expand_more'}
                 </span>
@@ -476,7 +488,7 @@ const Expenses = () => {
               onClick={() => handleFilterClick('years')}
             >
               <div className={styles.modernSelectHeader}>
-                <span>{formatSelectedPeriod('years')}</span>
+                <span>{formatSelectedPeriod('years').length>4  ? 'Anos: ' : 'Ano: '} {formatSelectedPeriod('years')}</span>
                 <span className={`material-icons ${styles.arrow}`}>
                   {openFilter === 'years' ? 'expand_less' : 'expand_more'}
                 </span>
@@ -542,6 +554,25 @@ const Expenses = () => {
               </div>
               {openFilter === 'category' && (
                 <div className={styles.modernSelectDropdown} onClick={e => e.stopPropagation()}>
+                  <label 
+                    key="all-categories" 
+                    className={styles.modernCheckboxLabel}
+                    onClick={handleCheckboxClick}
+                  >
+                    <div className={styles.modernCheckbox}>
+                      <input
+                        type="radio"
+                        checked={!filters.category || filters.category === ''}
+                        onChange={() => handleFilterChange('category', '')}
+                        className={styles.hiddenCheckbox}
+                      />
+                      <div className={styles.customCheckbox}>
+                        <span className="material-icons">check</span>
+                      </div>
+                    </div>
+                    <span><strong>Todas as categorias</strong></span>
+                  </label>
+                  <div className={styles.divider}></div>
                   {categories.map(category => (
                     <label 
                       key={category.value} 
@@ -646,7 +677,7 @@ const Expenses = () => {
       {expenses.length > 0 ? (
         <>
           <div className={styles.totalExpenses}>
-            <h3>Total de Despesas: {formatCurrency(expenses.reduce((sum, expense) => sum + Number(expense.amount), 0))}</h3>
+            <h3>Total de despesas para os filtros selecionados: {formatCurrency(expenses.reduce((sum, expense) => sum + Number(expense.amount), 0))}</h3>
           </div>
           <div className={styles.tableContainer}>
             <table className={styles.table}>
@@ -692,9 +723,12 @@ const Expenses = () => {
                         <span className="material-icons">pix</span>
                       )}
                       {expense.is_recurring && (
-                        // <span className={`${styles.badge} ${styles.recurring}`} title="Despesa Recorrente">
-                          <span className="material-icons">sync</span>
-                        // </span>
+                        <span 
+                          className="material-icons" 
+                          title={`Despesa Recorrente - Início: ${formatDate(expense.start_date)} - Fim: ${formatDate(expense.end_date)}`}
+                        >
+                          sync
+                        </span>
                       )}
                     </td>
                     <td>
@@ -736,64 +770,113 @@ const Expenses = () => {
             
             {deleteOptions.type === 'recurring' ? (
               <>
-                <p>Esta é uma despesa recorrente. O que você deseja fazer?</p>
-                <div className={styles.checkboxGroup}>
-                  <input
-                    type="checkbox"
-                    id="delete_future"
-                    checked={deleteOptions.delete_future}
-                    onChange={(e) => setDeleteOptions(prev => ({
-                      ...prev,
-                      delete_future: e.target.checked
-                    }))}
-                    className={styles.checkbox}
-                  />
-                  <label htmlFor="delete_future" className={styles.checkboxLabel}>
-                    Excluir também todas as ocorrências futuras
-                  </label>
+                <p>Como você deseja excluir esta despesa recorrente?</p>
+                <div className={styles.modalButtons}>
+                  <button
+                    onClick={() => {
+                      setShowDeleteModal(false);
+                      setExpenseToDelete(null);
+                      setDeleteOptions({ type: 'single' });
+                    }}
+                    className={styles.cancelButton}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={() => {
+                      setDeleteOptions(prev => ({ ...prev, delete_future: false, delete_past: false, delete_all: false }));
+                      handleDelete();
+                    }}
+                    className={styles.deleteButton}
+                  >
+                    Apenas esta
+                  </button>
+                  <button
+                    onClick={() => {
+                      setDeleteOptions(prev => ({ ...prev, delete_future: true, delete_past: false, delete_all: false }));
+                      handleDelete();
+                    }}
+                    className={styles.deleteButton}
+                  >
+                    Esta e futuras
+                  </button>
+                  <button
+                    onClick={() => {
+                      setDeleteOptions(prev => ({ ...prev, delete_future: false, delete_past: true, delete_all: false }));
+                      handleDelete();
+                    }}
+                    className={styles.deleteButton}
+                  >
+                    Esta e passadas
+                  </button>
+                  <button
+                    onClick={() => {
+                      setDeleteOptions(prev => ({ ...prev, delete_future: false, delete_past: false, delete_all: true }));
+                      handleDelete();
+                    }}
+                    className={styles.deleteButton}
+                  >
+                    Todas
+                  </button>
                 </div>
               </>
             ) : deleteOptions.type === 'installment' ? (
               <>
-                <p>Esta despesa faz parte de um parcelamento. O que você deseja fazer?</p>
-                <div className={styles.checkboxGroup}>
-                  <input
-                    type="checkbox"
-                    id="delete_all_installments"
-                    checked={deleteOptions.deleteAllInstallments}
-                    onChange={(e) => setDeleteOptions(prev => ({
-                      ...prev,
-                      deleteAllInstallments: e.target.checked
-                    }))}
-                    className={styles.checkbox}
-                  />
-                  <label htmlFor="delete_all_installments" className={styles.checkboxLabel}>
-                    Excluir todas as parcelas
-                  </label>
+                <p>Como você deseja excluir esta despesa parcelada?</p>
+                <div className={styles.modalButtons}>
+                  <button
+                    onClick={() => {
+                      setShowDeleteModal(false);
+                      setExpenseToDelete(null);
+                      setDeleteOptions({ type: 'single' });
+                    }}
+                    className={styles.cancelButton}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={() => {
+                      setDeleteOptions(prev => ({ ...prev, deleteAllInstallments: false }));
+                      handleDelete();
+                    }}
+                    className={styles.deleteButton}
+                  >
+                    Apenas esta parcela
+                  </button>
+                  <button
+                    onClick={() => {
+                      setDeleteOptions(prev => ({ ...prev, deleteAllInstallments: true }));
+                      handleDelete();
+                    }}
+                    className={styles.deleteButton}
+                  >
+                    Todas as parcelas
+                  </button>
                 </div>
               </>
             ) : (
-              <p>Tem certeza que deseja excluir esta despesa?</p>
+              <>
+                <p>Tem certeza que deseja excluir esta despesa?</p>
+                <div className={styles.modalButtons}>
+                  <button
+                    onClick={() => {
+                      setShowDeleteModal(false);
+                      setExpenseToDelete(null);
+                      setDeleteOptions({ type: 'single' });
+                    }}
+                    className={styles.cancelButton}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    className={styles.deleteButton}
+                  >
+                    Confirmar
+                  </button>
+                </div>
+              </>
             )}
-
-            <div className={styles.buttonGroup}>
-              <button
-                onClick={handleDelete}
-                className={styles.deleteButton}
-              >
-                Confirmar
-              </button>
-              <button
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setExpenseToDelete(null);
-                  setDeleteOptions({ type: 'single' });
-                }}
-                className={styles.cancelButton}
-              >
-                Cancelar
-              </button>
-            </div>
           </div>
         </div>
       )}

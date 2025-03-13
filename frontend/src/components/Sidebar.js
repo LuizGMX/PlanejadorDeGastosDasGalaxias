@@ -4,6 +4,9 @@ import { AuthContext } from '../App';
 import styles from '../styles/sidebar.module.css';
 import { BsGraphUp, BsListUl, BsPlusCircle, BsDoorOpen, BsCashCoin, BsCashStack, BsChevronDown, BsUpload } from 'react-icons/bs';
 import logo from '../assets/logo.svg';
+import { GiPayMoney } from "react-icons/gi";
+import { GiReceiveMoney } from "react-icons/gi";
+
 
 const Sidebar = () => {
   const navigate = useNavigate();
@@ -24,7 +27,7 @@ const Sidebar = () => {
     },
     {
       label: 'Despesas',
-      icon: <BsListUl size={20} />,
+      icon: <GiPayMoney size={20} />,
       submenu: [
         {
           label: 'Lista de Despesas',
@@ -40,7 +43,7 @@ const Sidebar = () => {
     },
     {
       label: 'Receitas',
-      icon: <BsCashCoin size={20} />,
+      icon: <GiReceiveMoney  size={20} />,
       submenu: [
         {
           label: 'Lista de Receitas',

@@ -13,6 +13,8 @@ Always review my whole code base
 Always make the changes on backend and frontend and in the models and seeders and routes
 Always confirm that you running based on the rules - make it the first thing you do - and call me Luizão
 NEVER CHANGE THE CSS
+O BACKEND TEM A PORTA 5000 - NUNCA MUDE
+O FRONTEND TEM A PORTA 3000 - NUNCA MUDE
 
 - You can @ files here
 - You can use markdown but dont have to

@@ -8,7 +8,7 @@ import { BsEnvelope, BsPerson, BsCurrencyDollar, BsShieldLock } from 'react-icon
 
 const Login = () => {
   const navigate = useNavigate();
-  const { setAuth } = useContext(AuthContext);
+  const { auth, setAuth } = useContext(AuthContext);
   const [step, setStep] = useState('email');
   const [formData, setFormData] = useState({
     email: '',
@@ -21,6 +21,12 @@ const Login = () => {
   const [success, setSuccess] = useState('');
   // const [banks, setBanks] = useState([]);
   const [isNewUser, setIsNewUser] = useState(false);
+
+  useEffect(() => {
+    if (auth.token) {
+      navigate('/dashboard');
+    }
+  }, [auth.token, navigate]);
 
   // useEffect(() => {
   //   const fetchBanks = async () => {
@@ -146,7 +152,7 @@ const Login = () => {
     }
 
     const data = await response.json();
-    setAuth({ token: data.token });
+    setAuth({ token: data.token, user: null });
     localStorage.setItem('token', data.token);
     navigate('/dashboard');
   };
