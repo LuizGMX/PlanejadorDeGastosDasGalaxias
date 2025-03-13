@@ -262,32 +262,75 @@ const Expenses = () => {
     });
   };
 
-  const handleDeleteClick = (expense) => {
-    if (expense.is_recurring) {
+  const handleDeleteClick = (expense = null) => {
+    if (expense) {
       setExpenseToDelete(expense);
-      setDeleteOptions({
-        type: 'recurring',
-        delete_future: false
-      });
-      setShowDeleteModal(true);
-    } else if (expense.has_installments) {
-      setExpenseToDelete(expense);
-      setDeleteOptions({
-        type: 'installment',
-        installmentGroupId: expense.installment_group_id
-      });
-      setShowDeleteModal(true);
+      if (expense.is_recurring) {
+        setDeleteOptions({
+          type: 'recurring',
+          delete_future: false
+        });
+      } else if (expense.has_installments) {
+        setDeleteOptions({
+          type: 'installment',
+          installmentGroupId: expense.installment_group_id
+        });
+      } else {
+        setDeleteOptions({
+          type: 'single'
+        });
+      }
     } else {
-      setExpenseToDelete(expense);
+      // Deleção em massa
+      setExpenseToDelete(null);
       setDeleteOptions({
-        type: 'single'
+        type: 'bulk',
+        ids: selectedExpenses
       });
-      setShowDeleteModal(true);
     }
+    setShowDeleteModal(true);
   };
 
   const handleDelete = async () => {
     try {
+      if (deleteOptions.type === 'bulk') {
+        const response = await fetch('/api/expenses/bulk', {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${auth.token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ ids: deleteOptions.ids })
+        });
+
+        if (!response.ok) {
+          throw new Error('Falha ao excluir despesas');
+        }
+
+        const data = await response.json();
+
+        // Limpa os estados do modal
+        setShowDeleteModal(false);
+        setExpenseToDelete(null);
+        setDeleteOptions({ type: 'single' });
+        setSelectedExpenses([]);
+
+        // Mostra mensagem de sucesso
+        setDeleteSuccess({
+          message: data.message,
+          count: data.count
+        });
+
+        // Remove a mensagem após 3 segundos
+        setTimeout(() => {
+          setDeleteSuccess(null);
+        }, 3000);
+
+        // Recarrega a lista de despesas
+        await fetchExpenses();
+        return;
+      }
+
       let url = `/api/expenses/${expenseToDelete.id}`;
       const queryParams = new URLSearchParams();
 
@@ -921,6 +964,33 @@ const Expenses = () => {
                     }}
                     className={styles.deleteButton}
                     disabled={!deleteOption}
+                  >
+                    Excluir
+                  </button>
+                </div>
+              </>
+            ) : deleteOptions.type === 'bulk' ? (
+              <>
+                <p>Tem certeza que deseja excluir {deleteOptions.ids.length} {deleteOptions.ids.length === 1 ? 'despesa' : 'despesas'}?</p>
+                <div className={styles.modalButtons}>
+                  <button
+                    onClick={() => {
+                      setShowDeleteModal(false);
+                      setExpenseToDelete(null);
+                      setDeleteOptions({ type: 'single' });
+                    }}
+                    className={styles.cancelButton}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={() => {
+                      Promise.all(deleteOptions.ids.map(id => handleDelete(id)))
+                        .then(() => {
+                          setSelectedExpenses([]);
+                        });
+                    }}
+                    className={styles.deleteButton}
                   >
                     Excluir
                   </button>

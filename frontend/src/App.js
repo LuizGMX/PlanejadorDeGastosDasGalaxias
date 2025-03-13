@@ -1,5 +1,5 @@
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-import { useState, createContext, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import Expenses from './components/Expenses';
@@ -9,86 +9,101 @@ import Layout from './components/Layout';
 import Income from './components/Income';
 import AddIncome from './components/AddIncome';
 import SpreadsheetUpload from './components/SpreadsheetUpload';
+import BankBalanceTrend from './components/BankBalanceTrend';
+import Sidebar from './components/Sidebar';
+import styles from './styles/app.module.css';
 
-export const AuthContext = createContext();
+export const AuthContext = React.createContext();
 
 function App() {
   const [auth, setAuth] = useState({ token: localStorage.getItem('token'), user: null });
 
   useEffect(() => {
-    if (auth.token) {
-      localStorage.setItem('token', auth.token);
-    } else {
-      localStorage.removeItem('token');
-    }
+    const fetchUser = async () => {
+      if (auth.token) {
+        try {
+          const response = await fetch('http://localhost:5000/api/auth/me', {
+            headers: {
+              'Authorization': `Bearer ${auth.token}`
+            }
+          });
+          if (response.ok) {
+            const userData = await response.json();
+            setAuth(prev => ({ ...prev, user: userData }));
+          } else {
+            localStorage.removeItem('token');
+            setAuth({ token: null, user: null });
+          }
+        } catch (error) {
+          console.error('Erro ao buscar dados do usuário:', error);
+          localStorage.removeItem('token');
+          setAuth({ token: null, user: null });
+        }
+      }
+    };
+
+    fetchUser();
   }, [auth.token]);
 
-  const ProtectedRoute = ({ children }) => {
-    return auth.token ? <Layout>{children}</Layout> : <Navigate to="/login" />;
+  const PrivateRoute = ({ children }) => {
+    return auth.token ? (
+      <div className={styles.appContainer}>
+        <Sidebar />
+        <div className={styles.mainContent}>
+          {children}
+        </div>
+      </div>
+    ) : (
+      <Navigate to="/login" />
+    );
   };
 
   return (
     <AuthContext.Provider value={{ auth, setAuth }}>
       <Router>
         <Routes>
-          <Route path="/login" element={auth.token ? <Navigate to="/dashboard" /> : <Login />} />
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/expenses"
-            element={
-              <ProtectedRoute>
-                <Expenses />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/add-expense"
-            element={
-              <ProtectedRoute>
-                <AddExpense />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/income"
-            element={
-              <ProtectedRoute>
-                <Income />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/add-income"
-            element={
-              <ProtectedRoute>
-                <AddIncome />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/upload-spreadsheet"
-            element={
-              <ProtectedRoute>
-                <SpreadsheetUpload />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/login" element={<Login />} />
           <Route path="/" element={<Navigate to={auth.token ? "/dashboard" : "/login"} />} />
+          <Route path="/dashboard" element={
+            <PrivateRoute>
+              <Dashboard />
+            </PrivateRoute>
+          } />
+          <Route path="/expenses" element={
+            <PrivateRoute>
+              <Expenses />
+            </PrivateRoute>
+          } />
+          <Route path="/add-expense" element={
+            <PrivateRoute>
+              <AddExpense />
+            </PrivateRoute>
+          } />
+          <Route path="/profile" element={
+            <PrivateRoute>
+              <Profile />
+            </PrivateRoute>
+          } />
+          <Route path="/income" element={
+            <PrivateRoute>
+              <Income />
+            </PrivateRoute>
+          } />
+          <Route path="/add-income" element={
+            <PrivateRoute>
+              <AddIncome />
+            </PrivateRoute>
+          } />
+          <Route path="/upload-spreadsheet" element={
+            <PrivateRoute>
+              <SpreadsheetUpload />
+            </PrivateRoute>
+          } />
+          <Route path="/bank-balance-trend" element={
+            <PrivateRoute>
+              <BankBalanceTrend />
+            </PrivateRoute>
+          } />
           <Route path="*" element={<Navigate to={auth.token ? "/dashboard" : "/login"} />} />
         </Routes>
       </Router>

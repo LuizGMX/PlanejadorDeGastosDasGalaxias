@@ -4,6 +4,7 @@ import { Expense, Income, Category, SubCategory, Bank, Budget, User } from '../m
 import { Op } from 'sequelize';
 import { authenticate } from '../middleware/auth.js';
 
+
 const router = express.Router();
 
 // Função auxiliar para construir condições de data
@@ -25,6 +26,14 @@ const buildDateConditions = (months, years, dateField = 'expense_date') => {
         ]
       });
     });
+  } else if (months?.length > 0) {
+    conditions[Op.or] = months.map(month => 
+      Sequelize.where(Sequelize.fn('MONTH', Sequelize.col(dateField)), month)
+    );
+  } else if (years?.length > 0) {
+    conditions[Op.or] = years.map(year => 
+      Sequelize.where(Sequelize.fn('YEAR', Sequelize.col(dateField)), year)
+    );
   }
 
   return conditions;
@@ -240,7 +249,11 @@ router.get('/bank-balance-trend', authenticate, async (req, res) => {
         where: {
           user_id: req.user.id,
           is_recurring: true,
-          end_date: { [Op.gte]: startDate }
+          start_date: { [Op.lte]: endDate },
+          [Op.or]: [
+            { end_date: { [Op.gte]: startDate } },
+            { end_date: null }
+          ]
         },
         include: [{ model: Category }, { model: Bank }]
       }),
@@ -248,7 +261,11 @@ router.get('/bank-balance-trend', authenticate, async (req, res) => {
         where: {
           user_id: req.user.id,
           is_recurring: true,
-          end_date: { [Op.gte]: startDate }
+          start_date: { [Op.lte]: endDate },
+          [Op.or]: [
+            { end_date: { [Op.gte]: startDate } },
+            { end_date: null }
+          ]
         },
         include: [{ model: Category }, { model: Bank }]
       }),
@@ -259,22 +276,36 @@ router.get('/bank-balance-trend', authenticate, async (req, res) => {
     const projectionData = [];
     let currentBalance = 0;
 
-    for (let i = 0; i <= projectionMonths; i++) {
+    for (let i = 0; i < projectionMonths; i++) {
       const currentDate = new Date(startDate);
-      currentDate.setMonth(currentDate.getMonth() + i);
+      currentDate.setMonth(currentDate.getMonth() + i + 1);
 
       const monthlyExpenses = recurringExpenses.reduce((total, expense) => {
-        if (!expense.end_date) return total;
-        return currentDate <= new Date(expense.end_date) 
-          ? total + parseFloat(expense.amount || 0)
-          : total;
+        const expenseStartDate = new Date(expense.start_date);
+        const expenseEndDate = expense.end_date ? new Date(expense.end_date) : null;
+        
+        // Verifica se a despesa está ativa no mês atual
+        const isActive = currentDate >= expenseStartDate && 
+                        (!expenseEndDate || currentDate <= expenseEndDate);
+        
+        if (isActive) {
+          return total + parseFloat(expense.amount || 0);
+        }
+        return total;
       }, 0);
 
       const monthlyIncomes = recurringIncomes.reduce((total, income) => {
-        if (!income.end_date) return total;
-        return currentDate <= new Date(income.end_date)
-          ? total + parseFloat(income.amount || 0)
-          : total;
+        const incomeStartDate = new Date(income.start_date);
+        const incomeEndDate = income.end_date ? new Date(income.end_date) : null;
+        
+        // Verifica se a receita está ativa no mês atual
+        const isActive = currentDate >= incomeStartDate && 
+                        (!incomeEndDate || currentDate <= incomeEndDate);
+        
+        if (isActive) {
+          return total + parseFloat(income.amount || 0);
+        }
+        return total;
       }, 0);
 
       const monthlyBalance = monthlyIncomes + monthlyNetIncome - monthlyExpenses;
@@ -282,20 +313,42 @@ router.get('/bank-balance-trend', authenticate, async (req, res) => {
 
       projectionData.push({
         date: currentDate.toISOString().split('T')[0],
-        balance: Number(currentBalance.toFixed(2)),
-        expenses: Number(monthlyExpenses.toFixed(2)),
-        incomes: Number((monthlyIncomes + monthlyNetIncome).toFixed(2))
+        balance: currentBalance,
+        expenses: monthlyExpenses,
+        incomes: monthlyIncomes + monthlyNetIncome
       });
     }
 
-    const summary = {
-      totalProjectedExpenses: Number(projectionData.reduce((sum, month) => sum + month.expenses, 0).toFixed(2)),
-      totalProjectedIncomes: Number(projectionData.reduce((sum, month) => sum + month.incomes, 0).toFixed(2)),
-      finalBalance: Number(currentBalance.toFixed(2))
-    };
+    // Calcula os totais projetados
+    const totalProjectedExpenses = projectionData.reduce((total, data) => total + data.expenses, 0);
+    const totalProjectedIncomes = projectionData.reduce((total, data) => total + data.incomes, 0);
+    const finalBalance = totalProjectedIncomes - totalProjectedExpenses;
 
-    res.json({ projectionData, summary });
+    console.log('Dados de Projeção:', {
+      recurringExpenses: recurringExpenses.map(e => ({
+        description: e.description,
+        amount: e.amount,
+        start_date: e.start_date,
+        end_date: e.end_date
+      })),
+      projectionData,
+      summary: {
+        totalProjectedExpenses,
+        totalProjectedIncomes,
+        finalBalance
+      }
+    });
+
+    res.json({
+      projectionData,
+      summary: {
+        totalProjectedExpenses,
+        totalProjectedIncomes,
+        finalBalance
+      }
+    });
   } catch (error) {
+    console.error('Erro ao calcular tendência de saldo:', error);
     res.status(500).json({ message: 'Erro ao calcular tendência de saldo' });
   }
 });

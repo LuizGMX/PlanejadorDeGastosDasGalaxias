@@ -33,6 +33,9 @@ const Income = () => {
     }
   });
   const [deleteOption, setDeleteOption] = useState(null);
+  const [deleteOptions, setDeleteOptions] = useState({
+    type: 'single'
+  });
 
   // Lista de anos para o filtro
   const years = Array.from(
@@ -187,6 +190,44 @@ const Income = () => {
 
   const handleDelete = async (id) => {
     try {
+      if (deleteOptions.type === 'bulk') {
+        const response = await fetch('/api/incomes/bulk', {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${auth.token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ ids: deleteOptions.ids })
+        });
+
+        if (!response.ok) {
+          throw new Error('Falha ao excluir receitas');
+        }
+
+        const data = await response.json();
+
+        // Limpa os estados do modal
+        setShowDeleteModal(false);
+        setIncomeToDelete(null);
+        setDeleteOptions({ type: 'single' });
+        setSelectedIncomes([]);
+
+        // Mostra mensagem de sucesso
+        setDeleteSuccess({
+          message: data.message,
+          count: data.count
+        });
+
+        // Remove a mensagem após 3 segundos
+        setTimeout(() => {
+          setDeleteSuccess(null);
+        }, 3000);
+
+        // Recarrega a lista de receitas
+        await fetchIncomes();
+        return;
+      }
+
       let url = `/api/incomes/${id}`;
       const queryParams = new URLSearchParams();
 
@@ -240,6 +281,29 @@ const Income = () => {
     } catch (err) {
       setError('Erro ao excluir receita. Por favor, tente novamente.');
     }
+  };
+
+  const handleDeleteClick = (income = null) => {
+    if (income) {
+      setIncomeToDelete(income);
+      if (income.is_recurring) {
+        setDeleteOptions({
+          type: 'recurring'
+        });
+      } else {
+        setDeleteOptions({
+          type: 'single'
+        });
+      }
+    } else {
+      // Deleção em massa
+      setIncomeToDelete(null);
+      setDeleteOptions({
+        type: 'bulk',
+        ids: selectedIncomes
+      });
+    }
+    setShowDeleteModal(true);
   };
 
   if (loading) return <div className={styles.loading}>Carregando...</div>;
@@ -561,6 +625,33 @@ const Income = () => {
                     }}
                     className={styles.deleteButton}
                     disabled={!deleteOption}
+                  >
+                    Excluir
+                  </button>
+                </div>
+              </>
+            ) : deleteOptions.type === 'bulk' ? (
+              <>
+                <p>Tem certeza que deseja excluir {deleteOptions.ids.length} {deleteOptions.ids.length === 1 ? 'receita' : 'receitas'}?</p>
+                <div className={styles.modalButtons}>
+                  <button
+                    onClick={() => {
+                      setShowDeleteModal(false);
+                      setIncomeToDelete(null);
+                      setDeleteOptions({ type: 'single' });
+                    }}
+                    className={styles.cancelButton}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={() => {
+                      Promise.all(deleteOptions.ids.map(id => handleDelete(id)))
+                        .then(() => {
+                          setSelectedIncomes([]);
+                        });
+                    }}
+                    className={styles.deleteButton}
                   >
                     Excluir
                   </button>

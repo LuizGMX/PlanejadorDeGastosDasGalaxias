@@ -2,7 +2,7 @@ import React, { useContext, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../App';
 import styles from '../styles/sidebar.module.css';
-import { BsGraphUp, BsListUl, BsPlusCircle, BsDoorOpen, BsCashCoin, BsCashStack, BsChevronDown, BsUpload } from 'react-icons/bs';
+import { BsGraphUp, BsListUl, BsPlusCircle, BsDoorOpen, BsCashCoin, BsCashStack, BsChevronDown, BsUpload, BsBank } from 'react-icons/bs';
 import logo from '../assets/logo.svg';
 import { GiPayMoney } from "react-icons/gi";
 import { GiReceiveMoney } from "react-icons/gi";
@@ -56,6 +56,11 @@ const Sidebar = () => {
           icon: <BsPlusCircle size={18} />
         }
       ]
+    },
+    {
+      label: 'Tendência de Saldo',
+      path: '/bank-balance-trend',
+      icon: <BsBank size={20} />
     },
     // {
     //   label: 'Importar Planilha',

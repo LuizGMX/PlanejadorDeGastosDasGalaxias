@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../App';
 import CurrencyInput from 'react-currency-input-field';
@@ -14,41 +14,11 @@ const Login = () => {
     email: '',
     name: '',
     netIncome: '',
-    // selectedBanks: []
   });
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  // const [banks, setBanks] = useState([]);
   const [isNewUser, setIsNewUser] = useState(false);
-
-  useEffect(() => {
-    if (auth.token) {
-      navigate('/dashboard');
-    }
-  }, [auth.token, navigate]);
-
-  // useEffect(() => {
-  //   const fetchBanks = async () => {
-  //     try {
-  //       console.log('Buscando bancos...');
-  //       const response = await fetch('/api/bank');
-  //       if (!response.ok) {
-  //         throw new Error('Falha ao carregar bancos');
-  //       }
-  //       const data = await response.json();
-  //       console.log('Bancos recebidos:', data);
-  //       setBanks(data);
-  //     } catch (err) {
-  //       console.error('Erro ao buscar bancos:', err);
-  //       setError('Erro ao carregar bancos. Por favor, tente novamente.');
-  //     }
-  //   };
-
-  //   if (step === 'banks') {
-  //     fetchBanks();
-  //   }
-  // }, [step]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -58,15 +28,6 @@ const Login = () => {
     }));
   };
 
-  // const handleBankToggle = (bankId) => {
-  //   setFormData(prev => {
-  //     const selectedBanks = prev.selectedBanks.includes(bankId)
-  //       ? prev.selectedBanks.filter(id => id !== bankId)
-  //       : [...prev.selectedBanks, bankId];
-  //     return { ...prev, selectedBanks };
-  //   });
-  // };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -74,7 +35,7 @@ const Login = () => {
 
     try {
       if (step === 'email') {
-        const response = await fetch('/api/auth/check-email', {
+        const response = await fetch('http://localhost:5000/api/auth/check-email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: formData.email })
@@ -113,16 +74,13 @@ const Login = () => {
           email: formData.email,
           name: formData.name,
           netIncome: formData.netIncome,
-          // selectedBanks: formData.selectedBanks
         }
       : {
           email: formData.email,
           name: formData.name
         };
 
-    console.log('Enviando dados:', requestData);
-
-    const response = await fetch('/api/auth/send-code', {
+    const response = await fetch('http://localhost:5000/api/auth/send-code', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(requestData)
@@ -134,11 +92,10 @@ const Login = () => {
     }
 
     const data = await response.json();
-    console.log('Código enviado:', data);
   };
 
   const verifyCode = async () => {
-    const response = await fetch('/api/auth/verify-code', {
+    const response = await fetch('http://localhost:5000/api/auth/verify-code', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -237,26 +194,6 @@ const Login = () => {
           </>
         );
 
-      // case 'banks':
-      //   return (
-      //     <>
-      //       <h1 className={styles.title}>Selecione seus bancos</h1>
-      //       <div className={styles.bankGrid}>
-      //         {banks.map(bank => (
-      //           <div
-      //             key={bank.id}
-      //             className={`${styles.bankCard} ${
-      //               formData.selectedBanks.includes(bank.id) ? styles.selected : ''
-      //             }`}
-      //             onClick={() => handleBankToggle(bank.id)}
-      //           >
-      //             <span className={styles.bankName}>{bank.name}</span>
-      //           </div>
-      //         ))}
-      //       </div>
-      //     </>
-      //   );
-
       case 'code':
         return (
           <>
@@ -300,6 +237,10 @@ const Login = () => {
             {renderStep()}
 
             <div className={styles.buttonGroup}>
+              <button type="submit" className={styles.loginButton}>
+                {step === 'code' ? 'Verificar' : 'Próximo'}
+              </button>
+
               {step !== 'email' && (
                 <button
                   type="button"
@@ -313,9 +254,6 @@ const Login = () => {
                   Voltar
                 </button>
               )}
-              <button type="submit" className={styles.loginButton}>
-                {step === 'code' ? 'Verificar' : 'Próximo'}
-              </button>
             </div>
           </form>
         </div>
