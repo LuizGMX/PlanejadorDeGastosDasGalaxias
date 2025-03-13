@@ -5,6 +5,7 @@ import styles from '../styles/shared.module.css';
 import { BsCreditCard2Front } from 'react-icons/bs';
 import { SiPix } from 'react-icons/si';
 import CurrencyInput from 'react-currency-input-field';
+import addExpenseStyles from '../styles/addExpense.module.css';
 
 const AddExpense = () => {
   const navigate = useNavigate();
@@ -279,7 +280,11 @@ const AddExpense = () => {
         <h1 className={styles.title}>Adicionar Despesa</h1>
 
         {error && <p className={styles.error}>{error}</p>}
-        {success && <p className={styles.success}>{success}</p>}
+        {success && (
+          <div className={addExpenseStyles.successMessage}>
+            {success}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.inputGroup}>

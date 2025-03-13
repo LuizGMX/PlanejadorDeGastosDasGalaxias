@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../App';
 import styles from '../styles/expenses.module.css';
+import sharedStyles from '../styles/shared.module.css';
 import EditExpenseForm from './EditExpenseForm';
 
 const Expenses = () => {
@@ -34,10 +35,10 @@ const Expenses = () => {
   const [deleteOption, setDeleteOption] = useState(null);
 
   const years = Array.from(
-    { length: 5 },
+    { length: 11 },
     (_, i) => ({
-      value: new Date().getFullYear() - i,
-      label: (new Date().getFullYear() - i).toString()
+      value: 2025 + i,
+      label: (2025 + i).toString()
     })
   );
 
@@ -448,7 +449,7 @@ const Expenses = () => {
       </div>
 
       {deleteSuccess && (
-        <div className={styles.successMessage}>
+        <div className={sharedStyles.successMessage}>
           {deleteSuccess.message} {deleteSuccess.count > 1 ? `(${deleteSuccess.count} itens)` : ''}
         </div>
       )}

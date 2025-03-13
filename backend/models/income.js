@@ -59,6 +59,10 @@ export default (sequelize) => {
       allowNull: false,
       defaultValue: DataTypes.NOW
     },
+    start_date: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
     is_recurring: {
       type: DataTypes.BOOLEAN,
       allowNull: false,

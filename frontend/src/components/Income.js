@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../App';
 import styles from '../styles/income.module.css';
+import sharedStyles from '../styles/shared.module.css';
 import EditIncomeForm from './EditIncomeForm';
 
 const Income = () => {
@@ -35,10 +36,10 @@ const Income = () => {
 
   // Lista de anos para o filtro
   const years = Array.from(
-    { length: 5 },
+    { length: 11 },
     (_, i) => ({
-      value: new Date().getFullYear() - i,
-      label: (new Date().getFullYear() - i).toString()
+      value: 2025 + i,
+      label: (2025 + i).toString()
     })
   );
 
@@ -259,7 +260,7 @@ const Income = () => {
 
       <div className={styles.filtersContainer}>
         {deleteSuccess && (
-          <div className={styles.successMessage}>
+          <div className={sharedStyles.successMessage}>
             {deleteSuccess.message} {deleteSuccess.count > 1 ? `(${deleteSuccess.count} itens)` : ''}
           </div>
         )}

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../App';
-import styles from '../styles/shared.module.css';
+import styles from '../styles/addIncome.module.css';
+import sharedStyles from '../styles/shared.module.css';
 import CurrencyInput from 'react-currency-input-field';
 
 const AddIncome = () => {
@@ -10,12 +11,13 @@ const AddIncome = () => {
   const [formData, setFormData] = useState({
     description: '',
     amount: '',
-    date: new Date().toISOString().split('T')[0],
+    date: '',
+    start_date: '',
+    end_date: '',
+    is_recurring: false,
     category_id: '',
     subcategory_id: '',
-    bank_id: '',
-    is_recurring: false,
-    end_date: ''
+    bank_id: ''
   });
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
@@ -110,8 +112,13 @@ const AddIncome = () => {
     setSuccess('');
 
     try {
-      if (formData.is_recurring && !formData.end_date) {
-        throw new Error('Data final é obrigatória para receitas recorrentes');
+      if (formData.is_recurring) {
+        if (!formData.start_date || !formData.end_date) {
+          throw new Error('Data inicial e final são obrigatórias para receitas recorrentes');
+        }
+        formData.date = formData.start_date;
+      } else if (!formData.date) {
+        throw new Error('Data é obrigatória para receitas não recorrentes');
       }
 
       const response = await fetch('/api/incomes', {
@@ -143,7 +150,11 @@ const AddIncome = () => {
         <h1 className={styles.title}>Adicionar Receita</h1>
 
         {error && <p className={styles.error}>{error}</p>}
-        {success && <p className={styles.success}>{success}</p>}
+        {success && (
+          <div className={sharedStyles.successMessage}>
+            {success}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.inputGroup}>
@@ -189,6 +200,8 @@ const AddIncome = () => {
                 setFormData(prev => ({
                   ...prev,
                   is_recurring: !prev.is_recurring,
+                  date: !prev.is_recurring ? prev.start_date : '',
+                  start_date: !prev.is_recurring ? new Date().toISOString().split('T')[0] : '',
                   end_date: !prev.is_recurring ? '' : prev.end_date
                 }));
               }}>
@@ -212,47 +225,62 @@ const AddIncome = () => {
               {formData.is_recurring && (
                 <div className={styles.optionContent}>
                   <div className={styles.inputGroup}>
-                    <label className={styles.label}>
-                      <span className="material-icons">event</span>
-                      Data Final da Recorrência
+                    <label htmlFor="start_date" className={styles.label}>
+                      Data de Início
                     </label>
                     <input
                       type="date"
+                      id="start_date"
+                      name="start_date"
+                      value={formData.start_date}
+                      onChange={handleChange}
+                      className={styles.input}
+                      required
+                    />
+                  </div>
+                  <div className={styles.inputGroup}>
+                    <label htmlFor="end_date" className={styles.label}>
+                      Data de Término
+                    </label>
+                    <input
+                      type="date"
+                      id="end_date"
                       name="end_date"
                       value={formData.end_date}
                       onChange={handleChange}
                       className={styles.input}
-                      required
-                      min={formData.date}
+                      min={formData.start_date}
                       max={(() => {
-                        const maxDate = new Date(formData.date);
+                        if (!formData.start_date) return '';
+                        const startDate = new Date(formData.start_date);
+                        const maxDate = new Date(startDate);
                         maxDate.setFullYear(maxDate.getFullYear() + 10);
                         return maxDate.toISOString().split('T')[0];
                       })()}
+                      required
                     />
-                    <small className={styles.helperText}>
-                      O período de recorrência não pode ser maior que 10 anos
-                    </small>
                   </div>
                 </div>
               )}
             </div>
           </div>
 
-          <div className={styles.inputGroup}>
-            <label className={styles.label}>
-              <span className="material-icons">calendar_today</span>
-              Data
-            </label>
-            <input
-              type="date"
-              name="date"
-              value={formData.date}
-              onChange={handleChange}
-              className={styles.input}
-              required
-            />
-          </div>
+          {!formData.is_recurring && (
+            <div className={styles.inputGroup}>
+              <label htmlFor="date" className={styles.label}>
+                Data
+              </label>
+              <input
+                type="date"
+                id="date"
+                name="date"
+                value={formData.date}
+                onChange={handleChange}
+                className={styles.input}
+                required
+              />
+            </div>
+          )}
 
           <div className={styles.inputGroup}>
             <label className={styles.label}>

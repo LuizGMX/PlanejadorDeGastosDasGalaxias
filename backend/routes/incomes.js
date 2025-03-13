@@ -158,7 +158,8 @@ router.post('/', authenticate, async (req, res) => {
       subcategory_id,
       bank_id,
       is_recurring,
-      end_date
+      end_date,
+      start_date
     } = req.body;
 
     // Validações básicas
@@ -170,14 +171,14 @@ router.post('/', authenticate, async (req, res) => {
       throw new Error('O valor deve ser maior que zero');
     }
 
-    // Se for recorrente, precisa de data final
-    if (is_recurring && !end_date) {
-      throw new Error('Data final é obrigatória para receitas recorrentes');
+    // Se for recorrente, precisa de data inicial e final
+    if (is_recurring && (!start_date || !end_date)) {
+      throw new Error('Data inicial e final são obrigatórias para receitas recorrentes');
     }
 
     // Validar período máximo de 10 anos para recorrência
     if (is_recurring) {
-      const startDate = new Date(date);
+      const startDate = new Date(start_date);
       const endDate = new Date(end_date);
       const maxDate = new Date(startDate);
       maxDate.setFullYear(maxDate.getFullYear() + 10);
@@ -192,7 +193,7 @@ router.post('/', authenticate, async (req, res) => {
 
     if (is_recurring) {
       // Criar receitas recorrentes mensais
-      const startDate = new Date(date);
+      const startDate = new Date(start_date);
       const endDate = new Date(end_date);
       const currentDate = new Date(startDate);
       const createdIncomes = [];
@@ -207,7 +208,9 @@ router.post('/', authenticate, async (req, res) => {
           bank_id,
           user_id: req.user.id,
           is_recurring,
-          recurring_group_id
+          recurring_group_id,
+          start_date: startDate,
+          end_date: endDate
         }, { transaction: t });
 
         createdIncomes.push(income);
