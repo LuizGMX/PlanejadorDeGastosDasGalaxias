@@ -156,7 +156,7 @@ const startServer = async () => {
     await seedDatabase();
     console.log('Seed concluído');
 
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0', () => {
       console.log('=================================');
       console.log(`Servidor rodando na porta ${PORT}`);
       console.log(`PID do processo: ${process.pid}`);
