@@ -44,7 +44,7 @@ const SpreadsheetUpload = () => {
     setSuccess('');
 
     try {
-      const response = await axios.post('http://localhost:5000/api/spreadsheet/upload', formData, {
+      const response = await axios.post('/api/spreadsheet/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${auth.token}`

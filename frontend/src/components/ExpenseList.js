@@ -171,26 +171,61 @@ const ExpenseList = () => {
   };
 
   const handleDelete = async (ids) => {
-    if (!window.confirm('Tem certeza que deseja excluir as despesas selecionadas?')) {
-      return;
-    }
-
     try {
-      const response = await fetch('/api/expenses/batch', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${auth.token}`
-        },
-        body: JSON.stringify({ ids })
-      });
+      // Adiciona confirmação
+      if (!window.confirm(`Tem certeza que deseja excluir ${ids.length} despesa(s)?`)) {
+        return;
+      }
 
-      if (!response.ok) throw new Error('Erro ao excluir despesas');
+      // Processa em lotes de 50 itens
+      const batchSize = 50;
+      const batches = [];
+      
+      for (let i = 0; i < ids.length; i += batchSize) {
+        batches.push(ids.slice(i, i + batchSize));
+      }
 
-      setExpenses(prev => prev.filter(expense => !ids.includes(expense.id)));
-      setSelectedExpenses([]);
-    } catch (err) {
-      setError(err.message);
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const batch of batches) {
+        try {
+          const response = await fetch('/api/expenses/bulk', {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${auth.token}`
+            },
+            body: JSON.stringify({ ids: batch })
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            successCount += result.count;
+          } else {
+            const error = await response.json();
+            console.error('Erro na deleção do lote:', error);
+            errorCount += batch.length;
+          }
+        } catch (error) {
+          console.error('Erro ao deletar lote:', error);
+          errorCount += batch.length;
+        }
+      }
+
+      // Atualiza a lista após todas as deleções
+      await fetchData();
+
+      // Notifica o resultado
+      if (errorCount > 0) {
+        alert(`${successCount} item(s) deletado(s) com sucesso.\n${errorCount} item(s) falharam.`);
+      } else {
+        alert(`${successCount} item(s) deletado(s) com sucesso!`);
+      }
+
+    } catch (error) {
+      console.error('Erro na deleção em massa:', error);
+      alert('Erro ao deletar itens. Por favor, tente novamente.');
     }
   };
 

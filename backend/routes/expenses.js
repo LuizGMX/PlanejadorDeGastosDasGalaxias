@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Op } from 'sequelize';
 import { Sequelize } from 'sequelize';
 import { literal } from 'sequelize';
+import { clearCache } from '../utils/cache.js';
 
 const router = express.Router();
 
@@ -488,49 +489,42 @@ router.delete('/installments', authenticate, async (req, res) => {
   }
 });
 
-router.delete('/batch', authenticate, async (req, res) => {
+router.delete('/bulk', authenticate, async (req, res) => {
   const transaction = await Expense.sequelize.transaction();
-
+  
   try {
     const { ids } = req.body;
     
-    if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ message: 'IDs inválidos' });
-    }
-
-    // Verifica se todas as despesas pertencem ao usuário
-    const expenses = await Expense.findAll({
-      where: {
-        id: ids,
-        user_id: req.user.id
-      }
-    });
-
-    if (expenses.length !== ids.length) {
+    if (!Array.isArray(ids) || ids.length === 0) {
       await transaction.rollback();
-      return res.status(403).json({ 
-        message: 'Algumas despesas não foram encontradas ou você não tem permissão para excluí-las' 
-      });
+      return res.status(400).json({ message: 'Lista de IDs inválida' });
     }
 
-    // Exclui as despesas
-    await Expense.destroy({
+    // Faz uma única chamada para deletar todas as despesas
+    const deletedCount = await Expense.destroy({
       where: {
-        id: ids,
+        id: { [Op.in]: ids },
         user_id: req.user.id
       },
       transaction
     });
 
+    // Limpa o cache relacionado
+    await clearCache(`expenses:${req.user.id}:*`);
+
     await transaction.commit();
     res.json({ 
-      message: 'Despesas excluídas com sucesso',
-      count: expenses.length
+      message: `${deletedCount} despesa(s) deletada(s) com sucesso`,
+      count: deletedCount
     });
+
   } catch (error) {
     await transaction.rollback();
-    console.error('Erro ao excluir despesas:', error);
-    res.status(500).json({ message: 'Erro ao excluir despesas' });
+    console.error('Erro na deleção em lote:', error);
+    res.status(500).json({ 
+      message: 'Erro ao deletar despesas',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
