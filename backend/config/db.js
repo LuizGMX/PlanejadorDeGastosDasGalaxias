@@ -2,7 +2,7 @@ import { Sequelize } from 'sequelize';
 import dotenv from 'dotenv';
 
 dotenv.config();
-
+console.log("AQUI " + process.env.DB_NAME);
 // Create a new Sequelize instance to connect to the local database
 const sequelize = new Sequelize(
   process.env.DB_NAME || 'planejador',
