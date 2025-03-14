@@ -1,8 +1,8 @@
 module.exports = {
     apps: [{
       name: 'planejador-frontend',
-      script: 'node',
-      args: '/usr/bin/serve build -s -p 3000',
+      script: 'npx',
+      args: 'serve build -s -p 3000',
       instances: 1,
       exec_mode: 'fork',
       autorestart: true,
