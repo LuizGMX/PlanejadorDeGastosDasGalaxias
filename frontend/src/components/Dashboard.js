@@ -400,6 +400,15 @@ const Dashboard = () => {
         const jsonData = await response.json();
         setData(jsonData);
         setError(null);
+
+        if (!jsonData.expenses_by_category || jsonData.expenses_by_category.length === 0) {
+          setNoExpensesMessage({
+            message: 'Você ainda não tem despesas cadastradas para este período.',
+            suggestion: 'Que tal começar adicionando sua primeira despesa?'
+          });
+        } else {
+          setNoExpensesMessage(null);
+        }
       } catch (err) {
         setError('Erro ao carregar dados do dashboard');
       } finally {
