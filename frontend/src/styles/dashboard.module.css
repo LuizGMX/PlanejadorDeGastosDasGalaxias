@@ -700,3 +700,26 @@
 .trendStat strong.negative {
   color: var(--error-color);
 }
+
+.greeting {
+  background: var(--card-background);
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.greeting h2 {
+  color: var(--text-color);
+  margin: 0 0 12px 0;
+  font-size: 1.8rem;
+  font-weight: 600;
+}
+
+.motivationalPhrase {
+  color: var(--text-secondary);
+  margin: 0;
+  font-size: 1.1rem;
+  font-style: italic;
+  line-height: 1.4;
+}

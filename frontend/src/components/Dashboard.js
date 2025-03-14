@@ -20,6 +20,46 @@ import {
 } from 'recharts';
 import styles from '../styles/dashboard.module.css';
   
+const motivationalPhrases = [
+  "Cuide do seu dinheiro hoje para não precisar se preocupar amanhã.",
+  "Cada real economizado é um passo mais perto da sua liberdade financeira.",
+  "Não trabalhe apenas por dinheiro, faça o dinheiro trabalhar para você.",
+  "Investir é plantar hoje para colher no futuro.",
+  "Quem controla seu dinheiro, controla seu futuro.",
+  "Gaste menos do que ganha e invista a diferença.",
+  "Disciplina financeira hoje significa tranquilidade amanhã.",
+  "Pequenos gastos diários podem se tornar grandes perdas anuais.",
+  "A riqueza começa na sua mentalidade antes de chegar à sua conta bancária.",
+  "Orçamento não é prisão, é liberdade.",
+  "Dinheiro é um ótimo servo, mas um péssimo mestre.",
+  "O segredo da riqueza está nos hábitos diários.",
+  "Cada centavo tem um propósito – dê um destino certo ao seu dinheiro.",
+  "A prosperidade começa com escolhas inteligentes.",
+  "Seja dono do seu dinheiro antes que ele seja dono de você."
+];
+
+const getGreeting = (userName) => {
+  const hour = new Date().getHours();
+  let greeting = '';
+  
+  if (hour >= 5 && hour < 12) {
+    greeting = 'Bom dia';
+  } else if (hour >= 12 && hour < 18) {
+    greeting = 'Boa tarde';
+  } else {
+    greeting = 'Boa noite';
+  }
+
+  const randomPhrase = motivationalPhrases[Math.floor(Math.random() * motivationalPhrases.length)];
+  
+  return (
+    <div className={styles.greeting}>
+      <h2>{greeting}, {userName}!</h2>
+      <p className={styles.motivationalPhrase}>{randomPhrase}</p>
+    </div>
+  );
+};
+
 const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300, containerStyle = {} }) => {
   const { auth } = useContext(AuthContext);
   const [data, setData] = useState(null);
@@ -554,6 +594,7 @@ const Dashboard = () => {
 
   return (
     <div className={styles.dashboardContainer}>
+      {getGreeting(auth.user?.name || 'Usuário')}
       <div className={styles.header}>
         <h1 className={styles.title}>Dashboard</h1>
       </div>
