@@ -39,10 +39,10 @@ const Income = () => {
 
   // Lista de anos para o filtro
   const years = Array.from(
-    { length: 11 },
+    { length: 20 },
     (_, i) => ({
-      value: 2025 + i,
-      label: (2025 + i).toString()
+      value: new Date().getFullYear() + i,
+      label: (new Date().getFullYear() + i).toString()
     })
   );
 
@@ -85,7 +85,7 @@ const Income = () => {
         queryParams.append('is_recurring', filters.is_recurring);
       }
 
-      const response = await fetch(`/api/incomes?${queryParams}`, {
+      const response = await fetch(`http://localhost:5000/api/incomes?${queryParams}`, {
         headers: {
           'Authorization': `Bearer ${auth.token}`
         }
@@ -191,13 +191,13 @@ const Income = () => {
   const handleDelete = async (id) => {
     try {
       if (deleteOptions.type === 'bulk') {
-        const response = await fetch('/api/incomes/bulk', {
+        const response = await fetch('http://localhost:5000/api/incomes/bulk', {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${auth.token}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ ids: deleteOptions.ids })
+          body: JSON.stringify({ ids: selectedIncomes })
         });
 
         if (!response.ok) {
@@ -228,7 +228,7 @@ const Income = () => {
         return;
       }
 
-      let url = `/api/incomes/${id}`;
+      let url = `http://localhost:5000/api/incomes/${id}`;
       const queryParams = new URLSearchParams();
 
       switch (deleteOption) {
@@ -304,6 +304,28 @@ const Income = () => {
       });
     }
     setShowDeleteModal(true);
+  };
+
+  const handleUpdate = async (updatedIncome) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/incomes/${updatedIncome.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${auth.token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updatedIncome)
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao atualizar receita');
+      }
+
+      setEditingIncome(null);
+      await fetchIncomes();
+    } catch (error) {
+      setError('Erro ao atualizar receita. Por favor, tente novamente.');
+    }
   };
 
   if (loading) return <div className={styles.loading}>Carregando...</div>;
@@ -428,7 +450,7 @@ const Income = () => {
                     checked={filters.category_id === category.id}
                     onChange={() => handleFilterChange('category_id', category.id)}
                   />
-                  {category_name}
+                  {category.name}
                 </label>
               ))}
             </div>
@@ -461,7 +483,7 @@ const Income = () => {
       </div>
 
       {selectedIncomes.length > 0 && (
-        <div className={styles.bulkActions}>
+        <div >
           <button
             className={styles.deleteButton}
             onClick={() => handleDeleteClick()}
@@ -508,7 +530,7 @@ const Income = () => {
                 <td>
                   {income.Category?.category_name || '-'}
                   {income.recurring_info && (
-                    <span className={styles.badge} title={income.recurring_info.badge.tooltip}>
+                    <span className="material-icons" title={income.recurring_info.badge.tooltip}>
                       <span className="material-icons">sync</span>
                     </span>
                   )}
@@ -566,7 +588,7 @@ const Income = () => {
                 <div className={styles.deleteOptions}>
                   <div className={styles.deleteOption}>
                     <input
-                      type="checkbox"
+                      type="radio"
                       id="delete-single"
                       checked={deleteOption === 'single'}
                       onChange={() => setDeleteOption('single')}
@@ -575,7 +597,7 @@ const Income = () => {
                   </div>
                   <div className={styles.deleteOption}>
                     <input
-                      type="checkbox"
+                      type="radio"
                       id="delete-future"
                       checked={deleteOption === 'future'}
                       onChange={() => setDeleteOption('future')}
@@ -584,7 +606,7 @@ const Income = () => {
                   </div>
                   <div className={styles.deleteOption}>
                     <input
-                      type="checkbox"
+                      type="radio"
                       id="delete-past"
                       checked={deleteOption === 'past'}
                       onChange={() => setDeleteOption('past')}
@@ -593,7 +615,7 @@ const Income = () => {
                   </div>
                   <div className={styles.deleteOption}>
                     <input
-                      type="checkbox"
+                      type="radio"
                       id="delete-all"
                       checked={deleteOption === 'all'}
                       onChange={() => setDeleteOption('all')}
@@ -632,7 +654,7 @@ const Income = () => {
               </>
             ) : deleteOptions.type === 'bulk' ? (
               <>
-                <p>Tem certeza que deseja excluir {deleteOptions.ids.length} {deleteOptions.ids.length === 1 ? 'receita' : 'receitas'}?</p>
+                <p>Tem certeza que deseja excluir {selectedIncomes.length} {selectedIncomes.length === 1 ? 'receita' : 'receitas'}?</p>
                 <div className={styles.modalButtons}>
                   <button
                     onClick={() => {
@@ -645,12 +667,7 @@ const Income = () => {
                     Cancelar
                   </button>
                   <button
-                    onClick={() => {
-                      Promise.all(deleteOptions.ids.map(id => handleDelete(id)))
-                        .then(() => {
-                          setSelectedIncomes([]);
-                        });
-                    }}
+                    onClick={() => handleDelete(null)}
                     className={styles.deleteButton}
                   >
                     Excluir

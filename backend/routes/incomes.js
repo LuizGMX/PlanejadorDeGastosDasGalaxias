@@ -6,8 +6,6 @@ import { Op } from 'sequelize';
 import { authenticate } from '../middleware/auth.js';
 import { Sequelize } from 'sequelize';
 
-
-
 // Listar todas as receitas do usuário
 router.get('/', authenticate, async (req, res) => {
   try {
@@ -331,6 +329,47 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+// Excluir receitas em lote
+router.delete('/bulk', authenticate, async (req, res) => {
+  const transaction = await Income.sequelize.transaction();
+  console.log('Iniciando deleção em lote');
+  try {
+    const { ids } = req.body;
+    
+    if (!Array.isArray(ids) || ids.length === 0) {
+      await transaction.rollback();
+      return res.status(400).json({ message: 'Lista de IDs inválida' });
+    }
+
+    console.log('IDs para deleção:', ids);
+
+    // Faz uma única chamada para deletar todas as receitas
+    const deletedCount = await Income.destroy({
+      where: {
+        id: { [Op.in]: ids },
+        user_id: req.user.id,
+        is_recurring: false
+      },
+      transaction
+    });
+
+    await transaction.commit();
+    console.log(`${deletedCount} receitas deletadas com sucesso`);
+    res.json({ 
+      message: `${deletedCount} receita(s) deletada(s) com sucesso`,
+      count: deletedCount
+    });
+
+  } catch (error) {
+    await transaction.rollback();
+    console.error('Erro na deleção em lote:', error);
+    res.status(500).json({ 
+      message: 'Erro ao deletar receitas',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
 // Excluir receita
 router.delete('/:id', authenticate, async (req, res) => {
   const t = await Income.sequelize.transaction();
@@ -449,41 +488,5 @@ router.get('/categories/:categoryId/subcategories', authenticate, async (req, re
   }
 });
 
-// Excluir receitas em lote
-router.delete('/bulk', authenticate, async (req, res) => {
-  const transaction = await Income.sequelize.transaction();
-  
-  try {
-    const { ids } = req.body;
-    
-    if (!Array.isArray(ids) || ids.length === 0) {
-      await transaction.rollback();
-      return res.status(400).json({ message: 'Lista de IDs inválida' });
-    }
-
-    // Faz uma única chamada para deletar todas as receitas
-    const deletedCount = await Income.destroy({
-      where: {
-        id: { [Op.in]: ids },
-        user_id: req.user.id
-      },
-      transaction
-    });
-
-    await transaction.commit();
-    res.json({ 
-      message: `${deletedCount} receita(s) deletada(s) com sucesso`,
-      count: deletedCount
-    });
-
-  } catch (error) {
-    await transaction.rollback();
-    console.error('Erro na deleção em lote:', error);
-    res.status(500).json({ 
-      message: 'Erro ao deletar receitas',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
-  }
-});
 
 export default router; 

@@ -5,7 +5,6 @@ import Dashboard from './components/Dashboard';
 import Expenses from './components/Expenses';
 import AddExpense from './components/AddExpense';
 import Profile from './components/Profile';
-import Layout from './components/Layout';
 import Income from './components/Income';
 import AddIncome from './components/AddIncome';
 import SpreadsheetUpload from './components/SpreadsheetUpload';
@@ -21,7 +20,7 @@ function App() {
     const fetchUser = async () => {
       if (auth.token) {
         try {
-          const response = await fetch('/api/auth/me', {
+          const response = await fetch('http://localhost:5000/api/auth/me', {
             headers: {
               'Authorization': `Bearer ${auth.token}`
             }
