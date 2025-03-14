@@ -11,10 +11,10 @@ yarn-error.log
 .env.test.local
 .env.production.local
 
-# Build files
-dist/
-build/
-*.bundle.js
+# # Build files
+# dist/
+# build/
+# *.bundle.js
 
 # IDE and editor files
 .idea/
