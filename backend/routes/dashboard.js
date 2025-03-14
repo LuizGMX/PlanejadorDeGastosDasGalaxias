@@ -244,7 +244,7 @@ router.get('/bank-balance-trend', authenticate, async (req, res) => {
     const endDate = new Date();
     endDate.setMonth(endDate.getMonth() + projectionMonths);
 
-    const [recurringExpenses, recurringIncomes, user] = await Promise.all([
+    const [recurringExpenses, recurringIncomes, allExpenses, user] = await Promise.all([
       Expense.findAll({
         where: {
           user_id: req.user.id,
@@ -266,6 +266,15 @@ router.get('/bank-balance-trend', authenticate, async (req, res) => {
             { end_date: { [Op.gte]: startDate } },
             { end_date: null }
           ]
+        },
+        include: [{ model: Category }, { model: Bank }]
+      }),
+      Expense.findAll({
+        where: {
+          user_id: req.user.id,
+          expense_date: { 
+            [Op.between]: [startDate, endDate] 
+          }
         },
         include: [{ model: Category }, { model: Bank }]
       }),
@@ -300,6 +309,20 @@ router.get('/bank-balance-trend', authenticate, async (req, res) => {
         return total;
       }, 0);
 
+      // Adiciona as despesas não recorrentes do mês atual
+      const nonRecurringExpenses = allExpenses.reduce((total, expense) => {
+        const expenseDate = new Date(expense.expense_date);
+        const isCurrentMonth = currentDate.getMonth() === expenseDate.getMonth() && 
+                             currentDate.getFullYear() === expenseDate.getFullYear();
+        
+        if (isCurrentMonth && !expense.is_recurring) {
+          return total + parseFloat(expense.amount || 0);
+        }
+        return total;
+      }, 0);
+
+      const totalMonthlyExpenses = monthlyExpenses + nonRecurringExpenses;
+
       const monthlyIncomes = recurringIncomes.reduce((total, income) => {
         const incomeDate = new Date(income.start_date);
         const isActive = currentDate.getMonth() === incomeDate.getMonth() && 
@@ -312,13 +335,13 @@ router.get('/bank-balance-trend', authenticate, async (req, res) => {
         return total;
       }, 0);
 
-      const monthlyBalance = monthlyIncomes + monthlyNetIncome - monthlyExpenses;
+      const monthlyBalance = monthlyIncomes + monthlyNetIncome - totalMonthlyExpenses;
       currentBalance += monthlyBalance;
 
       projectionData.push({
         date: currentDate.toISOString().split('T')[0],
         balance: currentBalance,
-        expenses: monthlyExpenses,
+        expenses: totalMonthlyExpenses,
         incomes: monthlyIncomes + monthlyNetIncome
       });
     }
