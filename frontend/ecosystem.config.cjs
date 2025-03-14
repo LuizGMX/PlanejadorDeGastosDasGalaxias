@@ -1,8 +1,8 @@
 module.exports = {
   apps: [{
     name: 'planejador-frontend',
-    script: 'serve',
-    args: ['-s', 'build', '-l', '3000'],
+    script: '/usr/bin/serve',
+    args: 'build -s -p 3000',
     instances: 1,
     exec_mode: 'fork',
     autorestart: true,
@@ -10,8 +10,6 @@ module.exports = {
     max_memory_restart: '500M',
     env_production: {
       NODE_ENV: 'production',
-      PM2_SERVE_PATH: './build',
-      PM2_SERVE_PORT: 3000,
       PM2_SERVE_SPA: 'true',
       PM2_SERVE_HOMEPAGE: '/index.html'
     },
