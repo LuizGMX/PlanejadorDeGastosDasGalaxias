@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import sequelize from './config/db.js';
 import authRoutes from './routes/auth.js';
 import categoryRoutes from './routes/categories.js';
@@ -14,13 +16,28 @@ import userRoutes from './routes/users.js';
 
 const app = express();
 
-// Middlewares
+// Middlewares de segurança
+app.use(helmet());
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 100 // limite de 100 requisições por IP
+});
+app.use(limiter);
+
+// CORS configuration
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: process.env.NODE_ENV === 'production' 
+    ? process.env.FRONTEND_URL 
+    : 'http://localhost:3000',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
 }));
-app.use(express.json());
+
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Criar diretório de uploads se não existir
 import { mkdirSync } from 'fs';
@@ -44,10 +61,19 @@ app.use('/api/spreadsheet', spreadsheetRoutes);
 app.use('/api/subcategories', subcategoryRoutes);
 app.use('/api/users', userRoutes);
 
-// Tratamento de erros
+// Tratamento de erros melhorado
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ message: 'Algo deu errado!' });
+  
+  // Não expor detalhes do erro em produção
+  const error = process.env.NODE_ENV === 'production' 
+    ? 'Erro interno do servidor' 
+    : err.message;
+    
+  res.status(err.status || 500).json({ 
+    success: false,
+    message: error
+  });
 });
 
 // Sincroniza os modelos com o banco de dados

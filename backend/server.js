@@ -12,91 +12,108 @@ import jwt from 'jsonwebtoken';
 import db from './models/index.js';
 import seedDatabase from './seeders/index.js';
 import spreadsheetRoutes from './routes/spreadsheetRoutes.js';
+import fs from 'fs';
+import path from 'path';
 
+// Carrega variáveis de ambiente
 dotenv.config();
+
+// Configura SendGrid
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 const app = express();
 
-// Configurações de segurança
-app.use(helmet());
-app.use(express.json());
+// Configurações de segurança avançadas
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
+  crossOriginEmbedderPolicy: true,
+  crossOriginOpenerPolicy: true,
+  crossOriginResourcePolicy: { policy: "same-site" },
+  dnsPrefetchControl: true,
+  frameguard: { action: "deny" },
+  hidePoweredBy: true,
+  hsts: true,
+  ieNoOpen: true,
+  noSniff: true,
+  referrerPolicy: { policy: "same-origin" },
+  xssFilter: true,
+}));
+
+// CORS configurado para produção
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: process.env.NODE_ENV === 'production' 
+    ? process.env.FRONTEND_URL 
+    : 'http://localhost:3000',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Logging
+// Configuração de logging melhorada
+const logDir = 'logs';
+if (!fs.existsSync(logDir)) {
+  fs.mkdirSync(logDir);
+}
+
 app.use(expressWinston.logger({
   winstonInstance: logger,
   meta: true,
   msg: 'HTTP {{req.method}} {{req.url}}',
   expressFormat: true,
-  colorize: false
+  colorize: false,
+  ignoreRoute: function (req, res) { 
+    return false; 
+  }
 }));
 
-// Rate limiting
+// Rate limiting configurável
 const limiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minuto
-  max: 9999999999999999, // limite de 100 requisições por minuto
-  message: { message: 'Muitas requisições, tente novamente em alguns minutos.' },
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
+  message: { 
+    message: 'Muitas requisições, tente novamente em alguns minutos.' 
+  },
   standardHeaders: true,
   legacyHeaders: false,
 });
 
 app.use('/api/auth', limiter);
 
-// Middleware de tratamento de erros global
-app.use((err, req, res, next) => {
-  logger.error('Erro não tratado:', err);
-  res.status(500).json({
-    message: 'Erro interno do servidor',
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined
-  });
-});
-
-// Middleware de autenticação
+// Middleware de autenticação melhorado
 const authenticate = async (req, res, next) => {
   try {
-    console.log('Verificando autenticação...');
     const authHeader = req.headers.authorization;
     if (!authHeader) {
-      console.log('Token não fornecido');
       return res.status(401).json({ message: 'Token não fornecido' });
     }
 
-    console.log('Header de autenticação:', authHeader);
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log('Token decodificado:', decoded);
     
-    // Tenta buscar usuário do cache
     const cacheKey = `user:${decoded.userId}`;
     let user = await getCache(cacheKey);
     
     if (!user) {
-      console.log('Usuário não encontrado no cache, buscando no banco...');
       user = await db.User.findByPk(decoded.userId);
       if (user) {
-        await setCache(cacheKey, user);
-        console.log('Usuário encontrado e armazenado no cache');
+        await setCache(cacheKey, user, 3600); // Cache por 1 hora
       }
-    } else {
-      console.log('Usuário encontrado no cache');
     }
 
     if (!user) {
-      console.log('Usuário não encontrado');
       return res.status(401).json({ message: 'Usuário não encontrado' });
     }
 
     req.user = user;
-    console.log('Autenticação bem-sucedida');
     next();
   } catch (error) {
-    console.error('Erro na autenticação:', error);
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({ message: 'Token inválido' });
     }
@@ -108,12 +125,9 @@ const authenticate = async (req, res, next) => {
   }
 };
 
-// Rotas
+// Configuração das rotas
 import authRoutes from './routes/auth.js';
-app.use('/api/auth', (req, res, next) => { 
-  logger.info('Rota de autenticação acessada', { path: req.path }); 
-  next(); 
-}, authRoutes);
+app.use('/api/auth', authRoutes);
 
 import expensesRoutes from './routes/expenses.js';
 app.use('/api/expenses', authenticate, expensesRoutes);
@@ -122,7 +136,7 @@ import dashboardRoutes from './routes/dashboard.js';
 app.use('/api/dashboard', authenticate, dashboardRoutes);
 
 import banksRouter from './routes/banks.js';
-app.use('/api/bank', banksRouter);
+app.use('/api/bank', authenticate, banksRouter);
 
 import userRouter from './routes/user.js';
 app.use('/api/user', authenticate, userRouter);
@@ -131,41 +145,85 @@ import categoriesRouter from './routes/categories.js';
 app.use('/api/categories', authenticate, categoriesRouter);
 
 import incomesRouter from './routes/incomes.js';
-app.use('/api/incomes', authenticate, incomesRouter); 
+app.use('/api/incomes', authenticate, incomesRouter);
 
-// Nova rota para upload de planilha
 app.use('/api/spreadsheet', authenticate, spreadsheetRoutes);
 
-import fs from 'fs';
+// Middleware de tratamento de erros global melhorado
+app.use((err, req, res, next) => {
+  logger.error('Erro não tratado:', {
+    error: err.message,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+    path: req.path,
+    method: req.method,
+    ip: req.ip
+  });
 
-// Logar o PID no console
-console.log('Process ID:', process.pid);
+  res.status(500).json({
+    message: 'Erro interno do servidor',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+});
 
-// Opcional: salvar o PID em um arquivo
-fs.writeFileSync('pid.log', `Process ID: ${process.pid}\n`);
-
-
+// Inicialização do servidor com tratamento de erros
 const PORT = process.env.PORT || 5000;
 
-// Sincroniza o banco de dados e inicia o servidor
 const startServer = async () => {
   try {
     await db.sequelize.sync();
-    console.log('Banco de dados sincronizado');
+    logger.info('Banco de dados sincronizado');
     
-    await seedDatabase();
-    console.log('Seed concluído');
+    if (process.env.NODE_ENV !== 'production') {
+      await seedDatabase();
+      logger.info('Seed concluído');
+    }
 
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log('=================================');
-      console.log(`Servidor rodando na porta ${PORT}`);
-      console.log(`PID do processo: ${process.pid}`);
-      console.log('=================================');
+    const server = app.listen(PORT, '0.0.0.0', () => {
+      logger.info('=================================');
+      logger.info(`Servidor rodando na porta ${PORT}`);
+      logger.info(`Ambiente: ${process.env.NODE_ENV}`);
+      logger.info(`PID do processo: ${process.pid}`);
+      logger.info('=================================');
     });
+
+    // Tratamento de erros não capturados
+    process.on('uncaughtException', (error) => {
+      logger.error('Erro não capturado:', error);
+      process.exit(1);
+    });
+
+    process.on('unhandledRejection', (reason, promise) => {
+      logger.error('Promessa rejeitada não tratada:', reason);
+    });
+
+    // Graceful shutdown
+    const shutdown = async () => {
+      logger.info('Iniciando shutdown gracioso...');
+      
+      server.close(async () => {
+        logger.info('Servidor HTTP fechado');
+        
+        try {
+          await db.sequelize.close();
+          logger.info('Conexão com o banco de dados fechada');
+          process.exit(0);
+        } catch (error) {
+          logger.error('Erro ao fechar conexão com o banco:', error);
+          process.exit(1);
+        }
+      });
+    };
+
+    process.on('SIGTERM', shutdown);
+    process.on('SIGINT', shutdown);
+
   } catch (error) {
-    console.error('Erro ao iniciar servidor:', error);
+    logger.error('Erro ao iniciar servidor:', error);
     process.exit(1);
   }
 };
+
+// Salvar PID em arquivo
+fs.writeFileSync('pid.log', `Process ID: ${process.pid}\n`);
 
 startServer();
