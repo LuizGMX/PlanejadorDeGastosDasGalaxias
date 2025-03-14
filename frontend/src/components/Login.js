@@ -114,6 +114,25 @@ const Login = () => {
     navigate('/dashboard');
   };
 
+  const requestAccessCode = async () => {
+    try {
+      const response = await fetch('/api/auth/send-access-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Falha ao enviar código de acesso');
+      }
+
+      setSuccess('Código de acesso enviado por email');
+    } catch (error) {
+      setError(error.message);
+    }
+  };
+
   const renderStep = () => {
     switch (step) {
       case 'email':
@@ -200,7 +219,7 @@ const Login = () => {
             <div className={styles.loginHeader}>
               <h1 className={styles.loginTitle}>Digite o código</h1>
               <p className={styles.loginSubtitle}>
-                Enviamos um código de verificação para {formData.email}
+                Enviamos um código de verificação para {formData.email}. Por favor, verifique também sua caixa de spam.
               </p>
             </div>
             <div className={styles.inputWrapper}>
@@ -215,6 +234,13 @@ const Login = () => {
               />
               <BsShieldLock className={styles.inputIcon} />
             </div>
+            <button 
+              type="button" 
+              onClick={requestAccessCode}
+              className={styles.resendButton}
+            >
+              Reenviar código
+            </button>
           </>
         );
 

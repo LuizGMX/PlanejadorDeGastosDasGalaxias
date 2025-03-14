@@ -79,15 +79,6 @@ const authenticate = async (req, res, next) => {
   }
 };
 
-// Validação de entrada
-const validateSendCodeInput = ({ email, netIncome, selectedBanks }) => {
-  if (!email || !/^\S+@\S+\.\S+$/.test(email)) return 'E-mail inválido';
-  if (!netIncome || isNaN(netIncome)) return 'Renda líquida inválida';
-  // if (!selectedBanks || !Array.isArray(selectedBanks) || selectedBanks.length === 0) {
-  //   return 'Bancos selecionados inválidos';
-  // }
-  return null;
-};
 
 // Rotas
 router.post('/check-email', async (req, res) => {
@@ -126,9 +117,7 @@ router.post('/send-code', async (req, res) => {
       if (!netIncome || isNaN(netIncome)) {
         return res.status(400).json({ message: 'Renda líquida inválida' });
       }
-      // if (!selectedBanks || !Array.isArray(selectedBanks) || selectedBanks.length === 0) {
-      //   return res.status(400).json({ message: 'Bancos selecionados inválidos' });
-      // }
+      
       // Cria o novo usuário
       user = await User.create({ 
         email, 
@@ -137,14 +126,7 @@ router.post('/send-code', async (req, res) => {
         is_active: true
       });
 
-      // Associa os bancos ao usuário
-      // if (selectedBanks && selectedBanks.length > 0) {
-      //   await Promise.all(
-      //     selectedBanks.map(bankId =>
-      //       user.addBank(bankId)
-      //     )
-      //   );
-      // }
+    
     } else {
       // Para usuários existentes, atualiza o nome se fornecido
       if (name) {
@@ -160,6 +142,8 @@ router.post('/send-code', async (req, res) => {
       code, 
       expires_at: new Date(Date.now() + 10 * 60 * 1000) 
     });
+
+    await sendVerificationEmail(email, name, code);
     
     // Apenas mostra o código no console ao invés de enviar por email
     console.log('=================================');
@@ -194,6 +178,36 @@ router.post('/verify-code', async (req, res) => {
   } catch (error) {
     console.error('Erro ao verificar código:', error);
     return res.status(500).json({ message: 'Erro interno ao verificar o código' });
+  }
+});
+
+router.post('/send-access-code', async (req, res) => {
+  console.log('/api/auth/send-access-code chamado');
+  try {
+    const { email } = req.body;
+    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+      return res.status(400).json({ message: 'E-mail inválido' });
+    }
+
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(404).json({ message: 'Usuário não encontrado' });
+    }
+
+    const code = generateVerificationCode();
+    await VerificationCode.destroy({ where: { email } });
+    await VerificationCode.create({ 
+      email, 
+      code, 
+      expires_at: new Date(Date.now() + 10 * 60 * 1000) 
+    });
+
+    await sendVerificationEmail(email, user.name, code);
+
+    return res.json({ message: 'Código de acesso enviado por email' });
+  } catch (error) {
+    console.error('Erro ao enviar código de acesso:', error);
+    return res.status(500).json({ message: 'Erro interno ao enviar código de acesso' });
   }
 });
 
