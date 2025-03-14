@@ -19,6 +19,8 @@ const Login = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isNewUser, setIsNewUser] = useState(false);
+  const [resendDisabled, setResendDisabled] = useState(false);
+  const [resendCountdown, setResendCountdown] = useState(0);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -128,6 +130,22 @@ const Login = () => {
       }
 
       setSuccess('Código de acesso enviado por email');
+      
+      // Iniciar contagem regressiva
+      setResendDisabled(true);
+      setResendCountdown(60);
+      const countdownInterval = setInterval(() => {
+        setResendCountdown(prevCountdown => {
+          if (prevCountdown <= 1) {
+            clearInterval(countdownInterval);
+            setResendDisabled(false);
+            return 0;
+          }
+          return prevCountdown - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(countdownInterval);
     } catch (error) {
       setError(error.message);
     }
@@ -237,9 +255,10 @@ const Login = () => {
             <button 
               type="button" 
               onClick={requestAccessCode}
-              className={styles.resendButton}
+              disabled={resendDisabled}
+              className={`${styles.resendButton} ${resendDisabled ? styles.disabled : ''}`}
             >
-              Reenviar código
+              {resendDisabled ? `Reenviar em ${resendCountdown}s` : 'Reenviar código'}
             </button>
           </>
         );
@@ -259,12 +278,12 @@ const Login = () => {
           {error && <p className={styles.error}>{error}</p>}
           {success && <p className={styles.success}>{success}</p>}
 
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} className={styles.loginForm}>
             {renderStep()}
 
             <div className={styles.buttonGroup}>
               <button type="submit" className={styles.loginButton}>
-                {step === 'code' ? 'Verificar' : 'Próximo'}
+                {step === 'code' ? 'Entrar' : 'Continuar'}
               </button>
 
               {step !== 'email' && (
@@ -275,7 +294,7 @@ const Login = () => {
                     if (step === 'income') setStep('name');
                     if (step === 'code') setStep(isNewUser ? 'income' : 'email');
                   }}
-                  className={`${styles.loginButton} ${styles.secondary}`}
+                  className={`${styles.backButton}`}
                 >
                   Voltar
                 </button>
