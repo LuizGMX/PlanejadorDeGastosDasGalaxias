@@ -292,6 +292,7 @@ const Income = () => {
         setDeleteOptions({
           type: 'single'
         });
+      }
     } else {
       // Deleção em massa
       setIncomeToDelete(null);
