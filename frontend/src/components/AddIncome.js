@@ -29,7 +29,7 @@ const AddIncome = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/incomes/categories', {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/incomes/categories`, {
           headers: {
             'Authorization': `Bearer ${auth.token}`
           }
@@ -52,7 +52,7 @@ const AddIncome = () => {
   useEffect(() => {
     const fetchBanks = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/bank', {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/bank`, {
           headers: {
             'Authorization': `Bearer ${auth.token}`
           }
@@ -76,7 +76,7 @@ const AddIncome = () => {
     if (formData.category_id) {
       const fetchSubcategories = async () => {
         try {
-          const response = await fetch(`http://localhost:5000/api/incomes/categories/${formData.category_id}/subcategories`, {
+          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/incomes/categories/${formData.category_id}/subcategories`, {
             headers: {
               'Authorization': `Bearer ${auth.token}`
             }
@@ -122,7 +122,7 @@ const AddIncome = () => {
         throw new Error('Data é obrigatória para receitas não recorrentes');
       }
 
-      const response = await fetch('http://localhost:5000/api/incomes', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/incomes`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

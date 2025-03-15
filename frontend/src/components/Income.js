@@ -63,47 +63,49 @@ const Income = () => {
   ];
 
   useEffect(() => {
-    fetchIncomes();
-  }, [filters]);
+    const fetchData = async () => {
+      try {
+        const queryParams = new URLSearchParams();
+        
+        // Adiciona meses e anos como arrays
+        filters.months.forEach(month => queryParams.append('months[]', month));
+        filters.years.forEach(year => queryParams.append('years[]', year));
 
-  const fetchIncomes = async () => {
-    try {
-      const queryParams = new URLSearchParams();
-      
-      filters.months.forEach(month => queryParams.append('months[]', month));
-      filters.years.forEach(year => queryParams.append('years[]', year));
-      
-      if (filters.description) {
-        queryParams.append('description', filters.description);
-      }
-
-      if (filters.category_id) {
-        queryParams.append('category_id', filters.category_id);
-      }
-
-      if (filters.is_recurring !== '') {
-        queryParams.append('is_recurring', filters.is_recurring);
-      }
-
-      const response = await fetch(`http://localhost:5000/api/incomes?${queryParams}`, {
-        headers: {
-          'Authorization': `Bearer ${auth.token}`
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/dashboard?${queryParams}`, {
+          headers: {
+            'Authorization': `Bearer ${auth.token}`
+          }
+        });
+        
+        if (response.status === 401) {
+          navigate('/login');
+          return;
         }
-      });
+        
+        if (!response.ok) {
+          throw new Error('Erro ao carregar dados do dashboard');
+        }
+        
+        const jsonData = await response.json();
+        setData(jsonData);
+        setError(null);
 
-      if (!response.ok) {
-        throw new Error('Falha ao carregar receitas');
+        if (!jsonData.expenses_by_category || jsonData.expenses_by_category.length === 0) {
+          setNoExpensesMessage({
+            message: 'Você ainda não tem despesas cadastradas para este período.',
+            suggestion: 'Que tal começar adicionando sua primeira despesa?'
+          });
+        } else {
+          setNoExpensesMessage(null);
+        }
+      } catch (err) {
+        setError('Erro ao carregar dados do dashboard');
       }
+      setLoading(false);
+    };
 
-      const data = await response.json();
-      setIncomes(data.incomes);
-      setMetadata(data.metadata);
-      setLoading(false);
-    } catch (err) {
-      setError('Erro ao carregar receitas. Por favor, tente novamente.');
-      setLoading(false);
-    }
-  };
+    fetchData();
+  }, [auth.token, navigate, filters]);
 
   const handleFilterClick = (filterType) => {
     setOpenFilter(openFilter === filterType ? null : filterType);
@@ -191,7 +193,7 @@ const Income = () => {
   const handleDelete = async (id) => {
     try {
       if (deleteOptions.type === 'bulk') {
-        const response = await fetch('http://localhost:5000/api/incomes/bulk', {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/incomes/bulk`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${auth.token}`,
@@ -228,7 +230,7 @@ const Income = () => {
         return;
       }
 
-      let url = `http://localhost:5000/api/incomes/${id}`;
+      let url = `${process.env.REACT_APP_API_URL}/api/incomes/${id}`;
       const queryParams = new URLSearchParams();
 
       switch (deleteOption) {
@@ -250,7 +252,8 @@ const Income = () => {
       const response = await fetch(url, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${auth.token}`
+          'Authorization': `Bearer ${auth.token}`,
+          'Content-Type': 'application/json'
         }
       });
 
@@ -259,27 +262,22 @@ const Income = () => {
       }
 
       const data = await response.json();
-
-      // Limpa os estados do modal
-      setShowDeleteModal(false);
-      setIncomeToDelete(null);
-      setDeleteOption(null);
-
-      // Mostra mensagem de sucesso
       setDeleteSuccess({
         message: data.message,
-        count: data.count || 1
+        count: data.count
       });
 
-      // Remove a mensagem após 3 segundos
       setTimeout(() => {
         setDeleteSuccess(null);
       }, 3000);
 
-      // Recarrega a lista de receitas
       await fetchIncomes();
     } catch (err) {
       setError('Erro ao excluir receita. Por favor, tente novamente.');
+    } finally {
+      setShowDeleteModal(false);
+      setIncomeToDelete(null);
+      setDeleteOption(null);
     }
   };
 
@@ -294,7 +292,6 @@ const Income = () => {
         setDeleteOptions({
           type: 'single'
         });
-      }
     } else {
       // Deleção em massa
       setIncomeToDelete(null);
@@ -308,7 +305,7 @@ const Income = () => {
 
   const handleUpdate = async (updatedIncome) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/incomes/${updatedIncome.id}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/incomes/${updatedIncome.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${auth.token}`,

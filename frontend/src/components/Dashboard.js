@@ -68,29 +68,29 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
   const [months, setMonths] = useState(12);
 
   useEffect(() => {
-    fetchTrendData();
-  }, [months, auth.token]);
+    const fetchBankBalanceTrend = async () => {
+      try {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/dashboard/bank-balance-trend?months=${months}`, {
+          headers: {
+            'Authorization': `Bearer ${auth.token}`
+          }
+        });
 
-  const fetchTrendData = async () => {
-    try {
-      const response = await fetch(`http://localhost:5000/api/dashboard/bank-balance-trend?months=${months}`, {
-        headers: {
-          'Authorization': `Bearer ${auth.token}`
+        if (!response.ok) {
+          throw new Error('Erro ao carregar dados de tendência');
         }
-      });
 
-      if (!response.ok) {
-        throw new Error('Erro ao carregar dados de tendência');
+        const data = await response.json();
+        setData(data);
+      } catch (error) {
+        console.error('Erro ao carregar tendência de saldo:', error);
+      } finally {
+        setLoading(false);
       }
+    };
 
-      const jsonData = await response.json();
-      setData(jsonData);
-      setLoading(false);
-    } catch (err) {
-      setError('Erro ao carregar dados de tendência');
-      setLoading(false);
-    }
-  };
+    fetchBankBalanceTrend();
+  }, [auth.token, months]);
 
   const formatCurrency = (value) => {
     const absValue = Math.abs(value);
@@ -382,7 +382,7 @@ const Dashboard = () => {
         filters.months.forEach(month => queryParams.append('months[]', month));
         filters.years.forEach(year => queryParams.append('years[]', year));
 
-        const response = await fetch(`http://localhost:5000/api/dashboard?${queryParams}`, {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/dashboard?${queryParams}`, {
           headers: {
             'Authorization': `Bearer ${auth.token}`
           }

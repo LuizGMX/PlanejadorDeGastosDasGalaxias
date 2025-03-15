@@ -30,7 +30,7 @@ const ExpenseForm = () => {
     const fetchData = async () => {
       try {
         console.log('Iniciando busca de dados...');
-        const categoriesResponse = await fetch('http://localhost:5000/api/expenses/categories', {
+        const categoriesResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/expenses/categories`, {
           headers: {
             'Authorization': `Bearer ${auth.token}`,
             'Content-Type': 'application/json'
@@ -58,7 +58,7 @@ const ExpenseForm = () => {
     if (formData.category_id) {
       const fetchSubcategories = async () => {
         try {
-          const response = await fetch(`http://localhost:5000/api/expenses/subcategories/${formData.category_id}`, {
+          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/expenses/subcategories/${formData.category_id}`, {
             headers: {
               'Authorization': `Bearer ${auth.token}`,
               'Content-Type': 'application/json'
@@ -100,7 +100,7 @@ const ExpenseForm = () => {
         amount: parseFloat(formData.amount.replace('R$', '').replace(',', '.').trim())
       };
 
-      const response = await fetch('http://localhost:5000/api/expenses', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/expenses`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

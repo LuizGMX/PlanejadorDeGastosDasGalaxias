@@ -37,7 +37,7 @@ const Login = () => {
 
     try {
       if (step === 'email') {
-        const response = await fetch('http://localhost:5000/api/auth/check-email', {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/check-email`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: formData.email })
@@ -82,7 +82,7 @@ const Login = () => {
           name: formData.name
         };
 
-    const response = await fetch('http://localhost:5000/api/auth/send-code', {
+    const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/send-code`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(requestData)
@@ -97,7 +97,7 @@ const Login = () => {
   };
 
   const verifyCode = async () => {
-    const response = await fetch('http://localhost:5000/api/auth/verify-code', {
+    const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/verify-code`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -118,7 +118,7 @@ const Login = () => {
 
   const requestAccessCode = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/auth/send-access-code', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/send-access-code`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.email })
