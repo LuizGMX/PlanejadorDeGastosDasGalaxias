@@ -47,7 +47,7 @@ const ExpenseList = () => {
     const fetchData = async () => {
       try {
         // Busca categorias
-        const categoriesResponse = await fetch('/api/expenses/categories', {
+        const categoriesResponse = await fetch('http://localhost:5000/api/expenses/categories', {
           headers: { 'Authorization': `Bearer ${auth.token}` }
         });
         if (!categoriesResponse.ok) throw new Error('Erro ao carregar categorias');
@@ -61,7 +61,7 @@ const ExpenseList = () => {
         if (filters.category_id) queryParams.append('category_id', filters.category_id);
         if (filters.description) queryParams.append('description', filters.description);
 
-        const expensesResponse = await fetch(`/api/expenses?${queryParams}`, {
+        const expensesResponse = await fetch(`http://localhost:5000/api/expenses?${queryParams}`, {
           headers: { 'Authorization': `Bearer ${auth.token}` }
         });
         if (!expensesResponse.ok) throw new Error('Erro ao carregar despesas');
@@ -190,7 +190,7 @@ const ExpenseList = () => {
 
       for (const batch of batches) {
         try {
-          const response = await fetch('/api/expenses/bulk', {
+          const response = await fetch('http://localhost:5000/api/expenses/bulk', {
             method: 'DELETE',
             headers: {
               'Content-Type': 'application/json',

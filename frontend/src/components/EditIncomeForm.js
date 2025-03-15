@@ -23,7 +23,7 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch('/api/incomes/categories', {
+        const response = await fetch('http://localhost:5000/api/incomes/categories', {
           headers: {
             'Authorization': `Bearer ${auth.token}`
           }
@@ -46,7 +46,7 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
   useEffect(() => {
     const fetchBanks = async () => {
       try {
-        const response = await fetch('/api/bank', {
+        const response = await fetch('http://localhost:5000/api/bank', {
           headers: {
             'Authorization': `Bearer ${auth.token}`
           }
@@ -70,7 +70,7 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
     if (formData.category_id) {
       const fetchSubcategories = async () => {
         try {
-          const response = await fetch(`/api/incomes/categories/${formData.category_id}/subcategories`, {
+          const response = await fetch(`http://localhost:5000/api/incomes/categories/${formData.category_id}/subcategories`, {
             headers: {
               'Authorization': `Bearer ${auth.token}`
             }

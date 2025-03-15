@@ -33,7 +33,7 @@ const AddExpense = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch('/api/expenses/categories', {
+        const response = await fetch('http://localhost:5000/api/expenses/categories', {
           headers: {
             'Authorization': `Bearer ${auth.token}`
           }
@@ -56,7 +56,7 @@ const AddExpense = () => {
   useEffect(() => {
     const fetchBanks = async () => {
       try {
-        const response = await fetch('/api/bank', {
+        const response = await fetch('http://localhost:5000/api/bank', {
           headers: {
             'Authorization': `Bearer ${auth.token}`
           }
@@ -80,7 +80,7 @@ const AddExpense = () => {
     if (formData.category_id) {
       const fetchSubcategories = async () => {
         try {
-          const response = await fetch(`/api/expenses/subcategories/${formData.category_id}`, {
+          const response = await fetch(`http://localhost:5000/api/expenses/subcategories/${formData.category_id}`, {
             headers: {
               'Authorization': `Bearer ${auth.token}`
             }
@@ -232,7 +232,7 @@ const AddExpense = () => {
           : formData.date
       };
 
-      const response = await fetch('/api/expenses', {
+      const response = await fetch('http://localhost:5000/api/expenses', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

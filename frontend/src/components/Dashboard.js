@@ -73,7 +73,7 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
 
   const fetchTrendData = async () => {
     try {
-      const response = await fetch(`/api/dashboard/bank-balance-trend?months=${months}`, {
+      const response = await fetch(`http://localhost:5000/api/dashboard/bank-balance-trend?months=${months}`, {
         headers: {
           'Authorization': `Bearer ${auth.token}`
         }
@@ -382,7 +382,7 @@ const Dashboard = () => {
         filters.months.forEach(month => queryParams.append('months[]', month));
         filters.years.forEach(year => queryParams.append('years[]', year));
 
-        const response = await fetch(`/api/dashboard?${queryParams}`, {
+        const response = await fetch(`http://localhost:5000/api/dashboard?${queryParams}`, {
           headers: {
             'Authorization': `Bearer ${auth.token}`
           }

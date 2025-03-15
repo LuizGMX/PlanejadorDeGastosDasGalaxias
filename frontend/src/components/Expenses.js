@@ -76,7 +76,7 @@ const Expenses = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch('/api/expenses/categories', {
+        const response = await fetch('http://localhost:5000/api/expenses/categories', {
           headers: {
             'Authorization': `Bearer ${auth.token}`
           }
@@ -199,7 +199,7 @@ const Expenses = () => {
         queryParams.append('is_recurring', filters.is_recurring);
       }
 
-      const response = await fetch(`/api/expenses?${queryParams}`, {
+      const response = await fetch(`http://localhost:5000/api/expenses?${queryParams}`, {
           headers: {
             'Authorization': `Bearer ${auth.token}`
           }
@@ -294,7 +294,7 @@ const Expenses = () => {
   const handleDelete = async () => {
     try {
       if (deleteOptions.type === 'bulk') {
-        const response = await fetch('/api/expenses/bulk', {
+        const response = await fetch('http://localhost:5000/api/expenses/bulk', {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${auth.token}`,
@@ -397,7 +397,7 @@ const Expenses = () => {
 
   const handleUpdate = async (updatedExpense) => {
     try {
-      const response = await fetch(`/api/expenses/${updatedExpense.id}`, {
+      const response = await fetch(`http://localhost:5000/api/expenses/${updatedExpense.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${auth.token}`,
