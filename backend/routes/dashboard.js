@@ -156,7 +156,7 @@ router.get('/', authenticate, async (req, res) => {
       const monthlyBalance = totalIncomes - totalExpenses;
       const projectedSavings = monthlyBalance * monthsUntilGoal;
       const goalAmount = parseFloat(user.financial_goal_amount);
-      const monthlyNeeded = (goalAmount - projectedSavings) / monthsUntilGoal;
+      const monthlyNeeded = (goalAmount) / monthsUntilGoal;
 
       financialGoalInfo = {
         name: user.financial_goal_name,
@@ -165,8 +165,7 @@ router.get('/', authenticate, async (req, res) => {
         months_remaining: monthsUntilGoal,
         monthly_balance: monthlyBalance,
         projected_savings: projectedSavings,
-        monthly_needed: monthlyNeeded,
-        is_achievable: monthlyBalance >= monthlyNeeded,
+        monthly_needed: monthlyNeeded,        
         progress_percentage: (projectedSavings / goalAmount) * 100
       };
     }

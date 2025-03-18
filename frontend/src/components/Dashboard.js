@@ -7,16 +7,14 @@ import {
   PieChart,
   Pie,
   BarChart,
-  Bar,
-  Area,
+  Bar,  
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   Legend,
   ResponsiveContainer,
-  Cell,
-  ComposedChart,
+  Cell  
 } from 'recharts';
 import styles from '../styles/dashboard.module.css';
   
@@ -541,6 +539,7 @@ const Dashboard = () => {
       economia: goal.projected_savings > goal.amount ? goal.amount : goal.projected_savings,
       faltante: goal.projected_savings > goal.amount ? 0 : goal.amount - goal.projected_savings
     }];
+    const isAchievable = data.budget_info.total_budget - data.budget_info.total_spent >= goal.monthly_needed;
 
   return (
       <div className={styles.chartContainer}>
@@ -554,8 +553,8 @@ const Dashboard = () => {
         <div className={styles.chartInfo}>
           <div className={styles.infoItem}>
             <span>Economia Mensal Atual:</span>
-            <strong className={goal.monthly_balance >= goal.monthly_needed ? styles.positive : styles.negative}>
-              {formatCurrency(goal.monthly_balance)}
+            <strong className={data.budget_info.total_budget - data.budget_info.total_spent >= goal.monthly_needed ? styles.positive : styles.negative}>
+            {formatCurrency(data.budget_info.total_budget - data.budget_info.total_spent)}  
             </strong>
           </div>
           <div className={styles.infoItem}>
@@ -567,11 +566,11 @@ const Dashboard = () => {
             <strong>{goal.months_remaining}</strong>
                 </div>
                         </div>
-
-        {!goal.is_achievable && (
-          <div className={styles.warning}>
-            <span className="material-icons">warning</span>
-            <p>Com a economia mensal atual, você não alcançará seu objetivo no prazo definido.</p>
+                        
+        {isAchievable && (
+          <div className={!isAchievable ? styles.warning : styles.positive}>
+            
+            <p> <span className="material-icons">{!isAchievable ? 'warning' : 'check_circle'}</span> Com a economia mensal atual, você {isAchievable ? 'alcançará' : 'não alcançará'} seu objetivo no prazo definido.</p>
                   </div>
                 )}
 
