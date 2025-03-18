@@ -1,3 +1,4 @@
+/* Sidebar */
 .sidebar {
   width: 280px;
   height: 100vh;
@@ -10,6 +11,15 @@
   left: 0;
   top: 0;
   box-shadow: 2px 0 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease-in-out;
+  z-index: 1000;
+}
+
+.mainContent {
+  margin-left: 280px;
+  transition: margin-left 0.3s ease-in-out;
+  padding: 2rem;
+  min-height: 100vh;
 }
 
 .logo {
@@ -96,6 +106,7 @@
 
 .menuItem .icon {
   color: inherit;
+  font-size: 1.5rem;
 }
 
 .menuItem .arrow {
@@ -138,37 +149,129 @@
 
 .submenuItem .icon {
   color: inherit;
+  font-size: 1.2rem;
 }
 
-/* Responsividade */
-@media (max-width: 768px) {
+/* Sidebar adapts when width is less than 1280px */
+@media (max-width: 1280px) {
   .sidebar {
-    width: 100%;
-    height: auto;
-    position: relative;
+    width: 100px;
     padding: 1rem;
+    align-items: center;
+  }
+
+  .mainContent {
+    margin-left: 100px;
   }
 
   .logo {
-    margin-bottom: 1rem;
+    padding: 1rem;
+  }
+
+  .logoImage {
+    width: 40px;
+  }
+
+  .logo h2,
+  .logo p {
+    display: none;
   }
 
   .menu {
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: center;
+    align-items: center;
     border-top: none;
     padding-top: 0;
   }
 
   .menuItem {
-    flex: 1;
-    min-width: 150px;
+    flex-direction: column;
+    align-items: center;
     justify-content: center;
+    padding: 1rem;
+    font-size: 0.8rem;
+    text-align: center;
+  }
+
+  .menuItem .icon {
+    font-size: 2rem;
+  }
+
+  .menuItem span {
+    font-size: 0.8rem;
+    margin-top: 5px;
+  }
+
+  .menuItem .arrow {
+    display: none;
+  }
+
+  .submenu {
+    display: none;
   }
 
   .logoutButton {
+    flex-direction: column;
     justify-content: center;
     margin: 0.5rem 0;
+    font-size: 0.8rem;
+    text-align: center;
+    padding: 1rem;
   }
-} 
+
+  .logoutButton .icon {
+    font-size: 1.5rem;
+  }
+}
+
+
+/* Footer menu for screens smaller than 768px */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    top: auto; /* Reseta o top para evitar conflito */
+    bottom: 0; /* Fixa a sidebar no fundo */
+    left: 0;
+    width: 100%;
+    height: 80px;
+    box-shadow: none;
+    border-top: 1px solid var(--border-color);
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 0.5rem 1rem;
+    z-index: 1000;
+  }
+
+  .mainContent {
+    margin-left: 0; /* Remove a margem à esquerda para telas pequenas */
+    margin-bottom: 80px; /* Garante que o conteúdo não fique sob a sidebar */
+  }
+
+  .logo {
+    display: none;
+  }
+
+  .menu {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+    padding-top: 0;
+  }
+
+  .menuItem {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    font-size: 0.9rem;
+    text-align: center;
+  }
+
+  .menuItem .icon {
+    font-size: 1.8rem;
+  }
+
+  .logoutButton {
+    display: none;
+  }
+}

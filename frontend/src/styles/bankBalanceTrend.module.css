@@ -1,3 +1,4 @@
+/* bankBalanceTrend.module.css */
 .container {
   width: 100%;
   max-width: 100%;
@@ -161,16 +162,13 @@
   .container {
     padding: 15px;
   }
-
   .container.expanded {
     padding: 20px;
   }
-
   .summary {
     grid-template-columns: 1fr;
   }
-
   .chartContainer {
     padding: 5px;
   }
-} 
+}

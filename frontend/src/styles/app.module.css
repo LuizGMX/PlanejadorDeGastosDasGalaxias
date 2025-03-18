@@ -1,22 +1,21 @@
-
-/* Variáveis de cores */
+/* app.module.css */
 :root {
-    --primary-color: #00FF85;
-    --secondary-color: #1A1B23;
-    --background-color: #13141B;
-    --card-background: #1A1B23;
-    --text-color: #FFFFFF;
-    --text-secondary: #8B8D97;
-    --error-color: #FF6B6B;
-    --success-color: #51CF66;
-    --border-color: #2A2B33;
-    --hover-color: #00E676;
-    --input-background: #2A2B33;
-    --gradient-start: #00FF85;
-    --gradient-end: #80FFB9;
-  }
-  
-  .appContainer {
+  --primary-color: #00FF85;
+  --secondary-color: #1A1B23;
+  --background-color: #13141B;
+  --card-background: #1A1B23;
+  --text-color: #FFFFFF;
+  --text-secondary: #8B8D97;
+  --error-color: #FF6B6B;
+  --success-color: #51CF66;
+  --border-color: #2A2B33;
+  --hover-color: #00E676;
+  --input-background: #2A2B33;
+  --gradient-start: #00FF85;
+  --gradient-end: #80FFB9;
+}
+
+.appContainer {
   display: flex;
   min-height: 100vh;
 }
@@ -26,4 +25,13 @@
   padding: 20px;
   background-color: var(--background-color);
   overflow-y: auto;
-} 
+}
+
+@media (max-width: 768px) {
+  .appContainer {
+    flex-direction: column;
+  }
+  .mainContent {
+    padding: 10px;
+  }
+}

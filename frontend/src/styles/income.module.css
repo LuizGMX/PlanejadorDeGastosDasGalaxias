@@ -1,3 +1,4 @@
+/* income.module.css */
 :root {
   --primary-color: #00FF85;
   --secondary-color: #1A1B23;
@@ -48,25 +49,23 @@
 }
 
 .addButton {
-    background-color: var(--card-background);
-    color: var(--text-color);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 0.75rem 1.5rem;
-    font-size: 0.95rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  } 
+  background-color: var(--card-background);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+} 
 
 .addButton:hover {
   background-color: var(--hover-color);
   transform: translateY(-1px);
 }
-
-/* Estilos para os filtros */
 
 .filtersContainer {
   display: flex;
@@ -97,15 +96,6 @@
   align-items: center;
   transition: all 0.2s;
 }
-
-.filterButton:hover {
-  /* border-color: var(--primary-color); */
-}
-
-/* .filterButton.active {
-  border-color: var(--primary-color);
-  background-color: rgba(0, 255, 133, 0.1);
-} */
 
 .filterDropdown {
   position: absolute;
@@ -144,7 +134,6 @@
   accent-color: var(--primary-color);
 }
 
-/* Badge de recorrência */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -161,7 +150,6 @@
   font-size: 14px;
 }
 
-/* Botão de recorrência */
 .recurringButton {
   background: none;
   border: 1px solid var(--border-color);
@@ -190,7 +178,6 @@
   font-size: 18px;
 }
 
-/* Tabela */
 .tableContainer {
   background-color: var(--card-background);
   border-radius: 8px;
@@ -224,7 +211,6 @@
   color: var(--text-color);
 }
 
-/* Botões de ação */
 .actionButtons {
   display: flex;
   gap: 0.5rem;
@@ -251,24 +237,19 @@
   background-color: rgba(255, 59, 48, 0.1);
 }
 
-/* Responsividade */
 @media (max-width: 768px) {
   .container {
     padding: 1rem;
   }
-
   .filtersContainer {
     flex-direction: column;
   }
-
   .filterGroup {
     width: 100%;
   }
-
   .table {
     font-size: 0.875rem;
   }
-
   .table th,
   .table td {
     padding: 0.75rem;
@@ -418,15 +399,12 @@
     margin: 1rem;
     width: calc(100% - 2rem);
   }
-
   .deleteOption {
     padding: 0.75rem;
   }
-
   .modalButtons {
     flex-direction: column;
   }
-
   .modalButtons button {
     width: 100%;
   }
@@ -577,4 +555,4 @@
 .backButton:hover {
   background-color: var(--input-background);
   border-color: var(--primary-color);
-} 
+}
