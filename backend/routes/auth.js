@@ -120,38 +120,21 @@ router.post('/send-code', async (req, res) => {
     let user = await User.findOne({ where: { email } });
     const isNewUser = !user;
 
-    if (isNewUser) {
-      // Para novos usuários, valida netIncome e selectedBanks
-      if (!netIncome || isNaN(netIncome)) {
-        return res.status(400).json({ message: 'Renda líquida inválida' });
-      }
-      
-      // Cria o novo usuário
-      user = await User.create({ 
-        email, 
-        name: name || '', 
-        net_income: netIncome,
-        is_active: true,
-        financial_goal_name: financialGoalName,
-        financial_goal_amount: financialGoalAmount,
-        financial_goal_date: financialGoalDate
-      });
-    } else {
-      // Para usuários existentes, atualiza o nome e os dados do objetivo se fornecidos
-      const updateData = { name };
-      if (financialGoalName) updateData.financial_goal_name = financialGoalName;
-      if (financialGoalAmount) updateData.financial_goal_amount = financialGoalAmount;
-      if (financialGoalDate) updateData.financial_goal_date = financialGoalDate;
-      
-      await user.update(updateData);
-    }
-
     // Gera o código de verificação
     const code = generateVerificationCode();
     await VerificationCode.destroy({ where: { email } });
+    
+    // Armazena os dados do usuário temporariamente junto com o código
     await VerificationCode.create({ 
       email, 
-      code, 
+      code,
+      userData: isNewUser ? JSON.stringify({
+        name,
+        netIncome,
+        financialGoalName,
+        financialGoalAmount,
+        financialGoalDate
+      }) : null,
       expires_at: new Date(Date.now() + 10 * 60 * 1000) 
     });
 
@@ -182,7 +165,30 @@ router.post('/verify-code', async (req, res) => {
       return res.status(400).json({ message: 'Código inválido ou expirado' });
     }
 
-    const user = await User.findOne({ where: { email } });
+    let user = await User.findOne({ where: { email } });
+    
+    // Se não existir usuário e houver dados temporários, cria o usuário
+    if (!user && verification.userData) {
+      const userData = JSON.parse(verification.userData);
+      user = await User.create({ 
+        email, 
+        name: userData.name || '', 
+        net_income: userData.netIncome,
+        is_active: true,
+        financial_goal_name: userData.financialGoalName,
+        financial_goal_amount: userData.financialGoalAmount,
+        financial_goal_date: userData.financialGoalDate
+      });
+    } else if (user && verification.userData) {
+      // Atualiza dados do usuário existente se necessário
+      const userData = JSON.parse(verification.userData);
+      const updateData = { name: userData.name };
+      if (userData.financialGoalName) updateData.financial_goal_name = userData.financialGoalName;
+      if (userData.financialGoalAmount) updateData.financial_goal_amount = userData.financialGoalAmount;
+      if (userData.financialGoalDate) updateData.financial_goal_date = userData.financialGoalDate;
+      await user.update(updateData);
+    }
+
     const token = generateJWT(user.id, user.email);
 
     await VerificationCode.destroy({ where: { email } });

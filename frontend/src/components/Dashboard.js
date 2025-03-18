@@ -963,8 +963,124 @@ const Dashboard = () => {
           </div>
         </div>
       ) : (
-        <>
-          {data.budget_info && filters.month !== 'all' && filters.year !== 'all' && (
+        <div>
+          <div className={styles.filtersContainer}>
+            <div className={styles.filterGroup}>
+              <div
+                className={`${styles.modernSelect} ${openFilter === 'months' ? styles.active : ''}`}
+                onClick={() => handleFilterClick('months')}
+              >
+                <div className={styles.modernSelectHeader}>
+                  <span>{formatSelectedMonths()}</span>
+                  <span className={`material-icons ${styles.arrow}`}>
+                    {openFilter === 'months' ? 'expand_less' : 'expand_more'}
+                  </span>
+                </div>
+                {openFilter === 'months' && (
+                  <div className={styles.modernSelectDropdown} onClick={e => e.stopPropagation()}>
+                    <label
+                      key="all-months"
+                      className={styles.modernCheckboxLabel}
+                      onClick={handleCheckboxClick}
+                    >
+                      <div className={styles.modernCheckbox}>
+                        <input
+                          type="checkbox"
+                          checked={filters.months.length === months.length}
+                          onChange={() => handleFilterChange('months', 'all')}
+                          className={styles.hiddenCheckbox}
+                        />
+                        <div className={styles.customCheckbox}>
+                          <span className="material-icons">check</span>
+                        </div>
+                      </div>
+                      <span><strong>Todos os Meses</strong></span>
+                    </label>
+                    <div className={styles.divider}></div>
+                    {months.map(month => (
+                      <label
+                        key={month.value}
+                        className={styles.modernCheckboxLabel}
+                        onClick={handleCheckboxClick}
+                      >
+                        <div className={styles.modernCheckbox}>
+                          <input
+                            type="checkbox"
+                            checked={filters.months.includes(month.value)}
+                            onChange={() => handleFilterChange('months', month.value)}
+                            className={styles.hiddenCheckbox}
+                          />
+                          <div className={styles.customCheckbox}>
+                            <span className="material-icons">check</span>
+                          </div>
+                        </div>
+                        <span>{month.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className={styles.filterGroup}>
+              <div
+                className={`${styles.modernSelect} ${openFilter === 'years' ? styles.active : ''}`}
+                onClick={() => handleFilterClick('years')}
+              >
+                <div className={styles.modernSelectHeader}>
+                  <span>{formatSelectedYears()}</span>
+                  <span className={`material-icons ${styles.arrow}`}>
+                    {openFilter === 'years' ? 'expand_less' : 'expand_more'}
+                  </span>
+                </div>
+                {openFilter === 'years' && (
+                  <div className={styles.modernSelectDropdown} onClick={e => e.stopPropagation()}>
+                    <label
+                      key="all-years"
+                      className={styles.modernCheckboxLabel}
+                      onClick={handleCheckboxClick}
+                    >
+                      <div className={styles.modernCheckbox}>
+                        <input
+                          type="checkbox"
+                          checked={filters.years.length === years.length}
+                          onChange={() => handleFilterChange('years', 'all')}
+                          className={styles.hiddenCheckbox}
+                        />
+                        <div className={styles.customCheckbox}>
+                          <span className="material-icons">check</span>
+                        </div>
+                      </div>
+                      <span><strong>Todos os Anos</strong></span>
+                    </label>
+                    <div className={styles.divider}></div>
+                    {years.map(year => (
+                      <label
+                        key={year.value}
+                        className={styles.modernCheckboxLabel}
+                        onClick={handleCheckboxClick}
+                      >
+                        <div className={styles.modernCheckbox}>
+                          <input
+                            type="checkbox"
+                            checked={filters.years.includes(year.value)}
+                            onChange={() => handleFilterChange('years', year.value)}
+                            className={styles.hiddenCheckbox}
+                          />
+                          <div className={styles.customCheckbox}>
+                            <span className="material-icons">check</span>
+                          </div>
+                        </div>
+                        <span>{year.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          
+         {data.budget_info && filters.month !== 'all' && filters.year !== 'all' && (
             <div className={styles.budgetInfoContainer}>
               <h3>Informações do Orçamento</h3>
               <div className={styles.budgetStats}>
@@ -1001,10 +1117,10 @@ const Dashboard = () => {
               <div className={styles.budgetProgressBar}>
                 <div
                   className={`${styles.budgetProgress} ${data.budget_info.percentage_spent > 90
-                    ? styles.dangerProgress
-                    : data.budget_info.percentage_spent > 60
-                      ? styles.warningProgress
-                      : ''
+                      ? styles.dangerProgress
+                      : data.budget_info.percentage_spent > 60
+                        ? styles.warningProgress
+                        : ''
                     }`}
                   style={{ width: `${Math.min(data.budget_info.percentage_spent, 100)}%` }}
                 />
@@ -1023,21 +1139,21 @@ const Dashboard = () => {
             {renderTimelineChart()}
             {renderIncomeCategoriesChart()}
             {renderBanksChart()}
-              </div>
+          </div>
 
-              <div className={styles.chartsGrid}>
-                <div className={`${styles.chartContainer} ${styles.trendChart}`}>
-                  <div className={styles.chartHeader}>
-                    <h3>Tendência de Saldo Bancário</h3>
-                  </div>
-                  <BankBalanceTrend
-                    showTitle={false}
-                    showControls={true}
-                    height={expandedChart === 'bank-balance-trend' ? 600 : 300}
-                  />
-                </div>
+          <div className={styles.chartsGrid}>
+            <div className={`${styles.chartContainer} ${styles.trendChart}`}>
+              <div className={styles.chartHeader}>
+                <h3>Tendência de Saldo Bancário</h3>
               </div>
-            </>
+              <BankBalanceTrend
+                showTitle={false}
+                showControls={true}
+                height={expandedChart === 'bank-balance-trend' ? 600 : 300}
+              />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

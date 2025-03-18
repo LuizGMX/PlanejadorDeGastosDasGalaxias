@@ -22,26 +22,6 @@
   padding: 2rem;
   max-width: 1200px;
   margin: 0 auto;
-  transition: margin-left 0.3s ease-in-out;
-}
-
-/* Ajuste conforme o sidebar */
-@media (min-width: 1280px) {
-  .dashboardContainer {
-    margin-left: 280px; /* Espaço para sidebar expandido */
-  }
-}
-
-@media (max-width: 1280px) {
-  .dashboardContainer {
-    margin-left: 100px; /* Espaço para sidebar reduzido */
-  }
-}
-
-@media (max-width: 768px) {
-  .dashboardContainer {
-    margin-left: 0; /* Remove a margem para telas menores */
-  }
 }
 
 .header {
@@ -178,12 +158,6 @@
   margin-bottom: 20px;
 }
 
-@media (max-width: 1024px) {
-  .chartsGrid {
-    grid-template-columns: 1fr;
-  }
-}
-
 .chartContainer {
   background-color: var(--card-background);
   border-radius: 12px;
@@ -203,15 +177,210 @@
   margin-bottom: 1rem;
 }
 
+.infoItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.infoItem span {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.infoItem strong {
+  color: var(--text-color);
+  font-size: 1.1rem;
+}
+
+.positive {
+  color: var(--success-color) !important;
+}
+
+.negative {
+  color: var(--error-color) !important;
+}
+
+.warning {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background-color: rgba(255, 107, 107, 0.1);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.warning span {
+  color: var(--error-color);
+}
+
+.warning p {
+  color: var(--text-color);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.chartContainer.trendChart {
+  grid-column: 1 / -1;
+  height: 500px;
+}
+
+.expandButton {
+  display: none;
+}
+
+.chartWrapper {
+  height: calc(100% - 60px);
+  width: 100%;
+}
+
+.budgetInfoContainer {
+  background-color: var(--card-background);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  margin-bottom: 24px;
+  border: 1px solid var(--border-color);
+}
+
+.budgetInfoContainer h3 {
+  margin: 0 0 1rem 0;
+  color: var(--text-color);
+}
+
+.budgetStats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.budgetStat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.budgetStat span {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.budgetStat strong {
+  color: var(--text-color);
+  font-size: 1.2rem;
+}
+
+.budgetProgressBar {
+  width: 100%;
+  height: 20px;
+  background-color: var(--input-background);
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+  margin-top: 1rem;
+  color: black;
+}
+
+.budgetProgress {
+  height: 100%;
+  background-color: var(--primary-color);
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.warningProgress {
+  background-color: var(--warning-color, #FFB020);
+}
+
+.dangerProgress {
+  background-color: var(--error-color);
+}
+
+.overBudget {
+  color: var(--text-color) !important;
+}
+
+.dailySpendingInfo {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+}
+
+.budgetProgressBar span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: black;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  z-index: 1;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-size: 18px;
+  color: var(--text-color);
+}
+
+.error {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-size: 18px;
+  color: var(--error-color);
+  background-color: rgba(255, 107, 107, 0.1);
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.dailyBudgetInfo {
+  background-color: var(--card-background);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  margin-bottom: 24px;
+  border: 1px solid var(--border-color);
+  text-align: center;
+}
+
+.dailyBudgetInfo h3 {
+  margin: 0 0 1rem 0;
+  color: var(--text-color);
+  font-size: 1.2rem;
+}
+
+.dailyBudgetInfo p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+}
+
+.dailyBudgetInfo strong {
+  color: var(--primary-color);
+  font-size: 1.2rem;
+}
+
+/* Responsividade */
 @media (max-width: 768px) {
   .dashboardContainer {
-    margin-left: 0; /* Remove a margem para telas menores */
     padding: 1rem;
-    box-sizing: border-box; /* Garantir que o padding não afete a largura */
   }
-  
+
   .chartsGrid {
     grid-template-columns: 1fr;
+  }
+
+  .chartContainer.expanded {
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
   }
 
   .filtersContainer {
@@ -231,10 +400,368 @@
     width: 100%;
   }
 
-  /* Adicionar estilo para a sidebar */
-  .sidebar {
-    width: 100%; /* Certifique-se que a sidebar ocupe a largura total */
-    position: relative;
+  .budgetStats {
+    grid-template-columns: 1fr;
   }
 }
 
+/* Animações */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chartContainer {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Overlay para quando o gráfico estiver expandido */
+.chartContainer.expanded::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: -1;
+}
+
+.checkboxGroup {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background-color: var(--input-background);
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  color: var(--text-color);
+  font-size: 0.9rem;
+}
+
+.checkboxLabel:hover {
+  background-color: var(--hover-color);
+}
+
+.checkbox {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border-color);
+  border-radius: 3px;
+  cursor: pointer;
+  accent-color: var(--primary-color);
+}
+
+.checkbox:checked {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.checkbox:hover {
+  border-color: var(--primary-color);
+}
+
+/* Estilo da barra de rolagem para o grupo de checkboxes */
+.checkboxGroup::-webkit-scrollbar {
+  width: 8px;
+}
+
+.checkboxGroup::-webkit-scrollbar-track {
+  background: var(--input-background);
+  border-radius: 4px;
+}
+
+.checkboxGroup::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+.checkboxGroup::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-color);
+}
+
+/* Estilos do Select Moderno */
+.modernSelect {
+  position: relative;
+  width: 100%;
+  min-width: 250px;
+  background-color: var(--input-background);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-color);
+}
+
+.modernSelect:hover {
+  border-color: var(--primary-color);
+}
+
+.modernSelect.active {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.1);
+}
+
+.modernSelectHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  color: var(--text-color);
+  font-size: 0.95rem;
+}
+
+.arrow {
+  color: var(--text-secondary);
+  transition: transform 0.2s ease;
+}
+
+.modernSelect.active .arrow {
+  transform: rotate(180deg);
+}
+
+.modernSelectDropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 100%;
+  background-color: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  max-height: 300px;
+  overflow-y: auto;
+  animation: slideDown 0.2s ease;
+}
+
+.modernCheckboxLabel {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  color: var(--text-color);
+  font-size: 0.95rem;
+  user-select: none;
+}
+
+.modernCheckboxLabel:hover {
+  background-color: rgba(var(--primary-color-rgb), 0.1);
+}
+
+.modernCheckbox {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-right: 12px;
+}
+
+.hiddenCheckbox {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.customCheckbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-color);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  background-color: var(--input-background);
+}
+
+.customCheckbox span {
+  color: white;
+  font-size: 16px;
+  opacity: 0;
+  transform: scale(0);
+  transition: all 0.2s ease;
+}
+
+.hiddenCheckbox:checked+.customCheckbox {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.hiddenCheckbox:checked+.customCheckbox span {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.modernSelectDropdown::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modernSelectDropdown::-webkit-scrollbar-track {
+  background: var(--input-background);
+  border-radius: 4px;
+}
+
+.modernSelectDropdown::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+.modernSelectDropdown::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-color);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Ajustes responsivos para o select moderno */
+@media (max-width: 768px) {
+  .modernSelect {
+    min-width: 100%;
+  }
+
+  .modernSelectDropdown {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    border-radius: 16px 16px 0 0;
+    max-height: 60vh;
+    animation: slideUp 0.3s ease;
+  }
+
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+    }
+
+    to {
+      transform: translateY(0);
+    }
+  }
+}
+
+.divider {
+  height: 1px;
+  background-color: var(--border-color);
+  margin: 8px 0;
+  opacity: 0.5;
+}
+
+@media (max-width: 1024px) {
+  .chartsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.trendControls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background-color: var(--card-background);
+  border-radius: 0.5rem;
+}
+
+.trendSelect {
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.25rem;
+  background-color: var(--background);
+  color: var(--text-color);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.trendSelect:hover {
+  border-color: var(--primary-color);
+}
+
+.trendSummary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background-color: var(--card-background);
+  border-radius: 0.5rem;
+}
+
+.trendStat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.trendStat span {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.trendStat strong {
+  font-size: 1.1rem;
+  color: var(--text-color);
+}
+
+.trendStat strong.positive {
+  color: var(--success-color);
+}
+
+.trendStat strong.negative {
+  color: var(--error-color);
+}
+
+.greeting {
+  background: var(--card-background);
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.greeting h2 {
+  color: var(--text-color);
+  margin: 0 0 12px 0;
+  font-size: 1.8rem;
+  font-weight: 600;
+}
+
+.motivationalPhrase {
+  color: var(--text-secondary);
+  margin: 0;
+  font-size: 1.1rem;
+  font-style: italic;
+  line-height: 1.4;
+}

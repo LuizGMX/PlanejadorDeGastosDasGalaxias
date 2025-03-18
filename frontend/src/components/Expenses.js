@@ -750,16 +750,15 @@ const Expenses = () => {
               onChange={(e) => handleFilterChange('description', e.target.value)}
               className={styles.searchInput}
             />
-            
           </div>
           <button
-              className={`${styles.recurringButton} ${filters.is_recurring === 'true' ? styles.active : ''}`}
-              onClick={() => handleFilterChange('is_recurring', filters.is_recurring === 'true' ? '' : 'true')}
-              title="Mostrar apenas despesas recorrentes"
-            >
-              <span className="material-icons">sync</span>
-              Recorrentes
-            </button>
+            className={`${styles.recurringButton} ${filters.is_recurring === 'true' ? styles.active : ''}`}
+            onClick={() => handleFilterChange('is_recurring', filters.is_recurring === 'true' ? '' : 'true')}
+            title="Mostrar apenas despesas recorrentes"
+          >
+            <span className="material-icons">sync</span>
+            Recorrentes
+          </button>
         </div>
      
      

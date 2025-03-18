@@ -30,7 +30,8 @@ const Income = () => {
     filters: {
       categories: [],
       recurring: []
-    }
+    },
+    total: 0
   });
   const [deleteOption, setDeleteOption] = useState(null);
   const [deleteOptions, setDeleteOptions] = useState({
@@ -71,6 +72,11 @@ const Income = () => {
         // Adiciona meses e anos como arrays
         filters.months.forEach(month => queryParams.append('months[]', month));
         filters.years.forEach(year => queryParams.append('years[]', year));
+        
+        // Adiciona outros filtros
+        if (filters.category_id) queryParams.append('category_id', filters.category_id);
+        if (filters.description) queryParams.append('description', filters.description);
+        if (filters.is_recurring !== '') queryParams.append('is_recurring', filters.is_recurring);
 
         const response = await fetch(`${process.env.REACT_APP_API_URL}/api/incomes?${queryParams}`, {
           headers: {
@@ -91,28 +97,17 @@ const Income = () => {
         const incomesData = data.incomes || [];
         setIncomes(incomesData);
         setSelectedIncomes([]);
-        setMetadata(data.metadata || { filters: { categories: [], recurring: [] } });
+        setMetadata(data.metadata || { filters: { categories: [], recurring: [] }, total: 0 });
 
         // Define a mensagem quando não há ganhos
         if (!incomesData || incomesData.length === 0) {
-          // Verifica se há filtros ativos
-          const hasActiveFilters = filters.months.length !== 1 || 
-                                 filters.years.length !== 1 || 
-                                 filters.description !== '' || 
-                                 filters.category_id !== '' || 
-                                 filters.is_recurring !== '';
-
-          setNoIncomesMessage(hasActiveFilters ? {
-            message: 'Nenhuma ganho encontrada para os filtros selecionados.',
+          setNoIncomesMessage({
+            message: 'Nenhum ganho encontrado para os filtros selecionados.',
             suggestion: 'Tente ajustar os filtros para ver mais resultados.'
-          } : {
-            message: 'Você ainda não tem ganhos cadastradas para este período.',
-            suggestion: 'Que tal começar adicionando sua primeira ganho?'
           });
         } else {
           setNoIncomesMessage(null);
         }
-
       } catch (err) {
         setError('Erro ao carregar ganhos');
       } finally {
@@ -128,6 +123,10 @@ const Income = () => {
   };
 
   const handleFilterChange = (type, value) => {
+    if (type === 'description') {
+      setFilters(prev => ({ ...prev, description: value }));
+      return;
+    }
     if (type === 'months' || type === 'years') {
       setFilters(prev => {
         const currentValues = prev[type];
@@ -247,29 +246,14 @@ const Income = () => {
       }
 
       let url = `${process.env.REACT_APP_API_URL}/api/incomes/${id}`;
-      const queryParams = new URLSearchParams();
-
-      switch (deleteOption) {
-        case 'future':
-          queryParams.append('delete_future', 'true');
-          break;
-        case 'past':
-          queryParams.append('delete_past', 'true');
-          break;
-        case 'all':
-          queryParams.append('delete_all', 'true');
-          break;
-      }
-
-      if (queryParams.toString()) {
-        url += `?${queryParams.toString()}`;
+      if (deleteOption) {
+        url += `?deleteOption=${deleteOption}`;
       }
 
       const response = await fetch(url, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${auth.token}`,
-          'Content-Type': 'application/json'
+          'Authorization': `Bearer ${auth.token}`
         }
       });
 
@@ -278,44 +262,37 @@ const Income = () => {
       }
 
       const data = await response.json();
+
+      // Limpa os estados do modal
+      setShowDeleteModal(false);
+      setIncomeToDelete(null);
+      setDeleteOption(null);
+
+      // Mostra mensagem de sucesso
       setDeleteSuccess({
         message: data.message,
-        count: data.count
+        count: 1
       });
 
+      // Remove a mensagem após 3 segundos
       setTimeout(() => {
         setDeleteSuccess(null);
       }, 3000);
 
+      // Recarrega a lista de ganhos
       await fetchIncomes();
-    } catch (err) {
-      setError('Erro ao excluir ganho. Por favor, tente novamente.');
-    } finally {
-      setShowDeleteModal(false);
-      setIncomeToDelete(null);
-      setDeleteOption(null);
+    } catch (error) {
+      console.error('Erro ao excluir:', error);
+      setError('Erro ao excluir ganho(s)');
     }
   };
 
   const handleDeleteClick = (income = null) => {
     if (income) {
       setIncomeToDelete(income);
-      if (income.is_recurring) {
-        setDeleteOptions({
-          type: 'recurring'
-        });
-      } else {
-        setDeleteOptions({
-          type: 'single'
-        });
-      }
+      setDeleteOptions({ type: 'single' });
     } else {
-      // Deleção em massa
-      setIncomeToDelete(null);
-      setDeleteOptions({
-        type: 'bulk',
-        ids: selectedIncomes
-      });
+      setDeleteOptions({ type: 'bulk' });
     }
     setShowDeleteModal(true);
   };
@@ -364,6 +341,8 @@ const Income = () => {
             {deleteSuccess.message} {deleteSuccess.count > 1 ? `(${deleteSuccess.count} itens)` : ''}
           </div>
         )}
+
+       
 
         <div className={styles.filterGroup}>
           <button
@@ -493,6 +472,12 @@ const Income = () => {
             </button>
         </div>
 
+        {incomes.length > 0 && (
+          <div className={styles.totalInfo}>
+            <span>Total de ganhos para os filtros selecionados: </span>
+            <strong>{formatCurrency(incomes.reduce((acc, income) => acc + parseFloat(income.amount), 0))}</strong>
+          </div>
+        )}
 
       </div>
 
