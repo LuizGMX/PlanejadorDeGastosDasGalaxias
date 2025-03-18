@@ -11,12 +11,15 @@ import budgetRoutes from './routes/budgets.js';
 import spreadsheetRoutes from './routes/spreadsheetRoutes.js';
 import subcategoryRoutes from './routes/subcategories.js';
 import userRoutes from './routes/user.js';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const app = express();
 
 // Middlewares
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: process.env.FRONTEND_URL,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
