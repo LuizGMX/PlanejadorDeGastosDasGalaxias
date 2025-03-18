@@ -183,6 +183,10 @@
     padding-top: 0;
   }
 
+  .menuGroup {
+    position: relative;
+  }
+
   .menuItem {
     flex-direction: column;
     align-items: center;
@@ -190,15 +194,18 @@
     padding: 1rem;
     font-size: 0.8rem;
     text-align: center;
+    position: relative;
+    width: 100%;
   }
 
   .menuItem .icon {
     font-size: 2rem;
   }
 
-  .menuItem span {
+  .menuItem span:not(.icon) {
     font-size: 0.8rem;
     margin-top: 5px;
+    display: none;
   }
 
   .menuItem .arrow {
@@ -207,6 +214,31 @@
 
   .submenu {
     display: none;
+    position: absolute;
+    left: 100%;
+    top: 0;
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.5rem;
+    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.2);
+    z-index: 1001;
+    min-width: 150px;
+  }
+
+  .menuGroup:hover .submenu,
+  .menuGroup .submenu.active {
+    display: block;
+  }
+
+  .submenuItem {
+    padding: 0.5rem 1rem;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .submenuItem .icon {
+    font-size: 1.2rem;
   }
 
   .logoutButton {
@@ -223,39 +255,32 @@
   }
 }
 
-
-/* Footer menu for screens smaller than 768px */
+/* Sidebar adapts when width is less than 768px */
 @media (max-width: 768px) {
+  .logo {
+    display: none;
+  }
   .sidebar {
     position: fixed;
-    top: auto; /* Reseta o top para evitar conflito */
-    bottom: 0; /* Fixa a sidebar no fundo */
+    top: auto;
+    bottom: 0;
     left: 0;
     width: 100%;
     height: 80px;
-    box-shadow: none;
     border-top: 1px solid var(--border-color);
     flex-direction: row;
-    justify-content: space-between;
+    justify-content: space-around;
     padding: 0.5rem 1rem;
     z-index: 1000;
-  }
-
-  .mainContent {
-    margin-left: 0; /* Remove a margem à esquerda para telas pequenas */
-    margin-bottom: 80px; /* Garante que o conteúdo não fique sob a sidebar */
-  }
-
-  .logo {
-    display: none;
+    background-color: var(--card-background);
   }
 
   .menu {
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 1rem;
-    padding-top: 0;
+    width: 100%;
+    justify-content: space-around;
   }
 
   .menuItem {
@@ -265,13 +290,27 @@
     padding: 0.5rem;
     font-size: 0.9rem;
     text-align: center;
+    position: relative;
+    width: 60px;
   }
 
-  .menuItem .icon {
-    font-size: 1.8rem;
-  }
-
-  .logoutButton {
+  .submenu {
+    position: absolute;
+    top: -120px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.5rem;
+    box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.2);
+    z-index: 5;
+    min-width: 150px;
     display: none;
+    height: 100px;
+  }
+
+  .submenu.active {
+    display: block;
   }
 }

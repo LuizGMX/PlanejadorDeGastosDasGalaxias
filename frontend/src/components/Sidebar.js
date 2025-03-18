@@ -2,11 +2,9 @@ import React, { useContext, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../App';
 import styles from '../styles/sidebar.module.css';
-import { BsGraphUp, BsListUl, BsPlusCircle, BsDoorOpen, BsCashCoin, BsCashStack, BsChevronDown, BsUpload, BsBank, BsPerson } from 'react-icons/bs';
+import { BsGraphUp, BsListUl, BsPlusCircle, BsDoorOpen, BsCashCoin, BsChevronDown, BsUpload, BsPerson } from 'react-icons/bs';
 import logo from '../assets/logo.svg';
-import { GiPayMoney } from "react-icons/gi";
-import { GiReceiveMoney } from "react-icons/gi";
-
+import { GiPayMoney, GiReceiveMoney } from "react-icons/gi";
 
 const Sidebar = () => {
   const navigate = useNavigate();
@@ -43,7 +41,7 @@ const Sidebar = () => {
     },
     {
       label: 'Ganhos',
-      icon: <GiReceiveMoney  size={20} />,
+      icon: <GiReceiveMoney size={20} />,
       submenu: [
         {
           label: 'Lista de Ganhos',
@@ -61,12 +59,7 @@ const Sidebar = () => {
       label: 'Perfil',
       path: '/profile',
       icon: <BsPerson size={20} />
-    },
-    // {
-    //   label: 'Importar Planilha',
-    //   path: '/upload-spreadsheet',
-    //   icon: <BsUpload size={20} />
-    // }
+    }
   ];
 
   const handleMenuClick = (item) => {
@@ -132,4 +125,4 @@ const Sidebar = () => {
   );
 };
 
-export default Sidebar; 
+export default Sidebar;
