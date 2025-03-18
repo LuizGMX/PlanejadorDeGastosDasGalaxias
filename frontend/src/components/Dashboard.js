@@ -19,7 +19,7 @@ import {
   ComposedChart,
 } from 'recharts';
 import styles from '../styles/dashboard.module.css';
-  
+
 const motivationalPhrases = [
   "Cuide do seu dinheiro hoje para não precisar se preocupar amanhã.",
   "Cada real economizado é um passo mais perto da sua liberdade financeira.",
@@ -41,7 +41,7 @@ const motivationalPhrases = [
 const getGreeting = (userName) => {
   const hour = new Date().getHours();
   let greeting = '';
-  
+
   if (hour >= 5 && hour < 12) {
     greeting = 'Bom dia';
   } else if (hour >= 12 && hour < 18) {
@@ -51,7 +51,7 @@ const getGreeting = (userName) => {
   }
 
   const randomPhrase = motivationalPhrases[Math.floor(Math.random() * motivationalPhrases.length)];
-  
+
   return (
     <div className={styles.greeting}>
       <h2>{greeting}, {userName}!</h2>
@@ -125,7 +125,7 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
   if (!data) return <div>Nenhum dado encontrado</div>;
 
   return (
-    <div style={{ 
+    <div style={{
       ...containerStyle,
       padding: '20px',
       backgroundColor: 'var(--background)',
@@ -138,7 +138,7 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
         <div className={styles.controls}>
           <label>
             Período:
-            <select className={styles.modernSelect } value={months} onChange={(e) => setMonths(Number(e.target.value))}>
+            <select className={styles.modernSelect} value={months} onChange={(e) => setMonths(Number(e.target.value))}>
               <option value={3}>3 meses</option>
               <option value={6}>6 meses</option>
               <option value={12}>12 meses</option>
@@ -148,16 +148,16 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
           </label>
         </div>
       )}
-      <div className={styles.summary} style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
+      <div className={styles.summary} style={{
+        display: 'flex',
+        justifyContent: 'space-between',
         padding: '20px',
         backgroundColor: 'var(--card-background)',
         borderRadius: '8px',
         marginTop: '20px'
       }}>
         <div className={styles.summaryItem} style={{ textAlign: 'center' }}>
-          <span style={{ display: 'block', marginBottom: '5px', color: 'var(--text-color)' }}>Receitas Projetadas</span>
+          <span style={{ display: 'block', marginBottom: '5px', color: 'var(--text-color)' }}>Ganhos Projetadas</span>
           <strong style={{ color: 'var(--success-color)', fontSize: '1.2em' }}>
             {formatFullCurrency(data.summary.totalProjectedIncomes)}
           </strong>
@@ -170,8 +170,8 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
         </div>
         <div className={styles.summaryItem} style={{ textAlign: 'center' }}>
           <span style={{ display: 'block', marginBottom: '5px', color: 'var(--text-color)' }}>Saldo Final</span>
-          <strong style={{ 
-            color: data.summary.finalBalance >= 0 ? 'var(--success-color)' : 'var(--error-color)', 
+          <strong style={{
+            color: data.summary.finalBalance >= 0 ? 'var(--success-color)' : 'var(--error-color)',
             fontSize: '1.2em'
           }}>
             {formatFullCurrency(data.summary.finalBalance)}
@@ -180,8 +180,8 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
       </div>
       <div style={{ width: '100%', height }}>
         <ResponsiveContainer>
-          <ComposedChart 
-            data={data.projectionData} 
+          <ComposedChart
+            data={data.projectionData}
             margin={{ top: 20, right: 30, left: 80, bottom: 20 }}
             style={{ backgroundColor: 'var(--card-background)', padding: '20px', borderRadius: '8px' }}
           >
@@ -234,7 +234,7 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
                   case 'expenses':
                     return [formattedValue, 'Despesas'];
                   case 'incomes':
-                    return [formattedValue, 'Receitas'];
+                    return [formattedValue, 'Ganhos'];
                   default:
                     return [formattedValue, name];
                 }
@@ -256,7 +256,7 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
                   case 'expenses':
                     return <span style={{ color: 'var(--text-color)' }}>Despesas</span>;
                   case 'incomes':
-                    return <span style={{ color: 'var(--text-color)' }}>Receitas</span>;
+                    return <span style={{ color: 'var(--text-color)' }}>Ganhos</span>;
                   default:
                     return <span style={{ color: 'var(--text-color)' }}>{value}</span>;
                 }
@@ -264,7 +264,7 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
             />
             <Line
               dataKey="incomes"
-              name="Receitas"
+              name="Ganhos"
               stroke="var(--success-color)"
               dot={{ fill: 'var(--success-color)', r: 4 }}
               activeDot={{ r: 6, fill: 'var(--success-color)' }}
@@ -377,7 +377,7 @@ const Dashboard = () => {
     const fetchData = async () => {
       try {
         const queryParams = new URLSearchParams();
-        
+
         // Adiciona meses e anos como arrays
         filters.months.forEach(month => queryParams.append('months[]', month));
         filters.years.forEach(year => queryParams.append('years[]', year));
@@ -387,16 +387,16 @@ const Dashboard = () => {
             'Authorization': `Bearer ${auth.token}`
           }
         });
-        
+
         if (response.status === 401) {
           navigate('/login');
           return;
         }
-        
+
         if (!response.ok) {
           throw new Error('Erro ao carregar dados do dashboard');
         }
-        
+
         const jsonData = await response.json();
         setData(jsonData);
         setError(null);
@@ -787,10 +787,10 @@ const Dashboard = () => {
               <div className={styles.budgetProgressBar}>
                 <div
                   className={`${styles.budgetProgress} ${data.budget_info.percentage_spent > 90
-                      ? styles.dangerProgress
-                      : data.budget_info.percentage_spent > 60
-                        ? styles.warningProgress
-                        : ''
+                    ? styles.dangerProgress
+                    : data.budget_info.percentage_spent > 60
+                      ? styles.warningProgress
+                      : ''
                     }`}
                   style={{ width: `${Math.min(data.budget_info.percentage_spent, 100)}%` }}
                 />
@@ -882,7 +882,7 @@ const Dashboard = () => {
 
               <div className={styles.chartsGrid}>
                 {renderChart('timeline', 'Gastos ao Longo do Tempo',
-                  <LineChart 
+                  <LineChart
                     data={(() => {
                       // Verifica se tem mais de um ano selecionado
                       const hasMultipleYears = filters.years.length > 1;
@@ -894,7 +894,7 @@ const Dashboard = () => {
                         const yearlyData = data.expenses_by_date.reduce((acc, curr) => {
                           const year = new Date(curr.date).getFullYear();
                           const existingEntry = acc.find(item => item.date === year);
-                          
+
                           if (existingEntry) {
                             existingEntry.total += curr.total;
                           } else {
@@ -909,7 +909,7 @@ const Dashboard = () => {
                           const date = new Date(curr.date);
                           const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
                           const existingEntry = acc.find(item => item.date === monthYear);
-                          
+
                           if (existingEntry) {
                             existingEntry.total += curr.total;
                           } else {
@@ -919,9 +919,9 @@ const Dashboard = () => {
                         }, []);
                         return monthlyData;
                       }
-                      
+
                       return data.expenses_by_date;
-                    })()} 
+                    })()}
                     margin={{ top: 10, right: 30, left: 80, bottom: 50 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
@@ -931,21 +931,21 @@ const Dashboard = () => {
                       tickFormatter={(value) => {
                         // Se o valor já é um ano, retorna ele direto
                         if (Number.isInteger(value)) return value;
-                        
+
                         const date = new Date(value);
-                        
+
                         // Se tem mais de um ano, mostra só o ano
                         if (filters.years.length > 1) {
                           return date.getFullYear();
                         }
-                        
+
                         // Se tem mais de 30 dias, mostra mês/ano
                         if (data.expenses_by_date.length > 30) {
-                          const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
-                                       'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+                          const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                            'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
                           return `${months[date.getMonth()]} ${date.getFullYear()}`;
                         }
-                        
+
                         // Caso contrário, mostra a data completa
                         return formatDate(value);
                       }}
@@ -965,21 +965,21 @@ const Dashboard = () => {
                       labelFormatter={(value) => {
                         // Se o valor já é um ano, retorna ele direto
                         if (Number.isInteger(value)) return `Ano: ${value}`;
-                        
+
                         const date = new Date(value);
-                        
+
                         // Se tem mais de um ano, mostra só o ano
                         if (filters.years.length > 1) {
                           return `Ano: ${date.getFullYear()}`;
                         }
-                        
+
                         // Se tem mais de 30 dias, mostra mês/ano
                         if (data.expenses_by_date.length > 30) {
-                          const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
-                                       'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+                          const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                            'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
                           return `${months[date.getMonth()]} de ${date.getFullYear()}`;
                         }
-                        
+
                         // Caso contrário, mostra a data completa
                         return formatDate(value);
                       }}
@@ -1006,7 +1006,7 @@ const Dashboard = () => {
                   </LineChart>
                 )}
 
-                {data.incomes_by_category && data.incomes_by_category.length > 0 && renderChart('income-categories', 'Receitas por Categoria',
+                {data.incomes_by_category && data.incomes_by_category.length > 0 && renderChart('income-categories', 'Ganhos por Categoria',
                   <PieChart margin={{ top: 10, right: 30, left: 30, bottom: 20 }}>
                     <Pie
                       data={data.incomes_by_category}
@@ -1072,80 +1072,6 @@ const Dashboard = () => {
                   </BarChart>
                 )}
 
-                {data.budget_info && data.expenses_by_date && data.expenses_by_date.length > 0 && renderChart('budget', 'Acompanhamento do Orçamento',
-                  <ComposedChart data={data.expenses_by_date} margin={{ top: 10, right: 30, left: 80, bottom: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
-                    <XAxis
-                      dataKey="date"
-                      tick={{ fill: 'var(--text-color)' }}
-                      tickFormatter={formatDate}
-                      angle={-45}
-                      textAnchor="end"
-                      height={100}
-                      interval={5}
-                      padding={{ left: 20, right: 20 }}
-                    />
-                    <YAxis
-                      tickFormatter={formatCurrency}
-                      tick={{ fill: 'var(--text-color)' }}
-                      width={80}
-                    />
-                    <Tooltip
-                      formatter={(value, name) => {
-                        switch (name) {
-                          case 'accumulated':
-                            return [formatCurrency(value), 'Gasto Acumulado'];
-                          case 'budget':
-                            return [formatCurrency(value), 'Orçamento'];
-                          case 'overBudget':
-                            return [formatCurrency(value), 'Acima do Orçamento'];
-                          default:
-                            return [formatCurrency(value), name];
-                        }
-                      }}
-                      contentStyle={{
-                        backgroundColor: 'var(--card-background)',
-                        border: '1px solid var(--border-color)',
-                        color: 'var(--text-color)'
-                      }}
-                      labelFormatter={formatDate}
-                      labelStyle={{ color: 'var(--text-color)' }}
-                    />
-                    <Legend formatter={(value) => {
-                      switch (value) {
-                        case 'accumulated':
-                          return <span style={{ color: 'var(--text-color)' }}>Gasto Acumulado</span>;
-                        case 'budget':
-                          return <span style={{ color: 'var(--text-color)' }}>Orçamento</span>;
-                        case 'overBudget':
-                          return <span style={{ color: 'var(--text-color)' }}>Acima do Orçamento</span>;
-                        default:
-                          return <span style={{ color: 'var(--text-color)' }}>{value}</span>;
-                      }
-                    }} />
-                    <Area
-                      type="monotone"
-                      dataKey="accumulated"
-                      stroke="var(--primary-color)"
-                      fill="var(--primary-color)"
-                      fillOpacity={0.2}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="budget"
-                      stroke="var(--text-secondary)"
-                      strokeDasharray="5 5"
-                      strokeWidth={2}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="overBudget"
-                      stroke="var(--error-color)"
-                      fill="var(--error-color)"
-                      fillOpacity={0.3}
-                    />
-                  </ComposedChart>
-                )}
               </div>
 
               <div className={styles.chartsGrid}>

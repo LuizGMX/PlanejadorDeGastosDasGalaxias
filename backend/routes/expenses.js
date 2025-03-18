@@ -101,7 +101,8 @@ router.post('/', authenticate, async (req, res) => {
       total_installments,
       is_recurring,
       first_installment_date,
-      end_date
+      end_date,
+      is_in_cash
     } = req.body;
 
     // Validações básicas
@@ -143,6 +144,20 @@ router.post('/', authenticate, async (req, res) => {
     } else if (!expense_date || isNaN(new Date(expense_date).getTime())) {
       await t.rollback();
       return res.status(400).json({ message: 'Data da despesa inválida' });
+    }
+
+    // Validação do tipo de pagamento
+    if (!is_recurring && !has_installments && !is_in_cash) {
+      return res.status(400).json({
+        error: 'Selecione uma forma de pagamento: Recorrente, Parcelado ou À Vista'
+      });
+    }
+
+    // Validação da data para pagamento à vista
+    if (is_in_cash && !expense_date) {
+      return res.status(400).json({
+        error: 'A data da despesa é obrigatória para pagamento à vista'
+      });
     }
 
     const expenses = [];

@@ -42,16 +42,16 @@ const Sidebar = () => {
       ]
     },
     {
-      label: 'Receitas',
+      label: 'Ganhos',
       icon: <GiReceiveMoney  size={20} />,
       submenu: [
         {
-          label: 'Lista de Receitas',
+          label: 'Lista de Ganhos',
           path: '/income',
           icon: <BsCashCoin size={18} />
         },
         {
-          label: 'Adicionar Receita',
+          label: 'Adicionar Ganho',
           path: '/add-income',
           icon: <BsPlusCircle size={18} />
         }

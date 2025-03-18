@@ -94,6 +94,11 @@ export default (sequelize) => {
       allowNull: false,
       defaultValue: 'card'
     },
+    is_in_cash: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false
+    },
     has_installments: {
       type: DataTypes.BOOLEAN,
       allowNull: false,

@@ -36,6 +36,7 @@ const Income = () => {
   const [deleteOptions, setDeleteOptions] = useState({
     type: 'single'
   });
+  const [noIncomesMessage, setNoIncomesMessage] = useState(null);
 
   // Lista de anos para o filtro
   const years = Array.from(
@@ -63,7 +64,7 @@ const Income = () => {
   ];
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchIncomes = async () => {
       try {
         const queryParams = new URLSearchParams();
         
@@ -71,7 +72,7 @@ const Income = () => {
         filters.months.forEach(month => queryParams.append('months[]', month));
         filters.years.forEach(year => queryParams.append('years[]', year));
 
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/dashboard?${queryParams}`, {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/incomes?${queryParams}`, {
           headers: {
             'Authorization': `Bearer ${auth.token}`
           }
@@ -83,29 +84,44 @@ const Income = () => {
         }
         
         if (!response.ok) {
-          throw new Error('Erro ao carregar dados do dashboard');
+          throw new Error('Erro ao carregar receitas');
         }
         
-        const jsonData = await response.json();
-        setData(jsonData);
-        setError(null);
+        const data = await response.json();
+        const incomesData = data.incomes || [];
+        setIncomes(incomesData);
+        setSelectedIncomes([]);
+        setMetadata(data.metadata || { filters: { categories: [], recurring: [] } });
 
-        if (!jsonData.expenses_by_category || jsonData.expenses_by_category.length === 0) {
-          setNoExpensesMessage({
-            message: 'Você ainda não tem despesas cadastradas para este período.',
-            suggestion: 'Que tal começar adicionando sua primeira despesa?'
+        // Define a mensagem quando não há receitas
+        if (!incomesData || incomesData.length === 0) {
+          // Verifica se há filtros ativos
+          const hasActiveFilters = filters.months.length !== 1 || 
+                                 filters.years.length !== 1 || 
+                                 filters.description !== '' || 
+                                 filters.category_id !== '' || 
+                                 filters.is_recurring !== '';
+
+          setNoIncomesMessage(hasActiveFilters ? {
+            message: 'Nenhuma receita encontrada para os filtros selecionados.',
+            suggestion: 'Tente ajustar os filtros para ver mais resultados.'
+          } : {
+            message: 'Você ainda não tem receitas cadastradas para este período.',
+            suggestion: 'Que tal começar adicionando sua primeira receita?'
           });
         } else {
-          setNoExpensesMessage(null);
+          setNoIncomesMessage(null);
         }
+
       } catch (err) {
-        setError('Erro ao carregar dados do dashboard');
+        setError('Erro ao carregar receitas');
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
-    fetchData();
-  }, [auth.token, navigate, filters]);
+    fetchIncomes();
+  }, [auth.token, filters, navigate]);
 
   const handleFilterClick = (filterType) => {
     setOpenFilter(openFilter === filterType ? null : filterType);

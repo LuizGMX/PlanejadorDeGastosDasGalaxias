@@ -498,7 +498,7 @@
 
 .installmentMessage {
   position: absolute;
-  background-color: var(--background-dark);
+  background-color: var(--background-color);
   color: var(--text-primary);
   padding: 0.5rem 1rem;
   border-radius: 4px;
@@ -519,4 +519,62 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+.noIncomesContainer {
+  text-align: center;
+  padding: 2rem;
+  background-color: var(--card-background);
+  border-radius: 12px;
+  margin: 2rem 0;
+  border: 1px solid var(--border-color);
+}
+
+.noIncomesContainer h2 {
+  color: var(--text-color);
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.noIncomesContainer p {
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.addFirstIncomeButton {
+  background-color: var(--primary-color);
+  color: var(--background-color);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.addFirstIncomeButton:hover {
+  background-color: var(--hover-color);
+  transform: translateY(-1px);
+}
+
+.backButton {
+  background-color: var(--card-background);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.backButton:hover {
+  background-color: var(--input-background);
+  border-color: var(--primary-color);
 } 

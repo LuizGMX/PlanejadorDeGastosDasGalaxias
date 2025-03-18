@@ -27,12 +27,12 @@ const Expenses = () => {
   });
   const [openFilter, setOpenFilter] = useState(null);
   const [deleteOptions, setDeleteOptions] = useState({
-    type: 'single',
-    installmentGroupId: null
+    type: 'single'
   });
   const [showInstallmentMessage, setShowInstallmentMessage] = useState(false);
   const [messagePosition, setMessagePosition] = useState({ x: 0, y: 0 });
   const [deleteOption, setDeleteOption] = useState(null);
+  const [noExpensesMessage, setNoExpensesMessage] = useState(null);
 
   const years = Array.from(
     { length: 11 },
@@ -205,15 +205,43 @@ const Expenses = () => {
           }
         });
 
+        if (response.status === 401) {
+          navigate('/login');
+          return;
+        }
+        
         if (!response.ok) {
-          throw new Error('Falha ao carregar despesas');
+          throw new Error('Erro ao carregar despesas');
         }
 
         const data = await response.json();
-        setExpenses(data);
-        setLoading(false);
+        setExpenses(Array.isArray(data) ? data : []);
+        setSelectedExpenses([]);
+
+        // Define a mensagem quando não há despesas
+        if (!data || !Array.isArray(data) || data.length === 0) {
+          // Verifica se há filtros ativos
+          const hasActiveFilters = filters.months.length !== 1 || 
+                                 filters.years.length !== 1 || 
+                                 filters.category !== 'all' || 
+                                 filters.paymentMethod !== 'all' || 
+                                 filters.hasInstallments !== 'all' || 
+                                 filters.description !== '' || 
+                                 filters.is_recurring !== '';
+
+          setNoExpensesMessage(hasActiveFilters ? {
+            message: 'Nenhuma despesa encontrada para os filtros selecionados.',
+            suggestion: 'Tente ajustar os filtros para ver mais resultados.'
+          } : {
+            message: 'Você ainda não tem despesas cadastradas para este período.',
+            suggestion: 'Que tal começar adicionando sua primeira despesa?'
+          });
+        } else {
+          setNoExpensesMessage(null);
+        }
       } catch (err) {
-        setError('Erro ao carregar despesas. Por favor, tente novamente.');
+        setError('Erro ao carregar despesas');
+      } finally {
         setLoading(false);
       }
   };
@@ -748,7 +776,36 @@ const Expenses = () => {
         </div>
       )}
 
-      {expenses.length > 0 ? (
+      {expenses.length === 0 ? (
+        <div className={styles.noExpensesContainer}>
+          <h2>{noExpensesMessage?.message || 'Nenhuma despesa encontrada para os filtros selecionados.'}</h2>
+          {noExpensesMessage?.suggestion && <p>{noExpensesMessage.suggestion}</p>}
+          <div className={styles.buttonGroup}>
+            <button
+              className={styles.addFirstExpenseButton}
+              onClick={() => navigate('/add-expense')}
+            >
+              Adicionar Primeira Despesa
+            </button>
+            <button
+              className={styles.backButton}
+              onClick={() => {
+                setFilters({
+                  months: [new Date().getMonth() + 1],
+                  years: [new Date().getFullYear()],
+                  category: 'all',
+                  paymentMethod: 'all',
+                  hasInstallments: 'all',
+                  description: '',
+                  is_recurring: ''
+                });
+              }}
+            >
+              Voltar para Mês Atual
+            </button>
+          </div>
+        </div>
+      ) : (
         <>
           <div className={styles.totalExpenses}>
             <h3>Total de despesas para os filtros selecionados: {formatCurrency(expenses.reduce((sum, expense) => sum + Number(expense.amount), 0))}</h3>
@@ -831,10 +888,6 @@ const Expenses = () => {
             </table>
           </div>
         </>
-      ) : (
-        <div className={styles.noData}>
-          <p>Nenhuma despesa encontrada para os filtros selecionados.</p>
-        </div>
       )}
 
       {showDeleteModal && (

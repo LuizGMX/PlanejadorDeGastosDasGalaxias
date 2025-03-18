@@ -13,16 +13,17 @@ const AddExpense = () => {
   const [formData, setFormData] = useState({
     description: '',
     amount: '',
-    date: new Date().toLocaleDateString('en-CA'),
+    date: '',
     category_id: '',
     subcategory_id: '',
-    payment_method: 'card',
     bank_id: '',
-    has_installments: false,
-    total_installments: 1,
-    current_installment: 1,
     is_recurring: false,
-    end_date: ''
+    has_installments: false,
+    is_in_cash: false,
+    total_installments: '',
+    current_installment: '',
+    end_date: '',
+    payment_method: 'card'
   });
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
@@ -105,24 +106,20 @@ const AddExpense = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
-    if (name === 'total_installments') {
-      const totalParcelas = parseInt(value) || 1;
+
+    if (name === 'total_installments' || name === 'current_installment') {
+      // Remove qualquer caractere que não seja número
+      const numericValue = value.replace(/\D/g, '');
+      
+      // Atualiza o estado com o valor digitado (mesmo que vazio)
       setFormData(prev => ({
         ...prev,
-        [name]: totalParcelas,
-        current_installment: Math.min(prev.current_installment, totalParcelas)
-      }));
-    } else if (name === 'current_installment') {
-      const parcelaAtual = parseInt(value) || 1;
-      setFormData(prev => ({
-        ...prev,
-        [name]: Math.min(parcelaAtual, prev.total_installments)
+        [name]: numericValue ? parseInt(numericValue) : ''
       }));
     } else if (name === 'date' || name === 'end_date') {
       // Remove qualquer caractere que não seja número
       const cleanValue = value.replace(/[^\d]/g, '');
-      
+
       // Se o valor limpo tiver 8 dígitos, formata como YYYY-MM-DD
       if (cleanValue.length === 8) {
         const year = cleanValue.substring(0, 4);
@@ -156,15 +153,15 @@ const AddExpense = () => {
 
   const formatCurrency = (value) => {
     if (!value) return '';
-    
+
     // Converte para número se for string
-    const numericValue = typeof value === 'string' 
+    const numericValue = typeof value === 'string'
       ? parseFloat(value.replace(/\D/g, '')) / 100
       : value;
-    
+
     // Se não for um número válido, retorna vazio
     if (isNaN(numericValue)) return '';
-    
+
     // Formata o número para moeda brasileira
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -179,10 +176,48 @@ const AddExpense = () => {
     setSuccess('');
 
     try {
-      // Validação das datas
-      const expenseDate = new Date(formData.date);
-      if (isNaN(expenseDate.getTime())) {
-        throw new Error('A data da despesa é inválida');
+      // Validação do tipo de pagamento
+      if (!formData.is_recurring && !formData.has_installments && !formData.is_in_cash) {
+        throw new Error('Selecione uma forma de pagamento: Recorrente, Parcelado ou À Vista');
+      }
+
+      // Validação da data para pagamento à vista
+      if (formData.is_in_cash) {
+        const expenseDate = new Date(formData.date);
+        if (isNaN(expenseDate.getTime())) {
+          throw new Error('A data da despesa é obrigatória para pagamento à vista');
+        }
+      }
+
+      // Validações específicas para pagamento parcelado
+      if (formData.has_installments) {
+        // Validação do número de parcelas
+        if (formData.total_installments === '') {
+          throw new Error('O número de parcelas é obrigatório');
+        }
+        if (formData.total_installments < 2) {
+          throw new Error('O número de parcelas deve ser no mínimo 2');
+        }
+        if (formData.total_installments > 100) {
+          throw new Error('O número de parcelas não pode ser maior que 100');
+        }
+
+        // Validação da parcela atual
+        if (formData.current_installment === '') {
+          throw new Error('O número da parcela atual é obrigatório');
+        }
+        if (formData.current_installment < 1) {
+          throw new Error('O número da parcela atual deve ser no mínimo 1');
+        }
+        if (formData.current_installment > formData.total_installments) {
+          throw new Error('O número da parcela atual não pode ser maior que o total de parcelas');
+        }
+
+        // Validação da data para pagamento parcelado
+        const expenseDate = new Date(formData.date);
+        if (isNaN(expenseDate.getTime())) {
+          throw new Error('A data da despesa é obrigatória para pagamento parcelado');
+        }
       }
 
       if (formData.is_recurring && formData.end_date) {
@@ -191,7 +226,7 @@ const AddExpense = () => {
           throw new Error('A data final da recorrência é inválida');
         }
 
-        const maxDate = new Date(expenseDate);
+        const maxDate = new Date(formData.date);
         maxDate.setFullYear(maxDate.getFullYear() + 10);
 
         if (endDate > maxDate) {
@@ -202,34 +237,28 @@ const AddExpense = () => {
         formData.start_date = formData.date;
       }
 
-      if (formData.has_installments) {
-        if (formData.current_installment > formData.total_installments) {
-          throw new Error('A parcela atual não pode ser maior que o total de parcelas');
-        }
-        if (formData.current_installment < 1) {
-          throw new Error('A parcela atual não pode ser menor que 1');
-        }
-        if (formData.total_installments < 2) {
-          throw new Error('O número total de parcelas deve ser pelo menos 2');
-        }
-      }
-
       // Prepara os dados para envio
       const baseDate = new Date(formData.date);
-      
-      // Garante que o valor total seja preservado
-      const totalAmount = formData.amount;
-      const installmentAmount = formData.has_installments 
-        ? totalAmount 
-        : formData.amount;
+
+      // Calcula o valor da parcela se for pagamento parcelado
+      const totalAmount = parseFloat(formData.amount);
+      const installmentAmount = formData.has_installments
+        ? (totalAmount / formData.total_installments).toFixed(2)
+        : totalAmount;
+
+      // Calcula a data da primeira parcela
+      let first_installment_date = formData.date;
+      if (formData.has_installments && formData.current_installment > 1) {
+        const firstDate = new Date(baseDate);
+        firstDate.setMonth(firstDate.getMonth() - (formData.current_installment - 1));
+        first_installment_date = firstDate.toISOString().split('T')[0];
+      }
 
       const dataToSend = {
         ...formData,
         amount: installmentAmount,
-        // Calcula a data da primeira parcela subtraindo os meses necessários
-        first_installment_date: formData.has_installments 
-          ? new Date(baseDate.setMonth(baseDate.getMonth() - (formData.current_installment - 1))).toISOString().split('T')[0]
-          : formData.date
+        first_installment_date,
+        expense_date: formData.date
       };
 
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/expenses`, {
@@ -277,9 +306,9 @@ const AddExpense = () => {
   return (
     <div className={styles.container}>
       <div className={`${styles.card} ${styles.fadeIn}`}>
-        
-          
-        
+
+
+
         <h1 className={styles.title}><BsPlusCircle size={24} className={styles.icon} /> Adicionar Despesa</h1>
 
         {error && <p className={styles.error}>{error}</p>}
@@ -327,85 +356,13 @@ const AddExpense = () => {
           </div>
 
           <div className={styles.paymentOptions}>
-            <div className={`${styles.paymentOption} ${formData.has_installments ? styles.active : ''}`}>
-              <div className={styles.optionHeader} onClick={() => {
-                setFormData(prev => ({
-                  ...prev,
-                  has_installments: !prev.has_installments,
-                  is_recurring: false,
-                  total_installments: !prev.has_installments ? 2 : 1
-                }));
-              }}>
-                <div className={styles.checkboxWrapper}>
-                  <input
-                    type="checkbox"
-                    id="has_installments"
-                    name="has_installments"
-                    checked={formData.has_installments}
-                    onChange={() => {}}
-                    className={styles.checkbox}
-                  />
-                  <span className={styles.checkmark}></span>
-                </div>
-                <label htmlFor="has_installments" className={styles.optionLabel}>
-                  <span className="material-icons">payments</span>
-                  Parcelado
-                </label>
-              </div>
-
-              {formData.has_installments && (
-                <div className={styles.optionContent}>
-                  <div className={styles.inputGroup}>
-                    <label className={styles.label}>
-                      <span className="material-icons">format_list_numbered</span>
-                      Número de Parcelas
-                    </label>
-                    <input
-                      type="number"
-                      name="total_installments"
-                      value={formData.total_installments}
-                      onChange={handleChange}
-                      min="2"
-                      max="24"
-                      className={styles.input}
-                      required={formData.has_installments}
-                    />
-                  </div>
-
-                  <div className={styles.inputGroup}>
-                    <label className={styles.label}>
-                      <span className="material-icons">filter_1</span>
-                      Qual parcela você está pagando?
-                    </label>
-                    <input
-                      type="number"
-                      name="current_installment"
-                      value={formData.current_installment}
-                      onChange={handleChange}
-                      min="1"
-                      max={formData.total_installments}
-                      className={styles.input}
-                      required={formData.has_installments}
-                    />
-                    {formData.amount && formData.total_installments > 1 && (
-                      <small className={styles.installmentInfo}>
-                        {formData.total_installments}x de {formatCurrency(formData.amount / formData.total_installments)}
-                        <br />
-                        {getInstallmentMessage(formData.total_installments, formData.current_installment)}
-                      </small>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
             <div className={`${styles.paymentOption} ${formData.is_recurring ? styles.active : ''}`}>
               <div className={styles.optionHeader} onClick={() => {
                 setFormData(prev => ({
                   ...prev,
                   is_recurring: !prev.is_recurring,
                   has_installments: false,
-                  total_installments: 1,
+                  is_in_cash: false,
                   date: !prev.is_recurring ? '' : new Date().toLocaleDateString('en-CA')
                 }));
               }}>
@@ -422,7 +379,7 @@ const AddExpense = () => {
                 </div>
                 <label htmlFor="is_recurring" className={styles.optionLabel}>
                   <span className="material-icons">sync</span>
-                  Recorrente
+                  Despesa Recorrente
                 </label>
               </div>
 
@@ -468,13 +425,116 @@ const AddExpense = () => {
                 </div>
               )}
             </div>
+
+            <div className={`${styles.paymentOption} ${formData.has_installments ? styles.active : ''}`}>
+              <div className={styles.optionHeader} onClick={() => {
+                const today = new Date().toISOString().split('T')[0];
+                setFormData(prev => ({
+                  ...prev,
+                  has_installments: !prev.has_installments,
+                  is_recurring: false,
+                  is_in_cash: false,
+                  total_installments: !prev.has_installments ? '' : '',
+                  current_installment: !prev.has_installments ? '' : '',
+                  date: !prev.has_installments ? today : ''
+                }));
+              }}>
+                <div className={styles.checkboxWrapper}>
+                  <input
+                    type="checkbox"
+                    id="has_installments"
+                    name="has_installments"
+                    checked={formData.has_installments}
+                    onChange={() => {}}
+                    className={styles.checkbox}
+                  />
+                  <span className={styles.checkmark}></span>
+                </div>
+                <label htmlFor="has_installments" className={styles.optionLabel}>
+                  <span className="material-icons">credit_card</span>
+                  Parcelado
+                </label>
+              </div>
+
+              {formData.has_installments && (
+                <div className={styles.optionContent}>
+                  <div className={styles.inputGroup}>
+                    <label className={styles.label}>
+                      <span className="material-icons">format_list_numbered</span>
+                      Número de Parcelas
+                    </label>
+                    <input
+                      type="text"
+                      name="total_installments"
+                      value={formData.total_installments}
+                      onChange={handleChange}                      
+                      max="100"
+                      className={styles.input}
+                      required={formData.has_installments}
+                      placeholder="Ex: 12"
+                    />
+                  </div>
+
+                  <div className={styles.inputGroup}>
+                    <label className={styles.label}>
+                      <span className="material-icons">filter_1</span>
+                      Qual parcela você está pagando?
+                    </label>
+                    <input
+                      type="text"
+                      name="current_installment"
+                      value={formData.current_installment}
+                      onChange={handleChange}                      
+                      max={formData.total_installments}
+                      className={styles.input}
+                      required={formData.has_installments}
+                      placeholder="Ex: 1"
+                    />
+                    {formData.amount && formData.total_installments > 1 && (
+                      <small className={styles.installmentInfo}>
+                        {formData.total_installments}x de {formatCurrency(formData.amount / formData.total_installments)}
+                        <br />
+                        {getInstallmentMessage(formData.total_installments, formData.current_installment)}
+                      </small>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className={`${styles.paymentOption} ${formData.is_in_cash ? styles.active : ''}`}>
+              <div className={styles.optionHeader} onClick={() => {
+                setFormData(prev => ({
+                  ...prev,
+                  is_in_cash: !prev.is_in_cash,
+                  is_recurring: false,
+                  has_installments: false
+                }));
+              }}>
+                <div className={styles.checkboxWrapper}>
+                  <input
+                    type="checkbox"
+                    id="is_in_cash"
+                    name="is_in_cash"
+                    checked={formData.is_in_cash}
+                    onChange={() => {}}
+                    className={styles.checkbox}
+                  />
+                  <span className={styles.checkmark}></span>
+                </div>
+                <label htmlFor="is_in_cash" className={styles.optionLabel}>
+                  <span className="material-icons">payments</span>
+                  À Vista
+                </label>
+              </div>
+            </div>
           </div>
 
           {!formData.is_recurring && !formData.has_installments && (
             <div className={styles.inputGroup}>
               <label className={styles.label}>
                 <span className="material-icons">calendar_today</span>
-                Data
+                Data {formData.is_in_cash && '*'}
               </label>
               <input
                 type="date"
@@ -482,7 +542,7 @@ const AddExpense = () => {
                 value={formData.date}
                 onChange={handleChange}
                 className={styles.input}
-                required
+                required={formData.is_in_cash}
               />
             </div>
           )}

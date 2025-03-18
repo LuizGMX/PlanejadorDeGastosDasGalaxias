@@ -85,7 +85,7 @@ class SpreadsheetProcessorService {
       const prompt = `Categorize a seguinte despesa/receita em uma das categorias: 
       ${categoryList}
       
-      Despesa/Receita: "${description}"
+      Despesa/Ganho: "${description}"
       
       Responda apenas com o nome da categoria, sem pontuação ou texto adicional.
       Mas antes, faça uma sanitização dos dados, removendo caracteres especiais e espaços em branco.
@@ -122,7 +122,7 @@ class SpreadsheetProcessorService {
       const subcategoryPrompt = `Agora, para a categoria "${category.category_name}", escolha uma subcategoria entre:
       ${subcategoryList}
       
-      Despesa/Receita: "${description}"
+      Despesa/Ganho: "${description}"
       
       Responda apenas com o nome da subcategoria, sem pontuação ou texto adicional.`;
 

@@ -13,10 +13,12 @@ const ExpenseList = () => {
     months: [new Date().getMonth() + 1],
     years: [new Date().getFullYear()],
     category_id: '',
-    description: ''
+    description: '',
+    is_recurring: ''
   });
   const [selectedExpenses, setSelectedExpenses] = useState([]);
   const [openFilter, setOpenFilter] = useState(null);
+  const [noExpensesMessage, setNoExpensesMessage] = useState(null);
 
   // Lista de anos para o filtro
   const years = Array.from(
@@ -60,6 +62,7 @@ const ExpenseList = () => {
         filters.years.forEach(year => queryParams.append('years[]', year));
         if (filters.category_id) queryParams.append('category_id', filters.category_id);
         if (filters.description) queryParams.append('description', filters.description);
+        if (filters.is_recurring !== '') queryParams.append('is_recurring', filters.is_recurring);
 
         const expensesResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/expenses?${queryParams}`, {
           headers: { 'Authorization': `Bearer ${auth.token}` }
@@ -67,6 +70,17 @@ const ExpenseList = () => {
         if (!expensesResponse.ok) throw new Error('Erro ao carregar despesas');
         const expensesData = await expensesResponse.json();
         setExpenses(expensesData);
+        setSelectedExpenses([]);
+
+        // Define a mensagem quando não há despesas
+        if (!expensesData || expensesData.length === 0) {
+          setNoExpensesMessage({
+            message: 'Você ainda não tem despesas cadastradas para este período.',
+            suggestion: 'Que tal começar adicionando sua primeira despesa?'
+          });
+        } else {
+          setNoExpensesMessage(null);
+        }
 
         setLoading(false);
       } catch (err) {
@@ -394,61 +408,68 @@ const ExpenseList = () => {
       )}
 
       <div className={styles.tableContainer}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>
-                <input
-                  type="checkbox"
-                  checked={selectedExpenses.length === expenses.length}
-                  onChange={handleSelectAll}
-                />
-              </th>
-              <th>Data</th>
-              <th>Descrição</th>
-              <th>Categoria</th>
-              <th>Subcategoria</th>
-              <th>Valor</th>
-              <th>Método</th>
-              <th>Parcela</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {expenses.map(expense => (
-              <tr key={expense.id}>
-                <td>
+        {noExpensesMessage ? (
+          <div className={styles.noDataMessage}>
+            <p>{noExpensesMessage.message}</p>
+            <p className={styles.suggestion}>{noExpensesMessage.suggestion}</p>
+          </div>
+        ) : (
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>
                   <input
                     type="checkbox"
-                    checked={selectedExpenses.includes(expense.id)}
-                    onChange={() => handleSelectExpense(expense.id)}
+                    checked={selectedExpenses.length === expenses.length}
+                    onChange={handleSelectAll}
                   />
-                </td>
-                <td>{new Date(expense.expense_date).toLocaleDateString('pt-BR')}</td>
-                <td>{expense.description}</td>
-                <td>{expense.Category.category_name}</td>
-                <td>{expense.SubCategory.subcategory_name}</td>
-                <td>R$ {parseFloat(expense.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                <td>{expense.payment_method === 'card' ? '💳 Cartão' : '📱 Pix'}</td>
-                <td>
-                  {expense.has_installments 
-                    ? `${expense.current_installment}/${expense.total_installments}`
-                    : '-'
-                  }
-                </td>
-                <td>
-                  <button
-                    onClick={() => handleDelete([expense.id])}
-                    className={styles.deleteButton}
-                    title="Excluir"
-                  >
-                    🗑️
-                  </button>
-                </td>
+                </th>
+                <th>Data</th>
+                <th>Descrição</th>
+                <th>Categoria</th>
+                <th>Subcategoria</th>
+                <th>Valor</th>
+                <th>Método</th>
+                <th>Parcela</th>
+                <th>Ações</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {expenses.map(expense => (
+                <tr key={expense.id}>
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={selectedExpenses.includes(expense.id)}
+                      onChange={() => handleSelectExpense(expense.id)}
+                    />
+                  </td>
+                  <td>{new Date(expense.expense_date).toLocaleDateString('pt-BR')}</td>
+                  <td>{expense.description}</td>
+                  <td>{expense.Category.category_name}</td>
+                  <td>{expense.SubCategory.subcategory_name}</td>
+                  <td>R$ {parseFloat(expense.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                  <td>{expense.payment_method === 'card' ? '💳 Cartão' : '📱 Pix'}</td>
+                  <td>
+                    {expense.has_installments 
+                      ? `${expense.current_installment}/${expense.total_installments}`
+                      : '-'
+                    }
+                  </td>
+                  <td>
+                    <button
+                      onClick={() => handleDelete([expense.id])}
+                      className={styles.deleteButton}
+                      title="Excluir"
+                    >
+                      🗑️
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );
