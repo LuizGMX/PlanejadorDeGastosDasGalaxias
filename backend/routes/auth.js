@@ -236,7 +236,13 @@ router.post('/send-access-code', async (req, res) => {
 
 router.get('/me', authenticate, async (req, res) => {
   console.log('/api/auth/me chamado');
-  return res.json({ name: req.user.name, avatar: req.user.avatar });
+  return res.json({ name: req.user.name, 
+    email: req.user.email,
+    net_income: req.user.net_income,
+    financial_goal_name: req.user.financial_goal_name,
+    financial_goal_amount: parseInt(req.user.financial_goal_amount),
+    financial_goal_date: req.user.financial_goal_date
+   });
 });
 
 router.put('/me', authenticate, async (req, res) => {
@@ -248,7 +254,8 @@ router.put('/me', authenticate, async (req, res) => {
       net_income,
       financial_goal_name,
       financial_goal_amount,
-      financial_goal_date
+      financial_goal_date,
+      old_net_income,
     } = req.body;
 
     await req.user.update({
@@ -256,8 +263,9 @@ router.put('/me', authenticate, async (req, res) => {
       email,
       net_income,
       financial_goal_name,
-      financial_goal_amount,
-      financial_goal_date
+      financial_goal_amount: parseInt(financial_goal_amount),
+      financial_goal_date,
+      old_net_income
     });
 
     res.json({
@@ -266,8 +274,9 @@ router.put('/me', authenticate, async (req, res) => {
       email: req.user.email,
       net_income: req.user.net_income,
       financial_goal_name: req.user.financial_goal_name,
-      financial_goal_amount: req.user.financial_goal_amount,
-      financial_goal_date: req.user.financial_goal_date
+      financial_goal_amount: parseInt(req.user.financial_goal_amount),
+      financial_goal_date: req.user.financial_goal_date,
+      old_net_income: req.user.old_net_income
     });
   } catch (error) {
     console.error('Erro ao atualizar usuário:', error);

@@ -118,7 +118,22 @@ router.get('/', authenticate, async (req, res) => {
     };
 
     const user = await User.findByPk(req.user.id);
-    const netIncome = user ? parseFloat(user.net_income || 0) : 0;
+    
+    // Determina qual net_income usar baseado na data
+    let netIncome = parseFloat(user.net_income || 0);
+    if (user.old_net_income && user.old_net_income_date) {
+      const oldNetIncomeDate = new Date(user.old_net_income_date);
+      const currentDate = new Date();
+      
+      // Se estamos visualizando dados de antes da mudança de renda
+      if (years && years.length > 0) {
+        const yearToCheck = parseInt(years[0]);
+        if (yearToCheck < oldNetIncomeDate.getFullYear() || 
+            (yearToCheck === oldNetIncomeDate.getFullYear() && months && months.length > 0 && parseInt(months[0]) <= oldNetIncomeDate.getMonth() + 1)) {
+          netIncome = parseFloat(user.old_net_income);
+        }
+      }
+    }
 
     const [expenses, incomes] = await Promise.all([
       Expense.findAll({
@@ -186,6 +201,8 @@ router.get('/', authenticate, async (req, res) => {
         name: req.user.name,
         email: req.user.email,
         net_income: netIncome,
+        old_net_income: user.old_net_income,
+        old_net_income_date: user.old_net_income_date,
         total_income: totalIncomes,
         financial_goal_name: user.financial_goal_name,
         financial_goal_amount: user.financial_goal_amount,
@@ -195,8 +212,8 @@ router.get('/', authenticate, async (req, res) => {
 
     res.json(responseData);
   } catch (error) {
-    console.error('Erro ao carregar dados do dashboard:', error);
-    res.status(500).json({ message: 'Erro ao carregar dados do dashboard' });
+    console.error('Erro ao buscar dados do dashboard:', error);
+    res.status(500).json({ message: 'Erro ao buscar dados do dashboard' });
   }
 });
 

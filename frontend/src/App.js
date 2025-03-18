@@ -14,29 +14,36 @@ import styles from './styles/app.module.css';
 export const AuthContext = React.createContext();
 
 function App() {
-  const [auth, setAuth] = useState({ token: localStorage.getItem('token'), user: null });
+  const [auth, setAuth] = useState(() => {
+    const token = localStorage.getItem('token');
+    return { token, user: null, loading: !!token };
+  });
 
   useEffect(() => {
     const fetchUser = async () => {
-      if (auth.token) {
+      if (auth.token && auth.loading) {
         try {
           const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/me`, {
             headers: {
               'Authorization': `Bearer ${auth.token}`
             }
           });
+          
           if (response.ok) {
             const userData = await response.json();
-            setAuth(prev => ({ ...prev, user: userData }));
+            setAuth(prev => ({ ...prev, user: userData, loading: false }));
           } else {
+            console.error('Erro na resposta da API:', await response.text());
             localStorage.removeItem('token');
-            setAuth({ token: null, user: null });
+            setAuth({ token: null, user: null, loading: false });
           }
         } catch (error) {
           console.error('Erro ao buscar dados do usuário:', error);
           localStorage.removeItem('token');
-          setAuth({ token: null, user: null });
+          setAuth({ token: null, user: null, loading: false });
         }
+      } else if (!auth.token) {
+        setAuth(prev => ({ ...prev, loading: false }));
       }
     };
 
@@ -44,6 +51,10 @@ function App() {
   }, [auth.token]);
 
   const PrivateRoute = ({ children }) => {
+    if (auth.loading) {
+      return <div>Carregando...</div>;
+    }
+    
     return auth.token ? (
       <div className={styles.appContainer}>
         <Sidebar />

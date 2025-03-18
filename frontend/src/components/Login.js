@@ -83,14 +83,20 @@ const Login = () => {
         });
 
         if (!response.ok) {
-          throw new Error('Código inválido');
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Código inválido');
         }
 
         const data = await response.json();
+        
+        // Salvar token no localStorage
+        localStorage.setItem('token', data.token);
+        
         setAuth({
           token: data.token,
           user: data.user
         });
+        
         setSuccess('Login realizado com sucesso!');
         setTimeout(() => {
           navigate('/dashboard');
@@ -102,32 +108,54 @@ const Login = () => {
   };
 
   const requestCode = async () => {
-    const requestData = isNewUser
-      ? {
-          email: formData.email,
-          name: formData.name,
-          netIncome: formData.netIncome,
-          financialGoalName: formData.financialGoalName,
-          financialGoalAmount: formData.financialGoalAmount,
-          financialGoalDate: formData.financialGoalDate,
-        }
-      : {
-          email: formData.email,
-          name: formData.name
-        };
+    try {
+      const requestData = isNewUser
+        ? {
+            email: formData.email,
+            name: formData.name,
+            netIncome: formData.netIncome,
+            financialGoalName: formData.financialGoalName,
+            financialGoalAmount: formData.financialGoalAmount,
+            financialGoalDate: formData.financialGoalDate,
+          }
+        : {
+            email: formData.email,
+            name: formData.name
+          };
 
-    const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/send-code`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(requestData)
-    });
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/send-code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestData)
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Falha ao enviar código');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Falha ao enviar código');
+      }
+
+      const data = await response.json();
+      setSuccess('Código enviado com sucesso! Verifique seu email.');
+      
+      // Iniciar contagem regressiva
+      setResendDisabled(true);
+      setResendCountdown(60);
+      const countdownInterval = setInterval(() => {
+        setResendCountdown(prevCountdown => {
+          if (prevCountdown <= 1) {
+            clearInterval(countdownInterval);
+            setResendDisabled(false);
+            return 0;
+          }
+          return prevCountdown - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(countdownInterval);
+    } catch (error) {
+      setError(error.message);
+      throw error; // Re-throw para ser tratado no handleSubmit
     }
-
-    const data = await response.json();
   };
 
   const requestAccessCode = async () => {
