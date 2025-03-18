@@ -115,11 +115,11 @@ const AddIncome = () => {
     try {
       if (formData.is_recurring) {
         if (!formData.start_date || !formData.end_date) {
-          throw new Error('Data inicial e final são obrigatórias para receitas recorrentes');
+          throw new Error('Data inicial e final são obrigatórias para ganhos recorrentes');
         }
         formData.date = formData.start_date;
       } else if (!formData.date) {
-        throw new Error('Data é obrigatória para receitas não recorrentes');
+        throw new Error('Data é obrigatória para ganhos não recorrentes');
       }
 
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/incomes`, {
@@ -133,22 +133,22 @@ const AddIncome = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Falha ao adicionar receita');
+        throw new Error(errorData.message || 'Falha ao adicionar ganho');
       }
 
-      setSuccess('Receita adicionada com sucesso!');
+      setSuccess('Ganho adicionada com sucesso!');
       setTimeout(() => {
         navigate('/income');
       }, 2000);
     } catch (err) {
-      setError(err.message || 'Erro ao adicionar receita. Por favor, tente novamente.');
+      setError(err.message || 'Erro ao adicionar ganho. Por favor, tente novamente.');
     }
   };
 
   return (
     <div className={styles.container}>
       <div className={`${styles.card} ${styles.fadeIn}`}>
-        <h1 className={styles.title}><BsPlusCircle size={24} className={styles.icon} /> Adicionar Receita</h1>
+        <h1 className={styles.title}><BsPlusCircle size={24} className={styles.icon} /> Adicionar Ganho</h1>
 
         {error && <p className={styles.error}>{error}</p>}
         {success && (
@@ -355,7 +355,7 @@ const AddIncome = () => {
               type="submit"
               className={styles.submitButton}
             >
-              Adicionar Receita
+              Adicionar Ganho
             </button>
           </div>
         </form>

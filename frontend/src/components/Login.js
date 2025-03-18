@@ -14,6 +14,9 @@ const Login = () => {
     email: '',
     name: '',
     netIncome: '',
+    financialGoalName: '',
+    financialGoalAmount: '',
+    financialGoalDate: ''
   });
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
@@ -60,10 +63,38 @@ const Login = () => {
       } else if (step === 'name') {
         setStep('income');
       } else if (step === 'income') {
+        setStep('goal');
+      } else if (step === 'goal') {
         await requestCode();
         setStep('code');
       } else if (step === 'code') {
-        await verifyCode();
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/verify-code`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: formData.email,
+            code,
+            name: formData.name,
+            netIncome: formData.netIncome,
+            financialGoalName: formData.financialGoalName,
+            financialGoalAmount: formData.financialGoalAmount,
+            financialGoalDate: formData.financialGoalDate
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Código inválido');
+        }
+
+        const data = await response.json();
+        setAuth({
+          token: data.token,
+          user: data.user
+        });
+        setSuccess('Login realizado com sucesso!');
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 1500);
       }
     } catch (err) {
       setError(err.message || 'Ocorreu um erro. Por favor, tente novamente.');
@@ -76,6 +107,9 @@ const Login = () => {
           email: formData.email,
           name: formData.name,
           netIncome: formData.netIncome,
+          financialGoalName: formData.financialGoalName,
+          financialGoalAmount: formData.financialGoalAmount,
+          financialGoalDate: formData.financialGoalDate,
         }
       : {
           email: formData.email,
@@ -94,26 +128,6 @@ const Login = () => {
     }
 
     const data = await response.json();
-  };
-
-  const verifyCode = async () => {
-    const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/verify-code`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: formData.email,
-        code
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error('Código inválido');
-    }
-
-    const data = await response.json();
-    setAuth({ token: data.token, user: null });
-    localStorage.setItem('token', data.token);
-    navigate('/dashboard');
   };
 
   const requestAccessCode = async () => {
@@ -207,26 +221,72 @@ const Login = () => {
             <div className={styles.loginHeader}>
               <h1 className={styles.loginTitle}>Qual sua renda mensal?</h1>
               <p className={styles.loginSubtitle}>
-                Esta informação nos ajudará a personalizar seu planejamento financeiro
+                Esta informação nos ajuda a personalizar seu planejamento financeiro
               </p>
             </div>
             <div className={styles.inputWrapper}>
               <CurrencyInput
                 name="netIncome"
-                placeholder="R$ 0,00"
-                decimalsLimit={2}
+                value={formData.netIncome}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, netIncome: value || '' }))}
                 prefix="R$ "
                 decimalSeparator=","
                 groupSeparator="."
-                value={formData.netIncome}
-                onValueChange={(value) => {
-                  const numericValue = value ? parseFloat(value.replace(/\./g, '').replace(',', '.')) : '';
-                  setFormData(prev => ({ ...prev, netIncome: numericValue }));
-                }}
                 className={styles.loginInput}
+                placeholder="Digite sua renda mensal"
                 required
               />
               <BsCurrencyDollar className={styles.inputIcon} />
+            </div>
+          </>
+        );
+
+      case 'goal':
+        return (
+          <>
+            <div className={styles.loginHeader}>
+              <h1 className={styles.loginTitle}>Defina seu objetivo financeiro</h1>
+              <p className={styles.loginSubtitle}>
+                Vamos te ajudar a alcançar suas metas financeiras
+              </p>
+            </div>
+            <div className={styles.inputWrapper}>
+              <input
+                type="text"
+                name="financialGoalName"
+                value={formData.financialGoalName}
+                onChange={handleChange}
+                className={styles.loginInput}
+                placeholder="Nome do objetivo (ex: Comprar um carro)"
+                required
+              />
+              <BsPerson className={styles.inputIcon} />
+            </div>
+            <div className={styles.inputWrapper}>
+              <CurrencyInput
+                name="financialGoalAmount"
+                value={formData.financialGoalAmount}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, financialGoalAmount: value || '' }))}
+                prefix="R$ "
+                decimalSeparator=","
+                groupSeparator="."
+                className={styles.loginInput}
+                placeholder="Valor do objetivo"
+                required
+              />
+              <BsCurrencyDollar className={styles.inputIcon} />
+            </div>
+            <div className={styles.inputWrapper}>
+              <input
+                type="date"
+                name="financialGoalDate"
+                value={formData.financialGoalDate}
+                onChange={handleChange}
+                className={styles.loginInput}
+                min={new Date().toISOString().split('T')[0]}
+                required
+              />
+              <span className="material-icons">calendar_today</span>
             </div>
           </>
         );
@@ -235,9 +295,9 @@ const Login = () => {
         return (
           <>
             <div className={styles.loginHeader}>
-              <h1 className={styles.loginTitle}>Digite o código</h1>
+              <h1 className={styles.loginTitle}>Digite o código de acesso</h1>
               <p className={styles.loginSubtitle}>
-                Enviamos um código de verificação para {formData.email}. Por favor, verifique também sua caixa de spam.
+                Enviamos um código para seu e-mail
               </p>
             </div>
             <div className={styles.inputWrapper}>
@@ -247,19 +307,23 @@ const Login = () => {
                 onChange={(e) => setCode(e.target.value)}
                 className={styles.loginInput}
                 placeholder="Digite o código"
-                maxLength={6}
                 required
               />
               <BsShieldLock className={styles.inputIcon} />
             </div>
-            <button 
-              type="button" 
-              onClick={requestAccessCode}
-              disabled={resendDisabled}
-              className={`${styles.resendButton} ${resendDisabled ? styles.disabled : ''}`}
-            >
-              {resendDisabled ? `Reenviar em ${resendCountdown}s` : 'Reenviar código'}
-            </button>
+            <div className={styles.resendCode}>
+              {resendDisabled ? (
+                <p>Reenviar código em {resendCountdown}s</p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={requestAccessCode}
+                  className={styles.resendButton}
+                >
+                  Reenviar código
+                </button>
+              )}
+            </div>
           </>
         );
 

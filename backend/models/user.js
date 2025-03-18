@@ -30,6 +30,28 @@ export default (sequelize) => {
         min: 0
       }
     },
+    financial_goal_name: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    financial_goal_amount: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      validate: {
+        min: 0
+      }
+    },
+    financial_goal_date: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      validate: {
+        isAfterToday(value) {
+          if (value && new Date(value) <= new Date()) {
+            throw new Error('A data do objetivo deve ser futura');
+          }
+        }
+      }
+    },
     created_at: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW

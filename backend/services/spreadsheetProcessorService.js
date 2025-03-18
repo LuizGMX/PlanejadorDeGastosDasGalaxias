@@ -82,7 +82,7 @@ class SpreadsheetProcessorService {
       // Cria lista de categorias para o prompt
       const categoryList = this.categories.map(cat => cat.category_name).join(', ');
       
-      const prompt = `Categorize a seguinte despesa/receita em uma das categorias: 
+      const prompt = `Categorize a seguinte despesa/ganho em uma das categorias: 
       ${categoryList}
       
       Despesa/Ganho: "${description}"

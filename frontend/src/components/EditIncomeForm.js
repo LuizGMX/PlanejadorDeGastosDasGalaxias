@@ -113,7 +113,7 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
   return (
     <div className={styles.modal}>
       <div className={styles.modalContent}>
-        <h2>Editar Receita</h2>
+        <h2>Editar Ganho</h2>
         {error && <p className={styles.error}>{error}</p>}
         <form onSubmit={handleSubmit}>
           <div className={styles.formGroup}>
@@ -225,7 +225,7 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
                   checked={formData.update_future}
                   onChange={handleChange}
                 />
-                Atualizar receitas futuras
+                Atualizar ganhos futuras
               </label>
             </div>
           )}

@@ -4,7 +4,6 @@ import { Expense, Income, Category, SubCategory, Bank, Budget, User } from '../m
 import { Op } from 'sequelize';
 import { authenticate } from '../middleware/auth.js';
 
-
 const router = express.Router();
 
 // Função auxiliar para construir condições de data
@@ -146,6 +145,32 @@ router.get('/', authenticate, async (req, res) => {
     const totalExpenses = calculateTotals(expenses);
     const totalBudget = totalIncomes + netIncome;
 
+    // Calcula informações do objetivo financeiro
+    let financialGoalInfo = null;
+    if (user.financial_goal_amount && user.financial_goal_date) {
+      const today = new Date();
+      const goalDate = new Date(user.financial_goal_date);
+      const monthsUntilGoal = (goalDate.getFullYear() - today.getFullYear()) * 12 + 
+                             (goalDate.getMonth() - today.getMonth());
+      
+      const monthlyBalance = totalIncomes - totalExpenses;
+      const projectedSavings = monthlyBalance * monthsUntilGoal;
+      const goalAmount = parseFloat(user.financial_goal_amount);
+      const monthlyNeeded = (goalAmount - projectedSavings) / monthsUntilGoal;
+
+      financialGoalInfo = {
+        name: user.financial_goal_name,
+        amount: goalAmount,
+        date: user.financial_goal_date,
+        months_remaining: monthsUntilGoal,
+        monthly_balance: monthlyBalance,
+        projected_savings: projectedSavings,
+        monthly_needed: monthlyNeeded,
+        is_achievable: monthlyBalance >= monthlyNeeded,
+        progress_percentage: (projectedSavings / goalAmount) * 100
+      };
+    }
+
     const responseData = {
       expenses_by_category: groupByCategory(expenses),
       incomes_by_category: groupByCategory(incomes),
@@ -156,17 +181,22 @@ router.get('/', authenticate, async (req, res) => {
       budget_info: calculateBudgetInfo(totalBudget, totalExpenses, netIncome),
       total_expenses: totalExpenses,
       total_incomes: totalIncomes,
+      financial_goal: financialGoalInfo,
       user: {
         id: req.user.id,
         name: req.user.name,
         email: req.user.email,
         net_income: netIncome,
-        total_income: totalIncomes
+        total_income: totalIncomes,
+        financial_goal_name: user.financial_goal_name,
+        financial_goal_amount: user.financial_goal_amount,
+        financial_goal_date: user.financial_goal_date
       }
     };
 
     res.json(responseData);
   } catch (error) {
+    console.error('Erro ao carregar dados do dashboard:', error);
     res.status(500).json({ message: 'Erro ao carregar dados do dashboard' });
   }
 });
@@ -237,128 +267,111 @@ router.get('/period-summary', async (req, res) => {
 
 router.get('/bank-balance-trend', authenticate, async (req, res) => {
   try {
-    const { months = 12 } = req.query;
+    const { months = 3 } = req.query;
     const projectionMonths = parseInt(months);
 
+    // Define o período de projeção: começa no próximo mês
     const startDate = new Date();
-    const endDate = new Date();
-    endDate.setMonth(endDate.getMonth() + projectionMonths);
+    startDate.setUTCMonth(startDate.getUTCMonth() + 1);
+    startDate.setUTCDate(1);
+    startDate.setUTCHours(0, 0, 0, 0); // Início do dia em UTC
 
-    const [recurringExpenses, recurringIncomes, allExpenses, user] = await Promise.all([
-      Expense.findAll({
-        where: {
-          user_id: req.user.id,
-          is_recurring: true,
-          start_date: { [Op.lte]: endDate },
-          [Op.or]: [
-            { end_date: { [Op.gte]: startDate } },
-            { end_date: null }
-          ]
-        },
-        include: [{ model: Category }, { model: Bank }]
-      }),
-      Income.findAll({
-        where: {
-          user_id: req.user.id,
-          is_recurring: true,
-          start_date: { [Op.lte]: endDate },
-          [Op.or]: [
-            { end_date: { [Op.gte]: startDate } },
-            { end_date: null }
-          ]
-        },
-        include: [{ model: Category }, { model: Bank }]
-      }),
+    const endDate = new Date(startDate);
+    endDate.setUTCMonth(startDate.getUTCMonth() + projectionMonths - 1);
+    // Encontra o último dia do mês
+    const lastDay = new Date(endDate.getUTCFullYear(), endDate.getUTCMonth() + 1, 0).getUTCDate();
+    endDate.setUTCDate(lastDay);
+    endDate.setUTCHours(23, 59, 59, 999); // Fim do dia em UTC
+
+    console.log('\n=== INÍCIO DAS QUERIES DO DASHBOARD ===\n');
+    console.log('Período de busca:');
+    console.log('De:', startDate.toISOString());
+    console.log('Até:', endDate.toISOString());
+    console.log('\n');
+
+    const [expenses, incomes, user] = await Promise.all([
       Expense.findAll({
         where: {
           user_id: req.user.id,
           expense_date: { 
-            [Op.between]: [startDate, endDate] 
+            [Op.between]: [startDate.toISOString(), endDate.toISOString()] 
           }
         },
-        include: [{ model: Category }, { model: Bank }]
+        include: [{ model: Category }, { model: Bank }],
+        logging: (sql, timing) => {
+          console.log('\nQUERY DE DESPESAS:');
+          console.log(sql);
+          console.log(`Tempo de execução: ${timing}ms\n`);
+        }
       }),
-      User.findByPk(req.user.id)
+      Income.findAll({
+        where: {
+          user_id: req.user.id,
+          date: { 
+            [Op.between]: [startDate.toISOString(), endDate.toISOString()] 
+          }
+        },
+        include: [{ model: Category }, { model: Bank }],
+        logging: (sql, timing) => {
+          console.log('\nQUERY DE GANHOS:');
+          console.log(sql);
+          console.log(`Tempo de execução: ${timing}ms\n`);
+        }
+      }),
+      User.findByPk(req.user.id, {
+        logging: (sql, timing) => {
+          console.log('\nQUERY DE USUÁRIO:');
+          console.log(sql);
+          console.log(`Tempo de execução: ${timing}ms\n`);
+        }
+      })
     ]);
 
+    console.log('\n=== FIM DAS QUERIES DO DASHBOARD ===\n');
+
     const monthlyNetIncome = user ? parseFloat(user.net_income || 0) : 0;
+
+    // Ganhos Projetados: net_income * projectionMonths + soma de incomes no período
+    const totalFutureIncomes = incomes.reduce((total, income) => {
+      return total + parseFloat(income.amount || 0);
+    }, 0);
+    const totalNetIncome = monthlyNetIncome * projectionMonths;
+    const totalProjectedIncomes = totalNetIncome + totalFutureIncomes;
+
+    // Gastos Projetados: soma de todas as expenses no período (sem filtro)
+    const totalProjectedExpenses = expenses.reduce((total, expense) => {
+      return total + parseFloat(expense.amount || 0);
+    }, 0);
+
+    console.log("AIOH", totalProjectedIncomes, totalProjectedExpenses);
+
+    // Saldo Final: Ganhos Projetados - Gastos Projetados
+    const finalBalance = totalProjectedIncomes - totalProjectedExpenses;
+
     const projectionData = [];
-    let currentBalance = 0;
-
-    // Adiciona o saldo inicial
-    projectionData.push({
-      date: startDate.toISOString().split('T')[0],
-      balance: 0,
-      expenses: 0,
-      incomes: 0
-    });
-
     for (let i = 0; i < projectionMonths; i++) {
       const currentDate = new Date(startDate);
-      currentDate.setMonth(currentDate.getMonth() + i + 1);
+      currentDate.setMonth(startDate.getMonth() + i);
 
-      const monthlyExpenses = recurringExpenses.reduce((total, expense) => {
-        const expenseDate = new Date(expense.start_date);
-        const isActive = currentDate.getMonth() === expenseDate.getMonth() && 
-                        currentDate.getFullYear() === expenseDate.getFullYear();
-        
-        // Se a despesa é recorrente e está ativa no mês atual
-        if (isActive && expense.is_recurring) {
-          return total + parseFloat(expense.amount || 0);
-        }
-        return total;
-      }, 0);
-
-      // Adiciona as despesas não recorrentes do mês atual
-      const nonRecurringExpenses = allExpenses.reduce((total, expense) => {
+      const monthExpenses = expenses.filter(expense => {
         const expenseDate = new Date(expense.expense_date);
-        const isCurrentMonth = currentDate.getMonth() === expenseDate.getMonth() && 
-                             currentDate.getFullYear() === expenseDate.getFullYear();
-        
-        if (isCurrentMonth && !expense.is_recurring) {
-          return total + parseFloat(expense.amount || 0);
-        }
-        return total;
-      }, 0);
+        return expenseDate.getMonth() === currentDate.getMonth() && 
+               expenseDate.getFullYear() === currentDate.getFullYear();
+      }).reduce((total, expense) => total + parseFloat(expense.amount || 0), 0);
 
-      const totalMonthlyExpenses = monthlyExpenses + nonRecurringExpenses;
-
-      const monthlyIncomes = recurringIncomes.reduce((total, income) => {
-        const incomeDate = new Date(income.start_date);
-        const isActive = currentDate.getMonth() === incomeDate.getMonth() && 
-                        currentDate.getFullYear() === incomeDate.getFullYear();
-        
-        // Se a receita é recorrente e está ativa no mês atual
-        if (isActive && income.is_recurring) {
-          return total + parseFloat(income.amount || 0);
-        }
-        return total;
-      }, 0);
-
-      const monthlyBalance = monthlyIncomes + monthlyNetIncome - totalMonthlyExpenses;
-      currentBalance += monthlyBalance;
+      const monthIncomes = incomes.filter(income => {
+        const incomeDate = new Date(income.date);
+        return incomeDate.getMonth() === currentDate.getMonth() && 
+               incomeDate.getFullYear() === currentDate.getFullYear();
+      }).reduce((total, income) => total + parseFloat(income.amount || 0), 0);
 
       projectionData.push({
         date: currentDate.toISOString().split('T')[0],
-        balance: currentBalance,
-        expenses: totalMonthlyExpenses,
-        incomes: monthlyIncomes + monthlyNetIncome
+        expenses: monthExpenses,
+        incomes: monthIncomes + monthlyNetIncome,
+        balance: (monthIncomes + monthlyNetIncome) - monthExpenses
       });
     }
-
-    // Calcula os totais projetados
-    const totalProjectedExpenses = projectionData.reduce((total, data) => total + data.expenses, 0);
-    const totalProjectedIncomes = projectionData.reduce((total, data) => total + data.incomes, 0);
-    const finalBalance = totalProjectedIncomes - totalProjectedExpenses;
-
-    console.log('AQUI:', {
-      projectionData,
-      summary: {
-        totalProjectedExpenses,
-        totalProjectedIncomes,
-        finalBalance
-      }
-    });
 
     res.json({
       projectionData,

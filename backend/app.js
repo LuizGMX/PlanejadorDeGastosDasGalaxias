@@ -10,7 +10,7 @@ import bankRoutes from './routes/bank.js';
 import budgetRoutes from './routes/budgets.js';
 import spreadsheetRoutes from './routes/spreadsheetRoutes.js';
 import subcategoryRoutes from './routes/subcategories.js';
-import userRoutes from './routes/users.js';
+import userRoutes from './routes/user.js';
 
 const app = express();
 

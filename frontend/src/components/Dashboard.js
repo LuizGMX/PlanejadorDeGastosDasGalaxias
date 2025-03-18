@@ -19,7 +19,7 @@ import {
   ComposedChart,
 } from 'recharts';
 import styles from '../styles/dashboard.module.css';
-
+  
 const motivationalPhrases = [
   "Cuide do seu dinheiro hoje para não precisar se preocupar amanhã.",
   "Cada real economizado é um passo mais perto da sua liberdade financeira.",
@@ -41,7 +41,7 @@ const motivationalPhrases = [
 const getGreeting = (userName) => {
   const hour = new Date().getHours();
   let greeting = '';
-
+  
   if (hour >= 5 && hour < 12) {
     greeting = 'Bom dia';
   } else if (hour >= 12 && hour < 18) {
@@ -51,7 +51,7 @@ const getGreeting = (userName) => {
   }
 
   const randomPhrase = motivationalPhrases[Math.floor(Math.random() * motivationalPhrases.length)];
-
+  
   return (
     <div className={styles.greeting}>
       <h2>{greeting}, {userName}!</h2>
@@ -65,236 +65,175 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [months, setMonths] = useState(12);
+  const [projectionMonths, setProjectionMonths] = useState(3);
 
   useEffect(() => {
-    const fetchBankBalanceTrend = async () => {
-      try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/dashboard/bank-balance-trend?months=${months}`, {
-          headers: {
-            'Authorization': `Bearer ${auth.token}`
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error('Erro ao carregar dados de tendência');
+    const fetchData = async () => {
+    try {
+        const response = await fetch(
+          `${process.env.REACT_APP_API_URL}/api/dashboard/bank-balance-trend?months=${projectionMonths}`,
+          {
+        headers: {
+          'Authorization': `Bearer ${auth.token}`
         }
+          }
+        );
 
-        const data = await response.json();
-        setData(data);
-      } catch (error) {
-        console.error('Erro ao carregar tendência de saldo:', error);
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+          throw new Error('Falha ao carregar dados da projeção');
       }
-    };
 
-    fetchBankBalanceTrend();
-  }, [auth.token, months]);
-
-  const formatCurrency = (value) => {
-    const absValue = Math.abs(value);
-    if (absValue >= 1000000) {
-      return `${(value / 1000000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}M`;
-    } else if (absValue >= 1000) {
-      return `${(value / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}k`;
+        const result = await response.json();
+        setData(result);
+      setLoading(false);
+    } catch (err) {
+        setError(err.message);
+      setLoading(false);
     }
-    return value.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
   };
 
+    fetchData();
+  }, [auth.token, projectionMonths]);
+
+  if (loading) return <div>Carregando...</div>;
+  if (error) return <div>Erro: {error}</div>;
+  if (!data) return null;
+
   const formatFullCurrency = (value) => {
-    const absValue = Math.abs(value);
-    if (absValue >= 1000000) {
-      return `R$ ${(value / 1000000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} milhões`;
-    } else if (absValue >= 1000) {
-      return `R$ ${(value / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mil`;
-    }
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
     }).format(value);
   };
 
-  const formatDate = (date) => {
-    const d = new Date(date);
-    return `${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-  };
-
-  if (loading) return <div className={styles.loading}>Carregando...</div>;
-  if (error) return <div className={styles.error}>{error}</div>;
-  if (!data) return <div>Nenhum dado encontrado</div>;
-
   return (
-    <div style={{
-      ...containerStyle,
-      padding: '20px',
-      backgroundColor: 'var(--background)',
-      borderRadius: '12px',
-      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-      marginBottom: '20px'
-    }}>
-      {showTitle && <h3>Tendência de Saldo Bancário</h3>}
+    <div style={containerStyle}>
+      {showTitle && <h2>Projeção de Saldo</h2>}
+      
       {showControls && (
-        <div className={styles.controls}>
-          <label>
-            Período:
-            <select className={styles.modernSelect} value={months} onChange={(e) => setMonths(Number(e.target.value))}>
+        <div style={{ marginBottom: '20px' }}>
+          <label>Meses de Projeção: </label>
+          <select 
+            value={projectionMonths} 
+            onChange={(e) => setProjectionMonths(Number(e.target.value))}
+            style={{ marginLeft: '10px' }}
+          >
               <option value={3}>3 meses</option>
               <option value={6}>6 meses</option>
               <option value={12}>12 meses</option>
-              <option value={24}>24 meses</option>
-              <option value={36}>36 meses</option>
             </select>
-          </label>
         </div>
       )}
-      <div className={styles.summary} style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        padding: '20px',
-        backgroundColor: 'var(--card-background)',
-        borderRadius: '8px',
-        marginTop: '20px'
-      }}>
-        <div className={styles.summaryItem} style={{ textAlign: 'center' }}>
-          <span style={{ display: 'block', marginBottom: '5px', color: 'var(--text-color)' }}>Ganhos Projetadas</span>
-          <strong style={{ color: 'var(--success-color)', fontSize: '1.2em' }}>
-            {formatFullCurrency(data.summary.totalProjectedIncomes)}
-          </strong>
-        </div>
-        <div className={styles.summaryItem} style={{ textAlign: 'center' }}>
-          <span style={{ display: 'block', marginBottom: '5px', color: 'var(--text-color)' }}>Despesas Projetadas</span>
-          <strong style={{ color: 'var(--error-color)', fontSize: '1.2em' }}>
-            {formatFullCurrency(data.summary.totalProjectedExpenses)}
-          </strong>
-        </div>
-        <div className={styles.summaryItem} style={{ textAlign: 'center' }}>
-          <span style={{ display: 'block', marginBottom: '5px', color: 'var(--text-color)' }}>Saldo Final</span>
-          <strong style={{
-            color: data.summary.finalBalance >= 0 ? 'var(--success-color)' : 'var(--error-color)',
-            fontSize: '1.2em'
-          }}>
-            {formatFullCurrency(data.summary.finalBalance)}
-          </strong>
-        </div>
-      </div>
-      <div style={{ width: '100%', height }}>
-        <ResponsiveContainer>
-          <ComposedChart
-            data={data.projectionData}
-            margin={{ top: 20, right: 30, left: 80, bottom: 20 }}
-            style={{ backgroundColor: 'var(--card-background)', padding: '20px', borderRadius: '8px' }}
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+
+      <ResponsiveContainer width="100%" height={height}>
+        <LineChart data={data.projectionData}>
+          <CartesianGrid strokeDasharray="3 3" />
             <XAxis
               dataKey="date"
-              tick={{ fill: 'var(--text-color)' }}
-              tickFormatter={formatDate}
-              angle={-45}
-              textAnchor="end"
-              height={100}
-              interval={0}
-              padding={{ left: 20, right: 20 }}
+            tickFormatter={(date) => new Date(date).toLocaleDateString('pt-BR', { month: 'short' })}
             />
             <YAxis
-              tickFormatter={(value) => `${formatCurrency(value)}`}
-              tick={{ fill: 'var(--text-color)' }}
-              width={80}
-              domain={[0, 'dataMax']}
-              ticks={(() => {
-                const allValues = [...new Set(
-                  data.projectionData.flatMap(d => [d.balance, d.expenses, d.incomes])
-                    .filter(v => v !== null && v !== undefined)
-                )];
-
-                const maxValue = Math.max(...allValues);
-                const midPoint = maxValue / 2;
-
-                const startPoints = [
-                  data.projectionData[0]?.balance,
-                  data.projectionData[0]?.expenses,
-                  data.projectionData[0]?.incomes
-                ].filter(v => v !== null && v !== undefined);
-
-                const points = [
-                  maxValue,
-                  ...startPoints,
-                  midPoint
-                ];
-
-                return [...new Set(points)].sort((a, b) => b - a);
-              })()}
+            tickFormatter={(value) => formatFullCurrency(value)}
             />
             <Tooltip
-              formatter={(value, name) => {
-                const formattedValue = formatFullCurrency(value);
-                switch (name) {
-                  case 'balance':
-                    return [formattedValue, 'Saldo'];
-                  case 'expenses':
-                    return [formattedValue, 'Despesas'];
-                  case 'incomes':
-                    return [formattedValue, 'Ganhos'];
-                  default:
-                    return [formattedValue, name];
-                }
-              }}
-              contentStyle={{
-                backgroundColor: 'var(--card-background)',
-                border: '1px solid var(--border-color)',
-                color: 'var(--text-color)',
-                padding: '10px'
-              }}
-              labelFormatter={formatDate}
-              labelStyle={{ color: 'var(--text-color)', marginBottom: '5px' }}
-            />
-            <Legend
-              formatter={(value) => {
-                switch (value) {
-                  case 'balance':
-                    return <span style={{ color: 'var(--text-color)' }}>Saldo</span>;
-                  case 'expenses':
-                    return <span style={{ color: 'var(--text-color)' }}>Despesas</span>;
-                  case 'incomes':
-                    return <span style={{ color: 'var(--text-color)' }}>Ganhos</span>;
-                  default:
-                    return <span style={{ color: 'var(--text-color)' }}>{value}</span>;
-                }
-              }}
-            />
+            formatter={(value) => formatFullCurrency(value)}
+            labelFormatter={(date) => new Date(date).toLocaleDateString('pt-BR')}
+          />
+          <Legend />
             <Line
+            type="monotone" 
               dataKey="incomes"
-              name="Ganhos"
               stroke="var(--success-color)"
-              dot={{ fill: 'var(--success-color)', r: 4 }}
-              activeDot={{ r: 6, fill: 'var(--success-color)' }}
-              isAnimationActive={false}
-              connectNulls={true}
-              strokeWidth={2}
+            name="Ganhos"
             />
             <Line
+            type="monotone" 
               dataKey="expenses"
-              name="Despesas"
               stroke="var(--error-color)"
-              dot={{ fill: 'var(--error-color)', r: 4 }}
-              activeDot={{ r: 6, fill: 'var(--error-color)' }}
-              isAnimationActive={false}
-              connectNulls={true}
-              strokeWidth={2}
+            name="Despesas"
             />
             <Line
               type="monotone"
               dataKey="balance"
-              stroke="rgb(0, 187, 249)"
-              strokeWidth={2}
-              dot={{ fill: 'rgb(0, 187, 249)', r: 4 }}
-              activeDot={{ r: 6, fill: 'rgb(0, 187, 249)' }}
-              isAnimationActive={false}
-              connectNulls={true}
-            />
-          </ComposedChart>
+            stroke="var(--primary-color)" 
+            name="Saldo"
+          />
+        </LineChart>
         </ResponsiveContainer>
+
+      <div
+  className={styles.summary}
+  style={{
+    display: 'flex',
+    justifyContent: 'space-between',
+    padding: '20px',
+    backgroundColor: 'var(--card-background)',
+    borderRadius: '8px',
+    marginTop: '20px'
+  }}
+>
+  <div className={styles.summaryItem} style={{ textAlign: 'center' }}>
+    <span
+      style={{
+        display: 'block',
+        marginBottom: '5px',
+        color: 'var(--text-color)'
+      }}
+    >
+      Ganhos Projetados ({projectionMonths} meses)
+    </span>
+    <strong
+      style={{
+        color: 'var(--success-color)',
+        fontSize: '1.2em'
+      }}
+    >
+      {formatFullCurrency(data.summary.totalProjectedIncomes)}
+    </strong>
       </div>
+  <div className={styles.summaryItem} style={{ textAlign: 'center' }}>
+    <span
+      style={{
+        display: 'block',
+        marginBottom: '5px',
+        color: 'var(--text-color)'
+      }}
+    >
+      Despesas Projetadas ({projectionMonths} meses)
+    </span>
+    <strong
+      style={{
+        color: 'var(--error-color)',
+        fontSize: '1.2em'
+      }}
+    >
+      {formatFullCurrency(data.summary.totalProjectedExpenses)}
+    </strong>
+  </div>
+  <div className={styles.summaryItem} style={{ textAlign: 'center' }}>
+    <span
+      style={{
+        display: 'block',
+        marginBottom: '5px',
+        color: 'var(--text-color)'
+      }}
+    >
+      Saldo Final
+    </span>
+    <strong
+      style={{
+        color:
+          data.summary.finalBalance >= 0
+            ? 'var(--success-color)'
+            : 'var(--error-color)',
+        fontSize: '1.2em'
+      }}
+    >
+      {formatFullCurrency(data.summary.finalBalance)}
+    </strong>
+  </div>
+</div>
+
     </div>
   );
 };
@@ -305,9 +244,7 @@ const Dashboard = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [expandedChart, setExpandedChart] = useState(null);
-  const [projectionMonths, setProjectionMonths] = useState(12);
-  const [trendData, setTrendData] = useState(null);
+  const [expandedChart, setExpandedChart] = useState(null);  
   const [noExpensesMessage, setNoExpensesMessage] = useState(null);
   const [filters, setFilters] = useState({
     months: [new Date().getMonth() + 1],
@@ -322,7 +259,7 @@ const Dashboard = () => {
     'banks': useRef(null),
     'budget': useRef(null)
   };
-  const [chartHeights, setChartHeights] = useState({});
+  
 
   // Lista de anos para o filtro
   const years = Array.from(
@@ -377,7 +314,7 @@ const Dashboard = () => {
     const fetchData = async () => {
       try {
         const queryParams = new URLSearchParams();
-
+        
         // Adiciona meses e anos como arrays
         filters.months.forEach(month => queryParams.append('months[]', month));
         filters.years.forEach(year => queryParams.append('years[]', year));
@@ -387,16 +324,16 @@ const Dashboard = () => {
             'Authorization': `Bearer ${auth.token}`
           }
         });
-
+        
         if (response.status === 401) {
           navigate('/login');
           return;
         }
-
+        
         if (!response.ok) {
           throw new Error('Erro ao carregar dados do dashboard');
         }
-
+        
         const jsonData = await response.json();
         setData(jsonData);
         setError(null);
@@ -449,7 +386,7 @@ const Dashboard = () => {
         const { height } = entry.contentRect;
         newHeights[chartId] = height;
       }
-      setChartHeights(prev => ({ ...prev, ...newHeights }));
+      
     });
 
     Object.entries(chartRefs).forEach(([chartId, ref]) => {
@@ -547,7 +484,7 @@ const Dashboard = () => {
         <div className={styles.chartHeader}>
           <h3>{title} - {formatPeriod()}</h3>
         </div>
-        <div ref={chartRefs[chartId]} className={styles.chartWrapper}>
+        <div ref={chartRefs[chartId]} className={styles.chartWrapper} style={{ height: '400px' }}>
           <ResponsiveContainer width="100%" height="100%">
             {chartComponent}
           </ResponsiveContainer>
@@ -593,9 +530,403 @@ const Dashboard = () => {
     }
   };
 
-  const handleTrendDataFetched = useCallback((data) => {
-    // Removendo essa função pois não é mais necessária
-  }, []);
+
+  const renderFinancialGoalChart = () => {
+    console.log("renderFinancialGoalChart", data);
+    if (!data?.financial_goal) return null;
+
+    const goal = data.financial_goal;
+    const chartData = [{
+      name: 'Progresso',
+      economia: goal.projected_savings > goal.amount ? goal.amount : goal.projected_savings,
+      faltante: goal.projected_savings > goal.amount ? 0 : goal.amount - goal.projected_savings
+    }];
+
+  return (
+      <div className={styles.chartContainer}>
+        <div className={styles.chartHeader}>
+          <h3>Progresso do Objetivo Financeiro</h3>
+          <p className={styles.goalInfo}>
+            Meta: {formatCurrency(goal.amount)} até {new Date(goal.date).toLocaleDateString('pt-BR')}
+          </p>
+      </div>
+
+        <div className={styles.chartInfo}>
+          <div className={styles.infoItem}>
+            <span>Economia Mensal Atual:</span>
+            <strong className={goal.monthly_balance >= goal.monthly_needed ? styles.positive : styles.negative}>
+              {formatCurrency(goal.monthly_balance)}
+            </strong>
+          </div>
+          <div className={styles.infoItem}>
+            <span>Economia Mensal Necessária:</span>
+            <strong>{formatCurrency(goal.monthly_needed)}</strong>
+        </div>
+          <div className={styles.infoItem}>
+            <span>Meses Restantes:</span>
+            <strong>{goal.months_remaining}</strong>
+                </div>
+                        </div>
+
+        {!goal.is_achievable && (
+          <div className={styles.warning}>
+            <span className="material-icons">warning</span>
+            <p>Com a economia mensal atual, você não alcançará seu objetivo no prazo definido.</p>
+                  </div>
+                )}
+
+        <div style={{ width: '100%', height: '300px' }}>
+          <ResponsiveContainer>
+            <BarChart
+              data={chartData}
+              margin={{ top: 20, right: 30, left: 80, bottom: 20 }}
+              layout="vertical"
+              barSize={40}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+              <XAxis
+                type="number"
+                tickFormatter={formatCurrency}
+                tick={{ fill: 'var(--text-color)' }}
+              />
+              <YAxis
+                type="category"
+                dataKey="name"
+                tick={{ fill: 'var(--text-color)' }}
+              />
+              <Tooltip
+                formatter={formatCurrency}
+                contentStyle={{
+                  backgroundColor: 'var(--card-background)',
+                  border: '1px solid var(--border-color)',
+                  color: 'var(--text-color)'
+                }}
+                labelStyle={{ color: 'var(--text-color)' }}
+              />
+              <Legend
+                formatter={(value) => {
+                  switch (value) {
+                    case 'economia':
+                      return <span style={{ color: 'var(--text-color)' }}>Economia Projetada</span>;
+                    case 'faltante':
+                      return <span style={{ color: 'var(--text-color)' }}>Faltante</span>;
+                    default:
+                      return <span style={{ color: 'var(--text-color)' }}>{value}</span>;
+                  }
+                }}
+              />
+              <Bar dataKey="economia" stackId="a" fill="var(--success-color)" />
+              <Bar dataKey="faltante" stackId="a" fill="var(--error-color)" />
+            </BarChart>
+          </ResponsiveContainer>
+              </div>
+            </div>
+    );
+  };
+
+  const renderIncomeVsExpensesChart = () => {
+    if (!data?.budget_info) return null;
+
+    return renderChart('income-vs-expenses', 'Ganhos vs Despesas',
+                  <PieChart margin={{ top: 10, right: 30, left: 30, bottom: 20 }}>
+                    <Pie
+                      data={[
+                        {
+                          name: 'Disponível',
+                          value: Math.max(0, data.budget_info.total_budget - data.budget_info.total_spent)
+                        },
+                        {
+                          name: 'Total Gasto',
+                          value: data.budget_info.total_spent
+                        }
+                      ]}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      startAngle={90}
+                      endAngle={-270}
+                      label={({ name, percent }) =>
+                        `${name} (${(percent * 100).toFixed(0)}%)`
+                      }
+                    >
+                      <Cell fill="var(--primary-color)" />
+                      <Cell fill="var(--error-color)" />
+                    </Pie>
+                    <Tooltip
+                      formatter={formatCurrency}
+                      contentStyle={{
+                        backgroundColor: 'var(--card-background)',
+                        border: '1px solid var(--border-color)',
+                        color: 'var(--text-color)'
+                      }}
+                      labelStyle={{ color: 'var(--text-color)' }}
+                    />
+                    <Legend
+                      formatter={(value) => <span style={{ color: 'var(--text-color)' }}>{value}</span>}
+                    />
+                  </PieChart>
+    );
+  };
+
+  const renderCategoriesChart = () => {
+    if (!data?.expenses_by_category?.length) return null;
+
+    return renderChart('categories', 'Gastos por Categoria',
+                  <PieChart margin={{ top: 10, right: 30, left: 30, bottom: 20 }}>
+                    <Pie
+                      data={data.expenses_by_category}
+                      dataKey="total"
+                      nameKey="category_name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      label={({ category_name, percent }) =>
+                        `${category_name} (${(percent * 100).toFixed(0)}%)`
+                      }
+                    >
+                      {data.expenses_by_category.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={formatCurrency}
+                      contentStyle={{
+                        backgroundColor: 'var(--card-background)',
+                        border: '1px solid var(--border-color)',
+                        color: 'var(--text-color)'
+                      }}
+                      labelStyle={{ color: 'var(--text-color)' }}
+                    />
+                    <Legend
+                      formatter={(value) => <span style={{ color: 'var(--text-color)' }}>{value}</span>}
+                    />
+                  </PieChart>
+    );
+  };
+
+  const renderTimelineChart = () => {
+    if (!data?.expenses_by_date?.length) return null;
+
+    const chartData = (() => {
+                      const hasMultipleYears = filters.years.length > 1;
+                      const hasMoreThan30Days = data.expenses_by_date.length > 30;
+
+                      if (hasMultipleYears) {
+        return data.expenses_by_date.reduce((acc, curr) => {
+                          const year = new Date(curr.date).getFullYear();
+                          const existingEntry = acc.find(item => item.date === year);
+                          
+                          if (existingEntry) {
+                            existingEntry.total += curr.total;
+                          } else {
+                            acc.push({ date: year, total: curr.total });
+                          }
+                          return acc;
+                        }, []);
+                      } else if (hasMoreThan30Days) {
+        return data.expenses_by_date.reduce((acc, curr) => {
+                          const date = new Date(curr.date);
+                          const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                          const existingEntry = acc.find(item => item.date === monthYear);
+                          
+                          if (existingEntry) {
+                            existingEntry.total += curr.total;
+                          } else {
+                            acc.push({ date: monthYear, total: curr.total });
+                          }
+                          return acc;
+                        }, []);
+                      }
+                      
+                      return data.expenses_by_date;
+    })();
+
+    return renderChart('timeline', 'Gastos ao Longo do Tempo',
+      <LineChart
+        data={chartData}
+                    margin={{ top: 10, right: 30, left: 80, bottom: 50 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fill: 'var(--text-color)' }}
+                      tickFormatter={(value) => {
+                        if (Number.isInteger(value)) return value;
+                        const date = new Date(value);
+            if (filters.years.length > 1) return date.getFullYear();
+                        if (data.expenses_by_date.length > 30) {
+                          const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                                       'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+                          return `${months[date.getMonth()]} ${date.getFullYear()}`;
+                        }
+                        return formatDate(value);
+                      }}
+                      angle={-45}
+                      textAnchor="end"
+                      height={100}
+                      interval={0}
+                      padding={{ left: 20, right: 20 }}
+                    />
+                    <YAxis
+                      tickFormatter={formatCurrency}
+                      tick={{ fill: 'var(--text-color)' }}
+                      width={80}
+                    />
+                    <Tooltip
+                      formatter={formatCurrency}
+                      contentStyle={{
+                        backgroundColor: 'var(--card-background)',
+                        border: '1px solid var(--border-color)',
+                        color: 'var(--text-color)'
+                      }}
+                      labelStyle={{ color: 'var(--text-color)' }}
+                    />
+                    <Legend
+                      formatter={(value) => <span style={{ color: 'var(--text-color)' }}>Total Gasto</span>}
+                      verticalAlign="top"
+                      height={36}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="total"
+                      stroke="var(--primary-color)"
+                      strokeWidth={2}
+                      dot={{ fill: 'var(--primary-color)', r: 4 }}
+                      activeDot={{ r: 6, fill: 'var(--primary-color)' }}
+                    />
+                  </LineChart>
+    );
+  };
+
+  const renderIncomeCategoriesChart = () => {
+    if (!data?.incomes_by_category?.length) return null;
+
+    return renderChart('income-categories', 'Ganhos por Categoria',
+                  <PieChart margin={{ top: 10, right: 30, left: 30, bottom: 20 }}>
+                    <Pie
+                      data={data.incomes_by_category}
+                      dataKey="total"
+                      nameKey="category_name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      label={({ category_name, percent }) =>
+                        `${category_name} (${(percent * 100).toFixed(0)}%)`
+                      }
+                    >
+                      {data.incomes_by_category.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={formatCurrency}
+                      contentStyle={{
+                        backgroundColor: 'var(--card-background)',
+                        border: '1px solid var(--border-color)',
+                        color: 'var(--text-color)'
+                      }}
+                      labelStyle={{ color: 'var(--text-color)' }}
+                    />
+                    <Legend
+                      formatter={(value) => <span style={{ color: 'var(--text-color)' }}>{value}</span>}
+                    />
+                  </PieChart>
+    );
+  };
+
+  const renderBanksChart = () => {
+    if (!data?.expenses_by_bank?.length) return null;
+
+    return renderChart('banks', 'Gastos por Banco',
+                  <BarChart data={data.expenses_by_bank} margin={{ top: 10, right: 30, left: 80, bottom: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+                    <XAxis
+                      dataKey="bank_name"
+                      tick={{ fill: 'var(--text-color)' }}
+                    />
+                    <YAxis
+                      tickFormatter={formatCurrency}
+                      tick={{ fill: 'var(--text-color)' }}
+                      width={80}
+                    />
+                    <Tooltip
+                      formatter={formatCurrency}
+                      contentStyle={{
+                        backgroundColor: 'var(--card-background)',
+                        border: '1px solid var(--border-color)',
+                        color: 'var(--text-color)'
+                      }}
+                      labelStyle={{ color: 'var(--text-color)' }}
+                    />
+                    <Legend
+                      formatter={(value) => <span style={{ color: 'var(--text-color)' }}>Total por Banco</span>}
+                    />
+                    <Bar dataKey="total" fill="var(--primary-color)">
+                      {data.expenses_by_bank.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+    );
+  };
+
+  const renderBudgetChart = () => {
+    if (!data?.budget_info) return null;
+
+    return (
+      <div className={styles.budgetInfoContainer}>
+        <h3>Informações do Orçamento</h3>
+        <div className={styles.budgetStats}>
+          <div className={styles.budgetStat}>
+            <span>Orçamento Total:</span>
+            <strong>{formatCurrency(data.budget_info.total_budget)}</strong>
+          </div>
+          <div className={styles.budgetStat}>
+            <span>Gasto até agora:</span>
+            <strong className={data.budget_info.percentage_spent > 100 ? styles.overBudget : ''}>
+              {formatCurrency(data.budget_info.total_spent)}
+            </strong>
+          </div>
+          <div className={styles.budgetStat}>
+            <span>Restante:</span>
+            <strong className={data.budget_info.remaining_budget < 0 ? styles.overBudget : ''}>
+              {formatCurrency(data.budget_info.total_budget - data.budget_info.total_spent)}
+            </strong>
+          </div>
+          {data.budget_info.remaining_days > 0 && (
+            <div className={styles.budgetStat}>
+              <span>Sugestão de gasto diário:</span>
+              <strong className={data.budget_info.suggested_daily_spend < 0 ? styles.overBudget : ''}>
+                {formatCurrency(data.budget_info.suggested_daily_spend)}
+                <div className={styles.dailySpendingInfo}>
+                  {data.budget_info.suggested_daily_spend < 0
+                    ? 'Orçamento já estourado para este mês'
+                    : 'por dia até o final do mês para manter-se dentro do orçamento'}
+                </div>
+              </strong>
+            </div>
+          )}
+        </div>
+        <div className={styles.budgetProgressBar}>
+          <div
+            className={`${styles.budgetProgress} ${data.budget_info.percentage_spent > 90
+              ? styles.dangerProgress
+              : data.budget_info.percentage_spent > 60
+                ? styles.warningProgress
+                : ''
+              }`}
+            style={{ width: `${Math.min(data.budget_info.percentage_spent, 100)}%` }}
+          />
+          <span className={data.budget_info.percentage_spent > 100 ? styles.overBudget : ''}>
+            {data.budget_info.percentage_spent.toFixed(1)}% utilizado
+            {data.budget_info.percentage_spent > 100 && ' (Orçamento Estourado)'}
+          </span>
+        </div>
+      </div>
+    );
+  };
 
   if (loading) return <div className={styles.loading}>Carregando...</div>;
   if (error) return <div className={styles.error}>{error}</div>;
@@ -633,123 +964,7 @@ const Dashboard = () => {
           </div>
         </div>
       ) : (
-        <div>
-          <div className={styles.filtersContainer}>
-            <div className={styles.filterGroup}>
-              <div
-                className={`${styles.modernSelect} ${openFilter === 'months' ? styles.active : ''}`}
-                onClick={() => handleFilterClick('months')}
-              >
-                <div className={styles.modernSelectHeader}>
-                  <span>{formatSelectedMonths()}</span>
-                  <span className={`material-icons ${styles.arrow}`}>
-                    {openFilter === 'months' ? 'expand_less' : 'expand_more'}
-                  </span>
-                </div>
-                {openFilter === 'months' && (
-                  <div className={styles.modernSelectDropdown} onClick={e => e.stopPropagation()}>
-                    <label
-                      key="all-months"
-                      className={styles.modernCheckboxLabel}
-                      onClick={handleCheckboxClick}
-                    >
-                      <div className={styles.modernCheckbox}>
-                        <input
-                          type="checkbox"
-                          checked={filters.months.length === months.length}
-                          onChange={() => handleFilterChange('months', 'all')}
-                          className={styles.hiddenCheckbox}
-                        />
-                        <div className={styles.customCheckbox}>
-                          <span className="material-icons">check</span>
-                        </div>
-                      </div>
-                      <span><strong>Todos os Meses</strong></span>
-                    </label>
-                    <div className={styles.divider}></div>
-                    {months.map(month => (
-                      <label
-                        key={month.value}
-                        className={styles.modernCheckboxLabel}
-                        onClick={handleCheckboxClick}
-                      >
-                        <div className={styles.modernCheckbox}>
-                          <input
-                            type="checkbox"
-                            checked={filters.months.includes(month.value)}
-                            onChange={() => handleFilterChange('months', month.value)}
-                            className={styles.hiddenCheckbox}
-                          />
-                          <div className={styles.customCheckbox}>
-                            <span className="material-icons">check</span>
-                          </div>
-                        </div>
-                        <span>{month.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className={styles.filterGroup}>
-              <div
-                className={`${styles.modernSelect} ${openFilter === 'years' ? styles.active : ''}`}
-                onClick={() => handleFilterClick('years')}
-              >
-                <div className={styles.modernSelectHeader}>
-                  <span>{formatSelectedYears()}</span>
-                  <span className={`material-icons ${styles.arrow}`}>
-                    {openFilter === 'years' ? 'expand_less' : 'expand_more'}
-                  </span>
-                </div>
-                {openFilter === 'years' && (
-                  <div className={styles.modernSelectDropdown} onClick={e => e.stopPropagation()}>
-                    <label
-                      key="all-years"
-                      className={styles.modernCheckboxLabel}
-                      onClick={handleCheckboxClick}
-                    >
-                      <div className={styles.modernCheckbox}>
-                        <input
-                          type="checkbox"
-                          checked={filters.years.length === years.length}
-                          onChange={() => handleFilterChange('years', 'all')}
-                          className={styles.hiddenCheckbox}
-                        />
-                        <div className={styles.customCheckbox}>
-                          <span className="material-icons">check</span>
-                        </div>
-                      </div>
-                      <span><strong>Todos os Anos</strong></span>
-                    </label>
-                    <div className={styles.divider}></div>
-                    {years.map(year => (
-                      <label
-                        key={year.value}
-                        className={styles.modernCheckboxLabel}
-                        onClick={handleCheckboxClick}
-                      >
-                        <div className={styles.modernCheckbox}>
-                          <input
-                            type="checkbox"
-                            checked={filters.years.includes(year.value)}
-                            onChange={() => handleFilterChange('years', year.value)}
-                            className={styles.hiddenCheckbox}
-                          />
-                          <div className={styles.customCheckbox}>
-                            <span className="material-icons">check</span>
-                          </div>
-                        </div>
-                        <span>{year.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
+        <>
           {data.budget_info && filters.month !== 'all' && filters.year !== 'all' && (
             <div className={styles.budgetInfoContainer}>
               <h3>Informações do Orçamento</h3>
@@ -802,276 +1017,13 @@ const Dashboard = () => {
             </div>
           )}
 
-          {data.expenses_by_category && data.expenses_by_category.length > 0 && (
-            <>
-              <div className={styles.chartsGrid}>
-                {renderChart('income-vs-expenses', 'Gastos vs. Renda',
-                  <PieChart margin={{ top: 10, right: 30, left: 30, bottom: 20 }}>
-                    <Pie
-                      data={[
-                        {
-                          name: 'Disponível',
-                          value: Math.max(0, data.budget_info.total_budget - data.budget_info.total_spent)
-                        },
-                        {
-                          name: 'Total Gasto',
-                          value: data.budget_info.total_spent
-                        }
-                      ]}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      startAngle={90}
-                      endAngle={-270}
-                      label={({ name, percent }) =>
-                        `${name} (${(percent * 100).toFixed(0)}%)`
-                      }
-                    >
-                      <Cell fill="var(--primary-color)" />
-                      <Cell fill="var(--error-color)" />
-                    </Pie>
-                    <Tooltip
-                      formatter={formatCurrency}
-                      contentStyle={{
-                        backgroundColor: 'var(--card-background)',
-                        border: '1px solid var(--border-color)',
-                        color: 'var(--text-color)'
-                      }}
-                      labelStyle={{ color: 'var(--text-color)' }}
-                    />
-                    <Legend
-                      formatter={(value) => <span style={{ color: 'var(--text-color)' }}>{value}</span>}
-                    />
-                  </PieChart>
-                )}
-
-                {renderChart('categories', 'Gastos por Categoria',
-                  <PieChart margin={{ top: 10, right: 30, left: 30, bottom: 20 }}>
-                    <Pie
-                      data={data.expenses_by_category}
-                      dataKey="total"
-                      nameKey="category_name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      label={({ category_name, percent }) =>
-                        `${category_name} (${(percent * 100).toFixed(0)}%)`
-                      }
-                    >
-                      {data.expenses_by_category.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={formatCurrency}
-                      contentStyle={{
-                        backgroundColor: 'var(--card-background)',
-                        border: '1px solid var(--border-color)',
-                        color: 'var(--text-color)'
-                      }}
-                      labelStyle={{ color: 'var(--text-color)' }}
-                    />
-                    <Legend
-                      formatter={(value) => <span style={{ color: 'var(--text-color)' }}>{value}</span>}
-                    />
-                  </PieChart>
-                )}
-              </div>
-
-              <div className={styles.chartsGrid}>
-                {renderChart('timeline', 'Gastos ao Longo do Tempo',
-                  <LineChart
-                    data={(() => {
-                      // Verifica se tem mais de um ano selecionado
-                      const hasMultipleYears = filters.years.length > 1;
-                      // Verifica se tem mais de 30 dias de dados
-                      const hasMoreThan30Days = data.expenses_by_date.length > 30;
-
-                      if (hasMultipleYears) {
-                        // Agrupa por ano
-                        const yearlyData = data.expenses_by_date.reduce((acc, curr) => {
-                          const year = new Date(curr.date).getFullYear();
-                          const existingEntry = acc.find(item => item.date === year);
-
-                          if (existingEntry) {
-                            existingEntry.total += curr.total;
-                          } else {
-                            acc.push({ date: year, total: curr.total });
-                          }
-                          return acc;
-                        }, []);
-                        return yearlyData;
-                      } else if (hasMoreThan30Days) {
-                        // Agrupa por mês
-                        const monthlyData = data.expenses_by_date.reduce((acc, curr) => {
-                          const date = new Date(curr.date);
-                          const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-                          const existingEntry = acc.find(item => item.date === monthYear);
-
-                          if (existingEntry) {
-                            existingEntry.total += curr.total;
-                          } else {
-                            acc.push({ date: monthYear, total: curr.total });
-                          }
-                          return acc;
-                        }, []);
-                        return monthlyData;
-                      }
-
-                      return data.expenses_by_date;
-                    })()}
-                    margin={{ top: 10, right: 30, left: 80, bottom: 50 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
-                    <XAxis
-                      dataKey="date"
-                      tick={{ fill: 'var(--text-color)' }}
-                      tickFormatter={(value) => {
-                        // Se o valor já é um ano, retorna ele direto
-                        if (Number.isInteger(value)) return value;
-
-                        const date = new Date(value);
-
-                        // Se tem mais de um ano, mostra só o ano
-                        if (filters.years.length > 1) {
-                          return date.getFullYear();
-                        }
-
-                        // Se tem mais de 30 dias, mostra mês/ano
-                        if (data.expenses_by_date.length > 30) {
-                          const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-                            'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-                          return `${months[date.getMonth()]} ${date.getFullYear()}`;
-                        }
-
-                        // Caso contrário, mostra a data completa
-                        return formatDate(value);
-                      }}
-                      angle={-45}
-                      textAnchor="end"
-                      height={100}
-                      interval={0}
-                      padding={{ left: 20, right: 20 }}
-                    />
-                    <YAxis
-                      tickFormatter={formatCurrency}
-                      tick={{ fill: 'var(--text-color)' }}
-                      width={80}
-                    />
-                    <Tooltip
-                      formatter={formatCurrency}
-                      labelFormatter={(value) => {
-                        // Se o valor já é um ano, retorna ele direto
-                        if (Number.isInteger(value)) return `Ano: ${value}`;
-
-                        const date = new Date(value);
-
-                        // Se tem mais de um ano, mostra só o ano
-                        if (filters.years.length > 1) {
-                          return `Ano: ${date.getFullYear()}`;
-                        }
-
-                        // Se tem mais de 30 dias, mostra mês/ano
-                        if (data.expenses_by_date.length > 30) {
-                          const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-                            'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-                          return `${months[date.getMonth()]} de ${date.getFullYear()}`;
-                        }
-
-                        // Caso contrário, mostra a data completa
-                        return formatDate(value);
-                      }}
-                      contentStyle={{
-                        backgroundColor: 'var(--card-background)',
-                        border: '1px solid var(--border-color)',
-                        color: 'var(--text-color)'
-                      }}
-                      labelStyle={{ color: 'var(--text-color)' }}
-                    />
-                    <Legend
-                      formatter={(value) => <span style={{ color: 'var(--text-color)' }}>Total Gasto</span>}
-                      verticalAlign="top"
-                      height={36}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="total"
-                      stroke="var(--primary-color)"
-                      strokeWidth={2}
-                      dot={{ fill: 'var(--primary-color)', r: 4 }}
-                      activeDot={{ r: 6, fill: 'var(--primary-color)' }}
-                    />
-                  </LineChart>
-                )}
-
-                {data.incomes_by_category && data.incomes_by_category.length > 0 && renderChart('income-categories', 'Ganhos por Categoria',
-                  <PieChart margin={{ top: 10, right: 30, left: 30, bottom: 20 }}>
-                    <Pie
-                      data={data.incomes_by_category}
-                      dataKey="total"
-                      nameKey="category_name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      label={({ category_name, percent }) =>
-                        `${category_name} (${(percent * 100).toFixed(0)}%)`
-                      }
-                    >
-                      {data.incomes_by_category.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={formatCurrency}
-                      contentStyle={{
-                        backgroundColor: 'var(--card-background)',
-                        border: '1px solid var(--border-color)',
-                        color: 'var(--text-color)'
-                      }}
-                      labelStyle={{ color: 'var(--text-color)' }}
-                    />
-                    <Legend
-                      formatter={(value) => <span style={{ color: 'var(--text-color)' }}>{value}</span>}
-                    />
-                  </PieChart>
-                )}
-              </div>
-
-              <div className={styles.chartsGrid}>
-                {renderChart('banks', 'Gastos por Banco',
-                  <BarChart data={data.expenses_by_bank} margin={{ top: 10, right: 30, left: 80, bottom: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
-                    <XAxis
-                      dataKey="bank_name"
-                      tick={{ fill: 'var(--text-color)' }}
-                    />
-                    <YAxis
-                      tickFormatter={formatCurrency}
-                      tick={{ fill: 'var(--text-color)' }}
-                      width={80}
-                    />
-                    <Tooltip
-                      formatter={formatCurrency}
-                      contentStyle={{
-                        backgroundColor: 'var(--card-background)',
-                        border: '1px solid var(--border-color)',
-                        color: 'var(--text-color)'
-                      }}
-                      labelStyle={{ color: 'var(--text-color)' }}
-                    />
-                    <Legend
-                      formatter={(value) => <span style={{ color: 'var(--text-color)' }}>Total por Banco</span>}
-                    />
-                    <Bar dataKey="total" fill="var(--primary-color)">
-                      {data.expenses_by_bank.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                )}
-
+          <div className={styles.chartsGrid}>
+            {renderFinancialGoalChart()}
+            {renderIncomeVsExpensesChart()}
+            {renderCategoriesChart()}
+            {renderTimelineChart()}
+            {renderIncomeCategoriesChart()}
+            {renderBanksChart()}
               </div>
 
               <div className={styles.chartsGrid}>
@@ -1087,8 +1039,6 @@ const Dashboard = () => {
                 </div>
               </div>
             </>
-          )}
-        </div>
       )}
     </div>
   );

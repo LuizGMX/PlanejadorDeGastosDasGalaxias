@@ -84,7 +84,7 @@ const Income = () => {
         }
         
         if (!response.ok) {
-          throw new Error('Erro ao carregar receitas');
+          throw new Error('Erro ao carregar ganhos');
         }
         
         const data = await response.json();
@@ -93,7 +93,7 @@ const Income = () => {
         setSelectedIncomes([]);
         setMetadata(data.metadata || { filters: { categories: [], recurring: [] } });
 
-        // Define a mensagem quando não há receitas
+        // Define a mensagem quando não há ganhos
         if (!incomesData || incomesData.length === 0) {
           // Verifica se há filtros ativos
           const hasActiveFilters = filters.months.length !== 1 || 
@@ -103,18 +103,18 @@ const Income = () => {
                                  filters.is_recurring !== '';
 
           setNoIncomesMessage(hasActiveFilters ? {
-            message: 'Nenhuma receita encontrada para os filtros selecionados.',
+            message: 'Nenhuma ganho encontrada para os filtros selecionados.',
             suggestion: 'Tente ajustar os filtros para ver mais resultados.'
           } : {
-            message: 'Você ainda não tem receitas cadastradas para este período.',
-            suggestion: 'Que tal começar adicionando sua primeira receita?'
+            message: 'Você ainda não tem ganhos cadastradas para este período.',
+            suggestion: 'Que tal começar adicionando sua primeira ganho?'
           });
         } else {
           setNoIncomesMessage(null);
         }
 
       } catch (err) {
-        setError('Erro ao carregar receitas');
+        setError('Erro ao carregar ganhos');
       } finally {
         setLoading(false);
       }
@@ -219,7 +219,7 @@ const Income = () => {
         });
 
         if (!response.ok) {
-          throw new Error('Falha ao excluir receitas');
+          throw new Error('Falha ao excluir ganhos');
         }
 
         const data = await response.json();
@@ -241,7 +241,7 @@ const Income = () => {
           setDeleteSuccess(null);
         }, 3000);
 
-        // Recarrega a lista de receitas
+        // Recarrega a lista de ganhos
         await fetchIncomes();
         return;
       }
@@ -274,7 +274,7 @@ const Income = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Falha ao excluir receita');
+        throw new Error('Falha ao excluir ganho');
       }
 
       const data = await response.json();
@@ -289,7 +289,7 @@ const Income = () => {
 
       await fetchIncomes();
     } catch (err) {
-      setError('Erro ao excluir receita. Por favor, tente novamente.');
+      setError('Erro ao excluir ganho. Por favor, tente novamente.');
     } finally {
       setShowDeleteModal(false);
       setIncomeToDelete(null);
@@ -332,13 +332,13 @@ const Income = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Falha ao atualizar receita');
+        throw new Error('Falha ao atualizar ganho');
       }
 
       setEditingIncome(null);
       await fetchIncomes();
     } catch (error) {
-      setError('Erro ao atualizar receita. Por favor, tente novamente.');
+      setError('Erro ao atualizar ganho. Por favor, tente novamente.');
     }
   };
 
@@ -348,13 +348,13 @@ const Income = () => {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h1>Receitas</h1>
+        <h1>Ganhos</h1>
         <button
           className={styles.addButton}
           onClick={() => navigate('/add-income')}
         >
           
-          Adicionar Receita
+          Adicionar Ganho
         </button>
       </div>
 
@@ -587,7 +587,7 @@ const Income = () => {
             top: messagePosition.y
           }}
         >
-          Para excluir receitas recorrentes, use o botão
+          Para excluir ganhos recorrentes, use o botão
           <span className="material-icons" style={{ verticalAlign: 'middle', marginLeft: '4px' }}>delete_outline</span>
         </div>
       )}
@@ -598,7 +598,7 @@ const Income = () => {
             <h2>Confirmar Exclusão</h2>
             {incomeToDelete?.is_recurring ? (
               <>
-                <p>Como você deseja excluir esta receita recorrente?</p>
+                <p>Como você deseja excluir esta ganho recorrente?</p>
                 <div className={styles.deleteOptions}>
                   <div className={styles.deleteOption}>
                     <input
@@ -668,7 +668,7 @@ const Income = () => {
               </>
             ) : deleteOptions.type === 'bulk' ? (
               <>
-                <p>Tem certeza que deseja excluir {selectedIncomes.length} {selectedIncomes.length === 1 ? 'receita' : 'receitas'}?</p>
+                <p>Tem certeza que deseja excluir {selectedIncomes.length} {selectedIncomes.length === 1 ? 'ganho' : 'ganhos'}?</p>
                 <div className={styles.modalButtons}>
                   <button
                     onClick={() => {
@@ -690,7 +690,7 @@ const Income = () => {
               </>
             ) : (
               <>
-                <p>Tem certeza que deseja excluir esta receita?</p>
+                <p>Tem certeza que deseja excluir esta ganho?</p>
                 <div className={styles.modalButtons}>
                   <button
                     onClick={() => {

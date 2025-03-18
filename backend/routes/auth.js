@@ -102,7 +102,15 @@ router.post('/check-email', async (req, res) => {
 router.post('/send-code', async (req, res) => {
   console.log('/api/auth/send-code chamado');
   try {
-    const { email, name, netIncome, selectedBanks } = req.body;
+    const { 
+      email, 
+      name, 
+      netIncome,       
+      financialGoalName,
+      financialGoalAmount,
+      financialGoalDate
+    } = req.body;
+
     // Validação básica do email
     if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
       return res.status(400).json({ message: 'E-mail inválido' });
@@ -123,15 +131,19 @@ router.post('/send-code', async (req, res) => {
         email, 
         name: name || '', 
         net_income: netIncome,
-        is_active: true
+        is_active: true,
+        financial_goal_name: financialGoalName,
+        financial_goal_amount: financialGoalAmount,
+        financial_goal_date: financialGoalDate
       });
-
-    
     } else {
-      // Para usuários existentes, atualiza o nome se fornecido
-      if (name) {
-        await user.update({ name });
-      }
+      // Para usuários existentes, atualiza o nome e os dados do objetivo se fornecidos
+      const updateData = { name };
+      if (financialGoalName) updateData.financial_goal_name = financialGoalName;
+      if (financialGoalAmount) updateData.financial_goal_amount = financialGoalAmount;
+      if (financialGoalDate) updateData.financial_goal_date = financialGoalDate;
+      
+      await user.update(updateData);
     }
 
     // Gera o código de verificação
@@ -174,7 +186,18 @@ router.post('/verify-code', async (req, res) => {
     const token = generateJWT(user.id, user.email);
 
     await VerificationCode.destroy({ where: { email } });
-    return res.json({ token });
+    return res.json({ 
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        net_income: user.net_income,
+        financial_goal_name: user.financial_goal_name,
+        financial_goal_amount: user.financial_goal_amount,
+        financial_goal_date: user.financial_goal_date
+      }
+    });
   } catch (error) {
     console.error('Erro ao verificar código:', error);
     return res.status(500).json({ message: 'Erro interno ao verificar o código' });
@@ -219,11 +242,36 @@ router.get('/me', authenticate, async (req, res) => {
 router.put('/me', authenticate, async (req, res) => {
   console.log('/api/auth/me chamado');
   try {
-    await req.user.update(req.body);
-    return res.json({ message: 'Perfil atualizado com sucesso' });
+    const {
+      name,
+      email,
+      net_income,
+      financial_goal_name,
+      financial_goal_amount,
+      financial_goal_date
+    } = req.body;
+
+    await req.user.update({
+      name,
+      email,
+      net_income,
+      financial_goal_name,
+      financial_goal_amount,
+      financial_goal_date
+    });
+
+    res.json({
+      id: req.user.id,
+      name: req.user.name,
+      email: req.user.email,
+      net_income: req.user.net_income,
+      financial_goal_name: req.user.financial_goal_name,
+      financial_goal_amount: req.user.financial_goal_amount,
+      financial_goal_date: req.user.financial_goal_date
+    });
   } catch (error) {
-    console.error('Erro ao atualizar perfil:', error);
-    return res.status(500).json({ message: 'Erro ao atualizar perfil' });
+    console.error('Erro ao atualizar usuário:', error);
+    res.status(500).json({ message: 'Erro ao atualizar usuário' });
   }
 });
 

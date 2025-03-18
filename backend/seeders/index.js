@@ -164,13 +164,13 @@ const seedBanks = async () => {
 
 const seedIncomeCategories = async () => {
   try {
-    // Verifica se já existem categorias de receita
+    // Verifica se já existem categorias de ganho
     const existingCategories = await Category.findAll({
       where: { type: 'income' }
     });
 
     if (existingCategories.length === 0) {
-      // Cria as categorias de receita
+      // Cria as categorias de ganho
       for (const category of incomeCategories) {
         const createdCategory = await Category.create({
           category_name: category.category_name,
@@ -187,12 +187,12 @@ const seedIncomeCategories = async () => {
           )
         );
       }
-      console.log('Categorias e subcategorias de receita criadas com sucesso!');
+      console.log('Categorias e subcategorias de ganho criadas com sucesso!');
     } else {
-      console.log('Categorias de receita já existem no banco de dados.');
+      console.log('Categorias de ganho já existem no banco de dados.');
     }
   } catch (error) {
-    console.error('Erro ao criar categorias de receita:', error);
+    console.error('Erro ao criar categorias de ganho:', error);
     throw error;
   }
 };
@@ -212,7 +212,7 @@ const seedDatabase = async () => {
     // Executa o seed de subcategorias de despesa
     await seedSubCategories();
 
-    // Executa o seed de categorias e subcategorias de receita
+    // Executa o seed de categorias e subcategorias de ganho
     await seedIncomeCategories();
 
     // Executa o seed de bancos

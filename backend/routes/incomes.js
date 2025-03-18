@@ -108,7 +108,7 @@ router.get('/', authenticate, async (req, res) => {
           recurring_group_id: income.recurring_group_id,
           badge: {
             text: 'Recorrente',
-            tooltip: 'Esta receita faz parte de um grupo de ganhos recorrentes'
+            tooltip: 'Esta ganho faz parte de um grupo de ganhos recorrentes'
           }
         } : null
       };
@@ -143,7 +143,7 @@ router.get('/', authenticate, async (req, res) => {
   }
 });
 
-// Adicionar nova receita
+// Adicionar nova ganho
 router.post('/', authenticate, async (req, res) => {
   const t = await Income.sequelize.transaction();
 
@@ -214,9 +214,9 @@ router.post('/', authenticate, async (req, res) => {
         createdIncomes.push(income);
         currentDate.setMonth(currentDate.getMonth() + 1);
       }
-      createdIncome = createdIncomes[0]; // Pega a primeira receita criada
+      createdIncome = createdIncomes[0]; // Pega a primeira ganho criada
     } else {
-      // Criar receita única
+      // Criar ganho única
       createdIncome = await Income.create({
         description,
         amount,
@@ -231,7 +231,7 @@ router.post('/', authenticate, async (req, res) => {
 
     await t.commit();
 
-    // Busca a receita criada com seus relacionamentos
+    // Busca a ganho criada com seus relacionamentos
     const incomeWithRelations = await Income.findOne({
       where: { id: createdIncome.id },
       include: [
@@ -251,7 +251,7 @@ router.post('/', authenticate, async (req, res) => {
   }
 });
 
-// Atualizar receita
+// Atualizar ganho
 router.put('/:id', async (req, res) => {
   const t = await Income.sequelize.transaction();
 
@@ -307,7 +307,7 @@ router.put('/:id', async (req, res) => {
         }
       );
     } else {
-      // Atualizar apenas a receita selecionada
+      // Atualizar apenas a ganho selecionada
       await income.update(
         {
           description,
@@ -356,7 +356,7 @@ router.delete('/bulk', authenticate, async (req, res) => {
     await transaction.commit();
     console.log(`${deletedCount} ganhos deletadas com sucesso`);
     res.json({ 
-      message: `${deletedCount} receita(s) deletada(s) com sucesso`,
+      message: `${deletedCount} ganho(s) deletada(s) com sucesso`,
       count: deletedCount
     });
 
@@ -370,7 +370,7 @@ router.delete('/bulk', authenticate, async (req, res) => {
   }
 });
 
-// Excluir receita
+// Excluir ganho
 router.delete('/:id', authenticate, async (req, res) => {
   const t = await Income.sequelize.transaction();
 
@@ -422,11 +422,11 @@ router.delete('/:id', authenticate, async (req, res) => {
           transaction: t
         });
       } else {
-        // Excluir apenas a receita selecionada
+        // Excluir apenas a ganho selecionada
         await income.destroy({ transaction: t });
       }
     } else {
-      // Se não for recorrente, exclui apenas a receita selecionada
+      // Se não for recorrente, exclui apenas a ganho selecionada
       await income.destroy({ transaction: t });
     }
 
@@ -441,7 +441,7 @@ router.delete('/:id', authenticate, async (req, res) => {
   }
 });
 
-// Listar categorias de receita
+// Listar categorias de ganho
 router.get('/categories', authenticate, async (req, res) => {
   try {
     const categories = await Category.findAll({
@@ -463,7 +463,7 @@ router.get('/categories', authenticate, async (req, res) => {
   }
 });
 
-// Listar subcategorias de uma categoria de receita
+// Listar subcategorias de uma categoria de ganho
 router.get('/categories/:categoryId/subcategories', authenticate, async (req, res) => {
   try {
     const category = await Category.findOne({
