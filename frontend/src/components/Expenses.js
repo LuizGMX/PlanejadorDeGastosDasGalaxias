@@ -833,7 +833,7 @@ const Expenses = () => {
               <tbody>
                 {expenses.map(expense => (
                   <tr key={expense.id}>
-                    <td>
+                    <td data-label="Selecionar">
                       <input
                         type="checkbox"
                         checked={selectedExpenses.includes(expense.id)}
@@ -841,12 +841,12 @@ const Expenses = () => {
                         className={expense.has_installments ? styles.installmentCheckbox : ''}
                       />
                     </td>
-                    <td>{formatDate(expense.expense_date)}</td>
-                    <td>{expense.description}</td>
-                    <td>{expense.Category?.category_name}</td>
-                    <td>{expense.SubCategory?.subcategory_name}</td>
-                    <td>{formatCurrency(expense.amount)}</td>
-                    <td>
+                    <td data-label="Data">{formatDate(expense.expense_date)}</td>
+                    <td data-label="Descrição">{expense.description}</td>
+                    <td data-label="Categoria">{expense.Category?.category_name}</td>
+                    <td data-label="Subcategoria">{expense.SubCategory?.subcategory_name}</td>
+                    <td data-label="Valor">{formatCurrency(expense.amount)}</td>
+                    <td data-label="Método">
                       {expense.payment_method === 'card' ? (
                         <span className="material-icons">credit_card</span>
                       ) : (
@@ -861,25 +861,29 @@ const Expenses = () => {
                         </span>
                       )}
                     </td>
-                    <td>
+                    <td data-label="Parcelas">
                       {expense.has_installments 
                         ? `${expense.current_installment}/${expense.total_installments}`
                         : '-'
                       }
                     </td>
-                    <td>
-                      <button
-                        className={styles.editButton}
-                        onClick={() => handleEditClick(expense)}
-                      >
-                        <span className="material-icons">edit</span>
-                      </button>
-                      <button
-                        className={styles.deleteButton}
-                        onClick={() => handleDeleteClick(expense)}
-                      >
-                        <span className="material-icons">delete_outline</span>
-                      </button>
+                    <td data-label="Ações">
+                      <div className={styles.actionButtons}>
+                        <button
+                          onClick={() => handleEditClick(expense)}
+                          className={styles.editButton}
+                          title="Editar"
+                        >
+                          <span className="material-icons">edit</span>
+                        </button>
+                        <button
+                          onClick={() => handleDeleteClick(expense)}
+                          className={styles.deleteButton}
+                          title="Excluir"
+                        >
+                          <span className="material-icons">delete</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

@@ -14,6 +14,12 @@
   --gradient-end: #80FFB9;
 }
 
+.logo {  
+  display: none;
+}
+
+
+
 .title {
   color: var(--primary-color) !important;
 }
@@ -646,6 +652,20 @@
 
 /* Ajustes responsivos para o select moderno */
 @media (max-width: 768px) {
+
+  .logo {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;    
+    img {
+      width: 100%;
+      height: 100%;
+    }
+  }
+
   .modernSelect {
     min-width: 100%;
   }

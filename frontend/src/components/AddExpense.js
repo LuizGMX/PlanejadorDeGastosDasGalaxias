@@ -304,11 +304,11 @@ const AddExpense = () => {
   };
 
   return (
+  
+
     <div className={styles.container}>
+      
       <div className={`${styles.card} ${styles.fadeIn}`}>
-
-
-
         <h1 className={styles.title}><BsPlusCircle size={24} className={styles.icon} /> Adicionar Despesa</h1>
 
         {error && <p className={styles.error}>{error}</p>}

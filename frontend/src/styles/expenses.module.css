@@ -300,25 +300,27 @@
 .table {
   width: 100%;
   border-collapse: collapse;
+  margin-top: 1rem;
   background-color: var(--card-background);
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .table th,
 .table td {
-  padding: 12px;
+  padding: 1rem;
   text-align: left;
   border-bottom: 1px solid var(--border-color);
-  vertical-align: middle;
 }
 
 .table th {
-  background-color: var(--input-background);
+  background-color: var(--card-background);
   font-weight: 600;
   color: var(--text-color);
 }
 
 .table tr:hover {
-  background-color: var(--input-background);
+  background-color: var(--hover-color);
 }
 
 .noData {
@@ -565,6 +567,79 @@
     flex-direction: column;
   }
   .modalButtons button {
+    width: 100%;
+  }
+  .table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 0;
+  }
+
+  .table thead {
+    display: none;
+  }
+
+  .table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .table tr {
+    display: block;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.5rem;
+    background-color: var(--card-background);
+  }
+
+  .table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    border: none;
+    text-align: right;
+  }
+
+  .table td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    margin-right: 1rem;
+    text-align: left;
+  }
+
+  .table td:last-child {
+    border-bottom: none;
+  }
+
+  .actionButtons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+
+  .searchRow {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .searchField {
+    width: 100%;
+  }
+
+  .recurringButton {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .filterGroup {
+    width: 100%;
+  }
+
+  .filterButton {
     width: 100%;
   }
 }

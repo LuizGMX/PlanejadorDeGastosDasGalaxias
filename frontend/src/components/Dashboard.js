@@ -17,6 +17,7 @@ import {
   Cell  
 } from 'recharts';
 import styles from '../styles/dashboard.module.css';
+import logo from '../assets/logo.svg';
   
 const motivationalPhrases = [
   "Cuide do seu dinheiro hoje para não precisar se preocupar amanhã.",
@@ -932,7 +933,13 @@ const Dashboard = () => {
   if (!data) return <div>Nenhum dado encontrado</div>;
 
   return (
+    
     <div className={styles.dashboardContainer}>
+
+<div className={styles.logo}>
+      <img src={logo} alt="Logo do Planejador de Gastos das Galáxias" className={styles.logo} />
+  </div>
+      
       {getGreeting(auth.user?.name || 'Usuário')}
       <div className={styles.header}>
         <h1 className={styles.title}>Dashboard</h1>

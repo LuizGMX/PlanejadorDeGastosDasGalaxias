@@ -515,7 +515,7 @@ const Income = () => {
           <tbody>
             {incomes.map(income => (
               <tr key={income.id}>
-                <td>
+                <td data-label="Selecionar">
                   <input
                     type="checkbox"
                     checked={selectedIncomes.includes(income.id)}
@@ -523,10 +523,10 @@ const Income = () => {
                     className={income.is_recurring ? styles.recurringCheckbox : ''}
                   />
                 </td>
-                <td>{income.description}</td>
-                <td>{formatCurrency(income.amount)}</td>
-                <td>{formatDate(income.date)}</td>
-                <td>
+                <td data-label="Descrição">{income.description}</td>
+                <td data-label="Valor">{formatCurrency(income.amount)}</td>
+                <td data-label="Data">{formatDate(income.date)}</td>
+                <td data-label="Categoria">
                   {income.Category?.category_name || '-'}
                   {income.recurring_info && (
                     <span className="material-icons" title={income.recurring_info.badge.tooltip}>
@@ -534,9 +534,9 @@ const Income = () => {
                     </span>
                   )}
                 </td>
-                <td>{income.SubCategory?.subcategory_name || '-'}</td>
-                <td>{income.Bank?.name || '-'}</td>
-                <td>
+                <td data-label="Subcategoria">{income.SubCategory?.subcategory_name || '-'}</td>
+                <td data-label="Banco">{income.Bank?.name || '-'}</td>
+                <td data-label="Ações">
                   <div className={styles.actionButtons}>
                     <button
                       onClick={() => setEditingIncome(income)}
@@ -546,10 +546,7 @@ const Income = () => {
                       <span className="material-icons">edit</span>
                     </button>
                     <button
-                      onClick={() => {
-                        setIncomeToDelete(income);
-                        setShowDeleteModal(true);
-                      }}
+                      onClick={() => handleDeleteClick(income)}
                       className={styles.deleteButton}
                       title="Excluir"
                     >
