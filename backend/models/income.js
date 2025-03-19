@@ -75,6 +75,36 @@ export default (sequelize) => {
     recurring_group_id: {
       type: DataTypes.UUID,
       allowNull: true
+    },
+    category_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: 'categories',
+        key: 'id'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'NO ACTION'
+    },
+    subcategory_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'subcategories',
+        key: 'id'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'NO ACTION'
+    },
+    bank_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: 'banks',
+        key: 'id'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'NO ACTION'
     }
   }, {
     timestamps: true,

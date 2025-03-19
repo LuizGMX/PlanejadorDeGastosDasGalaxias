@@ -320,7 +320,7 @@ const Income = () => {
   };
 
   const handleEditClick = (income) => {
-    if (income.is_recurring || income.has_installments) {
+    if (income.is_recurring) {
       navigate('/edit-recurring-incomes');
     } else {
       setEditingIncome(income);

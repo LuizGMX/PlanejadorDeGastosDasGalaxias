@@ -38,12 +38,14 @@ const EditRecurringExpenses = () => {
       // Verifica se data.expenses existe, senão usa o próprio data
       const expensesData = data.expenses || data;
       
-      // Filtra apenas despesas que são recorrentes
-      const filteredExpenses = expensesData.filter(expense => expense.is_recurring);
+      // Filtra despesas recorrentes e parceladas
+      const filteredExpenses = expensesData.filter(expense => 
+        expense.is_recurring || expense.has_installments
+      );
       
-      // Agrupa as despesas por recurring_group_id
+      // Agrupa as despesas por recurring_group_id ou installment_group_id
       const groupedExpenses = filteredExpenses.reduce((acc, expense) => {
-        const groupId = expense.recurring_group_id;
+        const groupId = expense.recurring_group_id || expense.installment_group_id;
         if (!acc[groupId]) {
           acc[groupId] = [];
         }
@@ -169,13 +171,13 @@ const EditRecurringExpenses = () => {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h1>Editar Despesas Recorrentes</h1>
-        <button 
+        <h1 style={{color: '#00FF85'}}>Editar Despesas Recorrentes</h1>
+        {/* <button 
           onClick={() => navigate('/expenses')}
           className={styles.backButton}
         >
           Voltar para Minhas Despesas
-        </button>
+        </button> */}
       </div>
 
       {error && <p className={styles.error}>{error}</p>}
@@ -188,6 +190,7 @@ const EditRecurringExpenses = () => {
               <th>Descrição</th>
               <th>Valor</th>
               <th>Data</th>
+              <th>Tipo</th>
               <th>Ações</th>
             </tr>
           </thead>
@@ -197,19 +200,20 @@ const EditRecurringExpenses = () => {
                 <td>{expense.description}</td>
                 <td>R$ {expense.amount.toFixed(2).replace('.', ',')}</td>
                 <td>{new Date(expense.expense_date).toLocaleDateString()}</td>
+                <td>{expense.is_recurring ? 'Recorrente' : 'Parcelada'}</td>
                 <td>
                   <div className={styles.actionButtons}>
                     <button
                       onClick={() => handleEditClick(expense)}
                       className={styles.editButton}
                     >
-                      Editar
+                      <span className="material-icons">edit</span>
                     </button>
                     <button
                       onClick={() => handleDeleteClick(expense)}
                       className={styles.deleteButton}
                     >
-                      Excluir
+                      <span className="material-icons">delete</span>
                     </button>
                   </div>
                 </td>

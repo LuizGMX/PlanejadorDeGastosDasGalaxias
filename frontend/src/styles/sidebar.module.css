@@ -257,6 +257,10 @@
 
 /* Sidebar adapts when width is less than 768px */
 @media (max-width: 768px) {
+  body {
+    padding-bottom: 90px; /* Um pouco maior que a altura do sidebar */
+  }
+
   .logo {
     display: none;
   }
@@ -272,7 +276,7 @@
     justify-content: space-around;
     padding: 0.5rem 1rem;
     z-index: 1000;
-    background-color: var(--card-background);
+    background-color: var(--card-background);    
   }
 
   .menu {
@@ -291,12 +295,12 @@
     font-size: 0.9rem;
     text-align: center;
     position: relative;
-    width: 60px;
+    width: 60px;    
   }
 
   .submenu {
     position: absolute;
-    top: -120px;
+    top: -180px;
     left: 50%;
     transform: translateX(-50%);
     background-color: var(--card-background);
@@ -307,7 +311,7 @@
     z-index: 5;
     min-width: 150px;
     display: none;
-    height: 100px;
+    height: fit-content;
   }
 
   .submenu.active {

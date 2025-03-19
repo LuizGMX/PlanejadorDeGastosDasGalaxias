@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../App';
 import styles from '../styles/shared.module.css';
 import CurrencyInput from 'react-currency-input-field';
+import { BsDoorOpen } from 'react-icons/bs';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -396,21 +397,13 @@ const Profile = () => {
       </div>
 
       <div className={styles.buttonGroup}>
-        <button
-          type="button"
-          onClick={() => navigate('/dashboard')}
-          className={`${styles.button} ${styles.secondary}`}
-        >
-          Voltar
-        </button>
-        <button
-          type="button"
-          onClick={handleLogout}
-          className={`${styles.button} ${styles.danger}`}
-        >
+        <button className={styles.logoutButton} onClick={handleLogout}>
+          <span className={styles.icon}><BsDoorOpen size={20} /></span>
           Sair
         </button>
       </div>
+
+    
     </div>
   );
 };

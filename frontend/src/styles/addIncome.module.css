@@ -259,3 +259,135 @@
   z-index: 1000;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
+
+.optionHeader.disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.optionHeader.disabled:hover {
+  background-color: transparent;
+}
+
+.optionHeader.disabled .checkboxWrapper input[type="checkbox"] {
+  cursor: not-allowed;
+}
+
+.optionHeader.disabled .optionLabel {
+  cursor: not-allowed;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modalHeader h3 {
+  margin: 0;
+  color: var(--text-color);
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.modalBody {
+  margin-bottom: 24px;
+}
+
+.modalBody p {
+  margin: 0 0 16px 0;
+  color: var(--text-color);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.changesList {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px 0;
+}
+
+.changesList li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  background-color: var(--input-background);
+  border-radius: 8px;
+  color: var(--text-color);
+}
+
+.changesList li .material-icons {
+  color: var(--primary-color);
+  font-size: 18px;
+}
+
+.changesList li strong {
+  color: var(--primary-color);
+}
+
+.warningBox {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  background-color: rgba(255, 193, 7, 0.1);
+  border-radius: 8px;
+  margin-top: 16px;
+}
+
+.warningBox .material-icons {
+  color: #FFC107;
+  font-size: 20px;
+}
+
+.warningBox p {
+  margin: 0;
+  color: var(--text-color);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+}
+
+.modalFooter button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.modalFooter button .material-icons {
+  font-size: 18px;
+}
+
+.fadeIn {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

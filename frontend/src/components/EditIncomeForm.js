@@ -1,13 +1,16 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../App';
-import styles from '../styles/expenses.module.css';
+import styles from '../styles/addIncome.module.css';
+import sharedStyles from '../styles/shared.module.css';
 import CurrencyInput from 'react-currency-input-field';
+import { BsPlusCircle } from 'react-icons/bs';
 
 const EditIncomeForm = ({ income, onSave, onCancel }) => {
   const { auth } = useContext(AuthContext);
   const [formData, setFormData] = useState({
     description: income.description,
     amount: income.amount,
+    date: income.date,
     category_id: income.category_id,
     subcategory_id: income.subcategory_id,
     bank_id: income.bank_id,
@@ -15,13 +18,13 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
     has_installments: income.has_installments,
     start_date: income.start_date || income.date,
     end_date: income.end_date,
-    total_installments: income.total_installments,
-    current_installment: income.current_installment
+    total_installments: income.total_installments || 2
   });
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
   const [banks, setBanks] = useState([]);
   const [error, setError] = useState('');
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -43,10 +46,29 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
       }
     };
 
-    fetchCategories();
-  }, [auth.token]);
+    const fetchSubcategories = async () => {
+      if (formData.category_id) {
+        try {
+          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/incomes/categories/${formData.category_id}/subcategories`, {
+            headers: {
+              'Authorization': `Bearer ${auth.token}`
+            }
+          });
 
-  useEffect(() => {
+          if (!response.ok) {
+            throw new Error('Falha ao carregar subcategorias');
+          }
+
+          const data = await response.json();
+          setSubcategories(data);
+        } catch (err) {
+          setError('Erro ao carregar subcategorias. Por favor, tente novamente.');
+        }
+      } else {
+        setSubcategories([]);
+      }
+    };
+
     const fetchBanks = async () => {
       try {
         const response = await fetch(`${process.env.REACT_APP_API_URL}/api/bank`, {
@@ -66,156 +88,237 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
       }
     };
 
+    fetchCategories();
+    fetchSubcategories();
     fetchBanks();
-  }, [auth.token]);
-
-  useEffect(() => {
-    if (formData.category_id) {
-      const fetchSubcategories = async () => {
-        try {
-          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/incomes/categories/${formData.category_id}/subcategories`, {
-            headers: {
-              'Authorization': `Bearer ${auth.token}`
-            }
-          });
-
-          if (!response.ok) {
-            throw new Error('Falha ao carregar subcategorias');
-          }
-
-          const data = await response.json();
-          setSubcategories(data);
-        } catch (err) {
-          setError('Erro ao carregar subcategorias. Por favor, tente novamente.');
-        }
-      };
-
-      fetchSubcategories();
-    } else {
-      setSubcategories([]);
-    }
-  }, [formData.category_id, auth.token]);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    // Formata as datas corretamente
-    const formattedData = {
-      ...income,
-      ...formData,
-      amount: parseFloat(formData.amount),
-      date: income.date
-    };
-
-    // Garante que as datas de recorrência sejam enviadas apenas se necessário
-    if (!formData.is_recurring) {
-      formattedData.start_date = null;
-      formattedData.end_date = null;
-    } else {
-      // Garante que as datas sejam objetos Date válidos
-      if (formData.start_date) {
-        const startDate = new Date(formData.start_date);
-        startDate.setHours(12, 0, 0, 0);
-        formattedData.start_date = startDate.toISOString();
-      }
-
-      if (formData.end_date) {
-        const endDate = new Date(formData.end_date);
-        endDate.setHours(12, 0, 0, 0);
-        formattedData.end_date = endDate.toISOString();
-      }
-    }
-
-    console.log('Enviando dados:', formattedData);
-    onSave(formattedData);
-  };
+  }, [auth.token, formData.category_id]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     
-    // Para campos de data, garante que o valor seja uma string ISO
-    if (type === 'date' && value) {
-      const date = new Date(value);
-      date.setHours(12); // Meio-dia para evitar problemas de timezone
-      console.log(`Convertendo data ${name}:`, {
-        input: value,
-        date: date,
-        iso: date.toISOString()
-      });
+    if (type === 'checkbox') {
       setFormData(prev => ({
         ...prev,
-        [name]: date.toISOString()
+        [name]: checked
+      }));
+      return;
+    }
+
+    if (type === 'date') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
       }));
       return;
     }
 
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: value
     }));
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmSubmit = () => {
+    try {
+      onSave({
+        ...income,
+        ...formData
+      });
+      setShowConfirmModal(false);
+    } catch (err) {
+      console.error('Erro na atualização:', err);
+      setError('Erro ao atualizar receita. Por favor, tente novamente.');
+    }
+  };
+
   return (
-    <div className={styles.modalOverlay}>
-      <div className={styles.modalContent}>
-        <h2>Editar Receita</h2>
+    <div className={styles.container}>
+      <div className={`${styles.card} ${styles.fadeIn}`}>
+        <h1 className={styles.title}>Editar Ganho</h1>
         {error && <p className={styles.error}>{error}</p>}
         
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.inputGroup}>
+            <label className={styles.label}>
+              <span className="material-icons">description</span>
+              Descrição
+            </label>
             <input
               type="text"
               name="description"
               value={formData.description}
               onChange={handleChange}
-              placeholder="Descrição"
+              className={styles.input}
               required
             />
           </div>
 
           <div className={styles.inputGroup}>
-            <input
-              type="number"
+            <label className={styles.label}>
+              <span className="material-icons">attach_money</span>
+              Valor
+            </label>
+            <CurrencyInput
               name="amount"
               value={formData.amount}
-              onChange={handleChange}
-              placeholder="Valor"
-              step="0.01"
+              onValueChange={(value) => setFormData(prev => ({ ...prev, amount: value || 0 }))}
+              prefix="R$ "
+              decimalsLimit={2}
+              decimalSeparator=","
+              groupSeparator="."
+              className={styles.input}
               required
             />
           </div>
 
-          {formData.is_recurring && (
-            <>
-              <div className={styles.inputGroup}>
-                <label>Data de Início da Recorrência</label>
-                <input
-                  type="date"
-                  name="start_date"
-                  value={formData.start_date ? formData.start_date.split('T')[0] : ''}
-                  onChange={handleChange}
-                  required
-                />
+          <div className={styles.paymentOptions}>
+            <div className={`${styles.paymentOption} ${formData.is_recurring ? styles.active : ''}`}>
+              <div className={`${styles.optionHeader} ${income.is_recurring ? styles.disabled : ''}`} onClick={() => {
+                if (!income.is_recurring) {
+                  setFormData(prev => ({
+                    ...prev,
+                    is_recurring: !prev.is_recurring,
+                    has_installments: false,
+                    date: !prev.is_recurring ? prev.start_date : prev.date,
+                    start_date: !prev.is_recurring ? new Date().toISOString().split('T')[0] : null,
+                    end_date: !prev.is_recurring ? null : prev.end_date
+                  }));
+                }
+              }}>
+                <div className={styles.checkboxWrapper}>
+                  <input
+                    type="checkbox"
+                    id="is_recurring"
+                    name="is_recurring"
+                    checked={formData.is_recurring}
+                    onChange={() => {}}
+                    className={styles.checkbox}
+                    disabled={income.is_recurring}
+                  />
+                  <span className={styles.checkmark}></span>
+                </div>
+                <label htmlFor="is_recurring" className={styles.optionLabel}>
+                  <span className="material-icons">sync</span>
+                  Receita Recorrente
+                </label>
               </div>
 
-              <div className={styles.inputGroup}>
-                <label>Data de Fim da Recorrência</label>
-                <input
-                  type="date"
-                  name="end_date"
-                  value={formData.end_date ? formData.end_date.split('T')[0] : ''}
-                  onChange={handleChange}
-                  required
-                />
+              {formData.is_recurring && (
+                <div className={styles.optionContent}>
+                  <div className={styles.inputGroup}>
+                    <label className={styles.label}>
+                      <span className="material-icons">event_repeat</span>
+                      Data de Início
+                    </label>
+                    <input
+                      type="date"
+                      name="start_date"
+                      value={formData.start_date ? formData.start_date.substring(0, 10) : ''}
+                      onChange={handleChange}
+                      className={styles.input}
+                      required
+                    />
+                  </div>
+
+                  <div className={styles.inputGroup}>
+                    <label className={styles.label}>
+                      <span className="material-icons">event_busy</span>
+                      Data de Fim
+                    </label>
+                    <input
+                      type="date"
+                      name="end_date"
+                      value={formData.end_date ? formData.end_date.substring(0, 10) : ''}
+                      onChange={handleChange}
+                      className={styles.input}
+                      required
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {!income.is_recurring && (
+              <div className={`${styles.paymentOption} ${formData.has_installments ? styles.active : ''}`}>
+                <div className={styles.optionHeader} onClick={() => {
+                  setFormData(prev => ({
+                    ...prev,
+                    has_installments: !prev.has_installments,
+                    is_recurring: false
+                  }));
+                }}>
+                  <div className={styles.checkboxWrapper}>
+                    <input
+                      type="checkbox"
+                      id="has_installments"
+                      name="has_installments"
+                      checked={formData.has_installments}
+                      onChange={() => {}}
+                      className={styles.checkbox}
+                    />
+                    <span className={styles.checkmark}></span>
+                  </div>
+                  <label htmlFor="has_installments" className={styles.optionLabel}>
+                    <span className="material-icons">calendar_month</span>
+                    Parcelado
+                  </label>
+                </div>
+
+                {formData.has_installments && (
+                  <div className={styles.optionContent}>
+                    <div className={styles.inputGroup}>
+                      <label className={styles.label}>
+                        <span className="material-icons">format_list_numbered</span>
+                        Número de Parcelas
+                      </label>
+                      <input
+                        type="number"
+                        name="total_installments"
+                        value={formData.total_installments}
+                        onChange={handleChange}
+                        min="2"
+                        max="48"
+                        className={styles.input}
+                        required
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
-            </>
+            )}
+          </div>
+
+          {!formData.is_recurring && (
+            <div className={styles.inputGroup}>
+              <label className={styles.label}>
+                <span className="material-icons">event</span>
+                Data
+              </label>
+              <input
+                type="date"
+                name="date"
+                value={formData.date ? formData.date.substring(0, 10) : ''}
+                onChange={handleChange}
+                className={styles.input}
+              />
+            </div>
           )}
 
           <div className={styles.inputGroup}>
+            <label className={styles.label}>
+              <span className="material-icons">category</span>
+              Categoria
+            </label>
             <select
               name="category_id"
               value={formData.category_id}
               onChange={handleChange}
+              className={styles.input}
               required
             >
               <option value="">Selecione uma categoria</option>
@@ -227,26 +330,38 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
             </select>
           </div>
 
-          <div className={styles.inputGroup}>
-            <select
-              name="subcategory_id"
-              value={formData.subcategory_id || ''}
-              onChange={handleChange}
-            >
-              <option value="">Selecione uma subcategoria</option>
-              {subcategories.map(subcategory => (
-                <option key={subcategory.id} value={subcategory.id}>
-                  {subcategory.subcategory_name}
-                </option>
-              ))}
-            </select>
-          </div>
+          {formData.category_id && (
+            <div className={styles.inputGroup}>
+              <label className={styles.label}>
+                <span className="material-icons">sell</span>
+                Subcategoria
+              </label>
+              <select
+                name="subcategory_id"
+                value={formData.subcategory_id || ''}
+                onChange={handleChange}
+                className={styles.input}
+              >
+                <option value="">Selecione uma subcategoria</option>
+                {subcategories.map(subcategory => (
+                  <option key={subcategory.id} value={subcategory.id}>
+                    {subcategory.subcategory_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className={styles.inputGroup}>
+            <label className={styles.label}>
+              <span className="material-icons">account_balance</span>
+              Banco/Carteira
+            </label>
             <select
               name="bank_id"
               value={formData.bank_id}
               onChange={handleChange}
+              className={styles.input}
               required
             >
               <option value="">Selecione um banco</option>
@@ -258,16 +373,43 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
             </select>
           </div>
 
-          <div className={styles.modalButtons}>
-            <button type="button" onClick={onCancel} className={styles.cancelButton}>
+          <div className={styles.buttonGroup}>
+            <button type="button" style={{backgroundColor: '#1A1B23', color: '#00FF85'}} onClick={onCancel} className={`${styles.submitButton} ${styles.secondary}`}>
               Cancelar
             </button>
-            <button type="submit" className={styles.confirmButton}>
+            <button type="submit" className={styles.submitButton}>
               Salvar
             </button>
           </div>
         </form>
       </div>
+
+      {showConfirmModal && (
+        <div className={sharedStyles.modalOverlay}>
+          <div className={sharedStyles.modalContent}>
+            <h3>Atenção!</h3>
+            <p>
+              Você está prestes a editar uma receita {formData.is_recurring ? 'recorrente' : formData.has_installments ? 'parcelada' : 'única'}.
+              Esta ação irá atualizar todas as receitas futuras deste grupo.
+              Deseja continuar?
+            </p>
+            <div className={sharedStyles.modalButtons}>
+              <button
+                onClick={() => setShowConfirmModal(false)}
+                className={sharedStyles.cancelButton}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmSubmit}
+                className={sharedStyles.confirmButton}
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

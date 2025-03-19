@@ -22,7 +22,6 @@ const EditRecurringIncomes = () => {
 
   const fetchIncomes = async () => {
     try {
-      // Busca ganhos recorrentes e parcelados
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/incomes`, {
         headers: {
           'Authorization': `Bearer ${auth.token}`
@@ -56,15 +55,14 @@ const EditRecurringIncomes = () => {
 
       // Para cada grupo, pega o ganho com a menor data
       const uniqueIncomes = Object.values(groupedIncomes)
-        .filter(group => group.length > 0) // Filtra grupos vazios
+        .filter(group => group.length > 0)
         .map(group => {
           return group.reduce((earliest, current) => {
             const earliestDate = new Date(earliest.date);
             const currentDate = new Date(current.date);
             return currentDate < earliestDate ? current : earliest;
           });
-        })
-        .filter(income => income); // Remove undefined/null
+        });
 
       console.log('Ganhos únicos:', uniqueIncomes);
       setIncomes(uniqueIncomes);
@@ -225,13 +223,14 @@ const EditRecurringIncomes = () => {
                       onClick={() => handleEditClick(income)}
                       className={styles.editButton}
                     >
-                      Editar
+                      <span className="material-icons">edit</span>
+                      
                     </button>
                     <button
                       onClick={() => handleDeleteClick(income)}
                       className={styles.deleteButton}
                     >
-                      Excluir
+                      <span className="material-icons">delete</span>
                     </button>
                   </div>
                 </td>

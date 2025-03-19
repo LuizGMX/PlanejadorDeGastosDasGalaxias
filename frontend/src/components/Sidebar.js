@@ -127,10 +127,7 @@ const Sidebar = () => {
         ))}
       </nav>
 
-      <button className={styles.logoutButton} onClick={handleLogout}>
-        <span className={styles.icon}><BsDoorOpen size={20} /></span>
-        Sair
-      </button>
+      
     </div>
   );
 };

@@ -2,8 +2,6 @@ import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../App';
 import styles from '../styles/expenses.module.css';
 import CurrencyInput from 'react-currency-input-field';
-import { BsCreditCard2Front } from 'react-icons/bs';
-import { SiPix } from 'react-icons/si';
 
 const EditExpenseForm = ({ expense, onSave, onCancel }) => {
   const { auth } = useContext(AuthContext);
@@ -16,15 +14,16 @@ const EditExpenseForm = ({ expense, onSave, onCancel }) => {
     bank_id: expense.bank_id,
     payment_method: expense.payment_method,
     is_recurring: expense.is_recurring,
+    has_installments: expense.has_installments,
     start_date: expense.start_date || expense.expense_date,
-    end_date: expense.end_date
+    end_date: expense.end_date,
+    total_installments: expense.total_installments || 2
   });
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
   const [banks, setBanks] = useState([]);
   const [error, setError] = useState('');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [pendingChanges, setPendingChanges] = useState(null);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -115,11 +114,16 @@ const EditExpenseForm = ({ expense, onSave, onCancel }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmSubmit = () => {
     try {
       onSave({
         ...expense,
         ...formData
       });
+      setShowConfirmModal(false);
     } catch (err) {
       console.error('Erro na atualização:', err);
       setError('Erro ao atualizar despesa. Por favor, tente novamente.');
@@ -158,30 +162,117 @@ const EditExpenseForm = ({ expense, onSave, onCancel }) => {
             />
           </div>
 
-          {formData.is_recurring && (
-            <>
-              <div className={styles.inputGroup}>
-                <label>Data de Início</label>
-                <input
-                  type="date"
-                  name="start_date"
-                  value={formData.start_date ? formData.start_date.split('T')[0] : ''}
-                  onChange={handleChange}
-                  required
-                />
+          <div className={styles.paymentOptions}>
+            <div className={`${styles.paymentOption} ${formData.is_recurring ? styles.active : ''}`}>
+              <div className={styles.optionHeader} onClick={() => {
+                setFormData(prev => ({
+                  ...prev,
+                  is_recurring: !prev.is_recurring,
+                  has_installments: false,
+                  expense_date: !prev.is_recurring ? prev.start_date : prev.expense_date,
+                  start_date: !prev.is_recurring ? new Date().toISOString().split('T')[0] : null,
+                  end_date: !prev.is_recurring ? null : prev.end_date
+                }));
+              }}>
+                <div className={styles.checkboxWrapper}>
+                  <input
+                    type="checkbox"
+                    id="is_recurring"
+                    name="is_recurring"
+                    checked={formData.is_recurring}
+                    onChange={() => {}}
+                    className={styles.checkbox}
+                  />
+                  <span className={styles.checkmark}></span>
+                </div>
+                <label htmlFor="is_recurring" className={styles.optionLabel}>
+                  <span className="material-icons">sync</span>
+                  Despesa Recorrente
+                </label>
               </div>
 
-              <div className={styles.inputGroup}>
-                <label>Data de Fim</label>
-                <input
-                  type="date"
-                  name="end_date"
-                  value={formData.end_date ? formData.end_date.split('T')[0] : ''}
-                  onChange={handleChange}
-                  required
-                />
+              {formData.is_recurring && (
+                <div className={styles.optionContent}>
+                  <div className={styles.inputGroup}>
+                    <label>Data de Início</label>
+                    <input
+                      type="date"
+                      name="start_date"
+                      value={formData.start_date ? formData.start_date.split('T')[0] : ''}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+
+                  <div className={styles.inputGroup}>
+                    <label>Data de Fim</label>
+                    <input
+                      type="date"
+                      name="end_date"
+                      value={formData.end_date ? formData.end_date.split('T')[0] : ''}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className={`${styles.paymentOption} ${formData.has_installments ? styles.active : ''}`}>
+              <div className={styles.optionHeader} onClick={() => {
+                setFormData(prev => ({
+                  ...prev,
+                  has_installments: !prev.has_installments,
+                  is_recurring: false
+                }));
+              }}>
+                <div className={styles.checkboxWrapper}>
+                  <input
+                    type="checkbox"
+                    id="has_installments"
+                    name="has_installments"
+                    checked={formData.has_installments}
+                    onChange={() => {}}
+                    className={styles.checkbox}
+                  />
+                  <span className={styles.checkmark}></span>
+                </div>
+                <label htmlFor="has_installments" className={styles.optionLabel}>
+                  <span className="material-icons">calendar_month</span>
+                  Parcelado
+                </label>
               </div>
-            </>
+
+              {formData.has_installments && (
+                <div className={styles.optionContent}>
+                  <div className={styles.inputGroup}>
+                    <label>Número de Parcelas</label>
+                    <input
+                      type="number"
+                      name="total_installments"
+                      value={formData.total_installments}
+                      onChange={handleChange}
+                      min="2"
+                      max="48"
+                      required
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {!formData.is_recurring && (
+            <div className={styles.inputGroup}>
+              <label>Data</label>
+              <input
+                type="date"
+                name="expense_date"
+                value={formData.expense_date ? formData.expense_date.split('T')[0] : ''}
+                onChange={handleChange}
+                required
+              />
+            </div>
           )}
 
           <div className={styles.inputGroup}>
@@ -270,25 +361,19 @@ const EditExpenseForm = ({ expense, onSave, onCancel }) => {
           <div className={styles.modalContent}>
             <h3>Atenção!</h3>
             <p>
-              Ao mudar para despesa à vista, todas as {expense.is_recurring ? 'recorrências' : 'parcelas'} serão excluídas.
+              Você está prestes a editar uma despesa {formData.is_recurring ? 'recorrente' : formData.has_installments ? 'parcelada' : 'única'}.
+              Esta ação irá atualizar todas as despesas futuras deste grupo.
               Deseja continuar?
             </p>
             <div className={styles.modalButtons}>
               <button
-                onClick={() => {
-                  setShowConfirmModal(false);
-                  setPendingChanges(null);
-                }}
+                onClick={() => setShowConfirmModal(false)}
                 className={styles.cancelButton}
               >
                 Cancelar
               </button>
               <button
-                onClick={() => {
-                  setFormData(pendingChanges);
-                  setShowConfirmModal(false);
-                  setPendingChanges(null);
-                }}
+                onClick={handleConfirmSubmit}
                 className={styles.confirmButton}
               >
                 Confirmar
