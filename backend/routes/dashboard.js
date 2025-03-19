@@ -49,14 +49,33 @@ const calculateTotals = (items) => {
 // Função auxiliar para agrupar por categoria
 const groupByCategory = (items) => {
   return items.reduce((acc, item) => {
-    const category = item.Category.category_name;
-    const existing = acc.find(i => i.category_name === category);
-    if (existing) {
-      existing.total += parseFloat(item.amount);
-    } else {
-      acc.push({ category_name: category, total: parseFloat(item.amount) });
+    try {
+      if (!item?.Category?.category_name || !item?.amount) {
+        return acc;
+      }
+
+      const category = item.Category.category_name;
+      const amount = parseFloat(item.amount);
+
+      if (!category || isNaN(amount)) {
+        return acc;
+      }
+
+      const existing = acc.find(i => i.category_name === category);
+      if (existing) {
+        existing.total += amount;
+      } else {
+        acc.push({ 
+          category_name: category,
+          total: amount 
+        });
+      }
+
+      return acc;
+    } catch (error) {
+      console.error('Erro ao processar item:', error);
+      return acc;
     }
-    return acc;
   }, []);
 };
 
@@ -139,22 +158,45 @@ router.get('/', authenticate, async (req, res) => {
       Expense.findAll({
         where: whereExpenses,
         include: [
-          { model: Category, where: { type: 'expense' } },
+          { 
+            model: Category, 
+            where: { type: 'expense' },
+            attributes: ['category_name', 'type']
+          },
           { model: SubCategory },
           { model: Bank }
         ],
-        order: [['expense_date', 'ASC']]
+        order: [['expense_date', 'ASC']],
+        logging: (sql) => {
+          console.log('Query de despesas:', sql);
+        }
       }),
       Income.findAll({
         where: whereIncomes,
         include: [
-          { model: Category, where: { type: 'income' } },
+          { 
+            model: Category, 
+            where: { type: 'income' },
+            attributes: ['category_name', 'type']
+          },
           { model: SubCategory },
           { model: Bank }
         ],
-        order: [['date', 'ASC']]
+        order: [['date', 'ASC']],
+        logging: (sql) => {
+          console.log('Query de ganhos:', sql);
+        }
       })
     ]);
+
+    console.log('Despesas encontradas:', expenses.length);
+    console.log('Ganhos encontrados:', incomes.length);
+
+    const expensesByCategory = groupByCategory(expenses);
+    const incomesByCategory = groupByCategory(incomes);
+
+    console.log('Despesas por categoria:', expensesByCategory);
+    console.log('Ganhos por categoria:', incomesByCategory);
 
     const totalIncomes = calculateTotals(incomes);
     const totalExpenses = calculateTotals(expenses);
@@ -186,8 +228,8 @@ router.get('/', authenticate, async (req, res) => {
     }
 
     const responseData = {
-      expenses_by_category: groupByCategory(expenses),
-      incomes_by_category: groupByCategory(incomes),
+      expenses_by_category: expensesByCategory,
+      incomes_by_category: incomesByCategory,
       expenses_by_date: groupByDate(expenses, 'expense_date'),
       incomes_by_date: groupByDate(incomes, 'date'),
       expenses_by_bank: groupByBank(expenses),

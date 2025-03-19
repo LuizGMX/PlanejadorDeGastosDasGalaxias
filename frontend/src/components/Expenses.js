@@ -420,7 +420,11 @@ const Expenses = () => {
   };
 
   const handleEditClick = (expense) => {
-    setEditingExpense(expense);
+    if (expense.is_recurring || expense.has_installments) {
+      navigate('/edit-recurring-expenses');
+    } else {
+      setEditingExpense(expense);
+    }
   };
 
   const handleUpdate = async (updatedExpense) => {
@@ -781,13 +785,13 @@ const Expenses = () => {
           {noExpensesMessage?.suggestion && <p>{noExpensesMessage.suggestion}</p>}
           <div className={styles.buttonGroup}>
             <button
-              className={styles.addFirstExpenseButton}
+              className={styles.addButton}
               onClick={() => navigate('/add-expense')}
             >
               Adicionar Primeira Despesa
             </button>
             <button
-              className={styles.backButton}
+              className={styles.backToCurrentMonth}
               onClick={() => {
                 setFilters({
                   months: [new Date().getMonth() + 1],

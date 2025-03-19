@@ -2,9 +2,9 @@ import React, { useContext, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../App';
 import styles from '../styles/sidebar.module.css';
-import { BsGraphUp, BsListUl, BsPlusCircle, BsDoorOpen, BsCashCoin, BsChevronDown, BsUpload, BsPerson } from 'react-icons/bs';
+import { BsGraphUp, BsListUl, BsPlusCircle, BsDoorOpen, BsCashCoin, BsChevronDown, BsPerson, BsPencil } from 'react-icons/bs';
 import logo from '../assets/logo.svg';
-import { GiPayMoney, GiReceiveMoney } from "react-icons/gi";
+import { GiPayMoney, GiReceiveMoney, } from "react-icons/gi";
 
 const Sidebar = () => {
   const navigate = useNavigate();
@@ -36,6 +36,11 @@ const Sidebar = () => {
           label: 'Adicionar Despesa',
           path: '/add-expense',
           icon: <BsPlusCircle size={18} />
+        },
+        {
+          label: 'Editar Despesa Parcelas ou Recorrentes',
+          path: '/edit-recurring-expenses',
+          icon: <BsPencil size={18} />
         }
       ]
     },
@@ -52,6 +57,11 @@ const Sidebar = () => {
           label: 'Adicionar Ganho',
           path: '/add-income',
           icon: <BsPlusCircle size={18} />
+        },
+        {
+          label: 'Editar Ganhos Recorrentes',
+          path: '/edit-recurring-incomes',
+          icon: <BsPencil size={18} />
         }
       ]
     },

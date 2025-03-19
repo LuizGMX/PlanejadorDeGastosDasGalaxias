@@ -319,13 +319,21 @@ const Income = () => {
     }
   };
 
+  const handleEditClick = (income) => {
+    if (income.is_recurring || income.has_installments) {
+      navigate('/edit-recurring-incomes');
+    } else {
+      setEditingIncome(income);
+    }
+  };
+
   if (loading) return <div className={styles.loading}>Carregando...</div>;
   if (error) return <div className={styles.error}>{error}</div>;
 
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h1>Ganhos</h1>
+        <h1>Meus Ganhos</h1>
         <button
           className={styles.addButton}
           onClick={() => navigate('/add-income')}
@@ -539,7 +547,7 @@ const Income = () => {
                 <td data-label="Ações">
                   <div className={styles.actionButtons}>
                     <button
-                      onClick={() => setEditingIncome(income)}
+                      onClick={() => handleEditClick(income)}
                       className={styles.editButton}
                       title="Editar"
                     >

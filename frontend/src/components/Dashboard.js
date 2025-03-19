@@ -17,7 +17,6 @@ import {
   Cell  
 } from 'recharts';
 import styles from '../styles/dashboard.module.css';
-import logo from '../assets/logo.svg';
   
 const motivationalPhrases = [
   "Cuide do seu dinheiro hoje para não precisar se preocupar amanhã.",
@@ -670,39 +669,62 @@ const Dashboard = () => {
     );
   };
 
+  const groupByCategory = (items) => {
+    return items.reduce((acc, item) => {
+      if (!item.Category) return acc;
+      const category = item.Category.category_name;
+      const type = item.Category.type;
+      if (!category || !type) return acc;
+      
+      const existing = acc.find(i => i.category_name === category);
+      if (existing) {
+        existing.total += parseFloat(item.amount);
+      } else {
+        acc.push({ 
+          category_name: category, 
+          type: type,
+          total: parseFloat(item.amount) 
+        });
+      }
+      return acc;
+    }, []);
+  };
+
   const renderCategoriesChart = () => {
-    if (!data?.expenses_by_category?.length) return null;
+    if (!data?.expenses_by_category?.length) {
+      return null;
+    }
 
     return renderChart('categories', 'Gastos por Categoria',
-                  <PieChart margin={{ top: 10, right: 30, left: 30, bottom: 20 }}>
-                    <Pie
-                      data={data.expenses_by_category}
-                      dataKey="total"
-                      nameKey="category_name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      label={({ category_name, percent }) =>
-                        `${category_name} (${(percent * 100).toFixed(0)}%)`
-                      }
-                    >
-                      {data.expenses_by_category.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={formatCurrency}
-                      contentStyle={{
-                        backgroundColor: 'var(--card-background)',
-                        border: '1px solid var(--border-color)',
-                        color: 'var(--text-color)'
-                      }}
-                      labelStyle={{ color: 'var(--text-color)' }}
-                    />
-                    <Legend
-                      formatter={(value) => <span style={{ color: 'var(--text-color)' }}>{value}</span>}
-                    />
-                  </PieChart>
+      <PieChart margin={{ top: 10, right: 30, left: 30, bottom: 20 }}>
+        <Pie
+          data={data.expenses_by_category}
+          dataKey="total"
+          nameKey="category_name"
+          cx="50%"
+          cy="50%"
+          outerRadius={80}
+          label={({ category_name, percent }) =>
+            `${category_name} (${(percent * 100).toFixed(0)}%)`
+          }
+        >
+          {data.expenses_by_category.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+          ))}
+        </Pie>
+        <Tooltip
+          formatter={formatCurrency}
+          contentStyle={{
+            backgroundColor: 'var(--card-background)',
+            border: '1px solid var(--border-color)',
+            color: 'var(--text-color)'
+          }}
+          labelStyle={{ color: 'var(--text-color)' }}
+        />
+        <Legend
+          formatter={(value) => <span style={{ color: 'var(--text-color)' }}>{value}</span>}
+        />
+      </PieChart>
     );
   };
 
@@ -801,38 +823,40 @@ const Dashboard = () => {
   };
 
   const renderIncomeCategoriesChart = () => {
-    if (!data?.incomes_by_category?.length) return null;
+    if (!data?.incomes_by_category?.length) {
+      return null;
+    }
 
     return renderChart('income-categories', 'Ganhos por Categoria',
-                  <PieChart margin={{ top: 10, right: 30, left: 30, bottom: 20 }}>
-                    <Pie
-                      data={data.incomes_by_category}
-                      dataKey="total"
-                      nameKey="category_name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      label={({ category_name, percent }) =>
-                        `${category_name} (${(percent * 100).toFixed(0)}%)`
-                      }
-                    >
-                      {data.incomes_by_category.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={formatCurrency}
-                      contentStyle={{
-                        backgroundColor: 'var(--card-background)',
-                        border: '1px solid var(--border-color)',
-                        color: 'var(--text-color)'
-                      }}
-                      labelStyle={{ color: 'var(--text-color)' }}
-                    />
-                    <Legend
-                      formatter={(value) => <span style={{ color: 'var(--text-color)' }}>{value}</span>}
-                    />
-                  </PieChart>
+      <PieChart margin={{ top: 10, right: 30, left: 30, bottom: 20 }}>
+        <Pie
+          data={data.incomes_by_category}
+          dataKey="total"
+          nameKey="category_name"
+          cx="50%"
+          cy="50%"
+          outerRadius={80}
+          label={({ category_name, percent }) =>
+            `${category_name} (${(percent * 100).toFixed(0)}%)`
+          }
+        >
+          {data.incomes_by_category.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+          ))}
+        </Pie>
+        <Tooltip
+          formatter={formatCurrency}
+          contentStyle={{
+            backgroundColor: 'var(--card-background)',
+            border: '1px solid var(--border-color)',
+            color: 'var(--text-color)'
+          }}
+          labelStyle={{ color: 'var(--text-color)' }}
+        />
+        <Legend
+          formatter={(value) => <span style={{ color: 'var(--text-color)' }}>{value}</span>}
+        />
+      </PieChart>
     );
   };
 
@@ -933,234 +957,27 @@ const Dashboard = () => {
   if (!data) return <div>Nenhum dado encontrado</div>;
 
   return (
-    
-    <div className={styles.dashboardContainer}>
-
-<div className={styles.logo}>
-      <img src={logo} alt="Logo do Planejador de Gastos das Galáxias" className={styles.logo} />
-  </div>
-      
-      {getGreeting(auth.user?.name || 'Usuário')}
-      <div className={styles.header}>
-        <h1 className={styles.title}>Dashboard</h1>
-      </div>
-
-      {noExpensesMessage ? (
-        <div className={styles.noExpensesContainer}>
-          <h2>{noExpensesMessage.message}</h2>
-          <p>{noExpensesMessage.suggestion}</p>
-          <div className={styles.buttonGroup}>
-            <button
-              className={styles.addFirstExpenseButton}
-              onClick={() => navigate('/add-expense')}
-            >
-              Adicionar Primeira Despesa
-            </button>
-            <button
-              className={styles.backButton}
-              onClick={() => {
-                setFilters({
-                  months: [new Date().getMonth() + 1],
-                  years: [new Date().getFullYear()]
-                });
-              }}
-            >
-              Voltar para Mês Atual
-            </button>
-          </div>
-        </div>
+    <div className={styles.container}>
+      {loading ? (
+        <div>Carregando...</div>
+      ) : error ? (
+        <div className={styles.error}>{error}</div>
       ) : (
-        <div>
-          <div className={styles.filtersContainer}>
-            <div className={styles.filterGroup}>
-              <div
-                className={`${styles.modernSelect} ${openFilter === 'months' ? styles.active : ''}`}
-                onClick={() => handleFilterClick('months')}
-              >
-                <div className={styles.modernSelectHeader}>
-                  <span>{formatSelectedMonths()}</span>
-                  <span className={`material-icons ${styles.arrow}`}>
-                    {openFilter === 'months' ? 'expand_less' : 'expand_more'}
-                  </span>
-                </div>
-                {openFilter === 'months' && (
-                  <div className={styles.modernSelectDropdown} onClick={e => e.stopPropagation()}>
-                    <label
-                      key="all-months"
-                      className={styles.modernCheckboxLabel}
-                      onClick={handleCheckboxClick}
-                    >
-                      <div className={styles.modernCheckbox}>
-                        <input
-                          type="checkbox"
-                          checked={filters.months.length === months.length}
-                          onChange={() => handleFilterChange('months', 'all')}
-                          className={styles.hiddenCheckbox}
-                        />
-                        <div className={styles.customCheckbox}>
-                          <span className="material-icons">check</span>
-                        </div>
-                      </div>
-                      <span><strong>Todos os Meses</strong></span>
-                    </label>
-                    <div className={styles.divider}></div>
-                    {months.map(month => (
-                      <label
-                        key={month.value}
-                        className={styles.modernCheckboxLabel}
-                        onClick={handleCheckboxClick}
-                      >
-                        <div className={styles.modernCheckbox}>
-                          <input
-                            type="checkbox"
-                            checked={filters.months.includes(month.value)}
-                            onChange={() => handleFilterChange('months', month.value)}
-                            className={styles.hiddenCheckbox}
-                          />
-                          <div className={styles.customCheckbox}>
-                            <span className="material-icons">check</span>
-                          </div>
-                        </div>
-                        <span>{month.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className={styles.filterGroup}>
-              <div
-                className={`${styles.modernSelect} ${openFilter === 'years' ? styles.active : ''}`}
-                onClick={() => handleFilterClick('years')}
-              >
-                <div className={styles.modernSelectHeader}>
-                  <span>{formatSelectedYears()}</span>
-                  <span className={`material-icons ${styles.arrow}`}>
-                    {openFilter === 'years' ? 'expand_less' : 'expand_more'}
-                  </span>
-                </div>
-                {openFilter === 'years' && (
-                  <div className={styles.modernSelectDropdown} onClick={e => e.stopPropagation()}>
-                    <label
-                      key="all-years"
-                      className={styles.modernCheckboxLabel}
-                      onClick={handleCheckboxClick}
-                    >
-                      <div className={styles.modernCheckbox}>
-                        <input
-                          type="checkbox"
-                          checked={filters.years.length === years.length}
-                          onChange={() => handleFilterChange('years', 'all')}
-                          className={styles.hiddenCheckbox}
-                        />
-                        <div className={styles.customCheckbox}>
-                          <span className="material-icons">check</span>
-                        </div>
-                      </div>
-                      <span><strong>Todos os Anos</strong></span>
-                    </label>
-                    <div className={styles.divider}></div>
-                    {years.map(year => (
-                      <label
-                        key={year.value}
-                        className={styles.modernCheckboxLabel}
-                        onClick={handleCheckboxClick}
-                      >
-                        <div className={styles.modernCheckbox}>
-                          <input
-                            type="checkbox"
-                            checked={filters.years.includes(year.value)}
-                            onChange={() => handleFilterChange('years', year.value)}
-                            className={styles.hiddenCheckbox}
-                          />
-                          <div className={styles.customCheckbox}>
-                            <span className="material-icons">check</span>
-                          </div>
-                        </div>
-                        <span>{year.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
+        <>
+          {getGreeting(auth.user.name)}
+          <div className={styles.dashboardGrid}>
+            {renderChart('bankBalance', 'Projeção de Saldo', (
+              <BankBalanceTrend />
+            ))}
+            {renderChart('incomeVsExpenses', 'Ganhos vs Despesas', renderIncomeVsExpensesChart())}
+            {renderChart('categories', 'Despesas por Categoria', renderCategoriesChart())}
+            {renderChart('timeline', 'Linha do Tempo', renderTimelineChart())}
+            {renderChart('incomeCategories', 'Ganhos por Categoria', renderIncomeCategoriesChart())}
+            {renderChart('banks', 'Distribuição por Banco', renderBanksChart())}
+            {renderChart('budget', 'Orçamento', renderBudgetChart())}
+            {renderChart('financialGoal', 'Objetivo Financeiro', renderFinancialGoalChart())}
           </div>
-          
-         {data.budget_info && filters.month !== 'all' && filters.year !== 'all' && (
-            <div className={styles.budgetInfoContainer}>
-              <h3>Informações do Orçamento</h3>
-              <div className={styles.budgetStats}>
-                <div className={styles.budgetStat}>
-                  <span>Orçamento Total:</span>
-                  <strong>{formatCurrency(data.budget_info.total_budget)}</strong>
-                </div>
-                <div className={styles.budgetStat}>
-                  <span>Gasto até agora:</span>
-                  <strong className={data.budget_info.percentage_spent > 100 ? styles.overBudget : ''}>
-                    {formatCurrency(data.budget_info.total_spent)}
-                  </strong>
-                </div>
-                <div className={styles.budgetStat}>
-                  <span>Restante:</span>
-                  <strong className={data.budget_info.remaining_budget < 0 ? styles.overBudget : ''}>
-                    {formatCurrency(data.budget_info.total_budget - data.budget_info.total_spent)}
-                  </strong>
-                </div>
-                {data.budget_info.remaining_days > 0 && (
-                  <div className={styles.budgetStat}>
-                    <span>Sugestão de gasto diário:</span>
-                    <strong className={data.budget_info.suggested_daily_spend < 0 ? styles.overBudget : ''}>
-                      {formatCurrency(data.budget_info.suggested_daily_spend)}
-                      <div className={styles.dailySpendingInfo}>
-                        {data.budget_info.suggested_daily_spend < 0
-                          ? 'Orçamento já estourado para este mês'
-                          : 'por dia até o final do mês para manter-se dentro do orçamento'}
-                      </div>
-                    </strong>
-                  </div>
-                )}
-              </div>
-              <div className={styles.budgetProgressBar}>
-                <div
-                  className={`${styles.budgetProgress} ${data.budget_info.percentage_spent > 90
-                      ? styles.dangerProgress
-                      : data.budget_info.percentage_spent > 60
-                        ? styles.warningProgress
-                        : ''
-                    }`}
-                  style={{ width: `${Math.min(data.budget_info.percentage_spent, 100)}%` }}
-                />
-                <span className={data.budget_info.percentage_spent > 100 ? styles.overBudget : ''}>
-                  {data.budget_info.percentage_spent.toFixed(1)}% utilizado
-                  {data.budget_info.percentage_spent > 100 && ' (Orçamento Estourado)'}
-                </span>
-              </div>
-            </div>
-          )}
-
-          <div className={styles.chartsGrid}>
-            {renderFinancialGoalChart()}
-            {renderIncomeVsExpensesChart()}
-            {renderCategoriesChart()}
-            {renderTimelineChart()}
-            {renderIncomeCategoriesChart()}
-            {renderBanksChart()}
-          </div>
-
-          <div className={styles.chartsGrid}>
-            <div className={`${styles.chartContainer} ${styles.trendChart}`}>
-              <div className={styles.chartHeader}>
-                <h3>Tendência de Saldo Bancário</h3>
-              </div>
-              <BankBalanceTrend
-                showTitle={false}
-                showControls={true}
-                height={expandedChart === 'bank-balance-trend' ? 600 : 300}
-              />
-            </div>
-          </div>
-        </div>
+        </>
       )}
     </div>
   );

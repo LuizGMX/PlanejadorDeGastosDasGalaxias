@@ -5,23 +5,26 @@ import CurrencyInput from 'react-currency-input-field';
 import { BsCreditCard2Front } from 'react-icons/bs';
 import { SiPix } from 'react-icons/si';
 
-const EditExpenseForm = ({ expense, onUpdate, onCancel }) => {
+const EditExpenseForm = ({ expense, onSave, onCancel }) => {
   const { auth } = useContext(AuthContext);
   const [formData, setFormData] = useState({
     description: expense.description,
     amount: expense.amount,
-    date: expense.expense_date.split('T')[0],
+    expense_date: expense.expense_date,
     category_id: expense.category_id,
     subcategory_id: expense.subcategory_id,
-    payment_method: expense.payment_method,
     bank_id: expense.bank_id,
-    update_future: false,
-    is_recurring: expense.is_recurring
+    payment_method: expense.payment_method,
+    is_recurring: expense.is_recurring,
+    start_date: expense.start_date || expense.expense_date,
+    end_date: expense.end_date
   });
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
   const [banks, setBanks] = useState([]);
   const [error, setError] = useState('');
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [pendingChanges, setPendingChanges] = useState(null);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -43,35 +46,8 @@ const EditExpenseForm = ({ expense, onUpdate, onCancel }) => {
       }
     };
 
-    fetchCategories();
-  }, [auth.token]);
-
-  useEffect(() => {
-    const fetchBanks = async () => {
-      try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/bank`, {
-          headers: {
-            'Authorization': `Bearer ${auth.token}`
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error('Falha ao carregar bancos');
-        }
-
-        const data = await response.json();
-        setBanks(data);
-      } catch (err) {
-        setError('Erro ao carregar bancos. Por favor, tente novamente.');
-      }
-    };
-
-    fetchBanks();
-  }, [auth.token]);
-
-  useEffect(() => {
-    if (formData.category_id) {
-      const fetchSubcategories = async () => {
+    const fetchSubcategories = async () => {
+      if (formData.category_id) {
         try {
           const response = await fetch(`${process.env.REACT_APP_API_URL}/api/expenses/subcategories/${formData.category_id}`, {
             headers: {
@@ -88,16 +64,49 @@ const EditExpenseForm = ({ expense, onUpdate, onCancel }) => {
         } catch (err) {
           setError('Erro ao carregar subcategorias. Por favor, tente novamente.');
         }
-      };
+      } else {
+        setSubcategories([]);
+      }
+    };
 
-      fetchSubcategories();
-    } else {
-      setSubcategories([]);
-    }
-  }, [formData.category_id, auth.token]);
+    const fetchBanks = async () => {
+      try {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/banks`, {
+          headers: {
+            'Authorization': `Bearer ${auth.token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Falha ao carregar bancos');
+        }
+
+        const data = await response.json();
+        setBanks(data);
+      } catch (err) {
+        setError('Erro ao carregar bancos. Por favor, tente novamente.');
+      }
+    };
+
+    fetchCategories();
+    fetchSubcategories();
+    fetchBanks();
+  }, [auth.token, formData.category_id]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+    
+    // Para campos de data, garante que o valor seja uma string ISO
+    if (type === 'date' && value) {
+      const date = new Date(value);
+      date.setHours(12); // Meio-dia para evitar problemas de timezone
+      setFormData(prev => ({
+        ...prev,
+        [name]: date.toISOString()
+      }));
+      return;
+    }
+
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
@@ -107,86 +116,80 @@ const EditExpenseForm = ({ expense, onUpdate, onCancel }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/expenses/${expense.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${auth.token}`
-        },
-        body: JSON.stringify({
-          ...formData,
-          expense_date: formData.date,
-          is_recurring: formData.is_recurring
-        })
+      onSave({
+        ...expense,
+        ...formData
       });
-
-      if (!response.ok) {
-        throw new Error('Falha ao atualizar despesa');
-      }
-
-      const data = await response.json();
-      onUpdate(data.expense);
     } catch (err) {
-      setError(err.message);
+      console.error('Erro na atualização:', err);
+      setError('Erro ao atualizar despesa. Por favor, tente novamente.');
     }
   };
 
   return (
-    <div className={styles.modal}>
+    <div className={styles.modalOverlay}>
       <div className={styles.modalContent}>
         <h2>Editar Despesa</h2>
         {error && <p className={styles.error}>{error}</p>}
+        
         <form onSubmit={handleSubmit}>
           <div className={styles.inputGroup}>
-            <label className={styles.label}>Descrição</label>
+            <label>Descrição</label>
             <input
               type="text"
               name="description"
               value={formData.description}
               onChange={handleChange}
-              className={styles.input}
               required
             />
           </div>
 
           <div className={styles.inputGroup}>
-            <label className={styles.label}>Valor</label>
+            <label>Valor</label>
             <CurrencyInput
               name="amount"
-              placeholder="R$ 0,00"
-              decimalsLimit={2}
+              value={formData.amount}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, amount: value || 0 }))}
               prefix="R$ "
+              decimalsLimit={2}
               decimalSeparator=","
               groupSeparator="."
-              value={formData.amount}
-              onValueChange={(value) => {
-                const numericValue = value ? parseFloat(value.replace(/\./g, '').replace(',', '.')) : '';
-                setFormData(prev => ({ ...prev, amount: numericValue }));
-              }}
-              className={styles.input}
               required
             />
           </div>
 
-          <div className={styles.inputGroup}>
-            <label className={styles.label}>Data</label>
-            <input
-              type="date"
-              name="date"
-              value={formData.date}
-              onChange={handleChange}
-              className={styles.input}
-              required
-            />
-          </div>
+          {formData.is_recurring && (
+            <>
+              <div className={styles.inputGroup}>
+                <label>Data de Início</label>
+                <input
+                  type="date"
+                  name="start_date"
+                  value={formData.start_date ? formData.start_date.split('T')[0] : ''}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <div className={styles.inputGroup}>
+                <label>Data de Fim</label>
+                <input
+                  type="date"
+                  name="end_date"
+                  value={formData.end_date ? formData.end_date.split('T')[0] : ''}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+            </>
+          )}
 
           <div className={styles.inputGroup}>
-            <label className={styles.label}>Categoria</label>
+            <label>Categoria</label>
             <select
               name="category_id"
               value={formData.category_id}
               onChange={handleChange}
-              className={styles.input}
               required
             >
               <option value="">Selecione uma categoria</option>
@@ -198,15 +201,13 @@ const EditExpenseForm = ({ expense, onUpdate, onCancel }) => {
             </select>
           </div>
 
-          {subcategories.length > 0 && (
+          {formData.category_id && (
             <div className={styles.inputGroup}>
-              <label className={styles.label}>Subcategoria</label>
+              <label>Subcategoria</label>
               <select
                 name="subcategory_id"
-                value={formData.subcategory_id}
+                value={formData.subcategory_id || ''}
                 onChange={handleChange}
-                className={styles.input}
-                required
               >
                 <option value="">Selecione uma subcategoria</option>
                 {subcategories.map(subcategory => (
@@ -218,57 +219,84 @@ const EditExpenseForm = ({ expense, onUpdate, onCancel }) => {
             </div>
           )}
 
-          {banks.length > 0 && (
-            <div className={styles.inputGroup}>
-              <label className={styles.label}>Banco</label>
-              <select
-                name="bank_id"
-                value={formData.bank_id}
-                onChange={handleChange}
-                className={styles.input}
-                required
-              >
-                <option value="">Selecione um banco</option>
-                {banks.map(bank => (
-                  <option key={bank.id} value={bank.id}>
-                    {bank.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+          <div className={styles.inputGroup}>
+            <label>Banco/Carteira</label>
+            <select
+              name="bank_id"
+              value={formData.bank_id}
+              onChange={handleChange}
+              required
+            >
+              <option value="">Selecione um banco</option>
+              {banks.map(bank => (
+                <option key={bank.id} value={bank.id}>
+                  {bank.bank_name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-          {formData.is_recurring && (
-            <div className={styles.checkboxGroup}>
-              <label className={styles.checkboxLabel}>
-                <input
-                  type="checkbox"
-                  name="update_future"
-                  checked={formData.update_future}
-                  onChange={handleChange}
-                />
-                Atualizar despesas futuras
-              </label>
-            </div>
-          )}
+          <div className={styles.inputGroup}>
+            <label>Método de Pagamento</label>
+            <select
+              name="payment_method"
+              value={formData.payment_method}
+              onChange={handleChange}
+              required
+            >
+              <option value="">Selecione um método</option>
+              <option value="credit_card">Cartão de Crédito</option>
+              <option value="debit_card">Cartão de Débito</option>
+              <option value="money">Dinheiro</option>
+              <option value="pix">PIX</option>
+              <option value="transfer">Transferência</option>
+              <option value="other">Outro</option>
+            </select>
+          </div>
 
           <div className={styles.modalButtons}>
-            <button
-              type="button"
-              onClick={onCancel}
-              className={styles.cancelButton}
-            >
+            <button type="button" onClick={onCancel} className={styles.cancelButton}>
               Cancelar
             </button>
-            <button
-              type="submit"
-              className={styles.deleteButton}
-            >
+            <button type="submit" className={styles.saveButton}>
               Salvar
             </button>
           </div>
         </form>
       </div>
+
+      {showConfirmModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <h3>Atenção!</h3>
+            <p>
+              Ao mudar para despesa à vista, todas as {expense.is_recurring ? 'recorrências' : 'parcelas'} serão excluídas.
+              Deseja continuar?
+            </p>
+            <div className={styles.modalButtons}>
+              <button
+                onClick={() => {
+                  setShowConfirmModal(false);
+                  setPendingChanges(null);
+                }}
+                className={styles.cancelButton}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  setFormData(pendingChanges);
+                  setShowConfirmModal(false);
+                  setPendingChanges(null);
+                }}
+                className={styles.confirmButton}
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

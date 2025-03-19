@@ -136,7 +136,7 @@ const AddIncome = () => {
         throw new Error(errorData.message || 'Falha ao adicionar ganho');
       }
 
-      setSuccess('Ganho adicionada com sucesso!');
+      setSuccess('Ganho adicionado com sucesso!');
       setTimeout(() => {
         navigate('/income');
       }, 2000);

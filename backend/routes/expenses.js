@@ -344,8 +344,36 @@ router.put('/:id', authenticate, async (req, res) => {
   const transaction = await Expense.sequelize.transaction();
 
   try {
+    const {
+      description,
+      amount: rawAmount,
+      expense_date,
+      category_id,
+      subcategory_id,
+      bank_id,
+      payment_method,
+      is_recurring,
+      has_installments,
+      start_date,
+      end_date,
+      total_installments,
+      current_installment
+    } = req.body;
+
+    // Validação dos campos obrigatórios
+    if (!description || !rawAmount || !expense_date || !category_id || !bank_id || !payment_method) {
+      return res.status(400).json({ message: 'Todos os campos obrigatórios devem ser preenchidos.' });
+    }
+
+    // Converte o valor para número
+    const parsedAmount = parseFloat(rawAmount);
+    if (isNaN(parsedAmount)) {
+      return res.status(400).json({ message: 'O valor deve ser um número válido.' });
+    }
+
+    // Busca a despesa original
     const expense = await Expense.findOne({
-      where: { 
+      where: {
         id: req.params.id,
         user_id: req.user.id
       }
@@ -353,35 +381,12 @@ router.put('/:id', authenticate, async (req, res) => {
 
     if (!expense) {
       await transaction.rollback();
-      return res.status(404).json({ message: 'Despesa não encontrada' });
+      return res.status(404).json({ message: 'Despesa não encontrada.' });
     }
 
-    // Validações básicas
-    const {
-      description,
-      amount,
-      category_id,
-      subcategory_id,
-      bank_id,
-      expense_date,
-      payment_method,
-      update_future
-    } = req.body;
-
-    if (!description || amount === undefined || !category_id || !subcategory_id || !bank_id || !expense_date || !payment_method) {
-      await transaction.rollback();
-      return res.status(400).json({ message: 'Todos os campos são obrigatórios' });
-    }
-
-    // Garante que o valor é um número válido
-    const parsedAmount = Number(parseFloat(amount).toFixed(2));
-    if (isNaN(parsedAmount) || parsedAmount < 0) {
-      await transaction.rollback();
-      return res.status(400).json({ message: 'Valor inválido' });
-    }
-
-    // Se a despesa for recorrente e o usuário quiser atualizar as futuras
-    if (expense.is_recurring && expense.recurring_group_id && update_future === true) {
+    // Se a despesa for recorrente
+    if (expense.is_recurring && expense.recurring_group_id) {
+      // Atualiza todas as despesas do grupo (atual e futuras)
       const currentDate = new Date(expense.expense_date);
       await Expense.update(
         {
@@ -391,7 +396,9 @@ router.put('/:id', authenticate, async (req, res) => {
           subcategory_id,
           bank_id,
           payment_method,
-          is_recurring: req.body.is_recurring
+          is_recurring,
+          start_date: start_date ? new Date(start_date) : null,
+          end_date: end_date ? new Date(end_date) : null
         },
         {
           where: {
@@ -404,29 +411,57 @@ router.put('/:id', authenticate, async (req, res) => {
           transaction
         }
       );
-    } else {
-      // Atualiza apenas a despesa selecionada
-      await expense.update({
-        description,
-        amount: parsedAmount,
-        category_id,
-        subcategory_id,
-        bank_id,
-        expense_date,
-        payment_method,
-        is_recurring: req.body.is_recurring
-      }, { transaction });
+    }
+    // Se a despesa for parcelada
+    else if (expense.has_installments && expense.installment_group_id) {
+      // Atualiza todas as parcelas futuras
+      const currentDate = new Date(expense.expense_date);
+      await Expense.update(
+        {
+          description,
+          amount: parsedAmount,
+          category_id,
+          subcategory_id,
+          bank_id,
+          payment_method
+        },
+        {
+          where: {
+            installment_group_id: expense.installment_group_id,
+            expense_date: {
+              [Op.gte]: currentDate
+            },
+            user_id: req.user.id
+          },
+          transaction
+        }
+      );
+    }
+    // Se for uma despesa única
+    else {
+      await expense.update(
+        {
+          description,
+          amount: parsedAmount,
+          expense_date: new Date(expense_date),
+          category_id,
+          subcategory_id,
+          bank_id,
+          payment_method
+        },
+        { transaction }
+      );
     }
 
     await transaction.commit();
-    res.json({ 
-      message: 'Despesa atualizada com sucesso',
-      expense
-    });
+
+    // Busca a despesa atualizada
+    const updatedExpense = await Expense.findByPk(req.params.id);
+    res.json(updatedExpense);
   } catch (error) {
     await transaction.rollback();
     console.error('Erro ao atualizar despesa:', error);
-    res.status(500).json({ message: 'Erro ao atualizar despesa' });
+    res.status(500).json({ message: 'Erro ao atualizar despesa.' });
   }
 });
 

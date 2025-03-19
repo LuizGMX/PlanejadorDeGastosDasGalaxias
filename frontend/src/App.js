@@ -9,6 +9,8 @@ import Income from './components/Income';
 import AddIncome from './components/AddIncome';
 import SpreadsheetUpload from './components/SpreadsheetUpload';
 import Sidebar from './components/Sidebar';
+import EditRecurringExpenses from './components/EditRecurringExpenses';
+import EditRecurringIncomes from './components/EditRecurringIncomes';
 import styles from './styles/app.module.css';
 
 export const AuthContext = React.createContext();
@@ -101,6 +103,16 @@ function App() {
           <Route path="/add-income" element={
             <PrivateRoute>
               <AddIncome />
+            </PrivateRoute>
+          } />
+          <Route path="/edit-recurring-expenses" element={
+            <PrivateRoute>
+              <EditRecurringExpenses />
+            </PrivateRoute>
+          } />
+          <Route path="/edit-recurring-incomes" element={
+            <PrivateRoute>
+              <EditRecurringIncomes />
             </PrivateRoute>
           } />
           <Route path="/upload-spreadsheet" element={

@@ -252,7 +252,7 @@ router.post('/', authenticate, async (req, res) => {
 });
 
 // Atualizar ganho
-router.put('/:id', async (req, res) => {
+router.put('/:id', authenticate, async (req, res) => {
   const t = await Income.sequelize.transaction();
 
   try {
@@ -263,7 +263,8 @@ router.put('/:id', async (req, res) => {
       category_id,
       subcategory_id,
       bank_id,
-      update_future
+      start_date,
+      end_date
     } = req.body;
 
     const income = await Income.findOne({
@@ -274,7 +275,7 @@ router.put('/:id', async (req, res) => {
     });
 
     if (!income) {
-      throw new Error('Ganho não encontrada');
+      throw new Error('Ganho não encontrado');
     }
 
     // Validações básicas
@@ -286,11 +287,139 @@ router.put('/:id', async (req, res) => {
       throw new Error('O valor deve ser maior que zero');
     }
 
-    if (income.is_recurring && update_future) {
-      // Atualizar todas as ganhos futuras do mesmo grupo
+    if (income.is_recurring) {
+      // Validar período máximo de 10 anos para recorrência
+      if (start_date && end_date) {
+        const startDateObj = new Date(start_date);
+        const endDateObj = new Date(end_date);
+        const maxDate = new Date(startDateObj);
+        maxDate.setFullYear(maxDate.getFullYear() + 10);
+
+        if (endDateObj > maxDate) {
+          throw new Error('O período de recorrência não pode ser maior que 10 anos');
+        }
+      }
+
+      const newStartDate = start_date ? new Date(start_date) : income.start_date;
+      const newEndDate = end_date ? new Date(end_date) : income.end_date;
+      const oldStartDate = income.start_date;
+      const oldEndDate = income.end_date;
+
+      console.log('Atualizando ganho recorrente:', {
+        id: income.id,
+        old_start_date: oldStartDate,
+        old_end_date: oldEndDate,
+        new_start_date: newStartDate,
+        new_end_date: newEndDate
+      });
+
+      // Primeiro, busca todos os ganhos do grupo
+      const allGroupIncomes = await Income.findAll({
+        where: {
+          recurring_group_id: income.recurring_group_id,
+          user_id: req.user.id
+        },
+        order: [['date', 'ASC']],
+        transaction: t
+      });
+
+      // Atualiza os dados básicos em todos os ganhos existentes
       await Income.update(
         {
           description,
+          amount,
+          category_id,
+          subcategory_id,
+          bank_id,
+          start_date: newStartDate,
+          end_date: newEndDate
+        },
+        {
+          where: {
+            recurring_group_id: income.recurring_group_id,
+            user_id: req.user.id,
+            date: {
+              [Op.between]: [oldStartDate, oldEndDate]
+            }
+          },
+          transaction: t
+        }
+      );
+
+      // Remove ganhos que estão fora do novo período
+      await Income.destroy({
+        where: {
+          recurring_group_id: income.recurring_group_id,
+          user_id: req.user.id,
+          [Op.or]: [
+            {
+              date: {
+                [Op.lt]: newStartDate
+              }
+            },
+            {
+              date: {
+                [Op.gt]: newEndDate
+              }
+            }
+          ]
+        },
+        transaction: t
+      });
+
+      // Cria novos ganhos para as novas datas
+      let currentDate = new Date(newStartDate);
+      currentDate.setDate(newStartDate.getDate()); // Mantém o mesmo dia do mês
+
+      while (currentDate <= newEndDate) {
+        // Verifica se já existe um ganho nesta data
+        const existingIncome = allGroupIncomes.find(inc => 
+          new Date(inc.date).getMonth() === currentDate.getMonth() &&
+          new Date(inc.date).getFullYear() === currentDate.getFullYear()
+        );
+
+        if (!existingIncome) {
+          await Income.create({
+            description,
+            amount,
+            date: new Date(currentDate),
+            category_id,
+            subcategory_id,
+            bank_id,
+            user_id: req.user.id,
+            is_recurring: true,
+            recurring_group_id: income.recurring_group_id,
+            start_date: newStartDate,
+            end_date: newEndDate
+          }, { transaction: t });
+        }
+
+        // Avança para o próximo mês
+        currentDate.setMonth(currentDate.getMonth() + 1);
+      }
+
+      // Busca todos os ganhos atualizados para verificar
+      const updatedIncomes = await Income.findAll({
+        where: {
+          recurring_group_id: income.recurring_group_id,
+          user_id: req.user.id
+        },
+        order: [['date', 'ASC']],
+        transaction: t
+      });
+
+      console.log('Ganhos atualizados:', updatedIncomes.map(inc => ({
+        id: inc.id,
+        date: inc.date,
+        start_date: inc.start_date,
+        end_date: inc.end_date
+      })));
+    } else if (income.has_installments) {
+      // Atualizar todas as parcelas (atual e futuras)
+      const currentInstallment = income.current_installment;
+      await Income.update(
+        {
+          description: description.replace(/\(\d+\/\d+\)/, ''),
           amount,
           category_id,
           subcategory_id,
@@ -298,16 +427,49 @@ router.put('/:id', async (req, res) => {
         },
         {
           where: {
-            recurring_group_id: income.recurring_group_id,
-            date: {
-              [Op.gte]: date
-            }
+            installment_group_id: income.installment_group_id,
+            current_installment: {
+              [Op.gte]: currentInstallment
+            },
+            user_id: req.user.id
           },
           transaction: t
         }
       );
+
+      // Atualiza também o ganho atual
+      await income.update(
+        {
+          description: `${description} (${income.current_installment}/${income.total_installments})`,
+          amount,
+          date,
+          category_id,
+          subcategory_id,
+          bank_id
+        },
+        { transaction: t }
+      );
+
+      // Atualiza a descrição das parcelas com o novo número
+      const remainingIncomes = await Income.findAll({
+        where: {
+          installment_group_id: income.installment_group_id,
+          current_installment: {
+            [Op.gt]: currentInstallment
+          },
+          user_id: req.user.id
+        },
+        order: [['current_installment', 'ASC']],
+        transaction: t
+      });
+
+      for (const inc of remainingIncomes) {
+        await inc.update({
+          description: `${description} (${inc.current_installment}/${income.total_installments})`
+        }, { transaction: t });
+      }
     } else {
-      // Atualizar apenas a ganho selecionada
+      // Atualizar apenas o ganho selecionado
       await income.update(
         {
           description,
@@ -322,7 +484,21 @@ router.put('/:id', async (req, res) => {
     }
 
     await t.commit();
-    res.json({ message: 'Ganho atualizada com sucesso' });
+
+    // Busca o ganho atualizado com seus relacionamentos
+    const updatedIncome = await Income.findOne({
+      where: { id: income.id },
+      include: [
+        { model: Category },
+        { model: SubCategory },
+        { model: Bank }
+      ]
+    });
+
+    res.json({ 
+      message: 'Ganho atualizado com sucesso',
+      income: updatedIncome
+    });
   } catch (error) {
     await t.rollback();
     res.status(400).json({ message: error.message });
