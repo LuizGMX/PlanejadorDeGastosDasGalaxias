@@ -832,7 +832,7 @@ const Expenses = () => {
               </thead>
               <tbody>
                 {expenses.map(expense => (
-                  <tr key={expense.id}>
+                  <tr key={expense.id} className={selectedExpenses.includes(expense.id) ? styles.selected : ''}>
                     <td data-label="Selecionar">
                       <input
                         type="checkbox"

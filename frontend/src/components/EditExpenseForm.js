@@ -136,7 +136,7 @@ const EditExpenseForm = ({ expense, onUpdate, onCancel }) => {
       <div className={styles.modalContent}>
         <h2>Editar Despesa</h2>
         {error && <p className={styles.error}>{error}</p>}
-        <form onSubmit={handleSubmit} className={styles.form}>
+        <form onSubmit={handleSubmit}>
           <div className={styles.inputGroup}>
             <label className={styles.label}>Descrição</label>
             <input
@@ -179,25 +179,6 @@ const EditExpenseForm = ({ expense, onUpdate, onCancel }) => {
               required
             />
           </div>
-
-          {expense.is_recurring && (
-            <div className={styles.checkboxGroup}>
-              <input
-                type="checkbox"
-                id="update_future"
-                name="update_future"
-                checked={formData.update_future}
-                onChange={handleChange}
-                className={styles.checkbox}
-              />
-              <label htmlFor="update_future" className={styles.checkboxLabel}>
-                Atualizar despesas futuras
-              </label>
-              <small className={styles.helperText}>
-                Marque esta opção para atualizar todas as ocorrências futuras desta despesa recorrente
-              </small>
-            </div>
-          )}
 
           <div className={styles.inputGroup}>
             <label className={styles.label}>Categoria</label>
@@ -257,34 +238,33 @@ const EditExpenseForm = ({ expense, onUpdate, onCancel }) => {
             </div>
           )}
 
-          <div className={styles.paymentMethodGroup}>
-            <label className={styles.label}>Forma de Pagamento</label>
-            <div className={styles.paymentButtons}>
-              <button
-                type="button"
-                className={`${styles.paymentButton} ${formData.payment_method === 'card' ? styles.active : ''}`}
-                onClick={() => setFormData(prev => ({ ...prev, payment_method: 'card' }))}
-              >
-                <BsCreditCard2Front size={24} className={styles.cardIcon} />
-                <span>Cartão</span>
-              </button>
-              <button
-                type="button"
-                className={`${styles.paymentButton} ${formData.payment_method === 'pix' ? styles.active : ''}`}
-                onClick={() => setFormData(prev => ({ ...prev, payment_method: 'pix' }))}
-              >
-                <SiPix size={24} className={styles.pixIcon} />
-                <span>Pix</span>
-              </button>
+          {formData.is_recurring && (
+            <div className={styles.checkboxGroup}>
+              <label className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  name="update_future"
+                  checked={formData.update_future}
+                  onChange={handleChange}
+                />
+                Atualizar despesas futuras
+              </label>
             </div>
-          </div>
+          )}
 
-          <div className={styles.buttonGroup}>
-            <button type="submit" className={styles.submitButton}>
-              Salvar Alterações
-            </button>
-            <button type="button" onClick={onCancel} className={styles.cancelButton}>
+          <div className={styles.modalButtons}>
+            <button
+              type="button"
+              onClick={onCancel}
+              className={styles.cancelButton}
+            >
               Cancelar
+            </button>
+            <button
+              type="submit"
+              className={styles.deleteButton}
+            >
+              Salvar
             </button>
           </div>
         </form>

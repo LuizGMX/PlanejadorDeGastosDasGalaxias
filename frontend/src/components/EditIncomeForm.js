@@ -113,25 +113,24 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
   return (
     <div className={styles.modal}>
       <div className={styles.modalContent}>
-        <h2>Editar Ganho</h2>
+        <h2>Editar Receita</h2>
         {error && <p className={styles.error}>{error}</p>}
         <form onSubmit={handleSubmit}>
-          <div className={styles.formGroup}>
-            <label htmlFor="description">Descrição</label>
+          <div className={styles.inputGroup}>
+            <label className={styles.label}>Descrição</label>
             <input
               type="text"
-              id="description"
               name="description"
               value={formData.description}
               onChange={handleChange}
+              className={styles.input}
               required
             />
           </div>
 
-          <div className={styles.formGroup}>
-            <label htmlFor="amount">Valor</label>
+          <div className={styles.inputGroup}>
+            <label className={styles.label}>Valor</label>
             <CurrencyInput
-              id="amount"
               name="amount"
               placeholder="R$ 0,00"
               decimalsLimit={2}
@@ -148,25 +147,25 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
             />
           </div>
 
-          <div className={styles.formGroup}>
-            <label htmlFor="date">Data</label>
+          <div className={styles.inputGroup}>
+            <label className={styles.label}>Data</label>
             <input
               type="date"
-              id="date"
               name="date"
               value={formData.date}
               onChange={handleChange}
+              className={styles.input}
               required
             />
           </div>
 
-          <div className={styles.formGroup}>
-            <label htmlFor="category_id">Categoria</label>
+          <div className={styles.inputGroup}>
+            <label className={styles.label}>Categoria</label>
             <select
-              id="category_id"
               name="category_id"
               value={formData.category_id}
               onChange={handleChange}
+              className={styles.input}
               required
             >
               <option value="">Selecione uma categoria</option>
@@ -179,13 +178,13 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
           </div>
 
           {subcategories.length > 0 && (
-            <div className={styles.formGroup}>
-              <label htmlFor="subcategory_id">Subcategoria</label>
+            <div className={styles.inputGroup}>
+              <label className={styles.label}>Subcategoria</label>
               <select
-                id="subcategory_id"
                 name="subcategory_id"
                 value={formData.subcategory_id}
                 onChange={handleChange}
+                className={styles.input}
                 required
               >
                 <option value="">Selecione uma subcategoria</option>
@@ -198,26 +197,28 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
             </div>
           )}
 
-          <div className={styles.formGroup}>
-            <label htmlFor="bank_id">Banco</label>
-            <select
-              id="bank_id"
-              name="bank_id"
-              value={formData.bank_id}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Selecione um banco</option>
-              {banks.map(bank => (
-                <option key={bank.id} value={bank.id}>
-                  {bank.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          {banks.length > 0 && (
+            <div className={styles.inputGroup}>
+              <label className={styles.label}>Banco</label>
+              <select
+                name="bank_id"
+                value={formData.bank_id}
+                onChange={handleChange}
+                className={styles.input}
+                required
+              >
+                <option value="">Selecione um banco</option>
+                {banks.map(bank => (
+                  <option key={bank.id} value={bank.id}>
+                    {bank.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
-          {income.is_recurring && (
-            <div className={styles.formGroup}>
+          {formData.is_recurring && (
+            <div className={styles.checkboxGroup}>
               <label className={styles.checkboxLabel}>
                 <input
                   type="checkbox"
@@ -225,7 +226,7 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
                   checked={formData.update_future}
                   onChange={handleChange}
                 />
-                Atualizar ganhos futuras
+                Atualizar receitas futuras
               </label>
             </div>
           )}
@@ -240,7 +241,7 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
             </button>
             <button
               type="submit"
-              className={styles.confirmButton}
+              className={styles.deleteButton}
             >
               Salvar
             </button>

@@ -514,7 +514,7 @@ const Income = () => {
           </thead>
           <tbody>
             {incomes.map(income => (
-              <tr key={income.id}>
+              <tr key={income.id} className={selectedIncomes.includes(income.id) ? styles.selected : ''}>
                 <td data-label="Selecionar">
                   <input
                     type="checkbox"
