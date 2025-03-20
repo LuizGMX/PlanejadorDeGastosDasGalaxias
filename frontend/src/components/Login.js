@@ -61,10 +61,18 @@ const Login = () => {
           setStep('code');
         }
       } else if (step === 'name') {
+        if (!formData.name.trim()) {
+          setError('Nome é obrigatório');
+          return;
+        }
         setStep('income');
       } else if (step === 'income') {
         setStep('goal');
       } else if (step === 'goal') {
+        if (!formData.name.trim()) {
+          setError('Nome é obrigatório');
+          return;
+        }
         await requestCode();
         setStep('code');
       } else if (step === 'code') {
@@ -160,18 +168,33 @@ const Login = () => {
 
   const requestAccessCode = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/send-access-code`, {
+      const requestData = isNewUser
+        ? {
+            email: formData.email,
+            name: formData.name,
+            netIncome: formData.netIncome,
+            financialGoalName: formData.financialGoalName,
+            financialGoalAmount: formData.financialGoalAmount,
+            financialGoalDate: formData.financialGoalDate,
+          }
+        : {
+            email: formData.email,
+            name: formData.name
+          };
+
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/send-code`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: formData.email })
+        body: JSON.stringify(requestData)
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Falha ao enviar código de acesso');
+        throw new Error(errorData.message || 'Falha ao enviar código');
       }
 
-      setSuccess('Código de acesso enviado por email');
+      const data = await response.json();
+      setSuccess('Código enviado com sucesso! Verifique seu email.');
       
       // Iniciar contagem regressiva
       setResendDisabled(true);
@@ -186,8 +209,6 @@ const Login = () => {
           return prevCountdown - 1;
         });
       }, 1000);
-
-      return () => clearInterval(countdownInterval);
     } catch (error) {
       setError(error.message);
     }

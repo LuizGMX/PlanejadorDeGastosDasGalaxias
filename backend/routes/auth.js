@@ -6,6 +6,9 @@ import { User, VerificationCode } from '../models/index.js';
 
 dotenv.config();
 
+// Configurar SendGrid API Key
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
 const router = Router();
 
 // Utility Functions
@@ -22,6 +25,10 @@ const generateJWT = (userId, email) => {
 };
 
 const sendVerificationEmail = async (email, name, code) => {
+  console.log('Enviando email para:', email);
+  console.log('SENDGRID_API_KEY:', process.env.SENDGRID_API_KEY);
+  console.log('SENDGRID_FROM_EMAIL:', process.env.SENDGRID_FROM_EMAIL);
+
   const msg = {
     to: email,
     from: process.env.SENDGRID_FROM_EMAIL,
@@ -40,11 +47,12 @@ const sendVerificationEmail = async (email, name, code) => {
       </div>
     `,
   };
+
   try {
     await sgMail.send(msg);
     console.log(`Email enviado com sucesso para: ${email}`);
   } catch (error) {
-    console.error(`Erro ao enviar email para ${email}:`, error);
+    console.error('Erro detalhado ao enviar email:', error.response?.body);
     throw new Error('Falha ao enviar email de verificação');
   }
 };
@@ -111,6 +119,8 @@ router.post('/send-code', async (req, res) => {
       financialGoalDate
     } = req.body;
 
+    console.log('Dados recebidos:', { email, name, netIncome, financialGoalName, financialGoalAmount, financialGoalDate });
+
     // Validação básica do email
     if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
       return res.status(400).json({ message: 'E-mail inválido' });
@@ -120,32 +130,56 @@ router.post('/send-code', async (req, res) => {
     let user = await User.findOne({ where: { email } });
     const isNewUser = !user;
 
+    console.log('Status do usuário:', isNewUser ? 'Novo usuário' : 'Usuário existente');
+
+    // Se for novo usuário, valida o nome
+    if (isNewUser && !name) {
+      return res.status(400).json({ message: 'Nome é obrigatório para novos usuários' });
+    }
+
     // Gera o código de verificação
     const code = generateVerificationCode();
+    console.log('Código gerado:', code);
+
+    // Remove códigos antigos
     await VerificationCode.destroy({ where: { email } });
     
     // Armazena os dados do usuário temporariamente junto com o código
-    await VerificationCode.create({ 
+    const verificationData = {
       email, 
       code,
-      userData: isNewUser ? JSON.stringify({
+      userData: JSON.stringify({
         name,
         netIncome,
         financialGoalName,
         financialGoalAmount,
         financialGoalDate
-      }) : null,
-      expires_at: new Date(Date.now() + 10 * 60 * 1000) 
-    });
+      }),
+      expires_at: new Date(Date.now() + 10 * 60 * 1000)
+    };
 
-    await sendVerificationEmail(email, name, code);
+    console.log('Dados de verificação:', verificationData);
+
+    await VerificationCode.create(verificationData);
+
+    // Tenta enviar o email
+    try {
+      await sendVerificationEmail(email, name || (user ? user.name : null), code);
+      console.log('Email enviado com sucesso');
+    } catch (emailError) {
+      console.error('Erro ao enviar email:', emailError);
+      // Mesmo se o email falhar, mostramos o código no console
+    }
     
-    // Apenas mostra o código no console ao invés de enviar por email
+    // Sempre mostra o código no console para desenvolvimento
     console.log('=================================');
     console.log(`Código de verificação para ${email}: ${code}`);
     console.log('=================================');
     
-    return res.json({ message: 'Código gerado com sucesso! Verifique o console do backend.' });
+    return res.json({ 
+      message: 'Código gerado com sucesso! Verifique seu email ou o console do backend.',
+      code: process.env.NODE_ENV === 'development' ? code : undefined
+    });
   } catch (error) {
     console.error('Erro ao gerar código:', error);
     return res.status(500).json({ message: 'Erro interno ao gerar código' });
@@ -155,7 +189,9 @@ router.post('/send-code', async (req, res) => {
 router.post('/verify-code', async (req, res) => {
   console.log('/api/auth/verify-code chamado');
   try {
-    const { email, code } = req.body;
+    const { email, code, name, netIncome, financialGoalName, financialGoalAmount, financialGoalDate } = req.body;
+    console.log('Dados recebidos:', { email, code, name, netIncome, financialGoalName, financialGoalAmount, financialGoalDate });
+
     if (!email || !code) {
       return res.status(400).json({ message: 'E-mail e código são obrigatórios' });
     }
@@ -166,27 +202,63 @@ router.post('/verify-code', async (req, res) => {
     }
 
     let user = await User.findOne({ where: { email } });
+    let userData = {
+      name,
+      netIncome,
+      financialGoalName,
+      financialGoalAmount,
+      financialGoalDate
+    };
     
-    // Se não existir usuário e houver dados temporários, cria o usuário
-    if (!user && verification.userData) {
-      const userData = JSON.parse(verification.userData);
+    console.log('Dados do usuário antes do merge:', userData);
+    
+    if (verification.userData) {
+      try {
+        const storedUserData = JSON.parse(verification.userData);
+        console.log('Dados armazenados:', storedUserData);
+        // Combina os dados armazenados com os dados recebidos
+        userData = {
+          ...storedUserData,
+          ...userData
+        };
+        console.log('Dados combinados:', userData);
+      } catch (e) {
+        console.error('Erro ao parsear userData:', e);
+      }
+    }
+    
+    // Se não existir usuário, cria um novo
+    if (!user) {
+      console.log('Criando novo usuário com dados:', userData);
+      if (!userData.name) {
+        return res.status(400).json({ message: 'Nome é obrigatório para novos usuários' });
+      }
+
       user = await User.create({ 
         email, 
-        name: userData.name || '', 
-        net_income: userData.netIncome,
+        name: userData.name, 
+        net_income: userData.netIncome || 0,
         is_active: true,
-        financial_goal_name: userData.financialGoalName,
-        financial_goal_amount: userData.financialGoalAmount,
-        financial_goal_date: userData.financialGoalDate
+        financial_goal_name: userData.financialGoalName || null,
+        financial_goal_amount: userData.financialGoalAmount || null,
+        financial_goal_date: userData.financialGoalDate || null
       });
-    } else if (user && verification.userData) {
+      console.log('Novo usuário criado:', user.toJSON());
+    } else if (userData && Object.keys(userData).length > 0) {
+      console.log('Atualizando usuário existente com dados:', userData);
       // Atualiza dados do usuário existente se necessário
-      const userData = JSON.parse(verification.userData);
-      const updateData = { name: userData.name };
+      const updateData = {};
+      
+      if (userData.name) updateData.name = userData.name;
+      if (userData.netIncome) updateData.net_income = userData.netIncome;
       if (userData.financialGoalName) updateData.financial_goal_name = userData.financialGoalName;
       if (userData.financialGoalAmount) updateData.financial_goal_amount = userData.financialGoalAmount;
       if (userData.financialGoalDate) updateData.financial_goal_date = userData.financialGoalDate;
-      await user.update(updateData);
+      
+      if (Object.keys(updateData).length > 0) {
+        await user.update(updateData);
+        console.log('Usuário atualizado:', user.toJSON());
+      }
     }
 
     const token = generateJWT(user.id, user.email);
@@ -223,17 +295,28 @@ router.post('/send-access-code', async (req, res) => {
       return res.status(404).json({ message: 'Usuário não encontrado' });
     }
 
+    // Gera o código de verificação
     const code = generateVerificationCode();
+    
+    // Remove códigos antigos
     await VerificationCode.destroy({ where: { email } });
+    
+    // Cria novo código
     await VerificationCode.create({ 
       email, 
       code, 
-      expires_at: new Date(Date.now() + 10 * 60 * 1000) 
+      expires_at: new Date(Date.now() + 10 * 60 * 1000) // 10 minutos
     });
 
+    // Envia o email
     await sendVerificationEmail(email, user.name, code);
 
-    return res.json({ message: 'Código de acesso enviado por email' });
+    // Log para debug
+    console.log('=================================');
+    console.log(`Novo código de acesso para ${email}: ${code}`);
+    console.log('=================================');
+
+    return res.json({ message: 'Código de acesso enviado com sucesso!' });
   } catch (error) {
     console.error('Erro ao enviar código de acesso:', error);
     return res.status(500).json({ message: 'Erro interno ao enviar código de acesso' });

@@ -6,10 +6,10 @@ import categoryRoutes from './routes/categories.js';
 import expenseRoutes from './routes/expenses.js';
 import incomeRoutes from './routes/incomes.js';
 import dashboardRoutes from './routes/dashboard.js';
-import bankRoutes from './routes/bank.js';
+import bankRoutes from './routes/banks.js';
 import budgetRoutes from './routes/budgets.js';
 import spreadsheetRoutes from './routes/spreadsheetRoutes.js';
-import subcategoryRoutes from './routes/subcategories.js';
+
 import userRoutes from './routes/user.js';
 import dotenv from 'dotenv';
 
@@ -23,6 +23,8 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Importante: Adicionar o middleware json antes das rotas
 app.use(express.json());
 
 // Criar diretório de uploads se não existir
@@ -44,7 +46,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/bank', bankRoutes);
 app.use('/api/budgets', budgetRoutes);
 app.use('/api/spreadsheet', spreadsheetRoutes);
-app.use('/api/subcategories', subcategoryRoutes);
+
 app.use('/api/users', userRoutes);
 
 // Tratamento de erros
