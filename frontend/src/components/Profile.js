@@ -49,7 +49,7 @@ const Profile = () => {
       const timer = setTimeout(() => {
         setMessage('');
         setError('');
-      }, 5000);
+      }, 3000);
       return () => clearTimeout(timer);
     }
   }, [message, error]);
@@ -97,11 +97,16 @@ const Profile = () => {
 
       setMessage('Perfil atualizado com sucesso!');
       
-      // Scroll para a mensagem
       window.scrollTo({ top: 0, behavior: 'smooth' });
+      
+      setTimeout(() => {
+        const messageElement = document.querySelector(`.${styles.successMessage}`);
+        if (messageElement) {
+          messageElement.style.opacity = '1';
+        }
+      }, 100);
     } catch (err) {
       setError(err.message);
-      // Scroll para a mensagem de erro
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
@@ -230,7 +235,11 @@ const Profile = () => {
     <div className={styles.profileContainer}>
       <h1 className={styles.title}>Meu Perfil</h1>
       
-      {message && <div className={styles.successMessage}>{message}</div>}
+      {message && (
+        <div className={styles.successMessage} style={{ opacity: 0, transition: 'opacity 0.3s ease-in' }}>
+          {message}
+        </div>
+      )}
       {error && <div className={styles.errorMessage}>{error}</div>}
       
       <div className={styles.formSection}>
