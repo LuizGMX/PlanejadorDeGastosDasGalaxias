@@ -69,34 +69,34 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
 
   useEffect(() => {
     const fetchData = async () => {
-    try {
+      try {
         const response = await fetch(
           `${process.env.REACT_APP_API_URL}/api/dashboard/bank-balance-trend?months=${projectionMonths}`,
           {
-        headers: {
-          'Authorization': `Bearer ${auth.token}`
-        }
+            headers: {
+              'Authorization': `Bearer ${auth.token}`
+            }
           }
         );
 
-      if (!response.ok) {
+        if (!response.ok) {
           throw new Error('Falha ao carregar dados da projeção');
-      }
+        }
 
         const result = await response.json();
         setData(result);
-      setLoading(false);
-    } catch (err) {
+        setLoading(false);
+      } catch (err) {
         setError(err.message);
-      setLoading(false);
-    }
-  };
+        setLoading(false);
+      }
+    };
 
     fetchData();
   }, [auth.token, projectionMonths]);
 
-  if (loading) return <div>Carregando...</div>;
-  if (error) return <div>Erro: {error}</div>;
+  if (loading) return <div className={styles.loading}>Carregando...</div>;
+  if (error) return <div className={styles.error}>Erro: {error}</div>;
   if (!data) return null;
 
   const formatFullCurrency = (value) => {
@@ -107,133 +107,117 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
   };
 
   return (
-    <div style={containerStyle}>
-      {showTitle && <h2>Projeção de Saldo</h2>}
+    <div style={containerStyle} className={styles.trendChartContainer}>
+      {showTitle && <h2 className={styles.trendChartTitle}>Projeção de Saldo</h2>}
       
       {showControls && (
-        <div style={{ marginBottom: '20px' }}>
+        <div className={styles.trendChartControls}>
           <label>Meses de Projeção: </label>
           <select 
             value={projectionMonths} 
             onChange={(e) => setProjectionMonths(Number(e.target.value))}
-            style={{ marginLeft: '10px' }}
+            className={styles.trendChartSelect}
           >
-              <option value={3}>3 meses</option>
-              <option value={6}>6 meses</option>
-              <option value={12}>12 meses</option>
-            </select>
+            <option value={3}>3 meses</option>
+            <option value={6}>6 meses</option>
+            <option value={12}>12 meses</option>
+          </select>
         </div>
       )}
 
       <ResponsiveContainer width="100%" height={height}>
-        <LineChart data={data.projectionData}>
-          <CartesianGrid strokeDasharray="3 3" />
-            <XAxis
-              dataKey="date"
+        <LineChart data={data.projectionData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+          <XAxis
+            dataKey="date"
             tickFormatter={(date) => new Date(date).toLocaleDateString('pt-BR', { month: 'short' })}
-            />
-            <YAxis
+            stroke="var(--text-color)"
+          />
+          <YAxis
             tickFormatter={(value) => formatFullCurrency(value)}
-            />
-            <Tooltip
+            stroke="var(--text-color)"
+          />
+          <Tooltip
             formatter={(value) => formatFullCurrency(value)}
             labelFormatter={(date) => new Date(date).toLocaleDateString('pt-BR')}
+            contentStyle={{
+              backgroundColor: 'var(--card-background)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '8px',
+              padding: '10px'
+            }}
           />
-          <Legend />
-            <Line
-            type="monotone" 
-              dataKey="incomes"
-              stroke="var(--success-color)"
-            name="Ganhos"
-            />
-            <Line
-            type="monotone" 
-              dataKey="expenses"
-              stroke="var(--error-color)"
-            name="Despesas"
-            />
-            <Line
-              type="monotone"
-              dataKey="balance"
-            stroke="var(--primary-color)" 
-            name="Saldo"
+          <Legend 
+            verticalAlign="top"
+            height={36}
+            formatter={(value) => {
+              let color;
+              switch(value) {
+                case 'incomes':
+                  color = 'var(--success-color)';
+                  value = 'Ganhos';
+                  break;
+                case 'expenses':
+                  color = 'var(--error-color)';
+                  value = 'Despesas';
+                  break;
+                case 'balance':
+                  color = 'var(--primary-color)';
+                  value = 'Saldo';
+                  break;
+                default:
+                  color = 'var(--text-color)';
+              }
+              return <span style={{ color }}>{value}</span>;
+            }}
+          />
+          <Line
+            type="monotone"
+            dataKey="incomes"
+            stroke="var(--success-color)"
+            strokeWidth={2}
+            dot={{ fill: 'var(--success-color)', r: 4 }}
+            activeDot={{ r: 6, fill: 'var(--success-color)' }}
+          />
+          <Line
+            type="monotone"
+            dataKey="expenses"
+            stroke="var(--error-color)"
+            strokeWidth={2}
+            dot={{ fill: 'var(--error-color)', r: 4 }}
+            activeDot={{ r: 6, fill: 'var(--error-color)' }}
+          />
+          <Line
+            type="monotone"
+            dataKey="balance"
+            stroke="var(--primary-color)"
+            strokeWidth={2}
+            dot={{ fill: 'var(--primary-color)', r: 4 }}
+            activeDot={{ r: 6, fill: 'var(--primary-color)' }}
           />
         </LineChart>
-        </ResponsiveContainer>
+      </ResponsiveContainer>
 
-      <div
-  className={styles.summary}
-  style={{
-    display: 'flex',
-    justifyContent: 'space-between',
-    padding: '20px',
-    backgroundColor: 'var(--card-background)',
-    borderRadius: '8px',
-    marginTop: '20px'
-  }}
->
-  <div className={styles.summaryItem} style={{ textAlign: 'center' }}>
-    <span
-      style={{
-        display: 'block',
-        marginBottom: '5px',
-        color: 'var(--text-color)'
-      }}
-    >
-      Ganhos Projetados ({projectionMonths} meses)
-    </span>
-    <strong
-      style={{
-        color: 'var(--success-color)',
-        fontSize: '1.2em'
-      }}
-    >
-      {formatFullCurrency(data.summary.totalProjectedIncomes)}
-    </strong>
+      <div className={styles.trendChartSummary}>
+        <div className={styles.trendChartSummaryItem} style={{ marginBottom: '1rem' }}>
+          <span>Ganhos Projetados </span>
+          <strong className={styles.positive}>
+            {formatFullCurrency(data.summary.totalProjectedIncomes)}
+          </strong>
+        </div>
+        <div className={styles.trendChartSummaryItem} style={{ marginBottom: '1rem' }}>
+          <span>Despesas Projetadas </span>
+          <strong className={styles.negative}>
+            {formatFullCurrency(data.summary.totalProjectedExpenses)}
+          </strong>
+        </div>
+        <div className={styles.trendChartSummaryItem}>
+          <span>Saldo Final Projetado </span>
+          <strong className={data.summary.finalBalance >= 0 ? styles.positive : styles.negative}>
+            {formatFullCurrency(data.summary.finalBalance)}
+          </strong>
+        </div>
       </div>
-  <div className={styles.summaryItem} style={{ textAlign: 'center' }}>
-    <span
-      style={{
-        display: 'block',
-        marginBottom: '5px',
-        color: 'var(--text-color)'
-      }}
-    >
-      Despesas Projetadas ({projectionMonths} meses)
-    </span>
-    <strong
-      style={{
-        color: 'var(--error-color)',
-        fontSize: '1.2em'
-      }}
-    >
-      {formatFullCurrency(data.summary.totalProjectedExpenses)}
-    </strong>
-  </div>
-  <div className={styles.summaryItem} style={{ textAlign: 'center' }}>
-    <span
-      style={{
-        display: 'block',
-        marginBottom: '5px',
-        color: 'var(--text-color)'
-      }}
-    >
-      Saldo Final
-    </span>
-    <strong
-      style={{
-        color:
-          data.summary.finalBalance >= 0
-            ? 'var(--success-color)'
-            : 'var(--error-color)',
-        fontSize: '1.2em'
-      }}
-    >
-      {formatFullCurrency(data.summary.finalBalance)}
-    </strong>
-  </div>
-</div>
-
     </div>
   );
 };
