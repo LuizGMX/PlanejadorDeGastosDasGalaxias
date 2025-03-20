@@ -824,8 +824,8 @@ const Expenses = () => {
                       onChange={handleSelectAll}
                     />
                   </th>
-                  <th>Data</th>
                   <th>Descrição</th>
+                  <th>Data</th>                  
                   <th>Categoria</th>
                   <th>Subcategoria</th>
                   <th>Valor</th>
@@ -837,7 +837,7 @@ const Expenses = () => {
               <tbody>
                 {expenses.map(expense => (
                   <tr key={expense.id} className={selectedExpenses.includes(expense.id) ? styles.selected : ''}>
-                    <td data-label="Selecionar">
+                    <td data-label="">
                       <input
                         type="checkbox"
                         checked={selectedExpenses.includes(expense.id)}
@@ -845,8 +845,9 @@ const Expenses = () => {
                         className={expense.has_installments ? styles.installmentCheckbox : ''}
                       />
                     </td>
-                    <td data-label="Data">{formatDate(expense.expense_date)}</td>
                     <td data-label="Descrição">{expense.description}</td>
+                    <td data-label="Data">{formatDate(expense.expense_date)}</td>
+                   
                     <td data-label="Categoria">{expense.Category?.category_name}</td>
                     <td data-label="Subcategoria">{expense.SubCategory?.subcategory_name}</td>
                     <td data-label="Valor">{formatCurrency(expense.amount)}</td>

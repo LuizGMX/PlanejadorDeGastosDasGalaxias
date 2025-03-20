@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import { AuthContext } from '../App';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -7,14 +7,16 @@ import {
   PieChart,
   Pie,
   BarChart,
-  Bar,  
+  Bar,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   Legend,
   ResponsiveContainer,
-  Cell  
+  Cell,
+  ComposedChart,
 } from 'recharts';
 import styles from '../styles/dashboard.module.css';
   
@@ -530,8 +532,12 @@ const Dashboard = () => {
 
 
   const renderFinancialGoalChart = () => {
-    console.log("renderFinancialGoalChart", data);
-    if (!data?.financial_goal) return null;
+    console.log("Dados completos:", data);
+    console.log("Objetivo Financeiro:", data?.financial_goal);
+    if (!data?.financial_goal) {
+      console.log("Nenhum objetivo financeiro encontrado");
+      return null;
+    }
 
     const goal = data.financial_goal;
     const chartData = [{
@@ -539,7 +545,6 @@ const Dashboard = () => {
       economia: goal.projected_savings > goal.amount ? goal.amount : goal.projected_savings,
       faltante: goal.projected_savings > goal.amount ? 0 : goal.amount - goal.projected_savings
     }];
-    const isAchievable = data.budget_info.total_budget - data.budget_info.total_spent >= goal.monthly_needed;
 
   return (
       <div className={styles.chartContainer}>
@@ -553,8 +558,8 @@ const Dashboard = () => {
         <div className={styles.chartInfo}>
           <div className={styles.infoItem}>
             <span>Economia Mensal Atual:</span>
-            <strong className={data.budget_info.total_budget - data.budget_info.total_spent >= goal.monthly_needed ? styles.positive : styles.negative}>
-            {formatCurrency(data.budget_info.total_budget - data.budget_info.total_spent)}  
+            <strong className={goal.monthly_balance >= goal.monthly_needed ? styles.positive : styles.negative}>
+              {formatCurrency(goal.monthly_balance)}
             </strong>
           </div>
           <div className={styles.infoItem}>
@@ -566,11 +571,11 @@ const Dashboard = () => {
             <strong>{goal.months_remaining}</strong>
                 </div>
                         </div>
-                        
-        {isAchievable && (
-          <div className={!isAchievable ? styles.warning : styles.positive}>
-            
-            <p> <span className="material-icons">{!isAchievable ? 'warning' : 'check_circle'}</span> Com a economia mensal atual, você {isAchievable ? 'alcançará' : 'não alcançará'} seu objetivo no prazo definido.</p>
+
+        {!goal.is_achievable && (
+          <div className={styles.warning}>
+            <span className="material-icons">warning</span>
+            <p>Com a economia mensal atual, você não alcançará seu objetivo no prazo definido.</p>
                   </div>
                 )}
 
@@ -669,62 +674,39 @@ const Dashboard = () => {
     );
   };
 
-  const groupByCategory = (items) => {
-    return items.reduce((acc, item) => {
-      if (!item.Category) return acc;
-      const category = item.Category.category_name;
-      const type = item.Category.type;
-      if (!category || !type) return acc;
-      
-      const existing = acc.find(i => i.category_name === category);
-      if (existing) {
-        existing.total += parseFloat(item.amount);
-      } else {
-        acc.push({ 
-          category_name: category, 
-          type: type,
-          total: parseFloat(item.amount) 
-        });
-      }
-      return acc;
-    }, []);
-  };
-
   const renderCategoriesChart = () => {
-    if (!data?.expenses_by_category?.length) {
-      return null;
-    }
+    if (!data?.expenses_by_category?.length) return null;
 
     return renderChart('categories', 'Gastos por Categoria',
-      <PieChart margin={{ top: 10, right: 30, left: 30, bottom: 20 }}>
-        <Pie
-          data={data.expenses_by_category}
-          dataKey="total"
-          nameKey="category_name"
-          cx="50%"
-          cy="50%"
-          outerRadius={80}
-          label={({ category_name, percent }) =>
-            `${category_name} (${(percent * 100).toFixed(0)}%)`
-          }
-        >
-          {data.expenses_by_category.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-          ))}
-        </Pie>
-        <Tooltip
-          formatter={formatCurrency}
-          contentStyle={{
-            backgroundColor: 'var(--card-background)',
-            border: '1px solid var(--border-color)',
-            color: 'var(--text-color)'
-          }}
-          labelStyle={{ color: 'var(--text-color)' }}
-        />
-        <Legend
-          formatter={(value) => <span style={{ color: 'var(--text-color)' }}>{value}</span>}
-        />
-      </PieChart>
+                  <PieChart margin={{ top: 10, right: 30, left: 30, bottom: 20 }}>
+                    <Pie
+                      data={data.expenses_by_category}
+                      dataKey="total"
+                      nameKey="category_name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      label={({ category_name, percent }) =>
+                        `${category_name} (${(percent * 100).toFixed(0)}%)`
+                      }
+                    >
+                      {data.expenses_by_category.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={formatCurrency}
+                      contentStyle={{
+                        backgroundColor: 'var(--card-background)',
+                        border: '1px solid var(--border-color)',
+                        color: 'var(--text-color)'
+                      }}
+                      labelStyle={{ color: 'var(--text-color)' }}
+                    />
+                    <Legend
+                      formatter={(value) => <span style={{ color: 'var(--text-color)' }}>{value}</span>}
+                    />
+                  </PieChart>
     );
   };
 
@@ -823,40 +805,38 @@ const Dashboard = () => {
   };
 
   const renderIncomeCategoriesChart = () => {
-    if (!data?.incomes_by_category?.length) {
-      return null;
-    }
+    if (!data?.incomes_by_category?.length) return null;
 
     return renderChart('income-categories', 'Ganhos por Categoria',
-      <PieChart margin={{ top: 10, right: 30, left: 30, bottom: 20 }}>
-        <Pie
-          data={data.incomes_by_category}
-          dataKey="total"
-          nameKey="category_name"
-          cx="50%"
-          cy="50%"
-          outerRadius={80}
-          label={({ category_name, percent }) =>
-            `${category_name} (${(percent * 100).toFixed(0)}%)`
-          }
-        >
-          {data.incomes_by_category.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-          ))}
-        </Pie>
-        <Tooltip
-          formatter={formatCurrency}
-          contentStyle={{
-            backgroundColor: 'var(--card-background)',
-            border: '1px solid var(--border-color)',
-            color: 'var(--text-color)'
-          }}
-          labelStyle={{ color: 'var(--text-color)' }}
-        />
-        <Legend
-          formatter={(value) => <span style={{ color: 'var(--text-color)' }}>{value}</span>}
-        />
-      </PieChart>
+                  <PieChart margin={{ top: 10, right: 30, left: 30, bottom: 20 }}>
+                    <Pie
+                      data={data.incomes_by_category}
+                      dataKey="total"
+                      nameKey="category_name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      label={({ category_name, percent }) =>
+                        `${category_name} (${(percent * 100).toFixed(0)}%)`
+                      }
+                    >
+                      {data.incomes_by_category.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={formatCurrency}
+                      contentStyle={{
+                        backgroundColor: 'var(--card-background)',
+                        border: '1px solid var(--border-color)',
+                        color: 'var(--text-color)'
+                      }}
+                      labelStyle={{ color: 'var(--text-color)' }}
+                    />
+                    <Legend
+                      formatter={(value) => <span style={{ color: 'var(--text-color)' }}>{value}</span>}
+                    />
+                  </PieChart>
     );
   };
 
@@ -957,27 +937,112 @@ const Dashboard = () => {
   if (!data) return <div>Nenhum dado encontrado</div>;
 
   return (
-    <div className={styles.container}>
-      {loading ? (
-        <div>Carregando...</div>
-      ) : error ? (
-        <div className={styles.error}>{error}</div>
+    <div className={styles.dashboardContainer}>
+      {getGreeting(auth.user?.name || 'Usuário')}
+      <div className={styles.header}>
+        <h1 className={styles.title}>Dashboard</h1>
+      </div>
+
+      {noExpensesMessage ? (
+        <div className={styles.noExpensesContainer}>
+          <h2>{noExpensesMessage.message}</h2>
+          <p>{noExpensesMessage.suggestion}</p>
+          <div className={styles.buttonGroup}>
+            <button
+              className={styles.addFirstExpenseButton}
+              onClick={() => navigate('/add-expense')}
+            >
+              Adicionar Primeira Despesa
+            </button>
+            <button
+              className={styles.backButton}
+              onClick={() => {
+                setFilters({
+                  months: [new Date().getMonth() + 1],
+                  years: [new Date().getFullYear()]
+                });
+              }}
+            >
+              Voltar para Mês Atual
+            </button>
+          </div>
+        </div>
       ) : (
         <>
-          {getGreeting(auth.user.name)}
-          <div className={styles.dashboardGrid}>
-            {renderChart('bankBalance', 'Projeção de Saldo', (
-              <BankBalanceTrend />
-            ))}
-            {renderChart('incomeVsExpenses', 'Ganhos vs Despesas', renderIncomeVsExpensesChart())}
-            {renderChart('categories', 'Despesas por Categoria', renderCategoriesChart())}
-            {renderChart('timeline', 'Linha do Tempo', renderTimelineChart())}
-            {renderChart('incomeCategories', 'Ganhos por Categoria', renderIncomeCategoriesChart())}
-            {renderChart('banks', 'Distribuição por Banco', renderBanksChart())}
-            {renderChart('budget', 'Orçamento', renderBudgetChart())}
-            {renderChart('financialGoal', 'Objetivo Financeiro', renderFinancialGoalChart())}
-          </div>
-        </>
+          {data.budget_info && filters.month !== 'all' && filters.year !== 'all' && (
+            <div className={styles.budgetInfoContainer}>
+              <h3>Informações do Orçamento</h3>
+              <div className={styles.budgetStats}>
+                <div className={styles.budgetStat}>
+                  <span>Orçamento Total:</span>
+                  <strong>{formatCurrency(data.budget_info.total_budget)}</strong>
+                </div>
+                <div className={styles.budgetStat}>
+                  <span>Gasto até agora:</span>
+                  <strong className={data.budget_info.percentage_spent > 100 ? styles.overBudget : ''}>
+                    {formatCurrency(data.budget_info.total_spent)}
+                  </strong>
+                </div>
+                <div className={styles.budgetStat}>
+                  <span>Restante:</span>
+                  <strong className={data.budget_info.remaining_budget < 0 ? styles.overBudget : ''}>
+                    {formatCurrency(data.budget_info.total_budget - data.budget_info.total_spent)}
+                  </strong>
+                </div>
+                {data.budget_info.remaining_days > 0 && (
+                  <div className={styles.budgetStat}>
+                    <span>Sugestão de gasto diário:</span>
+                    <strong className={data.budget_info.suggested_daily_spend < 0 ? styles.overBudget : ''}>
+                      {formatCurrency(data.budget_info.suggested_daily_spend)}
+                      <div className={styles.dailySpendingInfo}>
+                        {data.budget_info.suggested_daily_spend < 0
+                          ? 'Orçamento já estourado para este mês'
+                          : 'por dia até o final do mês para manter-se dentro do orçamento'}
+                      </div>
+                    </strong>
+                  </div>
+                )}
+              </div>
+              <div className={styles.budgetProgressBar}>
+                <div
+                  className={`${styles.budgetProgress} ${data.budget_info.percentage_spent > 90
+                    ? styles.dangerProgress
+                    : data.budget_info.percentage_spent > 60
+                      ? styles.warningProgress
+                      : ''
+                    }`}
+                  style={{ width: `${Math.min(data.budget_info.percentage_spent, 100)}%` }}
+                />
+                <span className={data.budget_info.percentage_spent > 100 ? styles.overBudget : ''}>
+                  {data.budget_info.percentage_spent.toFixed(1)}% utilizado
+                  {data.budget_info.percentage_spent > 100 && ' (Orçamento Estourado)'}
+                </span>
+              </div>
+            </div>
+          )}
+
+          <div className={styles.chartsGrid}>
+            {renderFinancialGoalChart()}
+            {renderIncomeVsExpensesChart()}
+            {renderCategoriesChart()}
+            {renderTimelineChart()}
+            {renderIncomeCategoriesChart()}
+            {renderBanksChart()}
+              </div>
+
+              <div className={styles.chartsGrid}>
+                <div className={`${styles.chartContainer} ${styles.trendChart}`}>
+                  <div className={styles.chartHeader}>
+                    <h3>Tendência de Saldo Bancário</h3>
+                  </div>
+                  <BankBalanceTrend
+                    showTitle={false}
+                    showControls={true}
+                    height={expandedChart === 'bank-balance-trend' ? 600 : 300}
+                  />
+                </div>
+              </div>
+            </>
       )}
     </div>
   );

@@ -190,6 +190,10 @@ const EditRecurringExpenses = () => {
               <th>Descrição</th>
               <th>Valor</th>
               <th>Data</th>
+              <th>Categoria</th>
+              <th>Subcategoria</th>
+              <th>Banco/Carteira</th>
+              <th>Método de Pagamento</th>
               <th>Tipo</th>
               <th>Ações</th>
             </tr>
@@ -197,21 +201,42 @@ const EditRecurringExpenses = () => {
           <tbody>
             {expenses.map(expense => (
               <tr key={expense.id}>
-                <td>{expense.description}</td>
-                <td>R$ {expense.amount.toFixed(2).replace('.', ',')}</td>
-                <td>{new Date(expense.expense_date).toLocaleDateString()}</td>
-                <td>{expense.is_recurring ? 'Recorrente' : 'Parcelada'}</td>
-                <td>
+                <td data-label="Descrição">{expense.description}</td>
+                <td data-label="Valor">R$ {Number(expense.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                <td data-label="Data">
+                  {expense.is_recurring 
+                    ? `${new Date(expense.start_date).toLocaleDateString('pt-BR')} até ${new Date(expense.end_date).toLocaleDateString('pt-BR')}`
+                    : new Date(expense.expense_date).toLocaleDateString('pt-BR')}
+                </td>
+                <td data-label="Categoria">{expense.category_name}</td>
+                <td data-label="Subcategoria">{expense.subcategory_name || '-'}</td>
+                <td data-label="Banco/Carteira">{expense.bank_name}</td>
+                <td data-label="Método de Pagamento">
+                  {
+                    {
+                      'credit_card': 'Cartão de Crédito',
+                      'debit_card': 'Cartão de Débito',
+                      'money': 'Dinheiro',
+                      'pix': 'PIX',
+                      'transfer': 'Transferência',
+                      'other': 'Outro'
+                    }[expense.payment_method]
+                  }
+                </td>
+                <td data-label="Tipo">{expense.is_recurring ? 'Recorrente' : 'Parcelado'}</td>
+                <td data-label="Ações">
                   <div className={styles.actionButtons}>
                     <button
                       onClick={() => handleEditClick(expense)}
                       className={styles.editButton}
+                      title="Editar"
                     >
                       <span className="material-icons">edit</span>
                     </button>
                     <button
                       onClick={() => handleDeleteClick(expense)}
                       className={styles.deleteButton}
+                      title="Excluir"
                     >
                       <span className="material-icons">delete</span>
                     </button>

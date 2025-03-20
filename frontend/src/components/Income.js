@@ -523,7 +523,7 @@ const Income = () => {
           <tbody>
             {incomes.map(income => (
               <tr key={income.id} className={selectedIncomes.includes(income.id) ? styles.selected : ''}>
-                <td data-label="Selecionar">
+                <td data-label="">
                   <input
                     type="checkbox"
                     checked={selectedIncomes.includes(income.id)}
@@ -532,8 +532,12 @@ const Income = () => {
                   />
                 </td>
                 <td data-label="Descrição">{income.description}</td>
-                <td data-label="Valor">{formatCurrency(income.amount)}</td>
-                <td data-label="Data">{formatDate(income.date)}</td>
+                <td data-label="Valor">R$ {Number(income.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                <td data-label="Data">
+                  {income.is_recurring 
+                    ? `${new Date(income.start_date).toLocaleDateString('pt-BR')} até ${new Date(income.end_date).toLocaleDateString('pt-BR')}`
+                    : new Date(income.date).toLocaleDateString('pt-BR')}
+                </td>
                 <td data-label="Categoria">
                   {income.Category?.category_name || '-'}
                   {income.recurring_info && (

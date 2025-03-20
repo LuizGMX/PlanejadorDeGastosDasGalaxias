@@ -206,6 +206,9 @@ const EditRecurringIncomes = () => {
               <th>Descrição</th>
               <th>Valor</th>
               <th>Data</th>
+              <th>Categoria</th>
+              <th>Subcategoria</th>
+              <th>Banco/Carteira</th>
               <th>Tipo</th>
               <th>Ações</th>
             </tr>
@@ -213,22 +216,30 @@ const EditRecurringIncomes = () => {
           <tbody>
             {incomes.map(income => (
               <tr key={income.id}>
-                <td>{income.description}</td>
-                <td>R$ {income.amount.toFixed(2).replace('.', ',')}</td>
-                <td>{new Date(income.date).toLocaleDateString()}</td>
-                <td>{income.is_recurring ? 'Recorrente' : 'Parcelada'}</td>
-                <td>
+                <td data-label="Descrição">{income.description}</td>
+                <td data-label="Valor">R$ {Number(income.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                <td data-label="Data">
+                  {income.is_recurring 
+                    ? `${new Date(income.start_date).toLocaleDateString('pt-BR')} até ${new Date(income.end_date).toLocaleDateString('pt-BR')}`
+                    : new Date(income.date).toLocaleDateString('pt-BR')}
+                </td>
+                <td data-label="Categoria">{income.category_name}</td>
+                <td data-label="Subcategoria">{income.subcategory_name || '-'}</td>
+                <td data-label="Banco/Carteira">{income.bank_name}</td>
+                <td data-label="Tipo">{income.is_recurring ? 'Recorrente' : 'Parcelado'}</td>
+                <td data-label="Ações">
                   <div className={styles.actionButtons}>
                     <button
                       onClick={() => handleEditClick(income)}
                       className={styles.editButton}
+                      title="Editar"
                     >
                       <span className="material-icons">edit</span>
-                      
                     </button>
                     <button
                       onClick={() => handleDeleteClick(income)}
                       className={styles.deleteButton}
+                      title="Excluir"
                     >
                       <span className="material-icons">delete</span>
                     </button>

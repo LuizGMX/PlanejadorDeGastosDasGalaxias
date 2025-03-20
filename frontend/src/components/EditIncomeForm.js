@@ -386,24 +386,91 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
 
       {showConfirmModal && (
         <div className={sharedStyles.modalOverlay}>
-          <div className={sharedStyles.modalContent}>
-            <h3>Atenção!</h3>
-            <p>
-              Você está prestes a editar uma receita {formData.is_recurring ? 'recorrente' : formData.has_installments ? 'parcelada' : 'única'}.
-              Esta ação irá atualizar todas as receitas futuras deste grupo.
-              Deseja continuar?
-            </p>
-            <div className={sharedStyles.modalButtons}>
+          <div className={`${sharedStyles.modalContent} ${styles.fadeIn}`}>
+            <div className={styles.modalHeader}>
+              <span className="material-icons">warning</span>
+              <h3>Confirmar Edição</h3>
+            </div>
+            
+            <div className={styles.modalBody}>
+              <p>Você está editando os seguintes dados:</p>
+              
+              <ul className={styles.changesList}>
+                <li>
+                  <span className="material-icons">description</span>
+                  <span>Descrição: <strong>{formData.description}</strong></span>
+                </li>
+                <li>
+                  <span className="material-icons">attach_money</span>
+                  <span>Valor: <strong>R$ {Number(formData.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></span>
+                </li>
+                {!formData.is_recurring && !formData.has_installments && (
+                  <li>
+                    <span className="material-icons">event</span>
+                    <span>Data: <strong>{new Date(formData.date).toLocaleDateString('pt-BR')}</strong></span>
+                  </li>
+                )}
+                {formData.is_recurring && (
+                  <>
+                    <li>
+                      <span className="material-icons">event_repeat</span>
+                      <span>Data de Início: <strong>{new Date(formData.start_date).toLocaleDateString('pt-BR')}</strong></span>
+                    </li>
+                    <li>
+                      <span className="material-icons">event_busy</span>
+                      <span>Data de Fim: <strong>{new Date(formData.end_date).toLocaleDateString('pt-BR')}</strong></span>
+                    </li>
+                  </>
+                )}
+                {formData.has_installments && (
+                  <li>
+                    <span className="material-icons">format_list_numbered</span>
+                    <span>Número de Parcelas: <strong>{formData.total_installments}</strong></span>
+                  </li>
+                )}
+                <li>
+                  <span className="material-icons">category</span>
+                  <span>Categoria: <strong>{categories.find(c => c.id === Number(formData.category_id))?.category_name}</strong></span>
+                </li>
+                {formData.subcategory_id && (
+                  <li>
+                    <span className="material-icons">sell</span>
+                    <span>Subcategoria: <strong>{subcategories.find(s => s.id === Number(formData.subcategory_id))?.subcategory_name}</strong></span>
+                  </li>
+                )}
+                <li>
+                  <span className="material-icons">account_balance</span>
+                  <span>Banco/Carteira: <strong>{banks.find(b => b.id === Number(formData.bank_id))?.name}</strong></span>
+                </li>
+              </ul>
+
+              {formData.is_recurring && (
+                <div className={styles.warningBox}>
+                  <span className="material-icons">info</span>
+                  <p>Esta é uma receita recorrente. As alterações serão aplicadas a todas as receitas futuras deste grupo.</p>
+                </div>
+              )}
+              {formData.has_installments && (
+                <div className={styles.warningBox}>
+                  <span className="material-icons">info</span>
+                  <p>Esta é uma receita parcelada. As alterações serão aplicadas a todas as parcelas futuras.</p>
+                </div>
+              )}
+            </div>
+
+            <div className={styles.modalFooter}>
               <button
                 onClick={() => setShowConfirmModal(false)}
                 className={sharedStyles.cancelButton}
               >
+                <span className="material-icons">close</span>
                 Cancelar
               </button>
               <button
                 onClick={handleConfirmSubmit}
                 className={sharedStyles.confirmButton}
               >
+                <span className="material-icons">check</span>
                 Confirmar
               </button>
             </div>
