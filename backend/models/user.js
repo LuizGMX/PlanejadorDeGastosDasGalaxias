@@ -23,24 +23,6 @@ export default (sequelize) => {
         isEmail: true
       }
     },
-    net_income: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: false,
-      validate: {
-        min: 0
-      }
-    },
-    old_net_income: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: true,
-      validate: {
-        min: 0
-      }
-    },
-    old_net_income_date: {
-      type: DataTypes.DATE,
-      allowNull: true
-    },
     financial_goal_name: {
       type: DataTypes.STRING,
       allowNull: true

@@ -10,10 +10,10 @@ const Profile = () => {
   const { auth, setAuth } = useContext(AuthContext);
   const [formData, setFormData] = useState({
     name: '',
-    net_income: '',
-    financial_goal_name: '',
-    financial_goal_amount: '',
-    financial_goal_date: ''
+    email: '',
+    financialGoalName: '',
+    financialGoalAmount: '',
+    financialGoalDate: ''
   });
 
   const [emailChangeData, setEmailChangeData] = useState({
@@ -32,10 +32,10 @@ const Profile = () => {
     if (auth.user) {
       setFormData({
         name: auth.user.name || '',
-        net_income: auth.user.net_income || '',
-        financial_goal_name: auth.user.financial_goal_name || '',
-        financial_goal_amount: auth.user.financial_goal_amount || '',
-        financial_goal_date: auth.user.financial_goal_date ? new Date(auth.user.financial_goal_date).toISOString().split('T')[0] : ''
+        email: auth.user.email || '',
+        financialGoalName: auth.user.financial_goal_name || '',
+        financialGoalAmount: auth.user.financial_goal_amount ? auth.user.financial_goal_amount.toString() : '',
+        financialGoalDate: auth.user.financial_goal_date || ''
       });
       setEmailChangeData(prev => ({
         ...prev,
@@ -66,11 +66,11 @@ const Profile = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage('');
     setError('');
+    setMessage('');
 
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/user/profile`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/user/me`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -78,10 +78,10 @@ const Profile = () => {
         },
         body: JSON.stringify({
           name: formData.name,
-          net_income: formData.net_income,
-          financial_goal_name: formData.financial_goal_name || null,
-          financial_goal_amount: formData.financial_goal_amount || null,
-          financial_goal_date: formData.financial_goal_date || null
+          email: formData.email,
+          financial_goal_name: formData.financialGoalName,
+          financial_goal_amount: formData.financialGoalAmount,
+          financial_goal_date: formData.financialGoalDate
         })
       });
 
@@ -259,46 +259,37 @@ const Profile = () => {
           </div>
 
           <div className={styles.formGroup}>
-            <label htmlFor="net_income">Renda Líquida</label>
-            <CurrencyInput
-              id="net_income"
-              name="net_income"
-              value={formData.net_income}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, net_income: value || '' }))}
-              prefix="R$ "
-              decimalSeparator=","
-              groupSeparator="."
+            <label htmlFor="email">E-mail</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
               className={styles.input}
               required
             />
-            {auth.user?.old_net_income && auth.user?.old_net_income_date && (
-              <div className={styles.oldIncomeInfo}>
-                <p>Renda anterior: R$ {parseFloat(auth.user.old_net_income).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                <p>Atualizado em: {new Date(auth.user.old_net_income_date).toLocaleDateString('pt-BR')}</p>
-              </div>
-            )}
           </div>
 
           <div className={styles.formGroup}>
-            <label htmlFor="financial_goal_name">Nome do Objetivo Financeiro</label>
+            <label htmlFor="financialGoalName">Nome do Objetivo Financeiro</label>
             <input
               type="text"
-              id="financial_goal_name"
-              name="financial_goal_name"
-              value={formData.financial_goal_name || ''}
+              id="financialGoalName"
+              name="financialGoalName"
+              value={formData.financialGoalName}
               onChange={handleChange}
               className={styles.input}
-              placeholder="Ex: Comprar um carro"
             />
           </div>
 
           <div className={styles.formGroup}>
-            <label htmlFor="financial_goal_amount">Valor do Objetivo</label>
+            <label htmlFor="financialGoalAmount">Valor do Objetivo</label>
             <CurrencyInput
-              id="financial_goal_amount"
-              name="financial_goal_amount"
-              value={formData.financial_goal_amount || ''}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, financial_goal_amount: value || '' }))}
+              id="financialGoalAmount"
+              name="financialGoalAmount"
+              value={formData.financialGoalAmount}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, financialGoalAmount: value || '' }))}
               prefix="R$ "
               decimalSeparator=","
               groupSeparator="."
@@ -307,12 +298,12 @@ const Profile = () => {
           </div>
 
           <div className={styles.formGroup}>
-            <label htmlFor="financial_goal_date">Data do Objetivo</label>
+            <label htmlFor="financialGoalDate">Data do Objetivo</label>
             <input
               type="date"
-              id="financial_goal_date"
-              name="financial_goal_date"
-              value={formData.financial_goal_date || ''}
+              id="financialGoalDate"
+              name="financialGoalDate"
+              value={formData.financialGoalDate}
               onChange={handleChange}
               className={styles.input}
               min={new Date().toISOString().split('T')[0]}

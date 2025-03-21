@@ -4,7 +4,7 @@ import { AuthContext } from '../App';
 import CurrencyInput from 'react-currency-input-field';
 import styles from '../styles/login.module.css';
 import logo from '../assets/logo.svg';
-import { BsEnvelope, BsPerson, BsCurrencyDollar, BsShieldLock } from 'react-icons/bs';
+import { BsEnvelope, BsPerson, BsShieldLock } from 'react-icons/bs';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -13,7 +13,6 @@ const Login = () => {
   const [formData, setFormData] = useState({
     email: '',
     name: '',
-    netIncome: '',
     financialGoalName: '',
     financialGoalAmount: '',
     financialGoalDate: ''
@@ -65,8 +64,6 @@ const Login = () => {
           setError('Nome é obrigatório');
           return;
         }
-        setStep('income');
-      } else if (step === 'income') {
         setStep('goal');
       } else if (step === 'goal') {
         if (!formData.name.trim()) {
@@ -83,7 +80,6 @@ const Login = () => {
             email: formData.email,
             code,
             name: formData.name,
-            netIncome: formData.netIncome,
             financialGoalName: formData.financialGoalName,
             financialGoalAmount: formData.financialGoalAmount,
             financialGoalDate: formData.financialGoalDate
@@ -121,7 +117,6 @@ const Login = () => {
         ? {
             email: formData.email,
             name: formData.name,
-            netIncome: formData.netIncome,
             financialGoalName: formData.financialGoalName,
             financialGoalAmount: formData.financialGoalAmount,
             financialGoalDate: formData.financialGoalDate,
@@ -172,7 +167,6 @@ const Login = () => {
         ? {
             email: formData.email,
             name: formData.name,
-            netIncome: formData.netIncome,
             financialGoalName: formData.financialGoalName,
             financialGoalAmount: formData.financialGoalAmount,
             financialGoalDate: formData.financialGoalDate,
@@ -264,32 +258,6 @@ const Login = () => {
           </>
         );
 
-      case 'income':
-        return (
-          <>
-            <div className={styles.loginHeader}>
-              <h1 className={styles.loginTitle}>Qual sua renda mensal?</h1>
-              <p className={styles.loginSubtitle}>
-                Esta informação nos ajuda a personalizar seu planejamento financeiro
-              </p>
-            </div>
-            <div className={styles.inputWrapper}>
-              <CurrencyInput
-                name="netIncome"
-                value={formData.netIncome}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, netIncome: value || '' }))}
-                prefix="R$ "
-                decimalSeparator=","
-                groupSeparator="."
-                className={styles.loginInput}
-                placeholder="Digite sua renda mensal"
-                required
-              />
-              <BsCurrencyDollar className={styles.inputIcon} />
-            </div>
-          </>
-        );
-
       case 'goal':
         return (
           <>
@@ -323,7 +291,7 @@ const Login = () => {
                 placeholder="Valor do objetivo"
                 required
               />
-              <BsCurrencyDollar className={styles.inputIcon} />
+              <BsShieldLock className={styles.inputIcon} />
             </div>
             <div className={styles.inputWrapper}>
               <input
@@ -404,8 +372,7 @@ const Login = () => {
                   type="button"
                   onClick={() => {
                     if (step === 'name') setStep('email');
-                    if (step === 'income') setStep('name');
-                    if (step === 'code') setStep(isNewUser ? 'income' : 'email');
+                    if (step === 'code') setStep(isNewUser ? 'goal' : 'email');
                   }}
                   className={`${styles.backButton}`}
                 >

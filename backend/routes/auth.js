@@ -112,14 +112,13 @@ router.post('/send-code', async (req, res) => {
   try {
     const { 
       email, 
-      name, 
-      netIncome,       
+      name,      
       financialGoalName,
       financialGoalAmount,
       financialGoalDate
     } = req.body;
 
-    console.log('Dados recebidos:', { email, name, netIncome, financialGoalName, financialGoalAmount, financialGoalDate });
+    console.log('Dados recebidos:', { email, name, financialGoalName, financialGoalAmount, financialGoalDate });
 
     // Validação básica do email
     if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
@@ -150,7 +149,6 @@ router.post('/send-code', async (req, res) => {
       code,
       userData: JSON.stringify({
         name,
-        netIncome,
         financialGoalName,
         financialGoalAmount,
         financialGoalDate
@@ -189,8 +187,8 @@ router.post('/send-code', async (req, res) => {
 router.post('/verify-code', async (req, res) => {
   console.log('/api/auth/verify-code chamado');
   try {
-    const { email, code, name, netIncome, financialGoalName, financialGoalAmount, financialGoalDate } = req.body;
-    console.log('Dados recebidos:', { email, code, name, netIncome, financialGoalName, financialGoalAmount, financialGoalDate });
+    const { email, code, name, financialGoalName, financialGoalAmount, financialGoalDate } = req.body;
+    console.log('Dados recebidos:', { email, code, name, financialGoalName, financialGoalAmount, financialGoalDate });
 
     if (!email || !code) {
       return res.status(400).json({ message: 'E-mail e código são obrigatórios' });
@@ -204,7 +202,6 @@ router.post('/verify-code', async (req, res) => {
     let user = await User.findOne({ where: { email } });
     let userData = {
       name,
-      netIncome,
       financialGoalName,
       financialGoalAmount,
       financialGoalDate
@@ -236,8 +233,7 @@ router.post('/verify-code', async (req, res) => {
 
       user = await User.create({ 
         email, 
-        name: userData.name, 
-        net_income: userData.netIncome || 0,
+        name: userData.name,
         is_active: true,
         financial_goal_name: userData.financialGoalName || null,
         financial_goal_amount: userData.financialGoalAmount || null,
@@ -250,7 +246,6 @@ router.post('/verify-code', async (req, res) => {
       const updateData = {};
       
       if (userData.name) updateData.name = userData.name;
-      if (userData.netIncome) updateData.net_income = userData.netIncome;
       if (userData.financialGoalName) updateData.financial_goal_name = userData.financialGoalName;
       if (userData.financialGoalAmount) updateData.financial_goal_amount = userData.financialGoalAmount;
       if (userData.financialGoalDate) updateData.financial_goal_date = userData.financialGoalDate;
@@ -270,7 +265,6 @@ router.post('/verify-code', async (req, res) => {
         id: user.id,
         name: user.name,
         email: user.email,
-        net_income: user.net_income,
         financial_goal_name: user.financial_goal_name,
         financial_goal_amount: user.financial_goal_amount,
         financial_goal_date: user.financial_goal_date
@@ -325,9 +319,9 @@ router.post('/send-access-code', async (req, res) => {
 
 router.get('/me', authenticate, async (req, res) => {
   console.log('/api/auth/me chamado');
-  return res.json({ name: req.user.name, 
+  return res.json({ 
+    name: req.user.name, 
     email: req.user.email,
-    net_income: req.user.net_income,
     financial_goal_name: req.user.financial_goal_name,
     financial_goal_amount: parseInt(req.user.financial_goal_amount),
     financial_goal_date: req.user.financial_goal_date
@@ -340,32 +334,26 @@ router.put('/me', authenticate, async (req, res) => {
     const {
       name,
       email,
-      net_income,
       financial_goal_name,
       financial_goal_amount,
       financial_goal_date,
-      old_net_income,
     } = req.body;
 
     await req.user.update({
       name,
       email,
-      net_income,
       financial_goal_name,
       financial_goal_amount: parseInt(financial_goal_amount),
       financial_goal_date,
-      old_net_income
     });
 
     res.json({
       id: req.user.id,
       name: req.user.name,
       email: req.user.email,
-      net_income: req.user.net_income,
       financial_goal_name: req.user.financial_goal_name,
       financial_goal_amount: parseInt(req.user.financial_goal_amount),
       financial_goal_date: req.user.financial_goal_date,
-      old_net_income: req.user.old_net_income
     });
   } catch (error) {
     console.error('Erro ao atualizar usuário:', error);

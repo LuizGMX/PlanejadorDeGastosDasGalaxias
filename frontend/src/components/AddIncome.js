@@ -13,12 +13,15 @@ const AddIncome = () => {
     description: '',
     amount: '',
     date: '',
-    start_date: '',
-    end_date: '',
-    is_recurring: false,
     category_id: '',
     subcategory_id: '',
-    bank_id: ''
+    bank_id: '',
+    is_recurring: false,
+    has_installments: false,
+    total_installments: '',
+    current_installment: '',
+    start_date: '',
+    end_date: ''
   });
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
@@ -113,14 +116,23 @@ const AddIncome = () => {
     setSuccess('');
 
     try {
+      // Define as datas para ganhos fixos
+      let start_date = null;
+      let end_date = null;
       if (formData.is_recurring) {
-        if (!formData.start_date || !formData.end_date) {
-          throw new Error('Data inicial e final são obrigatórias para ganhos recorrentes');
-        }
-        formData.date = formData.start_date;
-      } else if (!formData.date) {
-        throw new Error('Data é obrigatória para ganhos não recorrentes');
+        start_date = formData.date;
+        const endDateObj = new Date(formData.date);
+        endDateObj.setMonth(11); // Define o mês como dezembro
+        endDateObj.setDate(31); // Define o dia como 31
+        endDateObj.setYear(2099);
+        end_date = endDateObj.toISOString().split('T')[0];
       }
+
+      const dataToSend = {
+        ...formData,
+        start_date,
+        end_date
+      };
 
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/incomes`, {
         method: 'POST',
@@ -128,7 +140,7 @@ const AddIncome = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${auth.token}`
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(dataToSend)
       });
 
       if (!response.ok) {
@@ -138,7 +150,7 @@ const AddIncome = () => {
 
       setSuccess('Ganho adicionado com sucesso!');
       setTimeout(() => {
-        navigate('/income');
+        navigate('/incomes');
       }, 2000);
     } catch (err) {
       setError(err.message || 'Erro ao adicionar ganho. Por favor, tente novamente.');
@@ -201,9 +213,8 @@ const AddIncome = () => {
                 setFormData(prev => ({
                   ...prev,
                   is_recurring: !prev.is_recurring,
-                  date: !prev.is_recurring ? prev.start_date : '',
-                  start_date: !prev.is_recurring ? new Date().toISOString().split('T')[0] : '',
-                  end_date: !prev.is_recurring ? '' : prev.end_date
+                  has_installments: false,
+                  date: prev.date || new Date().toISOString().split('T')[0]
                 }));
               }}>
                 <div className={styles.checkboxWrapper}>
@@ -219,61 +230,39 @@ const AddIncome = () => {
                 </div>
                 <label htmlFor="is_recurring" className={styles.optionLabel}>
                   <span className="material-icons">sync</span>
-                  Recorrente
+                  Fixo
                 </label>
               </div>
-
-              {formData.is_recurring && (
-                <div className={styles.optionContent}>
-                  <div className={styles.inputGroup}>
-                    <label htmlFor="start_date" className={styles.label}>
-                      Data de Início
-                    </label>
-                    <input
-                      type="date"
-                      id="start_date"
-                      name="start_date"
-                      value={formData.start_date}
-                      onChange={handleChange}
-                      className={styles.input}
-                      required
-                    />
-                  </div>
-                  <div className={styles.inputGroup}>
-                    <label htmlFor="end_date" className={styles.label}>
-                      Data de Término
-                    </label>
-                    <input
-                      type="date"
-                      id="end_date"
-                      name="end_date"
-                      value={formData.end_date}
-                      onChange={handleChange}
-                      className={styles.input}
-                      min={formData.start_date}
-                      max={(() => {
-                        if (!formData.start_date) return '';
-                        const startDate = new Date(formData.start_date);
-                        const maxDate = new Date(startDate);
-                        maxDate.setFullYear(maxDate.getFullYear() + 10);
-                        return maxDate.toISOString().split('T')[0];
-                      })()}
-                      required
-                    />
-                  </div>
-                </div>
-              )}
             </div>
           </div>
 
+          {formData.is_recurring && (
+            <div className={styles.optionContent}>
+              <div className={styles.inputGroup}>
+                <label className={styles.label}>
+                  <span className="material-icons">calendar_today</span>
+                  Data da Primeira Cobrança
+                </label>
+                <input
+                  type="date"
+                  name="date"
+                  value={formData.date}
+                  onChange={handleChange}
+                  className={styles.input}
+                  required
+                />
+              </div>
+            </div>
+          )}
+
           {!formData.is_recurring && (
             <div className={styles.inputGroup}>
-              <label htmlFor="date" className={styles.label}>
+              <label className={styles.label}>
+                <span className="material-icons">calendar_today</span>
                 Data
               </label>
               <input
                 type="date"
-                id="date"
                 name="date"
                 value={formData.date}
                 onChange={handleChange}

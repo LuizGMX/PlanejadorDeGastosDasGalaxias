@@ -4,6 +4,7 @@ import { AuthContext } from '../App';
 import styles from '../styles/expenses.module.css';
 import sharedStyles from '../styles/shared.module.css';
 import EditExpenseForm from './EditExpenseForm';
+import { toast } from 'react-hot-toast';
 
 const Expenses = () => {
   const navigate = useNavigate();
@@ -296,7 +297,13 @@ const Expenses = () => {
       if (expense.is_recurring) {
         setDeleteOptions({
           type: 'recurring',
-          delete_future: false
+          showModal: true,
+          options: [
+            { id: 'all', label: 'Excluir todos os gastos fixos (passados e futuros)' },
+            { id: 'past', label: 'Excluir somente gastos fixos passados' },
+            { id: 'future', label: 'Excluir somente gastos fixos futuros' }
+          ],
+          message: 'Para excluir um gasto fixo específico, encontre-o na lista de gastos do mês desejado.'
         });
       } else if (expense.has_installments) {
         setDeleteOptions({
@@ -319,7 +326,21 @@ const Expenses = () => {
     setShowDeleteModal(true);
   };
 
-  const handleDelete = async () => {
+  const handleDelete = async (expense) => {
+    if (expense.is_recurring) {
+      setExpenseToDelete(expense);
+      setDeleteOptions({
+        type: 'recurring',
+        showModal: true,
+        options: [
+          { id: 'all', label: 'Excluir todos os gastos fixos (passados e futuros)' },
+          { id: 'past', label: 'Excluir somente gastos fixos passados' },
+          { id: 'future', label: 'Excluir somente gastos fixos futuros' }
+        ],
+        message: 'Para excluir um gasto fixo específico, encontre-o na lista de gastos do mês desejado.'
+      });
+      return;
+    }
     try {
       if (deleteOptions.type === 'bulk') {
         const response = await fetch(`${process.env.REACT_APP_API_URL}/api/expenses/bulk`, {
@@ -419,33 +440,73 @@ const Expenses = () => {
     }
   };
 
+  const handleSave = async (expenseData) => {
+    try {
+      const payload = {
+        ...expenseData,
+        user_id: auth.user.id
+      };
+
+      if (expenseData.is_recurring) {
+        payload.start_date = expenseData.expense_date;
+        payload.end_date = '2099-12-31';
+      }
+
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/expenses/${editingExpense ? editingExpense.id : ''}`, {
+        method: editingExpense ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${auth.token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao salvar despesa');
+      }
+
+      setShowDeleteModal(false);
+      setEditingExpense(null);
+      fetchExpenses();
+      toast.success(editingExpense ? 'Despesa atualizada com sucesso!' : 'Despesa criada com sucesso!');
+    } catch (error) {
+      console.error('Erro:', error);
+      toast.error('Erro ao salvar despesa');
+    }
+  };
+
+  const handleDeleteConfirm = async (option) => {
+    try {
+      if (!expenseToDelete) return;
+
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/expenses/${expenseToDelete.id}/recurring`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${auth.token}`
+        },
+        body: JSON.stringify({ deleteType: option })
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao excluir despesa');
+      }
+
+      setDeleteOptions({ showModal: false });
+      setExpenseToDelete(null);
+      fetchExpenses();
+      toast.success('Despesa(s) excluída(s) com sucesso!');
+    } catch (error) {
+      console.error('Erro:', error);
+      toast.error('Erro ao excluir despesa');
+    }
+  };
+
   const handleEditClick = (expense) => {
     if (expense.is_recurring || expense.has_installments) {
       navigate('/edit-recurring-expenses');
     } else {
       setEditingExpense(expense);
-    }
-  };
-
-  const handleUpdate = async (updatedExpense) => {
-    try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/expenses/${updatedExpense.id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${auth.token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(updatedExpense)
-      });
-
-      if (!response.ok) {
-        throw new Error('Falha ao atualizar despesa');
-      }
-
-      setEditingExpense(null);
-      await fetchExpenses();
-    } catch (err) {
-      setError('Erro ao atualizar despesa. Por favor, tente novamente.');
     }
   };
 
@@ -758,10 +819,10 @@ const Expenses = () => {
           <button
             className={`${styles.recurringButton} ${filters.is_recurring === 'true' ? styles.active : ''}`}
             onClick={() => handleFilterChange('is_recurring', filters.is_recurring === 'true' ? '' : 'true')}
-            title="Mostrar apenas despesas recorrentes"
+            title="Mostrar apenas despesas fixas"
           >
             <span className="material-icons">sync</span>
-            Recorrentes
+            Fixas
           </button>
         </div>
      
@@ -860,7 +921,7 @@ const Expenses = () => {
                       {expense.is_recurring && (
                         <span 
                           className="material-icons" 
-                          title={`Despesa Recorrente - Início: ${formatDate(expense.start_date)} - Fim: ${formatDate(expense.end_date)}`}
+                          title="Despesa Fixa"
                         >
                           sync
                         </span>
@@ -898,188 +959,31 @@ const Expenses = () => {
         </>
       )}
 
-      {showDeleteModal && (
+      {deleteOptions.showModal && (
         <div className={styles.modal}>
           <div className={styles.modalContent}>
-            <h2>Confirmar Exclusão</h2>
-            {deleteOptions.type === 'recurring' ? (
-              <>
-                <p>Como você deseja excluir esta despesa recorrente?</p>
-                <div className={styles.deleteOptions}>
-                  <div className={styles.deleteOption}>
-                    <input
-                      type="checkbox"
-                      id="delete-single"
-                      checked={deleteOption === 'single'}
-                      onChange={() => setDeleteOption('single')}
-                    />
-                    <label htmlFor="delete-single">Apenas esta</label>
-                  </div>
-                  <div className={styles.deleteOption}>
-                    <input
-                      type="checkbox"
-                      id="delete-future"
-                      checked={deleteOption === 'future'}
-                      onChange={() => setDeleteOption('future')}
-                    />
-                    <label htmlFor="delete-future">Esta e futuras</label>
-                  </div>
-                  <div className={styles.deleteOption}>
-                    <input
-                      type="checkbox"
-                      id="delete-past"
-                      checked={deleteOption === 'past'}
-                      onChange={() => setDeleteOption('past')}
-                    />
-                    <label htmlFor="delete-past">Esta e passadas</label>
-                  </div>
-                  <div className={styles.deleteOption}>
-                    <input
-                      type="checkbox"
-                      id="delete-all"
-                      checked={deleteOption === 'all'}
-                      onChange={() => setDeleteOption('all')}
-                    />
-                    <label htmlFor="delete-all">Todas</label>
-                  </div>
-                </div>
-                <div className={styles.modalButtons}>
-                  <button
-                    onClick={() => {
-                      setShowDeleteModal(false);
-                      setExpenseToDelete(null);
-                      setDeleteOptions({ type: 'single' });
-                      setDeleteOption(null);
-                    }}
-                    className={styles.cancelButton}
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={() => {
-                      switch (deleteOption) {
-                        case 'single':
-                          setDeleteOptions(prev => ({ ...prev, delete_future: false, delete_past: false, delete_all: false }));
-                          break;
-                        case 'future':
-                          setDeleteOptions(prev => ({ ...prev, delete_future: true, delete_past: false, delete_all: false }));
-                          break;
-                        case 'past':
-                          setDeleteOptions(prev => ({ ...prev, delete_future: false, delete_past: true, delete_all: false }));
-                          break;
-                        case 'all':
-                          setDeleteOptions(prev => ({ ...prev, delete_future: false, delete_past: false, delete_all: true }));
-                          break;
-                      }
-                      handleDelete();
-                    }}
-                    className={styles.deleteButton}
-                    disabled={!deleteOption}
-                  >
-                    Excluir
-                  </button>
-                </div>
-              </>
-            ) : deleteOptions.type === 'installment' ? (
-              <>
-                <p>Como você deseja excluir esta despesa parcelada?</p>
-                <div className={styles.deleteOptions}>
-                  <div className={styles.deleteOption}>
-                    <input
-                      type="checkbox"
-                      id="delete-single-installment"
-                      checked={deleteOption === 'single'}
-                      onChange={() => setDeleteOption('single')}
-                    />
-                    <label htmlFor="delete-single-installment">Apenas esta parcela</label>
-                  </div>
-                  <div className={styles.deleteOption}>
-                    <input
-                      type="checkbox"
-                      id="delete-all-installments"
-                      checked={deleteOption === 'all'}
-                      onChange={() => setDeleteOption('all')}
-                    />
-                    <label htmlFor="delete-all-installments">Todas as parcelas</label>
-                  </div>
-                </div>
-                <div className={styles.modalButtons}>
-                  <button
-                    onClick={() => {
-                      setShowDeleteModal(false);
-                      setExpenseToDelete(null);
-                      setDeleteOptions({ type: 'single' });
-                      setDeleteOption(null);
-                    }}
-                    className={styles.cancelButton}
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={() => {
-                      setDeleteOptions(prev => ({ 
-                        ...prev, 
-                        deleteAllInstallments: deleteOption === 'all' 
-                      }));
-                      handleDelete();
-                    }}
-                    className={styles.deleteButton}
-                    disabled={!deleteOption}
-                  >
-                    Excluir
-                  </button>
-                </div>
-              </>
-            ) : deleteOptions.type === 'bulk' ? (
-              <>
-                <p>Tem certeza que deseja excluir {deleteOptions.ids.length} {deleteOptions.ids.length === 1 ? 'despesa' : 'despesas'}?</p>
-                <div className={styles.modalButtons}>
-                  <button
-                    onClick={() => {
-                      setShowDeleteModal(false);
-                      setExpenseToDelete(null);
-                      setDeleteOptions({ type: 'single' });
-                    }}
-                    className={styles.cancelButton}
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={() => {
-                      Promise.all(deleteOptions.ids.map(id => handleDelete(id)))
-                        .then(() => {
-                          setSelectedExpenses([]);
-                        });
-                    }}
-                    className={styles.deleteButton}
-                  >
-                    Excluir
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <p>Tem certeza que deseja excluir esta despesa?</p>
-                <div className={styles.modalButtons}>
-                  <button
-                    onClick={() => {
-                      setShowDeleteModal(false);
-                      setExpenseToDelete(null);
-                      setDeleteOptions({ type: 'single' });
-                    }}
-                    className={styles.cancelButton}
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={handleDelete}
-                    className={styles.deleteButton}
-                  >
-                    Excluir
-                  </button>
-                </div>
-              </>
-            )}
+            <h2>Excluir Despesa Fixa</h2>
+            <p>{deleteOptions.message}</p>
+            <div className={styles.optionsContainer}>
+              {deleteOptions.options.map(option => (
+                <button
+                  key={option.id}
+                  className={styles.optionButton}
+                  onClick={() => handleDeleteConfirm(option.id)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <button 
+              className={styles.cancelButton}
+              onClick={() => {
+                setDeleteOptions({ showModal: false });
+                setExpenseToDelete(null);
+              }}
+            >
+              Cancelar
+            </button>
           </div>
         </div>
       )}
@@ -1087,7 +991,7 @@ const Expenses = () => {
       {editingExpense && (
         <EditExpenseForm
           expense={editingExpense}
-          onSave={handleUpdate}
+          onSave={handleSave}
           onCancel={() => setEditingExpense(null)}
         />
       )}

@@ -4,6 +4,7 @@ import { AuthContext } from '../App';
 import styles from '../styles/income.module.css';
 import sharedStyles from '../styles/shared.module.css';
 import EditIncomeForm from './EditIncomeForm';
+import { toast } from 'react-hot-toast';
 
 const Income = () => {
   const navigate = useNavigate();
@@ -205,7 +206,21 @@ const Income = () => {
     });
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (income) => {
+    if (income.is_recurring) {
+      setIncomeToDelete(income);
+      setDeleteOptions({
+        type: 'recurring',
+        showModal: true,
+        options: [
+          { id: 'all', label: 'Excluir todos os ganhos fixos (passados e futuros)' },
+          { id: 'past', label: 'Excluir somente ganhos fixos passados' },
+          { id: 'future', label: 'Excluir somente ganhos fixos futuros' }
+        ],
+        message: 'Para excluir um ganho fixo específico, encontre-o na lista de ganhos do mês desejado.'
+      });
+      return;
+    }
     try {
       if (deleteOptions.type === 'bulk') {
         const response = await fetch(`${process.env.REACT_APP_API_URL}/api/incomes/bulk`, {
@@ -245,7 +260,7 @@ const Income = () => {
         return;
       }
 
-      let url = `${process.env.REACT_APP_API_URL}/api/incomes/${id}`;
+      let url = `${process.env.REACT_APP_API_URL}/api/incomes/${income.id}`;
       if (deleteOption) {
         url += `?deleteOption=${deleteOption}`;
       }
@@ -324,6 +339,68 @@ const Income = () => {
       navigate('/edit-recurring-incomes');
     } else {
       setEditingIncome(income);
+    }
+  };
+
+  const handleSave = async (incomeData) => {
+    try {
+      const payload = {
+        ...incomeData,
+        user_id: auth.userId
+      };
+
+      if (incomeData.is_recurring) {
+        payload.start_date = incomeData.date;
+        payload.end_date = '2099-12-31';
+      }
+
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/incomes${editingIncome ? `/${editingIncome.id}` : ''}`, {
+        method: editingIncome ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${auth.token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao salvar ganho');
+      }
+
+      setShowDeleteModal(false);
+      setEditingIncome(null);
+      fetchIncomes();
+      toast.success(editingIncome ? 'Ganho atualizado com sucesso!' : 'Ganho criado com sucesso!');
+    } catch (error) {
+      console.error('Erro:', error);
+      toast.error('Erro ao salvar ganho');
+    }
+  };
+
+  const handleDeleteConfirm = async (option) => {
+    try {
+      if (!incomeToDelete) return;
+
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/incomes/${incomeToDelete.id}/recurring`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${auth.token}`
+        },
+        body: JSON.stringify({ deleteType: option })
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao excluir ganho');
+      }
+
+      setDeleteOptions({ showModal: false });
+      setIncomeToDelete(null);
+      fetchIncomes();
+      toast.success('Ganho(s) excluído(s) com sucesso!');
+    } catch (error) {
+      console.error('Erro:', error);
+      toast.error('Erro ao excluir ganho');
     }
   };
 
@@ -473,10 +550,10 @@ const Income = () => {
           <button
               className={`${styles.recurringButton} ${filters.is_recurring === 'true' ? styles.active : ''}`}
               onClick={() => handleFilterChange('is_recurring', filters.is_recurring === 'true' ? '' : 'true')}
-              title="Mostrar apenas despesas recorrentes"
+              title="Mostrar apenas ganhos fixos"
             >
               <span className="material-icons">sync</span>
-              Recorrentes
+              Fixos
             </button>
         </div>
 
@@ -586,124 +663,31 @@ const Income = () => {
         </div>
       )}
 
-      {showDeleteModal && (
+      {deleteOptions.showModal && (
         <div className={styles.modal}>
           <div className={styles.modalContent}>
-            <h2>Confirmar Exclusão</h2>
-            {incomeToDelete?.is_recurring ? (
-              <>
-                <p>Como você deseja excluir esta ganho recorrente?</p>
-                <div className={styles.deleteOptions}>
-                  <div className={styles.deleteOption}>
-                    <input
-                      type="radio"
-                      id="delete-single"
-                      checked={deleteOption === 'single'}
-                      onChange={() => setDeleteOption('single')}
-                    />
-                    <label htmlFor="delete-single">Apenas esta</label>
-                  </div>
-                  <div className={styles.deleteOption}>
-                    <input
-                      type="radio"
-                      id="delete-future"
-                      checked={deleteOption === 'future'}
-                      onChange={() => setDeleteOption('future')}
-                    />
-                    <label htmlFor="delete-future">Esta e futuras</label>
-                  </div>
-                  <div className={styles.deleteOption}>
-                    <input
-                      type="radio"
-                      id="delete-past"
-                      checked={deleteOption === 'past'}
-                      onChange={() => setDeleteOption('past')}
-                    />
-                    <label htmlFor="delete-past">Esta e passadas</label>
-                  </div>
-                  <div className={styles.deleteOption}>
-                    <input
-                      type="radio"
-                      id="delete-all"
-                      checked={deleteOption === 'all'}
-                      onChange={() => setDeleteOption('all')}
-                    />
-                    <label htmlFor="delete-all">Todas</label>
-                  </div>
-                </div>
-                <div className={styles.modalButtons}>
-                  <button
-                    onClick={() => {
-                      setShowDeleteModal(false);
-                      setIncomeToDelete(null);
-                      setDeleteOption(null);
-                    }}
-                    className={styles.cancelButton}
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={() => {
-                      switch (deleteOption) {
-                        case 'single':
-                        case 'future':
-                        case 'past':
-                        case 'all':
-                          handleDelete(incomeToDelete.id);
-                          break;
-                      }
-                    }}
-                    className={styles.deleteButton}
-                    disabled={!deleteOption}
-                  >
-                    Excluir
-                  </button>
-                </div>
-              </>
-            ) : deleteOptions.type === 'bulk' ? (
-              <>
-                <p>Tem certeza que deseja excluir {selectedIncomes.length} {selectedIncomes.length === 1 ? 'ganho' : 'ganhos'}?</p>
-                <div className={styles.modalButtons}>
-                  <button
-                    onClick={() => {
-                      setShowDeleteModal(false);
-                      setIncomeToDelete(null);
-                      setDeleteOptions({ type: 'single' });
-                    }}
-                    className={styles.cancelButton}
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={() => handleDelete(null)}
-                    className={styles.deleteButton}
-                  >
-                    Excluir
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <p>Tem certeza que deseja excluir esta ganho?</p>
-                <div className={styles.modalButtons}>
-                  <button
-                    onClick={() => {
-                      setShowDeleteModal(false);
-                      setIncomeToDelete(null);
-                    }}
-                    className={styles.cancelButton}
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={() => handleDelete(incomeToDelete.id)}
-                    className={styles.deleteButton}
-                  >
-                    Excluir
-                  </button>
-                </div>
-              </>
-            )}
+            <h2>Excluir Ganho Fixo</h2>
+            <p>{deleteOptions.message}</p>
+            <div className={styles.optionsContainer}>
+              {deleteOptions.options.map(option => (
+                <button
+                  key={option.id}
+                  className={styles.optionButton}
+                  onClick={() => handleDeleteConfirm(option.id)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <button 
+              className={styles.cancelButton}
+              onClick={() => {
+                setDeleteOptions({ showModal: false });
+                setIncomeToDelete(null);
+              }}
+            >
+              Cancelar
+            </button>
           </div>
         </div>
       )}
@@ -711,7 +695,7 @@ const Income = () => {
       {editingIncome && (
         <EditIncomeForm
           income={editingIncome}
-          onSave={handleUpdate}
+          onSave={handleSave}
           onCancel={() => setEditingIncome(null)}
         />
       )}

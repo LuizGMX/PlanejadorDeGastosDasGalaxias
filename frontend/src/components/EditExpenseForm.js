@@ -114,6 +114,22 @@ const EditExpenseForm = ({ expense, onSave, onCancel }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Atualiza as datas para despesas fixas
+    if (formData.is_recurring) {
+      const startDate = new Date(formData.expense_date);
+      startDate.setHours(12); // Meio-dia para evitar problemas de timezone
+      
+      const endDate = new Date(startDate);
+      endDate.setFullYear(endDate.getFullYear() + 10); // Define um período de 10 anos
+      
+      formData.start_date = startDate.toISOString();
+      formData.end_date = endDate.toISOString();
+    } else {
+      formData.start_date = null;
+      formData.end_date = null;
+    }
+
     setShowConfirmModal(true);
   };
 
@@ -187,29 +203,18 @@ const EditExpenseForm = ({ expense, onSave, onCancel }) => {
                 </div>
                 <label htmlFor="is_recurring" className={styles.optionLabel}>
                   <span className="material-icons">sync</span>
-                  Despesa Recorrente
+                  Fixo
                 </label>
               </div>
 
               {formData.is_recurring && (
                 <div className={styles.optionContent}>
                   <div className={styles.inputGroup}>
-                    <label>Data de Início</label>
+                    <label>Data da Primeira Cobrança</label>
                     <input
                       type="date"
-                      name="start_date"
-                      value={formData.start_date ? formData.start_date.split('T')[0] : ''}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-
-                  <div className={styles.inputGroup}>
-                    <label>Data de Fim</label>
-                    <input
-                      type="date"
-                      name="end_date"
-                      value={formData.end_date ? formData.end_date.split('T')[0] : ''}
+                      name="expense_date"
+                      value={formData.expense_date ? formData.expense_date.split('T')[0] : ''}
                       onChange={handleChange}
                       required
                     />
@@ -432,7 +437,7 @@ const EditExpenseForm = ({ expense, onSave, onCancel }) => {
               {formData.is_recurring && (
                 <div className={styles.warningBox}>
                   <span className="material-icons">info</span>
-                  <p>Esta é uma despesa recorrente. As alterações serão aplicadas a todas as despesas futuras deste grupo.</p>
+                  <p>Esta é uma despesa fixa. As alterações serão aplicadas a todas as despesas futuras deste grupo.</p>
                 </div>
               )}
               {formData.has_installments && (

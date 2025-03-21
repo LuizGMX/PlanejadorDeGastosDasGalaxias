@@ -146,108 +146,60 @@ router.get('/', authenticate, async (req, res) => {
 // Adicionar nova ganho
 router.post('/', authenticate, async (req, res) => {
   const t = await Income.sequelize.transaction();
-
   try {
     const {
       description,
-      amount,
+      amount: rawAmount,
       date,
+      is_recurring,
       category_id,
       subcategory_id,
       bank_id,
-      is_recurring,
-      end_date,
-      start_date
+      start_date,
+      end_date
     } = req.body;
 
     // Validações básicas
-    if (!description || !amount || !date || !category_id || !bank_id) {
-      throw new Error('Campos obrigatórios faltando');
+    if (!description || !rawAmount || !date || !category_id || !bank_id) {
+      return res.status(400).json({ message: 'Todos os campos obrigatórios devem ser preenchidos' });
     }
 
-    if (amount <= 0) {
-      throw new Error('O valor deve ser maior que zero');
+    const parsedAmount = Number(rawAmount);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      return res.status(400).json({ message: 'O valor do ganho deve ser um número positivo' });
     }
 
-    // Se for recorrente, precisa de data inicial e final
-    if (is_recurring && (!start_date || !end_date)) {
-      throw new Error('Data inicial e final são obrigatórias para ganhos recorrentes');
+    // Validação da data
+    if (isNaN(new Date(date).getTime())) {
+      return res.status(400).json({ message: 'Data inválida' });
     }
 
-    // Validar período máximo de 10 anos para recorrência
+    // Se for recorrente, define as datas de início e fim
+    let incomeData = {
+      user_id: req.user.id,
+      description,
+      amount: parsedAmount,
+      date,
+      is_recurring,
+      recurring_group_id: is_recurring ? uuidv4() : null,
+      category_id,
+      subcategory_id,
+      bank_id
+    };
+
     if (is_recurring) {
-      const startDate = new Date(start_date);
-      const endDate = new Date(end_date);
-      const maxDate = new Date(startDate);
-      maxDate.setFullYear(maxDate.getFullYear() + 10);
-
-      if (endDate > maxDate) {
-        throw new Error('O período de recorrência não pode ser maior que 10 anos');
-      }
+      incomeData.start_date = date;
+      incomeData.end_date = end_date || '2099-12-31';
     }
 
-    const recurring_group_id = is_recurring ? uuidv4() : null;
-    let createdIncome;
-
-    if (is_recurring) {
-      // Criar ganhos recorrentes mensais
-      const startDate = new Date(start_date);
-      const endDate = new Date(end_date);
-      const currentDate = new Date(startDate);
-      const createdIncomes = [];
-
-      while (currentDate <= endDate) {
-        const income = await Income.create({
-          description,
-          amount,
-          date: new Date(currentDate),
-          category_id,
-          subcategory_id,
-          bank_id,
-          user_id: req.user.id,
-          is_recurring,
-          recurring_group_id,
-          start_date: startDate,
-          end_date: endDate
-        }, { transaction: t });
-
-        createdIncomes.push(income);
-        currentDate.setMonth(currentDate.getMonth() + 1);
-      }
-      createdIncome = createdIncomes[0]; // Pega a primeira ganho criada
-    } else {
-      // Criar ganho única
-      createdIncome = await Income.create({
-        description,
-        amount,
-        date,
-        category_id,
-        subcategory_id,
-        bank_id,
-        user_id: req.user.id,
-        is_recurring: false
-      }, { transaction: t });
-    }
+    const income = await Income.create(incomeData, { transaction: t });
 
     await t.commit();
-
-    // Busca a ganho criada com seus relacionamentos
-    const incomeWithRelations = await Income.findOne({
-      where: { id: createdIncome.id },
-      include: [
-        { model: Category },
-        { model: SubCategory },
-        { model: Bank }
-      ]
-    });
-
-    res.status(201).json({ 
-      message: 'Ganho adicionada com sucesso',
-      income: incomeWithRelations
-    });
+    res.status(201).json(income);
   } catch (error) {
     await t.rollback();
-    res.status(400).json({ message: error.message });
+    console.error('Erro ao criar ganho:', error);
+    res.status(500).json({ message: 'Erro ao criar ganho' });
   }
 });
 
@@ -267,24 +219,25 @@ router.put('/:id', authenticate, async (req, res) => {
       end_date
     } = req.body;
 
+    // Validações básicas
+    if (!description || !amount || !date || !category_id || !bank_id) {
+      return res.status(400).json({ message: 'Campos obrigatórios faltando' });
+    }
+
+    if (amount <= 0) {
+      return res.status(400).json({ message: 'O valor deve ser maior que zero' });
+    }
+
     const income = await Income.findOne({
       where: {
         id: req.params.id,
         user_id: req.user.id
-      }
+      },
+      transaction: t
     });
 
     if (!income) {
-      throw new Error('Ganho não encontrado');
-    }
-
-    // Validações básicas
-    if (!description || !amount || !date || !category_id || !bank_id) {
-      throw new Error('Campos obrigatórios faltando');
-    }
-
-    if (amount <= 0) {
-      throw new Error('O valor deve ser maior que zero');
+      return res.status(404).json({ message: 'Ganho não encontrado' });
     }
 
     if (income.is_recurring) {
@@ -296,7 +249,7 @@ router.put('/:id', authenticate, async (req, res) => {
         maxDate.setFullYear(maxDate.getFullYear() + 10);
 
         if (endDateObj > maxDate) {
-          throw new Error('O período de recorrência não pode ser maior que 10 anos');
+          return res.status(400).json({ message: 'O período de recorrência não pode ser maior que 10 anos' });
         }
       }
 
@@ -556,11 +509,12 @@ router.delete('/:id', authenticate, async (req, res) => {
       where: {
         id: req.params.id,
         user_id: req.user.id
-      }
+      },
+      transaction: t
     });
 
     if (!income) {
-      throw new Error('Ganho não encontrada');
+      return res.status(404).json({ message: 'Ganho não encontrado' });
     }
 
     if (income.is_recurring) {
@@ -608,12 +562,12 @@ router.delete('/:id', authenticate, async (req, res) => {
 
     await t.commit();
     res.json({ 
-      message: 'Ganho excluída com sucesso',
+      message: 'Ganho excluído com sucesso',
       isRecurring: income.is_recurring 
     });
   } catch (error) {
     await t.rollback();
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: 'Erro ao excluir ganho' });
   }
 });
 
@@ -664,5 +618,110 @@ router.get('/categories/:categoryId/subcategories', authenticate, async (req, re
   }
 });
 
+// Rota para excluir ganho fixo
+router.delete('/:id/recurring', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { deleteType } = req.body;
+    const income = await Income.findByPk(id);
+
+    if (!income) {
+      return res.status(404).json({ message: 'Ganho não encontrado' });
+    }
+
+    if (income.user_id !== req.user.id) {
+      return res.status(403).json({ message: 'Não autorizado' });
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let whereClause = {
+      user_id: req.user.id,
+      recurring_group_id: income.recurring_group_id
+    };
+
+    switch (deleteType) {
+      case 'all':
+        // Não adiciona condição de data - exclui tudo
+        break;
+      case 'past':
+        whereClause.date = {
+          [Op.lt]: today
+        };
+        break;
+      case 'future':
+        whereClause.date = {
+          [Op.gte]: today
+        };
+        break;
+      default:
+        return res.status(400).json({ message: 'Tipo de exclusão inválido' });
+    }
+
+    await Income.destroy({
+      where: whereClause
+    });
+
+    res.json({ message: 'Ganho(s) excluído(s) com sucesso' });
+  } catch (error) {
+    console.error('Erro ao excluir ganho fixo:', error);
+    res.status(500).json({ message: 'Erro ao excluir ganho fixo' });
+  }
+});
+
+// Rota para criar ganho
+router.post('/', authenticate, async (req, res) => {
+  try {
+    const incomeData = {
+      ...req.body,
+      user_id: req.user.id
+    };
+
+    if (incomeData.is_recurring) {
+      incomeData.recurring_group_id = uuidv4();
+      incomeData.start_date = incomeData.date;
+      incomeData.end_date = '2099-12-31';
+    }
+
+    const income = await Income.create(incomeData);
+    res.status(201).json(income);
+  } catch (error) {
+    console.error('Erro ao criar ganho:', error);
+    res.status(500).json({ message: 'Erro ao criar ganho' });
+  }
+});
+
+// Rota para atualizar ganho
+router.put('/:id', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const income = await Income.findByPk(id);
+
+    if (!income) {
+      return res.status(404).json({ message: 'Ganho não encontrado' });
+    }
+
+    if (income.user_id !== req.user.id) {
+      return res.status(403).json({ message: 'Não autorizado' });
+    }
+
+    const incomeData = {
+      ...req.body
+    };
+
+    if (incomeData.is_recurring && !income.is_recurring) {
+      incomeData.recurring_group_id = uuidv4();
+      incomeData.start_date = incomeData.date;
+      incomeData.end_date = '2099-12-31';
+    }
+
+    await income.update(incomeData);
+    res.json(income);
+  } catch (error) {
+    console.error('Erro ao atualizar ganho:', error);
+    res.status(500).json({ message: 'Erro ao atualizar ganho' });
+  }
+});
 
 export default router; 

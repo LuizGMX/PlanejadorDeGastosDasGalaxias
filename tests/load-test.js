@@ -65,8 +65,7 @@ function createAccount() {
   const data = generateRandomData();
   const payload = JSON.stringify({
     email: data.email,
-    name: data.name,
-    netIncome: 5000, // Valor fixo para teste
+    name: data.name,    
     selectedBanks: [1] // Banco de exemplo
   });
 

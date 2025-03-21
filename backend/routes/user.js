@@ -42,49 +42,53 @@ const sendVerificationEmail = async (email, name, code) => {
 };
 
 // Rota para atualizar o perfil do usuário
-router.put('/profile', authenticate, async (req, res) => {
+router.put('/me', authenticate, async (req, res) => {
   try {
-    const { name, net_income, financial_goal_name, financial_goal_amount, financial_goal_date } = req.body;
-    const user = await User.findByPk(req.user.id);
+    const user = req.user;
+    const { name, financial_goal_name, financial_goal_amount, financial_goal_date } = req.body;
 
-    if (!user) {
-      return res.status(404).json({ message: 'Usuário não encontrado' });
+    // Validações
+    if (!name) {
+      return res.status(400).json({ message: 'Nome é obrigatório' });
     }
 
-    // Se houver mudança no net_income, salva o valor antigo
-    if (net_income && net_income !== user.net_income) {
-      await user.update({
-        old_net_income: user.net_income,
-        old_net_income_date: new Date()
-      });
-    }
-
-    // Atualiza os demais dados
-    await user.update({
-      name: name || user.name,
-      net_income: net_income || user.net_income,
-      financial_goal_name: financial_goal_name || user.financial_goal_name,
-      financial_goal_amount: financial_goal_amount || user.financial_goal_amount,
-      financial_goal_date: financial_goal_date || user.financial_goal_date,
+    // Atualiza os dados do usuário
+    const updatedUser = await user.update({
+      name,
+      financial_goal_name: financial_goal_name || null,
+      financial_goal_amount: financial_goal_amount || null,
+      financial_goal_date: financial_goal_date || null
     });
 
-    // Busca o usuário atualizado
-    const updatedUser = await User.findByPk(req.user.id);
-
+    // Retorna os dados atualizados
     res.json({
       id: updatedUser.id,
       name: updatedUser.name,
       email: updatedUser.email,
-      net_income: updatedUser.net_income,
-      old_net_income: updatedUser.old_net_income,
-      old_net_income_date: updatedUser.old_net_income_date,
       financial_goal_name: updatedUser.financial_goal_name,
       financial_goal_amount: updatedUser.financial_goal_amount,
       financial_goal_date: updatedUser.financial_goal_date
     });
   } catch (error) {
-    console.error('Erro ao atualizar perfil:', error);
-    res.status(500).json({ message: 'Erro ao atualizar perfil' });
+    console.error('Erro ao atualizar usuário:', error);
+    res.status(500).json({ message: 'Erro ao atualizar usuário' });
+  }
+});
+
+router.get('/me', authenticate, async (req, res) => {
+  try {
+    const user = req.user;
+    res.json({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      financial_goal_name: user.financial_goal_name,
+      financial_goal_amount: user.financial_goal_amount,
+      financial_goal_date: user.financial_goal_date
+    });
+  } catch (error) {
+    console.error('Erro ao buscar usuário:', error);
+    res.status(500).json({ message: 'Erro ao buscar usuário' });
   }
 });
 
@@ -163,9 +167,6 @@ router.post('/change-email/verify', authenticate, async (req, res) => {
         id: user.id,
         name: user.name,
         email: user.email,
-        net_income: user.net_income,
-        old_net_income: user.old_net_income,
-        old_net_income_date: user.old_net_income_date,
         financial_goal_name: user.financial_goal_name,
         financial_goal_amount: user.financial_goal_amount,
         financial_goal_date: user.financial_goal_date

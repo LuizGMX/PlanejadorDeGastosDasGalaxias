@@ -18,7 +18,7 @@ export const authenticate = async (req, res, next) => {
     
     if (!user) {
       user = await User.findByPk(decoded.userId, {
-        attributes: ['id', 'name', 'email', 'net_income', 'created_at', 'updated_at']
+        attributes: ['id', 'name', 'email', 'created_at', 'updated_at', 'financial_goal_name', 'financial_goal_amount', 'financial_goal_date']
       });
       if (user) {
         await setCache(cacheKey, user);
@@ -34,7 +34,6 @@ export const authenticate = async (req, res, next) => {
       id: user.id,
       name: user.name,
       email: user.email,
-      net_income: parseFloat(user.net_income || 0),
       created_at: user.created_at,
       updated_at: user.updated_at
     };

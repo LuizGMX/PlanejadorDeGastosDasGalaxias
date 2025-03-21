@@ -254,11 +254,25 @@ const AddExpense = () => {
         first_installment_date = firstDate.toISOString().split('T')[0];
       }
 
+      // Define as datas para despesas fixas
+      let start_date = null;
+      let end_date = null;
+      if (formData.is_recurring) {        
+        start_date = formData.date;
+        const endDateObj = new Date(formData.date);        
+        endDateObj.setMonth(11); // Define o mês como dezembro
+        endDateObj.setDate(31); // Define o dia como 31
+        endDateObj.setYear(2099);
+        end_date = endDateObj.toISOString().split('T')[0];
+      }
+
       const dataToSend = {
         ...formData,
         amount: installmentAmount,
         first_installment_date,
-        expense_date: formData.date
+        expense_date: formData.date,
+        start_date,
+        end_date
       };
 
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/expenses`, {
@@ -363,7 +377,7 @@ const AddExpense = () => {
                   is_recurring: !prev.is_recurring,
                   has_installments: false,
                   is_in_cash: false,
-                  date: !prev.is_recurring ? '' : new Date().toLocaleDateString('en-CA')
+                  date: !prev.is_recurring ? '' : new Date().toLocaleDateString('pt-BR')
                 }));
               }}>
                 <div className={styles.checkboxWrapper}>
@@ -377,9 +391,9 @@ const AddExpense = () => {
                   />
                   <span className={styles.checkmark}></span>
                 </div>
-                <label htmlFor="is_recurring" className={styles.optionLabel}>
+                <label htmlFor="is_recurring" className={styles.optionLabel} style={{fontSize: '15px'}}>
                   <span className="material-icons">sync</span>
-                  Despesa Recorrente
+                  Fixo - Ocorrerá a cada mês
                 </label>
               </div>
 
@@ -387,8 +401,8 @@ const AddExpense = () => {
                 <div className={styles.optionContent}>
                   <div className={styles.inputGroup}>
                     <label className={styles.label}>
-                      <span className="material-icons">event</span>
-                      Data de Início da Recorrência
+                      <span className="material-icons">calendar_today</span>
+                      Data da Primeira Cobrança
                     </label>
                     <input
                       type="date"
@@ -398,29 +412,6 @@ const AddExpense = () => {
                       className={styles.input}
                       required
                     />
-                  </div>
-                  <div className={styles.inputGroup}>
-                    <label className={styles.label}>
-                      <span className="material-icons">event_busy</span>
-                      Data Final da Recorrência
-                    </label>
-                    <input
-                      type="date"
-                      name="end_date"
-                      value={formData.end_date}
-                      onChange={handleChange}
-                      className={styles.input}
-                      min={formData.date || new Date().toLocaleDateString('en-CA')}
-                      max={(() => {
-                        const date = formData.date ? new Date(formData.date) : new Date();
-                        const maxDate = new Date(date);
-                        maxDate.setFullYear(maxDate.getFullYear() + 10);
-                        return maxDate.toLocaleDateString('en-CA');
-                      })()}
-                    />
-                    <small className={styles.helperText}>
-                      O período de recorrência não pode ser maior que 10 anos
-                    </small>
                   </div>
                 </div>
               )}

@@ -22,8 +22,7 @@ describe('Autenticação', () => {
     it('deve retornar isNewUser false para email cadastrado', async () => {
       await User.create({
         email: 'test@example.com',
-        name: 'Test User',
-        net_income: 5000
+        name: 'Test User'
       });
 
       const res = await request(app)
@@ -43,7 +42,6 @@ describe('Autenticação', () => {
         .send({
           email: 'test@example.com',
           name: 'Test User',
-          netIncome: 5000,
           selectedBanks: ['Banco 1']
         });
 

@@ -4,7 +4,6 @@ router.put('/:id', authenticate, async (req, res) => {
     const {
       name,
       email,
-      net_income,
       financial_goal_name,
       financial_goal_amount,
       financial_goal_date
@@ -22,7 +21,6 @@ router.put('/:id', authenticate, async (req, res) => {
     await user.update({
       name,
       email,
-      net_income,
       financial_goal_name,
       financial_goal_amount,
       financial_goal_date
@@ -32,7 +30,6 @@ router.put('/:id', authenticate, async (req, res) => {
       id: user.id,
       name: user.name,
       email: user.email,
-      net_income: user.net_income,
       financial_goal_name: user.financial_goal_name,
       financial_goal_amount: user.financial_goal_amount,
       financial_goal_date: user.financial_goal_date
@@ -40,5 +37,32 @@ router.put('/:id', authenticate, async (req, res) => {
   } catch (error) {
     console.error('Erro ao atualizar usuário:', error);
     res.status(500).json({ message: 'Erro ao atualizar usuário' });
+  }
+});
+
+router.get('/', authenticate, async (req, res) => {
+  try {
+    const users = await User.findAll({
+      attributes: ['id', 'name', 'email', 'created_at', 'updated_at']
+    });
+    res.json(users);
+  } catch (error) {
+    console.error('Erro ao listar usuários:', error);
+    res.status(500).json({ message: 'Erro ao listar usuários' });
+  }
+});
+
+router.get('/:id', authenticate, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.params.id, {
+      attributes: ['id', 'name', 'email', 'created_at', 'updated_at']
+    });
+    if (!user) {
+      return res.status(404).json({ message: 'Usuário não encontrado' });
+    }
+    res.json(user);
+  } catch (error) {
+    console.error('Erro ao buscar usuário:', error);
+    res.status(500).json({ message: 'Erro ao buscar usuário' });
   }
 }); 

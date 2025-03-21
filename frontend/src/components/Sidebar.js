@@ -28,7 +28,7 @@ const Sidebar = () => {
       icon: <GiPayMoney size={20} />,
       submenu: [
         {
-          label: 'Lista de Despesas',
+          label: 'Minhas Despesas',
           path: '/expenses',
           icon: <BsListUl size={18} />
         },
@@ -37,32 +37,32 @@ const Sidebar = () => {
           path: '/add-expense',
           icon: <BsPlusCircle size={18} />
         },
-        {
-          label: 'Editar Despesa Parcelas ou Recorrentes',
-          path: '/edit-recurring-expenses',
-          icon: <BsPencil size={18} />
-        }
+        // {
+        //   label: 'Editar Despesa Parcelas ou Recorrentes',
+        //   path: '/edit-recurring-expenses',
+        //   icon: <BsPencil size={18} />
+        // }
       ]
     },
     {
-      label: 'Ganhos',
+      label: 'Receitas',
       icon: <GiReceiveMoney size={20} />,
       submenu: [
         {
-          label: 'Lista de Ganhos',
+          label: 'Minhas Receitas',
           path: '/income',
           icon: <BsCashCoin size={18} />
         },
         {
-          label: 'Adicionar Ganho',
+          label: 'Adicionar Receita',
           path: '/add-income',
           icon: <BsPlusCircle size={18} />
         },
-        {
-          label: 'Editar Ganhos Recorrentes',
-          path: '/edit-recurring-incomes',
-          icon: <BsPencil size={18} />
-        }
+        // {
+        //   label: 'Editar Ganhos Recorrentes',
+        //   path: '/edit-recurring-incomes',
+        //   icon: <BsPencil size={18} />
+        // }
       ]
     },
     {

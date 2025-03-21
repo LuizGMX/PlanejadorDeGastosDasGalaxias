@@ -171,7 +171,7 @@ const EditRecurringExpenses = () => {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h1 style={{color: '#00FF85'}}>Editar Despesas Recorrentes</h1>
+        <h1 style={{color: '#00FF85'}}>Editar Despesas Fixas</h1>
         {/* <button 
           onClick={() => navigate('/expenses')}
           className={styles.backButton}
@@ -205,7 +205,7 @@ const EditRecurringExpenses = () => {
                 <td data-label="Valor">R$ {Number(expense.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                 <td data-label="Data">
                   {expense.is_recurring 
-                    ? `${new Date(expense.start_date).toLocaleDateString('pt-BR')} até ${new Date(expense.end_date).toLocaleDateString('pt-BR')}`
+                    ? `${new Date(expense.expense_date).toLocaleDateString('pt-BR')} até ${new Date(expense.end_date).toLocaleDateString('pt-BR')}`
                     : new Date(expense.expense_date).toLocaleDateString('pt-BR')}
                 </td>
                 <td data-label="Categoria">{expense.category_name}</td>
@@ -223,7 +223,7 @@ const EditRecurringExpenses = () => {
                     }[expense.payment_method]
                   }
                 </td>
-                <td data-label="Tipo">{expense.is_recurring ? 'Recorrente' : 'Parcelado'}</td>
+                <td data-label="Tipo">{expense.is_recurring ? 'Fixo' : 'Parcelado'}</td>
                 <td data-label="Ações">
                   <div className={styles.actionButtons}>
                     <button
@@ -253,7 +253,7 @@ const EditRecurringExpenses = () => {
           <div className={styles.modalContent}>
             <h3>Atenção!</h3>
             <p>
-              Você está prestes a editar uma despesa recorrente.
+              Você está prestes a editar uma despesa fixa.
               Esta ação irá atualizar todas as despesas futuras deste grupo.
               Deseja continuar?
             </p>
@@ -283,7 +283,7 @@ const EditRecurringExpenses = () => {
           <div className={styles.modalContent}>
             <h3>Atenção!</h3>
             <p>
-              Você está prestes a excluir uma despesa recorrente.
+              Você está prestes a excluir uma despesa fixa.
               Esta ação irá excluir todas as despesas deste grupo.
               Esta ação não pode ser desfeita. Deseja continuar?
             </p>

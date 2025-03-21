@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import Expenses from './components/Expenses';
@@ -72,6 +73,7 @@ function App() {
   return (
     <AuthContext.Provider value={{ auth, setAuth }}>
       <Router>
+        <Toaster position="top-right" />
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<Navigate to={auth.token ? "/dashboard" : "/login"} />} />

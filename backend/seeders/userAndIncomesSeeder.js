@@ -46,7 +46,6 @@ export const seedUserAndIncomes = async () => {
 
     const createIncomesForMonth = async (year, month, quantity) => {
       const incomes = [];
-      const paymentMethods = ['pix', 'card']; // Invertido a ordem pois PIX é mais comum para ganhos
 
       for (let i = 0; i < quantity; i++) {
         const randomCategory = categoriesWithSubs[Math.floor(Math.random() * categoriesWithSubs.length)];
@@ -54,48 +53,20 @@ export const seedUserAndIncomes = async () => {
           Math.floor(Math.random() * randomCategory.SubCategories.length)
         ];
         const randomBank = banks[Math.floor(Math.random() * banks.length)];
-        const randomPaymentMethod = paymentMethods[Math.floor(Math.random() * paymentMethods.length)];
-        const hasInstallments = Math.random() < 0.2; // 20% de chance de ter parcelas (menos comum em ganhos)
-        const installmentGroupId = hasInstallments ? uuidv4() : null;
-        const totalInstallments = hasInstallments ? Math.floor(Math.random() * 5) + 2 : null; // 2-6 parcelas
+        const isRecurring = Math.random() < 0.3; // 30% de chance de ser fixo
+        const recurringGroupId = isRecurring ? uuidv4() : null;
 
-        if (hasInstallments) {
-          const baseAmount = generateRandomAmount();
-          const amountPerInstallment = baseAmount / totalInstallments;
-          const baseDate = generateRandomDate(year, month);
-
-          for (let j = 0; j < totalInstallments; j++) {
-            const installmentDate = new Date(baseDate);
-            installmentDate.setMonth(baseDate.getMonth() + j);
-
-            incomes.push({
-              user_id: user.id,
-              description: `Ganho parcelado ${i + 1} (${j + 1}/${totalInstallments})`,
-              amount: amountPerInstallment,
-              category_id: randomCategory.id,
-              subcategory_id: randomSubcategory.id,
-              bank_id: randomBank.id,
-              date: installmentDate,
-              payment_method: randomPaymentMethod,
-              has_installments: true,
-              current_installment: j + 1,
-              total_installments: totalInstallments,
-              installment_group_id: installmentGroupId
-            });
-          }
-        } else {
-          incomes.push({
-            user_id: user.id,
-            description: `Ganho ${i + 1}`,
-            amount: generateRandomAmount(),
-            category_id: randomCategory.id,
-            subcategory_id: randomSubcategory.id,
-            bank_id: randomBank.id,
-            date: generateRandomDate(year, month),
-            payment_method: randomPaymentMethod,
-            has_installments: false
-          });
-        }
+        incomes.push({
+          user_id: user.id,
+          description: isRecurring ? `Ganho Fixo ${i + 1}` : `Ganho ${i + 1}`,
+          amount: generateRandomAmount(),
+          category_id: randomCategory.id,
+          subcategory_id: randomSubcategory.id,
+          bank_id: randomBank.id,
+          date: generateRandomDate(year, month),
+          is_recurring: isRecurring,
+          recurring_group_id: recurringGroupId
+        });
       }
 
       await Income.bulkCreate(incomes);

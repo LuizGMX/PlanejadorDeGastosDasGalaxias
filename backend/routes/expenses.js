@@ -100,9 +100,10 @@ router.post('/', authenticate, async (req, res) => {
       has_installments,
       total_installments,
       is_recurring,
-      first_installment_date,
-      end_date,
-      is_in_cash
+      is_in_cash,
+      start_date,
+      end_date
+
     } = req.body;
 
     // Validações básicas
@@ -116,32 +117,14 @@ router.post('/', authenticate, async (req, res) => {
       return res.status(400).json({ message: 'Para despesas parceladas, o número de parcelas deve ser maior que 1' });
     }
 
-    if (is_recurring && (!first_installment_date || !end_date)) {
-      await t.rollback();
-      return res.status(400).json({ message: 'Para despesas recorrentes, as datas de início e fim são obrigatórias' });
-    }
-
     const parsedAmount = Number(rawAmount);
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
       await t.rollback();
       return res.status(400).json({ message: 'O valor da despesa deve ser um número positivo' });
     }
 
-    // Validação das datas
-    if (is_recurring) {
-      const startDate = new Date(first_installment_date);
-      const endDate = new Date(end_date);
-
-      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-        await t.rollback();
-        return res.status(400).json({ message: 'Datas inválidas' });
-      }
-
-      if (endDate < startDate) {
-        await t.rollback();
-        return res.status(400).json({ message: 'A data final deve ser posterior à data inicial' });
-      }
-    } else if (!expense_date || isNaN(new Date(expense_date).getTime())) {
+    // Validação da data
+    if (!expense_date || isNaN(new Date(expense_date).getTime())) {
       await t.rollback();
       return res.status(400).json({ message: 'Data da despesa inválida' });
     }
@@ -149,138 +132,62 @@ router.post('/', authenticate, async (req, res) => {
     // Validação do tipo de pagamento
     if (!is_recurring && !has_installments && !is_in_cash) {
       return res.status(400).json({
-        error: 'Selecione uma forma de pagamento: Recorrente, Parcelado ou À Vista'
-      });
-    }
-
-    // Validação da data para pagamento à vista
-    if (is_in_cash && !expense_date) {
-      return res.status(400).json({
-        error: 'A data da despesa é obrigatória para pagamento à vista'
+        error: 'Selecione uma forma de pagamento: Fixo, Parcelado ou À Vista'
       });
     }
 
     const expenses = [];
     const recurringGroupId = is_recurring ? uuidv4() : null;
 
-    if (is_recurring) {
-      const startDate = new Date(first_installment_date);
-      startDate.setHours(0, 0, 0, 0); // Normaliza a hora para meia-noite
-      
-      const endDate = new Date(end_date);
-      endDate.setHours(23, 59, 59, 999); // Define para o final do dia
-      
-      const maxDate = new Date(startDate);
-      maxDate.setFullYear(maxDate.getFullYear() + 10);
+    if (has_installments) {
+      const installmentGroupId = uuidv4();
+      const installmentAmount = Number((parsedAmount / total_installments).toFixed(2));
+      const roundingAdjustment = Number((parsedAmount - (installmentAmount * total_installments)).toFixed(2));
 
-      if (endDate > maxDate) {
-        return res.status(400).json({ 
-          message: 'O período de recorrência não pode ser maior que 10 anos'
-        });
-      }
+      for (let i = 0; i < total_installments; i++) {
+        const installmentDate = new Date(expense_date);
+        installmentDate.setMonth(installmentDate.getMonth() + i);
 
-      let currentDate = new Date(startDate);
-      
-      // Garante que o primeiro mês seja incluído
-      while (currentDate <= endDate) {
-        if (has_installments) {
-          const monthInstallmentGroupId = uuidv4();
-          const installmentAmount = Number((parsedAmount / total_installments).toFixed(2));
-          const roundingAdjustment = Number((parsedAmount - (installmentAmount * total_installments)).toFixed(2));
-
-          for (let i = 0; i < total_installments; i++) {
-            const installmentDate = new Date(currentDate);
-            installmentDate.setMonth(installmentDate.getMonth() + i);
-
-            expenses.push({
-              user_id: req.user.id,
-              description: `${description} (${i + 1}/${total_installments})`,
-              amount: i === total_installments - 1 ? installmentAmount + roundingAdjustment : installmentAmount,
-              category_id,
-              subcategory_id,
-              bank_id,
-              expense_date: installmentDate,
-              payment_method,
-              has_installments: true,
-              current_installment: i + 1,
-              total_installments,
-              installment_group_id: monthInstallmentGroupId,
-              is_recurring: true,
-              start_date: startDate,
-              end_date,
-              recurring_group_id: recurringGroupId
-            });
-          }
-        } else {
-          expenses.push({
-            user_id: req.user.id,
-            description,
-            amount: parsedAmount,
-            category_id,
-            subcategory_id,
-            bank_id,
-            expense_date: currentDate,
-            payment_method,
-            has_installments: false,
-            is_recurring: true,
-            start_date: startDate,
-            end_date,
-            recurring_group_id: recurringGroupId
-          });
-        }
-
-        const nextDate = new Date(currentDate);
-        nextDate.setMonth(nextDate.getMonth() + 1);
-        currentDate = nextDate;
-      }
-    } else {
-      // Lógica para despesa única ou parcelada não recorrente
-      if (has_installments) {
-        const installmentGroupId = uuidv4();
-        const installmentAmount = Number((parsedAmount / total_installments).toFixed(2));
-        const roundingAdjustment = Number((parsedAmount - (installmentAmount * total_installments)).toFixed(2));
-
-        for (let i = 0; i < total_installments; i++) {
-          const installmentDate = new Date(expense_date);
-          installmentDate.setMonth(installmentDate.getMonth() + i);
-
-          expenses.push({
-            user_id: req.user.id,
-            description: `${description} (${i + 1}/${total_installments})`,
-            amount: i === total_installments - 1 ? installmentAmount + roundingAdjustment : installmentAmount,
-            category_id,
-            subcategory_id,
-            bank_id,
-            expense_date: installmentDate,
-            payment_method,
-            has_installments: true,
-            current_installment: i + 1,
-            total_installments,
-            installment_group_id: installmentGroupId
-          });
-        }
-      } else {
         expenses.push({
           user_id: req.user.id,
-          description,
-          amount: parsedAmount,
+          description: `${description} (${i + 1}/${total_installments})`,
+          amount: i === total_installments - 1 ? installmentAmount + roundingAdjustment : installmentAmount,
           category_id,
           subcategory_id,
           bank_id,
-          expense_date,
+          expense_date: installmentDate,
           payment_method,
-          has_installments: false
+          has_installments: true,
+          current_installment: i + 1,
+          total_installments,
+          installment_group_id: installmentGroupId,
+          is_recurring: false
         });
       }
+    } else {
+      expenses.push({
+        user_id: req.user.id,
+        description,
+        amount: parsedAmount,
+        category_id,
+        subcategory_id,
+        bank_id,
+        expense_date,
+        payment_method,
+        has_installments: false,
+        is_recurring,
+        recurring_group_id: recurringGroupId,
+        is_in_cash,
+        start_date,
+        end_date
+      });
     }
 
     const createdExpenses = await Expense.bulkCreate(expenses, { transaction: t });
     await t.commit();
 
-    res.status(201).json({
-      message: 'Despesa(s) criada(s) com sucesso',
-      expenses: createdExpenses
-    });
+    clearCache(`expenses:${req.user.id}`);
+    res.status(201).json(createdExpenses);
   } catch (error) {
     await t.rollback();
     console.error('Erro ao criar despesa:', error);
@@ -673,6 +580,112 @@ router.delete('/:id', authenticate, async (req, res) => {
     await transaction.rollback();
     console.error('Erro ao excluir despesa:', error);
     res.status(500).json({ message: 'Erro ao excluir despesa' });
+  }
+});
+
+// Rota para excluir despesa fixa
+router.delete('/:id/recurring', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { deleteType } = req.body;
+    const expense = await Expense.findByPk(id);
+
+    if (!expense) {
+      return res.status(404).json({ message: 'Despesa não encontrada' });
+    }
+
+    if (expense.user_id !== req.user.id) {
+      return res.status(403).json({ message: 'Não autorizado' });
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let whereClause = {
+      user_id: req.user.id,
+      recurring_group_id: expense.recurring_group_id
+    };
+
+    switch (deleteType) {
+      case 'all':
+        // Não adiciona condição de data - exclui tudo
+        break;
+      case 'past':
+        whereClause.expense_date = {
+          [Op.lt]: today
+        };
+        break;
+      case 'future':
+        whereClause.expense_date = {
+          [Op.gte]: today
+        };
+        break;
+      default:
+        return res.status(400).json({ message: 'Tipo de exclusão inválido' });
+    }
+
+    await Expense.destroy({
+      where: whereClause
+    });
+
+    res.json({ message: 'Despesa(s) excluída(s) com sucesso' });
+  } catch (error) {
+    console.error('Erro ao excluir despesa fixa:', error);
+    res.status(500).json({ message: 'Erro ao excluir despesa fixa' });
+  }
+});
+
+// Rota para criar despesa
+router.post('/', authenticate, async (req, res) => {
+  try {
+    const expenseData = {
+      ...req.body,
+      user_id: req.user.id
+    };
+
+    if (expenseData.is_recurring) {
+      expenseData.recurring_group_id = uuidv4();
+      expenseData.start_date = expenseData.expense_date;
+      expenseData.end_date = '2099-12-31';
+    }
+
+    const expense = await Expense.create(expenseData);
+    res.status(201).json(expense);
+  } catch (error) {
+    console.error('Erro ao criar despesa:', error);
+    res.status(500).json({ message: 'Erro ao criar despesa' });
+  }
+});
+
+// Rota para atualizar despesa
+router.put('/:id', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const expense = await Expense.findByPk(id);
+
+    if (!expense) {
+      return res.status(404).json({ message: 'Despesa não encontrada' });
+    }
+
+    if (expense.user_id !== req.user.id) {
+      return res.status(403).json({ message: 'Não autorizado' });
+    }
+
+    const expenseData = {
+      ...req.body
+    };
+
+    if (expenseData.is_recurring && !expense.is_recurring) {
+      expenseData.recurring_group_id = uuidv4();
+      expenseData.start_date = expenseData.expense_date;
+      expenseData.end_date = '2099-12-31';
+    }
+
+    await expense.update(expenseData);
+    res.json(expense);
+  } catch (error) {
+    console.error('Erro ao atualizar despesa:', error);
+    res.status(500).json({ message: 'Erro ao atualizar despesa' });
   }
 });
 

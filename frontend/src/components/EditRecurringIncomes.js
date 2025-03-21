@@ -187,7 +187,7 @@ const EditRecurringIncomes = () => {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h1>Editar Receitas Recorrentes</h1>
+        <h1 style={{color: '#00FF85'}}>Editar Ganhos Fixos</h1>
         <button 
           onClick={() => navigate('/income')}
           className={styles.backButton}
@@ -226,7 +226,7 @@ const EditRecurringIncomes = () => {
                 <td data-label="Categoria">{income.category_name}</td>
                 <td data-label="Subcategoria">{income.subcategory_name || '-'}</td>
                 <td data-label="Banco/Carteira">{income.bank_name}</td>
-                <td data-label="Tipo">{income.is_recurring ? 'Recorrente' : 'Parcelado'}</td>
+                <td data-label="Tipo">{income.is_recurring ? 'Fixo' : 'Parcelado'}</td>
                 <td data-label="Ações">
                   <div className={styles.actionButtons}>
                     <button
