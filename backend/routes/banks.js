@@ -1,10 +1,10 @@
 import { Router } from 'express';
-import { Bank } from '../models/index.js';
+import { Bank, UserBank } from '../models/index.js';
 import { authenticate } from '../middleware/auth.js';
 
 const router = Router();
 
-// Listar todos os bancos disponíveis
+// Rota para listar todos os bancos
 router.get('/', async (req, res) => {
   try {
     const banks = await Bank.findAll({
@@ -14,6 +14,29 @@ router.get('/', async (req, res) => {
   } catch (error) {
     console.error('Erro ao listar bancos:', error);
     res.status(500).json({ message: 'Erro ao listar bancos' });
+  }
+});
+
+// Rota para listar bancos favoritos do usuário
+router.get('/favorites', authenticate, async (req, res) => {
+  try {
+    const userBanks = await UserBank.findAll({
+      where: { 
+        user_id: req.user.id,
+        is_active: true
+      },
+      include: [{
+        model: Bank,
+        attributes: ['id', 'name', 'code']
+      }],
+      order: [[Bank, 'name', 'ASC']]
+    });
+
+    const banks = userBanks.map(ub => ub.Bank);
+    res.json(banks);
+  } catch (error) {
+    console.error('Erro ao listar bancos favoritos:', error);
+    res.status(500).json({ message: 'Erro ao listar bancos favoritos' });
   }
 });
 
@@ -86,5 +109,36 @@ router.get('/', async (req, res) => {
 //     res.status(500).json({ message: 'Erro ao remover banco' });
 //   }
 // });
+
+// Rota para gerenciar bancos favoritos
+router.post('/favorites', authenticate, async (req, res) => {
+  const { bank_id, is_active } = req.body;
+  const user_id = req.user.id;
+
+  if (!bank_id) {
+    return res.status(400).json({ message: 'ID do banco é obrigatório' });
+  }
+
+  try {
+    const bank = await Bank.findByPk(bank_id);
+    if (!bank) {
+      return res.status(404).json({ message: 'Banco não encontrado' });
+    }
+
+    const [userBank, created] = await UserBank.findOrCreate({
+      where: { user_id, bank_id },
+      defaults: { is_active }
+    });
+
+    if (!created) {
+      await userBank.update({ is_active });
+    }
+
+    res.json({ message: 'Banco favorito atualizado com sucesso' });
+  } catch (error) {
+    console.error('Erro ao atualizar banco favorito:', error);
+    res.status(500).json({ message: 'Erro ao atualizar banco favorito' });
+  }
+});
 
 export default router;

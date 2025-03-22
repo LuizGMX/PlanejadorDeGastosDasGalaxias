@@ -81,16 +81,26 @@ const groupByCategory = (items) => {
 
 // Função auxiliar para agrupar por data
 const groupByDate = (items, dateField) => {
-  return items.reduce((acc, item) => {
-    const date = item[dateField].toISOString().split('T')[0];
-    const existing = acc.find(i => i.date === date);
-    if (existing) {
-      existing.total += parseFloat(item.amount);
-    } else {
-      acc.push({ date, total: parseFloat(item.amount) });
+  const groupedData = items.reduce((acc, item) => {
+    const date = new Date(item[dateField]);
+    const lastDayOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+    lastDayOfMonth.setHours(23, 59, 59, 999);
+    const monthKey = lastDayOfMonth.toISOString().split('T')[0];
+    
+    if (!acc[monthKey]) {
+      acc[monthKey] = 0;
     }
+    acc[monthKey] += parseFloat(item.amount || 0);
     return acc;
-  }, []).sort((a, b) => new Date(a.date) - new Date(b.date));
+  }, {});
+
+  // Ordena as chaves (datas) antes de converter para array
+  const sortedKeys = Object.keys(groupedData).sort((a, b) => new Date(a) - new Date(b));
+  
+  return sortedKeys.map(date => ({
+    date,
+    total: groupedData[date]
+  }));
 };
 
 // Função auxiliar para agrupar por banco
@@ -138,6 +148,113 @@ router.get('/', authenticate, async (req, res) => {
 
     const user = await User.findByPk(req.user.id);
 
+    // Calcula informações do objetivo financeiro
+    let financialGoalInfo = null;
+    if (user.financial_goal_amount && user.financial_goal_date) {
+      const today = new Date();
+      const goalDate = new Date(user.financial_goal_date);
+      const monthsUntilGoal = (goalDate.getFullYear() - today.getFullYear()) * 12 + 
+                             (goalDate.getMonth() - today.getMonth());
+
+      console.log('\n=== DEBUG OBJETIVO FINANCEIRO ===');
+      console.log('Data Atual:', today);
+      console.log('Data Objetivo:', goalDate);
+      console.log('Meses até o objetivo:', monthsUntilGoal);
+
+      // Busca todas as receitas e despesas dos últimos 6 meses para calcular a média
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+      
+      console.log('Buscando dados desde:', sixMonthsAgo);
+
+      const [historicExpenses, historicIncomes] = await Promise.all([
+        Expense.findAll({
+          where: {
+            user_id: req.user.id,
+            expense_date: {
+              [Op.gte]: sixMonthsAgo,
+              [Op.lte]: today
+            }
+          }
+        }),
+        Income.findAll({
+          where: {
+            user_id: req.user.id,
+            date: {
+              [Op.gte]: sixMonthsAgo,
+              [Op.lte]: today
+            }
+          }
+        })
+      ]);
+
+      console.log('Quantidade de despesas encontradas:', historicExpenses.length);
+      console.log('Quantidade de receitas encontradas:', historicIncomes.length);
+
+      // Calcula totais dos últimos 6 meses
+      const totalHistoricIncomes = historicIncomes.reduce((total, income) => {
+        const amount = parseFloat(income.amount || 0);
+        console.log('Receita:', amount);
+        return total + amount;
+      }, 0);
+
+      const totalHistoricExpenses = historicExpenses.reduce((total, expense) => {
+        const amount = parseFloat(expense.amount || 0);
+        console.log('Despesa:', amount);
+        return total + amount;
+      }, 0);
+
+      console.log('Total de Receitas:', totalHistoricIncomes);
+      console.log('Total de Despesas:', totalHistoricExpenses);
+
+      // Calcula a média mensal baseada nos últimos 6 meses
+      const totalSaved = totalHistoricIncomes - totalHistoricExpenses;
+      const averageMonthlyBalance = totalSaved / 6; // Divide por 6 meses
+      const goalAmount = parseFloat(user.financial_goal_amount);
+      const monthlyNeeded = monthsUntilGoal > 0 ? (goalAmount - totalSaved) / monthsUntilGoal : goalAmount;
+
+      console.log('Total Economizado:', totalSaved);
+      console.log('Média Mensal:', averageMonthlyBalance);
+      console.log('Valor Necessário por Mês:', monthlyNeeded);
+      
+      // Projeta a economia futura baseada na média mensal
+      const projectedAmount = totalSaved + (averageMonthlyBalance * monthsUntilGoal);
+      
+      // Verifica se o objetivo é alcançável com a média atual
+      const isAchievable = projectedAmount >= goalAmount;
+      
+      // Calcula o valor faltante
+      const remainingAmount = Math.max(0, goalAmount - totalSaved);
+
+      // Calcula quantos meses seriam necessários com a economia atual
+      const monthsNeededWithCurrentSavings = averageMonthlyBalance > 0 
+        ? Math.ceil(remainingAmount / averageMonthlyBalance)
+        : Infinity;
+
+      console.log('Projeção Final:', projectedAmount);
+      console.log('É alcançável?', isAchievable);
+      console.log('Valor Faltante:', remainingAmount);
+      console.log('Meses Necessários:', monthsNeededWithCurrentSavings);
+      console.log('=== FIM DEBUG OBJETIVO FINANCEIRO ===\n');
+
+      financialGoalInfo = {
+        name: user.financial_goal_name,
+        amount: goalAmount,
+        date: user.financial_goal_date,
+        months_remaining: monthsUntilGoal,
+        months_needed_with_current_savings: monthsNeededWithCurrentSavings,
+        monthly_balance: averageMonthlyBalance,
+        monthly_needed: monthlyNeeded,
+        total_saved: totalSaved,
+        projected_savings: projectedAmount,
+        is_achievable: isAchievable,
+        remaining_amount: remainingAmount,
+        progress_percentage: (totalSaved / goalAmount) * 100,
+        months_since_start: 6 // Fixo em 6 meses para o cálculo da média
+      };
+    }
+
+    // Busca as despesas e receitas do período selecionado
     const [expenses, incomes] = await Promise.all([
       Expense.findAll({
         where: whereExpenses,
@@ -150,10 +267,7 @@ router.get('/', authenticate, async (req, res) => {
           { model: SubCategory },
           { model: Bank }
         ],
-        order: [['expense_date', 'ASC']],
-        logging: (sql) => {
-          console.log('Query de despesas:', sql);
-        }
+        order: [['expense_date', 'ASC']]
       }),
       Income.findAll({
         where: whereIncomes,
@@ -166,50 +280,15 @@ router.get('/', authenticate, async (req, res) => {
           { model: SubCategory },
           { model: Bank }
         ],
-        order: [['date', 'ASC']],
-        logging: (sql) => {
-          console.log('Query de ganhos:', sql);
-        }
+        order: [['date', 'ASC']]
       })
     ]);
 
-    console.log('Despesas encontradas:', expenses.length);
-    console.log('Ganhos encontrados:', incomes.length);
-
     const expensesByCategory = groupByCategory(expenses);
     const incomesByCategory = groupByCategory(incomes);
-
-    console.log('Despesas por categoria:', expensesByCategory);
-    console.log('Ganhos por categoria:', incomesByCategory);
-
     const totalIncomes = calculateTotals(incomes);
     const totalExpenses = calculateTotals(expenses);
     const totalBudget = totalIncomes;
-
-    // Calcula informações do objetivo financeiro
-    let financialGoalInfo = null;
-    if (user.financial_goal_amount && user.financial_goal_date) {
-      const today = new Date();
-      const goalDate = new Date(user.financial_goal_date);
-      const monthsUntilGoal = (goalDate.getFullYear() - today.getFullYear()) * 12 + 
-                             (goalDate.getMonth() - today.getMonth());
-      
-      const monthlyBalance = totalIncomes - totalExpenses;
-      const projectedSavings = monthlyBalance * monthsUntilGoal;
-      const goalAmount = parseFloat(user.financial_goal_amount);
-      const monthlyNeeded = (goalAmount) / monthsUntilGoal;
-
-      financialGoalInfo = {
-        name: user.financial_goal_name,
-        amount: goalAmount,
-        date: user.financial_goal_date,
-        months_remaining: monthsUntilGoal,
-        monthly_balance: monthlyBalance,
-        projected_savings: projectedSavings,
-        monthly_needed: monthlyNeeded,        
-        progress_percentage: (projectedSavings / goalAmount) * 100
-      };
-    }
 
     const responseData = {
       expenses_by_category: expensesByCategory,
@@ -309,92 +388,75 @@ router.get('/bank-balance-trend', authenticate, async (req, res) => {
     const { months = 3 } = req.query;
     const projectionMonths = parseInt(months);
 
-    // Define o período de projeção: começa no próximo mês
-    const startDate = new Date();
-    startDate.setUTCMonth(startDate.getUTCMonth() + 1);
-    startDate.setUTCDate(1);
-    startDate.setUTCHours(0, 0, 0, 0); // Início do dia em UTC
+    // Ajusta para começar sempre no primeiro dia do próximo mês
+    const today = new Date();
+    const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+    nextMonth.setHours(0, 0, 0, 0);
 
-    const endDate = new Date(startDate);
-    endDate.setUTCMonth(startDate.getUTCMonth() + projectionMonths - 1);
-    // Encontra o último dia do mês
-    const lastDay = new Date(endDate.getUTCFullYear(), endDate.getUTCMonth() + 1, 0).getUTCDate();
-    endDate.setUTCDate(lastDay);
-    endDate.setUTCHours(23, 59, 59, 999); // Fim do dia em UTC
+    // Cria uma nova data para o início do período
+    const startDate = new Date(nextMonth);
+
+    // Ajusta a data final para o último dia do último mês da projeção
+    const endDate = new Date(nextMonth);
+    endDate.setMonth(endDate.getMonth() + (projectionMonths - 1));
+    const lastDay = new Date(endDate.getFullYear(), endDate.getMonth() + 1, 0).getDate();
+    endDate.setDate(lastDay);
+    endDate.setHours(23, 59, 59, 999);
 
     console.log('\n=== INÍCIO DAS QUERIES DO DASHBOARD ===\n');
     console.log('Período de busca:');
-    console.log('De:', startDate.toISOString());
-    console.log('Até:', endDate.toISOString());
+    console.log('De:', startDate);
+    console.log('Até:', endDate);
     console.log('\n');
 
-    const [expenses, incomes, user] = await Promise.all([
+    const [expenses, incomes] = await Promise.all([
       Expense.findAll({
         where: {
           user_id: req.user.id,
           expense_date: { 
-            [Op.between]: [startDate.toISOString(), endDate.toISOString()] 
+            [Op.between]: [startDate, endDate] 
           }
         },
-        include: [{ model: Category }, { model: Bank }],
-        logging: (sql, timing) => {
-          console.log('\nQUERY DE DESPESAS:');
-          console.log(sql);
-          console.log(`Tempo de execução: ${timing}ms\n`);
-        }
+        include: [{ model: Category }, { model: Bank }]
       }),
       Income.findAll({
         where: {
           user_id: req.user.id,
           date: { 
-            [Op.between]: [startDate.toISOString(), endDate.toISOString()] 
+            [Op.between]: [startDate, endDate] 
           }
         },
-        include: [{ model: Category }, { model: Bank }],
-        logging: (sql, timing) => {
-          console.log('\nQUERY DE GANHOS:');
-          console.log(sql);
-          console.log(`Tempo de execução: ${timing}ms\n`);
-        }
-      }),
-      User.findByPk(req.user.id, {
-        logging: (sql, timing) => {
-          console.log('\nQUERY DE USUÁRIO:');
-          console.log(sql);
-          console.log(`Tempo de execução: ${timing}ms\n`);
-        }
+        include: [{ model: Category }, { model: Bank }]
       })
     ]);
 
-    console.log('\n=== FIM DAS QUERIES DO DASHBOARD ===\n');
-
     // Ganhos Projetados: soma de incomes no período
-    const totalFutureIncomes = incomes.reduce((total, income) => {
+    const totalProjectedIncomes = incomes.reduce((total, income) => {
       return total + parseFloat(income.amount || 0);
     }, 0);
-    const totalProjectedIncomes = totalFutureIncomes;
 
-    // Gastos Projetados: soma de todas as expenses no período (sem filtro)
+    // Gastos Projetados: soma de todas as expenses no período
     const totalProjectedExpenses = expenses.reduce((total, expense) => {
       return total + parseFloat(expense.amount || 0);
     }, 0);
-
-    console.log("AIOH", totalProjectedIncomes, totalProjectedExpenses);
 
     // Saldo Final: Ganhos Projetados - Gastos Projetados
     const finalBalance = totalProjectedIncomes - totalProjectedExpenses;
 
     const projectionData = [];
     for (let i = 0; i < projectionMonths; i++) {
-      const currentDate = new Date(startDate);
-      currentDate.setMonth(startDate.getMonth() + i);
+      const currentDate = new Date(nextMonth);
+      currentDate.setMonth(currentDate.getMonth() + i);
+      const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
 
+      // Filtra despesas do mês atual
       const monthExpenses = expenses.filter(expense => {
         const expenseDate = new Date(expense.expense_date);
         return expenseDate.getMonth() === currentDate.getMonth() && 
                expenseDate.getFullYear() === currentDate.getFullYear();
       }).reduce((total, expense) => total + parseFloat(expense.amount || 0), 0);
 
+      // Filtra ganhos do mês atual
       const monthIncomes = incomes.filter(income => {
         const incomeDate = new Date(income.date);
         return incomeDate.getMonth() === currentDate.getMonth() && 
@@ -402,10 +464,10 @@ router.get('/bank-balance-trend', authenticate, async (req, res) => {
       }).reduce((total, income) => total + parseFloat(income.amount || 0), 0);
 
       projectionData.push({
-        date: currentDate.toISOString().split('T')[0],
-        expenses: monthExpenses,
-        incomes: monthIncomes,
-        balance: monthIncomes - monthExpenses
+        date: lastDayOfMonth.toISOString().split('T')[0],
+        despesas: monthExpenses,
+        ganhos: monthIncomes,
+        saldo: monthIncomes - monthExpenses
       });
     }
 

@@ -9,8 +9,7 @@ import dashboardRoutes from './routes/dashboard.js';
 import bankRoutes from './routes/banks.js';
 import budgetRoutes from './routes/budgets.js';
 import spreadsheetRoutes from './routes/spreadsheetRoutes.js';
-
-import userRoutes from './routes/user.js';
+import userRoutes from './routes/users.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -43,10 +42,9 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/incomes', incomeRoutes);
 app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/bank', bankRoutes);
+app.use('/api/banks', bankRoutes);
 app.use('/api/budgets', budgetRoutes);
 app.use('/api/spreadsheet', spreadsheetRoutes);
-
 app.use('/api/users', userRoutes);
 
 // Tratamento de erros
@@ -54,14 +52,5 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: 'Algo deu errado!' });
 });
-
-// Sincroniza os modelos com o banco de dados
-sequelize.sync()
-  .then(() => {
-    console.log('Banco de dados sincronizado com sucesso!');
-  })
-  .catch((error) => {
-    console.error('Erro ao sincronizar banco de dados:', error);
-  });
 
 export default app; 

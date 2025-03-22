@@ -217,4 +217,186 @@
   .loginSubtitle {
     font-size: 16px;
   }
+}
+
+.banksContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  margin-top: 1rem;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-right: 1rem;
+}
+
+.banksList {
+  background: rgba(26, 27, 35, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.selectedBanksList {
+  border: 1px solid var(--primary-color);
+  background: rgba(26, 27, 35, 0.9);
+}
+
+.selectedBanksHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.selectedCount {
+  font-size: 0.9rem;
+  color: var(--primary-color);
+  background: var(--primary-color-light);
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.bankInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.usageCount {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 8px;
+  border-radius: 8px;
+}
+
+.bankCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background: rgba(42, 43, 51, 0.8);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.bankCard:hover {
+  transform: translateY(-2px);
+  background: rgba(42, 43, 51, 0.9);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  border-color: var(--primary-color);
+}
+
+.bankCard.selected {
+  background: var(--primary-color-light);
+  border-color: var(--primary-color);
+  animation: pulse 2s infinite;
+}
+
+.bankCard.selected:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 255, 133, 0.2);
+}
+
+.bankCard.selected .bankName {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.bankCard .material-icons {
+  color: var(--primary-color);
+  font-size: 1.2rem;
+  transition: all 0.3s ease;
+}
+
+.bankCard:hover .material-icons {
+  transform: scale(1.2);
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(0, 255, 133, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(0, 255, 133, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 255, 133, 0);
+  }
+}
+
+.bankName {
+  font-size: 1rem;
+  color: var(--text-color);
+}
+
+.emptyMessage {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 1rem;
+  background: var(--background-color);
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+/* Estilização da scrollbar para a lista de bancos */
+.banksContainer::-webkit-scrollbar {
+  width: 8px;
+}
+
+.banksContainer::-webkit-scrollbar-track {
+  background: var(--background-color);
+  border-radius: 4px;
+}
+
+.banksContainer::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+.banksContainer::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+.searchContainer {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 12px 40px 12px 16px;
+  background: var(--background-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 1rem;
+  color: var(--text-color);
+  transition: all 0.2s ease;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px var(--primary-color-light);
+}
+
+.searchContainer .material-icons {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  font-size: 1.2rem;
+}
+
+.searchInput:focus + .material-icons {
+  color: var(--primary-color);
 } 

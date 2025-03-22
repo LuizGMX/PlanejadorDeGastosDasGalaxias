@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../App';
 import CurrencyInput from 'react-currency-input-field';
@@ -15,14 +15,49 @@ const Login = () => {
     name: '',
     financialGoalName: '',
     financialGoalAmount: '',
-    financialGoalDate: ''
+    financialGoalDate: '',
+    selectedBanks: []
   });
+  const [banks, setBanks] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isNewUser, setIsNewUser] = useState(false);
   const [resendDisabled, setResendDisabled] = useState(false);
   const [resendCountdown, setResendCountdown] = useState(0);
+
+  useEffect(() => {
+    const fetchBanks = async () => {
+      try {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/banks`);
+        if (!response.ok) {
+          throw new Error('Erro ao carregar bancos');
+        }
+        const data = await response.json();
+        // Ordena os bancos por ordem de uso (assumindo que o backend envia o campo usage_count)
+        const sortedBanks = data.sort((a, b) => (b.usage_count || 0) - (a.usage_count || 0));
+        setBanks(sortedBanks);
+      } catch (error) {
+        console.error('Erro ao carregar bancos:', error);
+      }
+    };
+
+    fetchBanks();
+  }, []);
+
+  const filteredBanks = banks.filter(bank => 
+    bank.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleBankSelection = (bankId) => {
+    setFormData(prev => ({
+      ...prev,
+      selectedBanks: prev.selectedBanks.includes(bankId)
+        ? prev.selectedBanks.filter(id => id !== bankId)
+        : [...prev.selectedBanks, bankId]
+    }));
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -64,6 +99,12 @@ const Login = () => {
           setError('Nome é obrigatório');
           return;
         }
+        setStep('banks');
+      } else if (step === 'banks') {
+        if (formData.selectedBanks.length === 0) {
+          setError('Selecione pelo menos um banco');
+          return;
+        }
         setStep('goal');
       } else if (step === 'goal') {
         if (!formData.name.trim()) {
@@ -82,7 +123,8 @@ const Login = () => {
             name: formData.name,
             financialGoalName: formData.financialGoalName,
             financialGoalAmount: formData.financialGoalAmount,
-            financialGoalDate: formData.financialGoalDate
+            financialGoalDate: formData.financialGoalDate,
+            selectedBanks: formData.selectedBanks
           })
         });
 
@@ -254,6 +296,100 @@ const Login = () => {
                 required
               />
               <BsPerson className={styles.inputIcon} />
+            </div>
+          </>
+        );
+
+      case 'banks':
+        return (
+          <>
+            <div className={styles.loginHeader}>
+              <h1 className={styles.loginTitle}>Selecione seus bancos</h1>
+              <p className={styles.loginSubtitle}>
+                Escolha os bancos que você mais utiliza para facilitar o registro de receitas e despesas
+              </p>
+            </div>
+            <div className={styles.searchContainer}>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className={styles.searchInput}
+                placeholder="Buscar banco..."
+              />
+              <span className="material-icons">search</span>
+            </div>
+            <div className={styles.banksContainer}>
+              <div className={styles.banksList}>
+                <h3>Bancos Disponíveis</h3>
+                <p className={styles.banksDescription}>
+                  Selecione os bancos que você utiliza para facilitar o registro de receitas e despesas. Você poderá alterar isso posteriormente.
+                </p>
+                <div className={styles.banksGrid}>
+                  {filteredBanks
+                    .filter(bank => !formData.selectedBanks.includes(bank.id))
+                    .map(bank => (
+                      <div
+                        key={bank.id}
+                        className={styles.bankCard}
+                        onClick={() => handleBankSelection(bank.id)}
+                      >
+                        <div className={styles.bankInfo}>
+                          <span className={styles.bankName}>{bank.name}</span>
+                          {bank.usage_count > 0 && (
+                            <span className={styles.usageCount}>
+                              {bank.usage_count} usuários
+                            </span>
+                          )}
+                        </div>
+                        <span className="material-icons">add_circle_outline</span>
+                      </div>
+                    ))}
+                  {filteredBanks.length === 0 && (
+                    <p className={styles.emptyMessage}>
+                      Nenhum banco encontrado com este nome
+                    </p>
+                  )}
+                  {filteredBanks.length > 0 && filteredBanks.length === formData.selectedBanks.length && (
+                    <p className={styles.emptyMessage}>
+                      Todos os bancos já estão selecionados
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className={`${styles.banksList} ${styles.selectedBanksList}`}>
+                <div className={styles.selectedBanksHeader}>
+                  <h3>Meus Bancos</h3>
+                  <span className={styles.selectedCount}>
+                    {formData.selectedBanks.length} selecionado(s)
+                  </span>
+                </div>
+                <p className={styles.banksDescription}>
+                  Estes bancos aparecerão ao registrar suas movimentações financeiras
+                </p>
+                <div className={styles.banksGrid}>
+                  {filteredBanks
+                    .filter(bank => formData.selectedBanks.includes(bank.id))
+                    .map(bank => (
+                      <div
+                        key={bank.id}
+                        className={`${styles.bankCard} ${styles.selected}`}
+                        onClick={() => handleBankSelection(bank.id)}
+                      >
+                        <div className={styles.bankInfo}>
+                          <span className={styles.bankName}>{bank.name}</span>
+                        </div>
+                        <span className="material-icons">check_circle</span>
+                      </div>
+                    ))}
+                  {formData.selectedBanks.length === 0 && (
+                    <p className={styles.emptyMessage}>
+                      Nenhum banco selecionado ainda
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
           </>
         );

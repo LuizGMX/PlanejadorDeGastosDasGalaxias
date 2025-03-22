@@ -72,6 +72,10 @@ export default (sequelize) => {
       allowNull: false,
       defaultValue: false
     },
+    recurrence_type: {
+      type: DataTypes.ENUM('daily', 'weekly', 'monthly', 'quarterly', 'semiannual', 'annual'),
+      allowNull: true
+    },
     recurring_group_id: {
       type: DataTypes.UUID,
       allowNull: true

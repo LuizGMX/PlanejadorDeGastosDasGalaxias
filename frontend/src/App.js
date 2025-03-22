@@ -16,6 +16,14 @@ import styles from './styles/app.module.css';
 
 export const AuthContext = React.createContext();
 
+// Configurações do React Router v7
+const routerConfig = {
+  future: {
+    v7_startTransition: true,
+    v7_relativeSplatPath: true
+  }
+};
+
 function App() {
   const [auth, setAuth] = useState(() => {
     const token = localStorage.getItem('token');
@@ -72,7 +80,7 @@ function App() {
 
   return (
     <AuthContext.Provider value={{ auth, setAuth }}>
-      <Router>
+      <Router {...routerConfig}>
         <Toaster position="top-right" />
         <Routes>
           <Route path="/login" element={<Login />} />

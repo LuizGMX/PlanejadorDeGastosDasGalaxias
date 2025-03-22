@@ -1,0 +1,11 @@
+.recurringInfo {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #666;
+}
+
+.recurringInfo span {
+  font-size: 16px;
+  color: #666;
+} 

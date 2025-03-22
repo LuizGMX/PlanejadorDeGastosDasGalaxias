@@ -122,6 +122,10 @@ export default (sequelize) => {
       allowNull: false,
       defaultValue: false
     },
+    recurrence_type: {
+      type: DataTypes.ENUM('daily', 'weekly', 'monthly', 'quarterly', 'semiannual', 'annual'),
+      allowNull: true
+    },
     end_date: {
       type: DataTypes.DATE,
       allowNull: true

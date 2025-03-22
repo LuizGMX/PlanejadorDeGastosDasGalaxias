@@ -23,7 +23,8 @@ const AddExpense = () => {
     total_installments: '',
     current_installment: '',
     end_date: '',
-    payment_method: 'card'
+    payment_method: 'card',
+    recurrence_type: null
   });
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
@@ -57,7 +58,7 @@ const AddExpense = () => {
   useEffect(() => {
     const fetchBanks = async () => {
       try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/bank`, {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/banks/favorites`, {
           headers: {
             'Authorization': `Bearer ${auth.token}`
           }
@@ -117,25 +118,12 @@ const AddExpense = () => {
         [name]: numericValue ? parseInt(numericValue) : ''
       }));
     } else if (name === 'date' || name === 'end_date') {
-      // Remove qualquer caractere que não seja número
-      const cleanValue = value.replace(/[^\d]/g, '');
-
-      // Se o valor limpo tiver 8 dígitos, formata como YYYY-MM-DD
-      if (cleanValue.length === 8) {
-        const year = cleanValue.substring(0, 4);
-        const month = cleanValue.substring(4, 6);
-        const day = cleanValue.substring(6, 8);
-        setFormData(prev => ({
-          ...prev,
-          [name]: `${year}-${month}-${day}`
-        }));
-      } else {
-        // Se não tiver 8 dígitos, mantém o valor como está
-        setFormData(prev => ({
-          ...prev,
-          [name]: value
-        }));
-      }
+      // Formata a data para o formato correto
+      const formattedDate = value ? value.split('T')[0] : '';
+      setFormData(prev => ({
+        ...prev,
+        [name]: formattedDate
+      }));
     } else {
       setFormData(prev => ({
         ...prev,
@@ -377,7 +365,8 @@ const AddExpense = () => {
                   is_recurring: !prev.is_recurring,
                   has_installments: false,
                   is_in_cash: false,
-                  date: !prev.is_recurring ? '' : new Date().toLocaleDateString('pt-BR')
+                  date: !prev.is_recurring ? '' : new Date().toLocaleDateString('pt-BR'),
+                  recurrence_type: !prev.is_recurring ? 'monthly' : null
                 }));
               }}>
                 <div className={styles.checkboxWrapper}>
@@ -393,7 +382,7 @@ const AddExpense = () => {
                 </div>
                 <label htmlFor="is_recurring" className={styles.optionLabel} style={{fontSize: '15px'}}>
                   <span className="material-icons">sync</span>
-                  Fixo - Ocorrerá a cada mês
+                  Fixo
                 </label>
               </div>
 
@@ -412,6 +401,27 @@ const AddExpense = () => {
                       className={styles.input}
                       required
                     />
+                  </div>
+
+                  <div className={styles.inputGroup}>
+                    <label className={styles.label}>
+                      <span className="material-icons">update</span>
+                      Periodicidade
+                    </label>
+                    <select
+                      name="recurrence_type"
+                      value={formData.recurrence_type || 'monthly'}
+                      onChange={handleChange}
+                      className={styles.input}
+                      required
+                    >
+                      <option value="daily">Diária</option>
+                      <option value="weekly">Semanal</option>
+                      <option value="monthly">Mensal</option>
+                      <option value="quarterly">Trimestral</option>
+                      <option value="semiannual">Semestral</option>
+                      <option value="annual">Anual</option>
+                    </select>
                   </div>
                 </div>
               )}

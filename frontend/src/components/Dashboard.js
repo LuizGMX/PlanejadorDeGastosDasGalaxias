@@ -130,16 +130,27 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
           <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
           <XAxis
             dataKey="date"
-            tickFormatter={(date) => new Date(date).toLocaleDateString('pt-BR', { month: 'short' })}
+            tickFormatter={(date) => {
+              const d = new Date(date);
+              const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 
+                           'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+              return `${months[d.getMonth()]}/${d.getFullYear()}`;
+            }}
             stroke="var(--text-color)"
           />
           <YAxis
-            tickFormatter={(value) => formatFullCurrency(value)}
+            tickFormatter={formatFullCurrency}
             stroke="var(--text-color)"
+            tick={{ fill: 'var(--text-color)', fontSize: 11 }}
           />
           <Tooltip
-            formatter={(value) => formatFullCurrency(value)}
-            labelFormatter={(date) => new Date(date).toLocaleDateString('pt-BR')}
+            formatter={formatFullCurrency}
+            labelFormatter={(date) => {
+              const d = new Date(date);
+              const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                           'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+              return `${months[d.getMonth()]} de ${d.getFullYear()}`;
+            }}
             contentStyle={{
               backgroundColor: 'var(--card-background)',
               border: '1px solid var(--border-color)',
@@ -153,16 +164,16 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
             formatter={(value) => {
               let color;
               switch(value) {
-                case 'incomes':
+                case 'ganhos':
                   color = 'var(--success-color)';
                   value = 'Ganhos';
                   break;
-                case 'expenses':
+                case 'despesas':
                   color = 'var(--error-color)';
                   value = 'Despesas';
                   break;
-                case 'balance':
-                  color = 'var(--primary-color)';
+                case 'saldo':
+                  color = '#1E90FF';
                   value = 'Saldo';
                   break;
                 default:
@@ -173,7 +184,7 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
           />
           <Line
             type="monotone"
-            dataKey="incomes"
+            dataKey="ganhos"
             stroke="var(--success-color)"
             strokeWidth={2}
             dot={{ fill: 'var(--success-color)', r: 4 }}
@@ -181,7 +192,7 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
           />
           <Line
             type="monotone"
-            dataKey="expenses"
+            dataKey="despesas"
             stroke="var(--error-color)"
             strokeWidth={2}
             dot={{ fill: 'var(--error-color)', r: 4 }}
@@ -189,11 +200,11 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
           />
           <Line
             type="monotone"
-            dataKey="balance"
-            stroke="var(--primary-color)"
+            dataKey="saldo"
+            stroke="#1E90FF"
             strokeWidth={2}
-            dot={{ fill: 'var(--primary-color)', r: 4 }}
-            activeDot={{ r: 6, fill: 'var(--primary-color)' }}
+            dot={{ fill: '#1E90FF', r: 4 }}
+            activeDot={{ r: 6, fill: '#1E90FF' }}
           />
         </LineChart>
       </ResponsiveContainer>
@@ -246,13 +257,28 @@ const Dashboard = () => {
   
 
   // Lista de anos para o filtro
-  const years = Array.from(
-    { length: 5 },
-    (_, i) => ({
-      value: new Date().getFullYear() - i,
-      label: (new Date().getFullYear() - i).toString()
-    })
-  );
+  const years = (() => {
+    const currentYear = new Date().getFullYear();
+    const years = [];
+    
+    // 5 anos para trás
+    for (let i = 5; i >= 0; i--) {
+      years.push({
+        value: currentYear - i,
+        label: (currentYear - i).toString()
+      });
+    }
+    
+    // 10 anos para frente
+    for (let i = 1; i <= 10; i++) {
+      years.push({
+        value: currentYear + i,
+        label: (currentYear + i).toString()
+      });
+    }
+    
+    return years;
+  })();
 
   // Lista de meses para o filtro
   const months = [
@@ -406,17 +432,6 @@ const Dashboard = () => {
           ? prev[type].filter(item => item !== value)
           : [...prev[type], value];
 
-        // Verifica se todos os itens foram selecionados manualmente
-        const totalItems = type === 'months' ? months.length : years.length;
-        if (newValues.length === totalItems - 1) {
-          return {
-            ...prev,
-            [type]: type === 'months'
-              ? months.map(m => m.value)
-              : years.map(y => y.value)
-          };
-        }
-
         return {
           ...prev,
           [type]: newValues
@@ -516,32 +531,30 @@ const Dashboard = () => {
 
 
   const renderFinancialGoalChart = () => {
-    console.log("Dados completos:", data);
-    console.log("Objetivo Financeiro:", data?.financial_goal);
     if (!data?.financial_goal) {
-      console.log("Nenhum objetivo financeiro encontrado");
       return null;
     }
 
     const goal = data.financial_goal;
     const chartData = [{
       name: 'Progresso',
-      economia: goal.projected_savings > goal.amount ? goal.amount : goal.projected_savings,
+      economia: goal.total_saved > goal.amount ? goal.amount : goal.total_saved,
+      projecao: goal.projected_savings > goal.amount ? goal.amount - goal.total_saved : goal.projected_savings - goal.total_saved,
       faltante: goal.projected_savings > goal.amount ? 0 : goal.amount - goal.projected_savings
     }];
 
-  return (
+    return (
       <div className={styles.chartContainer}>
         <div className={styles.chartHeader}>
           <h3>Progresso do Objetivo Financeiro</h3>
           <p className={styles.goalInfo}>
             Meta: {formatCurrency(goal.amount)} até {new Date(goal.date).toLocaleDateString('pt-BR')}
           </p>
-      </div>
+        </div>
 
         <div className={styles.chartInfo}>
           <div className={styles.infoItem}>
-            <span>Economia Mensal Atual:</span>
+            <span>Economia Mensal Média:</span>
             <strong className={goal.monthly_balance >= goal.monthly_needed ? styles.positive : styles.negative}>
               {formatCurrency(goal.monthly_balance)}
             </strong>
@@ -549,19 +562,39 @@ const Dashboard = () => {
           <div className={styles.infoItem}>
             <span>Economia Mensal Necessária:</span>
             <strong>{formatCurrency(goal.monthly_needed)}</strong>
-        </div>
+          </div>
           <div className={styles.infoItem}>
-            <span>Meses Restantes:</span>
+            <span>Total Economizado:</span>
+            <strong className={styles.positive}>{formatCurrency(goal.total_saved)}</strong>
+          </div>
+          <div className={styles.infoItem}>
+            <span>Meses desde o início:</span>
+            <strong>{goal.months_since_start}</strong>
+          </div>
+          <div className={styles.infoItem}>
+            <span>Meses até o objetivo:</span>
             <strong>{goal.months_remaining}</strong>
-                </div>
-                        </div>
+          </div>
+          {!goal.is_achievable && (
+            <div className={styles.infoItem}>
+              <span>Meses necessários no ritmo atual:</span>
+              <strong className={styles.negative}>{goal.months_needed_with_current_savings}</strong>
+            </div>
+          )}
+        </div>
 
         {!goal.is_achievable && (
           <div className={styles.warning}>
             <span className="material-icons">warning</span>
-            <p>Com a economia mensal atual, você não alcançará seu objetivo no prazo definido.</p>
-                  </div>
-                )}
+            <p>
+              Com a economia mensal média atual de {formatCurrency(goal.monthly_balance)}, 
+              você precisará de {goal.months_needed_with_current_savings} meses para atingir seu objetivo, 
+              {goal.months_needed_with_current_savings > goal.months_remaining 
+                ? ` ou seja, ${goal.months_needed_with_current_savings - goal.months_remaining} meses além do prazo definido.`
+                : ' mas ainda está dentro do prazo definido.'}
+            </p>
+          </div>
+        )}
 
         <div style={{ width: '100%', height: '300px' }}>
           <ResponsiveContainer>
@@ -587,15 +620,20 @@ const Dashboard = () => {
                 contentStyle={{
                   backgroundColor: 'var(--card-background)',
                   border: '1px solid var(--border-color)',
-                  color: 'var(--text-color)'
+                  color: 'var(--text-color)',
+                  padding: '10px',
+                  borderRadius: '8px'
                 }}
                 labelStyle={{ color: 'var(--text-color)' }}
+                itemStyle={{ color: 'var(--text-color)' }}
               />
               <Legend
                 formatter={(value) => {
                   switch (value) {
                     case 'economia':
-                      return <span style={{ color: 'var(--text-color)' }}>Economia Projetada</span>;
+                      return <span style={{ color: 'var(--text-color)' }}>Já Economizado</span>;
+                    case 'projecao':
+                      return <span style={{ color: 'var(--text-color)' }}>Projeção Futura</span>;
                     case 'faltante':
                       return <span style={{ color: 'var(--text-color)' }}>Faltante</span>;
                     default:
@@ -604,11 +642,12 @@ const Dashboard = () => {
                 }}
               />
               <Bar dataKey="economia" stackId="a" fill="var(--success-color)" />
+              <Bar dataKey="projecao" stackId="a" fill="#2196F3" />
               <Bar dataKey="faltante" stackId="a" fill="var(--error-color)" />
             </BarChart>
           </ResponsiveContainer>
-              </div>
-            </div>
+        </div>
+      </div>
     );
   };
 
@@ -647,9 +686,12 @@ const Dashboard = () => {
                       contentStyle={{
                         backgroundColor: 'var(--card-background)',
                         border: '1px solid var(--border-color)',
-                        color: 'var(--text-color)'
+                        color: 'var(--text-color)',
+                        padding: '10px',
+                        borderRadius: '8px'
                       }}
                       labelStyle={{ color: 'var(--text-color)' }}
+                      itemStyle={{ color: 'var(--text-color)' }}
                     />
                     <Legend
                       formatter={(value) => <span style={{ color: 'var(--text-color)' }}>{value}</span>}
@@ -683,9 +725,12 @@ const Dashboard = () => {
                       contentStyle={{
                         backgroundColor: 'var(--card-background)',
                         border: '1px solid var(--border-color)',
-                        color: 'var(--text-color)'
+                        color: 'var(--text-color)',
+                        padding: '10px',
+                        borderRadius: '8px'
                       }}
                       labelStyle={{ color: 'var(--text-color)' }}
+                      itemStyle={{ color: 'var(--text-color)' }}
                     />
                     <Legend
                       formatter={(value) => <span style={{ color: 'var(--text-color)' }}>{value}</span>}
@@ -698,93 +743,101 @@ const Dashboard = () => {
     if (!data?.expenses_by_date?.length) return null;
 
     const chartData = (() => {
-                      const hasMultipleYears = filters.years.length > 1;
-                      const hasMoreThan30Days = data.expenses_by_date.length > 30;
+      const hasMultipleYears = filters.years.length > 1;
+      const hasMoreThan30Days = data.expenses_by_date.length > 30;
 
-                      if (hasMultipleYears) {
+      if (hasMultipleYears) {
         return data.expenses_by_date.reduce((acc, curr) => {
-                          const year = new Date(curr.date).getFullYear();
-                          const existingEntry = acc.find(item => item.date === year);
-                          
-                          if (existingEntry) {
-                            existingEntry.total += curr.total;
-                          } else {
-                            acc.push({ date: year, total: curr.total });
-                          }
-                          return acc;
-                        }, []);
-                      } else if (hasMoreThan30Days) {
+          const year = new Date(curr.date).getFullYear();
+          const existingEntry = acc.find(item => item.date === year);
+          
+          if (existingEntry) {
+            existingEntry.total += curr.total;
+          } else {
+            acc.push({ date: year, total: curr.total });
+          }
+          return acc;
+        }, []);
+      } else {
+        // Sempre agrupa por mês
         return data.expenses_by_date.reduce((acc, curr) => {
-                          const date = new Date(curr.date);
-                          const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-                          const existingEntry = acc.find(item => item.date === monthYear);
-                          
-                          if (existingEntry) {
-                            existingEntry.total += curr.total;
-                          } else {
-                            acc.push({ date: monthYear, total: curr.total });
-                          }
-                          return acc;
-                        }, []);
-                      }
-                      
-                      return data.expenses_by_date;
+          const date = new Date(curr.date);
+          const lastDayOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+          const monthKey = lastDayOfMonth.toISOString().split('T')[0];
+          const existingEntry = acc.find(item => item.date === monthKey);
+          
+          if (existingEntry) {
+            existingEntry.total += curr.total;
+          } else {
+            acc.push({ date: monthKey, total: curr.total });
+          }
+          return acc;
+        }, []).sort((a, b) => new Date(a.date) - new Date(b.date));
+      }
     })();
 
     return renderChart('timeline', 'Gastos ao Longo do Tempo',
       <LineChart
         data={chartData}
-                    margin={{ top: 10, right: 30, left: 80, bottom: 50 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
-                    <XAxis
-                      dataKey="date"
-                      tick={{ fill: 'var(--text-color)' }}
-                      tickFormatter={(value) => {
-                        if (Number.isInteger(value)) return value;
-                        const date = new Date(value);
+        margin={{ top: 10, right: 30, left: 80, bottom: 50 }}
+      >
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+        <XAxis
+          dataKey="date"
+          tick={{ fill: 'var(--text-color)' }}
+          tickFormatter={(value) => {
+            if (Number.isInteger(value)) return value;
+            const date = new Date(value);
             if (filters.years.length > 1) return date.getFullYear();
-                        if (data.expenses_by_date.length > 30) {
-                          const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
-                                       'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-                          return `${months[date.getMonth()]} ${date.getFullYear()}`;
-                        }
-                        return formatDate(value);
-                      }}
-                      angle={-45}
-                      textAnchor="end"
-                      height={100}
-                      interval={0}
-                      padding={{ left: 20, right: 20 }}
-                    />
-                    <YAxis
-                      tickFormatter={formatCurrency}
-                      tick={{ fill: 'var(--text-color)' }}
-                      width={80}
-                    />
-                    <Tooltip
-                      formatter={formatCurrency}
-                      contentStyle={{
-                        backgroundColor: 'var(--card-background)',
-                        border: '1px solid var(--border-color)',
-                        color: 'var(--text-color)'
-                      }}
-                      labelStyle={{ color: 'var(--text-color)' }}
-                    />
-                    <Legend
-                      formatter={(value) => <span style={{ color: 'var(--text-color)' }}>Total Gasto</span>}
-                      verticalAlign="top"
-                      height={36}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="total"
-                      stroke="var(--primary-color)"
-                      strokeWidth={2}
-                      dot={{ fill: 'var(--primary-color)', r: 4 }}
-                      activeDot={{ r: 6, fill: 'var(--primary-color)' }}
-                    />
-                  </LineChart>
+            const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                         'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+            return months[date.getMonth()];
+          }}
+          angle={-45}
+          textAnchor="end"
+          height={100}
+          interval={0}
+          padding={{ left: 20, right: 20 }}
+        />
+        <YAxis
+          tickFormatter={formatCurrency}
+          tick={{ fill: 'var(--text-color)' }}
+          width={80}
+        />
+        <Tooltip
+          formatter={formatCurrency}
+          labelFormatter={(value) => {
+            if (Number.isInteger(value)) return `Ano: ${value}`;
+            const date = new Date(value);
+            if (filters.years.length > 1) return `Ano: ${date.getFullYear()}`;
+            const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                         'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+            return `${months[date.getMonth()]} de ${date.getFullYear()}`;
+          }}
+          contentStyle={{
+            backgroundColor: 'var(--card-background)',
+            border: '1px solid var(--border-color)',
+            color: 'var(--text-color)',
+            padding: '10px',
+            borderRadius: '8px'
+          }}
+          labelStyle={{ color: 'var(--text-color)' }}
+          itemStyle={{ color: 'var(--text-color)' }}
+        />
+        <Legend
+          formatter={(value) => <span style={{ color: 'var(--text-color)' }}>Total Gasto</span>}
+          verticalAlign="top"
+          height={36}
+        />
+        <Line
+          type="monotone"
+          dataKey="total"
+          stroke="var(--primary-color)"
+          strokeWidth={2}
+          dot={{ fill: 'var(--primary-color)', r: 4 }}
+          activeDot={{ r: 6, fill: 'var(--primary-color)' }}
+        />
+      </LineChart>
     );
   };
 
@@ -813,9 +866,12 @@ const Dashboard = () => {
                       contentStyle={{
                         backgroundColor: 'var(--card-background)',
                         border: '1px solid var(--border-color)',
-                        color: 'var(--text-color)'
+                        color: 'var(--text-color)',
+                        padding: '10px',
+                        borderRadius: '8px'
                       }}
                       labelStyle={{ color: 'var(--text-color)' }}
+                      itemStyle={{ color: 'var(--text-color)' }}
                     />
                     <Legend
                       formatter={(value) => <span style={{ color: 'var(--text-color)' }}>{value}</span>}
@@ -844,9 +900,12 @@ const Dashboard = () => {
                       contentStyle={{
                         backgroundColor: 'var(--card-background)',
                         border: '1px solid var(--border-color)',
-                        color: 'var(--text-color)'
+                        color: 'var(--text-color)',
+                        padding: '10px',
+                        borderRadius: '8px'
                       }}
                       labelStyle={{ color: 'var(--text-color)' }}
+                      itemStyle={{ color: 'var(--text-color)' }}
                     />
                     <Legend
                       formatter={(value) => <span style={{ color: 'var(--text-color)' }}>Total por Banco</span>}
@@ -925,6 +984,75 @@ const Dashboard = () => {
       {getGreeting(auth.user?.name || 'Usuário')}
       <div className={styles.header}>
         <h1 className={styles.title}>Dashboard</h1>
+        <div className={styles.filters}>
+          <div className={`${styles.modernSelect} ${openFilter === 'months' ? styles.active : ''}`}>
+            <div className={styles.selectedValue} onClick={() => handleFilterClick('months')}>
+              <span className="material-icons">calendar_today</span>
+              {formatSelectedMonths()}
+              <span className={`material-icons ${styles.arrow}`}>
+                {openFilter === 'months' ? 'keyboard_arrow_up' : 'keyboard_arrow_down'}
+              </span>
+            </div>
+            {openFilter === 'months' && (
+              <div className={styles.options}>
+                <label className={styles.option}>
+                  <input
+                    type="checkbox"
+                    checked={filters.months.length === months.length}
+                    onChange={() => handleFilterChange('months', 'all')}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  <span>Todos os meses</span>
+                </label>
+                {months.map(month => (
+                  <label key={month.value} className={styles.option}>
+                    <input
+                      type="checkbox"
+                      checked={filters.months.includes(month.value)}
+                      onChange={() => handleFilterChange('months', month.value)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    <span>{month.label}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className={`${styles.modernSelect} ${openFilter === 'years' ? styles.active : ''}`}>
+            <div className={styles.selectedValue} onClick={() => handleFilterClick('years')}>
+              <span className="material-icons">date_range</span>
+              {formatSelectedYears()}
+              <span className={`material-icons ${styles.arrow}`}>
+                {openFilter === 'years' ? 'keyboard_arrow_up' : 'keyboard_arrow_down'}
+              </span>
+            </div>
+            {openFilter === 'years' && (
+              <div className={styles.options}>
+                <label className={styles.option}>
+                  <input
+                    type="checkbox"
+                    checked={filters.years.length === years.length}
+                    onChange={() => handleFilterChange('years', 'all')}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  <span>Todos os anos</span>
+                </label>
+                {years.map(year => (
+                  <label key={year.value} className={styles.option}>
+                    <input
+                      type="checkbox"
+                      checked={filters.years.includes(year.value)}
+                      onChange={() => handleFilterChange('years', year.value)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    <span>{year.label}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {noExpensesMessage ? (

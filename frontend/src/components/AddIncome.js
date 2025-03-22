@@ -21,7 +21,8 @@ const AddIncome = () => {
     total_installments: '',
     current_installment: '',
     start_date: '',
-    end_date: ''
+    end_date: '',
+    recurrence_type: 'monthly'
   });
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
@@ -55,7 +56,7 @@ const AddIncome = () => {
   useEffect(() => {
     const fetchBanks = async () => {
       try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/bank`, {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/banks/favorites`, {
           headers: {
             'Authorization': `Bearer ${auth.token}`
           }
@@ -104,10 +105,29 @@ const AddIncome = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+
+    if (name === 'total_installments' || name === 'current_installment') {
+      // Remove qualquer caractere que não seja número
+      const numericValue = value.replace(/\D/g, '');
+      
+      // Atualiza o estado com o valor digitado (mesmo que vazio)
+      setFormData(prev => ({
+        ...prev,
+        [name]: numericValue ? parseInt(numericValue) : ''
+      }));
+    } else if (name === 'date' || name === 'end_date') {
+      // Formata a data para o formato correto
+      const formattedDate = value ? value.split('T')[0] : '';
+      setFormData(prev => ({
+        ...prev,
+        [name]: formattedDate
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -214,7 +234,8 @@ const AddIncome = () => {
                   ...prev,
                   is_recurring: !prev.is_recurring,
                   has_installments: false,
-                  date: prev.date || new Date().toISOString().split('T')[0]
+                  date: prev.date || new Date().toISOString().split('T')[0],
+                  recurrence_type: !prev.is_recurring ? 'monthly' : null
                 }));
               }}>
                 <div className={styles.checkboxWrapper}>
@@ -251,6 +272,27 @@ const AddIncome = () => {
                   className={styles.input}
                   required
                 />
+              </div>
+
+              <div className={styles.inputGroup}>
+                <label className={styles.label}>
+                  <span className="material-icons">update</span>
+                  Periodicidade
+                </label>
+                <select
+                  name="recurrence_type"
+                  value={formData.recurrence_type || 'monthly'}
+                  onChange={handleChange}
+                  className={styles.input}
+                  required
+                >
+                  <option value="daily">Diária</option>
+                  <option value="weekly">Semanal</option>
+                  <option value="monthly">Mensal</option>
+                  <option value="quarterly">Trimestral</option>
+                  <option value="semiannual">Semestral</option>
+                  <option value="annual">Anual</option>
+                </select>
               </div>
             </div>
           )}

@@ -28,14 +28,23 @@ const Profile = () => {
   const [resendDisabled, setResendDisabled] = useState(false);
   const [resendCountdown, setResendCountdown] = useState(0);
 
+  const [banks, setBanks] = useState([]);
+  const [selectedBanks, setSelectedBanks] = useState([]);
+
   useEffect(() => {
     if (auth.user) {
+      const formatDate = (dateString) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toISOString().split('T')[0];
+      };
+
       setFormData({
         name: auth.user.name || '',
         email: auth.user.email || '',
         financialGoalName: auth.user.financial_goal_name || '',
         financialGoalAmount: auth.user.financial_goal_amount ? auth.user.financial_goal_amount.toString() : '',
-        financialGoalDate: auth.user.financial_goal_date || ''
+        financialGoalDate: formatDate(auth.user.financial_goal_date) || ''
       });
       setEmailChangeData(prev => ({
         ...prev,
@@ -53,6 +62,39 @@ const Profile = () => {
       return () => clearTimeout(timer);
     }
   }, [message, error]);
+
+  useEffect(() => {
+    const fetchBanks = async () => {
+      try {
+        const [banksResponse, favoritesResponse] = await Promise.all([
+          fetch(`${process.env.REACT_APP_API_URL}/api/banks`),
+          fetch(`${process.env.REACT_APP_API_URL}/api/banks/favorites`, {
+            headers: {
+              'Authorization': `Bearer ${auth.token}`
+            }
+          })
+        ]);
+
+        if (!banksResponse.ok || !favoritesResponse.ok) {
+          throw new Error('Erro ao carregar bancos');
+        }
+
+        const [allBanks, favorites] = await Promise.all([
+          banksResponse.json(),
+          favoritesResponse.json()
+        ]);
+
+        setBanks(allBanks);
+        setSelectedBanks(favorites.map(bank => bank.id));
+      } catch (error) {
+        console.error('Erro ao carregar bancos:', error);
+      }
+    };
+
+    if (auth.token) {
+      fetchBanks();
+    }
+  }, [auth.token]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -231,6 +273,36 @@ const Profile = () => {
     navigate('/login');
   };
 
+  const handleBankSelection = async (bankId) => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/banks/favorites`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${auth.token}`
+        },
+        body: JSON.stringify({
+          bank_id: bankId,
+          is_active: !selectedBanks.includes(bankId)
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao atualizar bancos favoritos');
+      }
+
+      setSelectedBanks(prev =>
+        prev.includes(bankId)
+          ? prev.filter(id => id !== bankId)
+          : [...prev, bankId]
+      );
+
+      setMessage('Bancos favoritos atualizados com sucesso!');
+    } catch (error) {
+      setError('Erro ao atualizar bancos favoritos');
+    }
+  };
+
   return (
     <div className={styles.profileContainer}>
       <h1 className={styles.title}>Meu Perfil</h1>
@@ -394,6 +466,62 @@ const Profile = () => {
             </button>
           )}
         </form>
+      </div>
+
+      <div className={styles.formSection}>
+        <h2>Bancos</h2>
+        <div className={styles.banksContainer}>
+          <div className={`${styles.banksList} ${styles.selectedBanksList}`}>
+            <div className={styles.selectedBanksHeader}>
+              <h3>Meus Bancos</h3>
+              <span className={styles.selectedCount}>
+                {selectedBanks.length} selecionado(s)
+              </span>
+            </div>
+            <p className={styles.banksDescription}>
+              Estes bancos aparecerão ao registrar suas movimentações financeiras
+            </p>
+            <div className={styles.banksGrid}>
+              {banks
+                .filter(bank => selectedBanks.includes(bank.id))
+                .map(bank => (
+                  <div
+                    key={bank.id}
+                    className={`${styles.bankCard} ${styles.selected}`}
+                    onClick={() => handleBankSelection(bank.id)}
+                  >
+                    <span className={styles.bankName}>{bank.name}</span>
+                    <span className="material-icons">check_circle</span>
+                  </div>
+                ))}
+              {selectedBanks.length === 0 && (
+                <p className={styles.emptyMessage}>Nenhum banco favorito selecionado</p>
+              )}
+            </div>
+          </div>
+
+          <div className={styles.banksList}>
+            <h3>Bancos Disponíveis</h3>
+            <p className={styles.banksDescription}>Clique para adicionar aos favoritos</p>
+            <div className={styles.banksGrid}>
+              {banks
+                .filter(bank => !selectedBanks.includes(bank.id))
+                .map(bank => (
+                  <div
+                    key={bank.id}
+                    className={styles.bankCard}
+                    onClick={() => handleBankSelection(bank.id)}
+                  >
+                    <span className={styles.bankName}>{bank.name}</span>
+                    <span className="material-icons">add_circle_outline</span>
+                  </div>
+                ))}
+              {banks.length === selectedBanks.length && (
+                <p className={styles.emptyMessage}>Todos os bancos já estão selecionados</p>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className={styles.buttonGroup}>

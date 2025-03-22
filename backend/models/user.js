@@ -23,6 +23,10 @@ export default (sequelize) => {
         isEmail: true
       }
     },
+    password: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
     financial_goal_name: {
       type: DataTypes.STRING,
       allowNull: true
@@ -45,6 +49,10 @@ export default (sequelize) => {
         }
       }
     },
+    financial_goal_created_at: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
     created_at: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW
@@ -57,7 +65,14 @@ export default (sequelize) => {
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at',
-    tableName: 'users'
+    tableName: 'users',
+    hooks: {
+      beforeSave: async (user) => {
+        if (user.changed('financial_goal_amount') && user.financial_goal_amount && !user.financial_goal_created_at) {
+          user.financial_goal_created_at = new Date();
+        }
+      }
+    }
   });
 
   return User;

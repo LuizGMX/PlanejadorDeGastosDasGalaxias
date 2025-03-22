@@ -2,7 +2,8 @@ import { Router } from 'express';
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
 import sgMail from '@sendgrid/mail';
-import { User, VerificationCode } from '../models/index.js';
+import { User, VerificationCode, UserBank } from '../models/index.js';
+import sequelize from '../config/db.js';
 
 dotenv.config();
 
@@ -185,81 +186,80 @@ router.post('/send-code', async (req, res) => {
 });
 
 router.post('/verify-code', async (req, res) => {
-  console.log('/api/auth/verify-code chamado');
+  const t = await sequelize.transaction();
   try {
-    const { email, code, name, financialGoalName, financialGoalAmount, financialGoalDate } = req.body;
-    console.log('Dados recebidos:', { email, code, name, financialGoalName, financialGoalAmount, financialGoalDate });
+    const { email, code, name, financialGoalName, financialGoalAmount, financialGoalDate, selectedBanks } = req.body;
 
+    // Validações básicas
     if (!email || !code) {
-      return res.status(400).json({ message: 'E-mail e código são obrigatórios' });
+      return res.status(400).json({ message: 'Email e código são obrigatórios' });
     }
 
-    const verification = await VerificationCode.findOne({ where: { email, code } });
-    if (!verification || Date.now() > verification.expires_at) {
-      return res.status(400).json({ message: 'Código inválido ou expirado' });
+    // Verifica o código
+    const verificationCode = await VerificationCode.findOne({
+      where: { email, code },
+      order: [['created_at', 'DESC']]
+    });
+
+    if (!verificationCode) {
+      return res.status(400).json({ message: 'Código inválido' });
     }
 
+    // Verifica se o código não expirou (15 minutos)
+    const now = new Date();
+    const codeCreatedAt = new Date(verificationCode.created_at);
+    const diffInMinutes = (now - codeCreatedAt) / (1000 * 60);
+
+    if (diffInMinutes > 15) {
+      return res.status(400).json({ message: 'Código expirado' });
+    }
+
+    // Busca ou cria o usuário
     let user = await User.findOne({ where: { email } });
-    let userData = {
-      name,
-      financialGoalName,
-      financialGoalAmount,
-      financialGoalDate
-    };
     
-    console.log('Dados do usuário antes do merge:', userData);
-    
-    if (verification.userData) {
-      try {
-        const storedUserData = JSON.parse(verification.userData);
-        console.log('Dados armazenados:', storedUserData);
-        // Combina os dados armazenados com os dados recebidos
-        userData = {
-          ...storedUserData,
-          ...userData
-        };
-        console.log('Dados combinados:', userData);
-      } catch (e) {
-        console.error('Erro ao parsear userData:', e);
-      }
-    }
-    
-    // Se não existir usuário, cria um novo
     if (!user) {
-      console.log('Criando novo usuário com dados:', userData);
-      if (!userData.name) {
+      if (!name) {
         return res.status(400).json({ message: 'Nome é obrigatório para novos usuários' });
       }
 
-      user = await User.create({ 
-        email, 
-        name: userData.name,
-        is_active: true,
-        financial_goal_name: userData.financialGoalName || null,
-        financial_goal_amount: userData.financialGoalAmount || null,
-        financial_goal_date: userData.financialGoalDate || null
-      });
-      console.log('Novo usuário criado:', user.toJSON());
-    } else if (userData && Object.keys(userData).length > 0) {
-      console.log('Atualizando usuário existente com dados:', userData);
-      // Atualiza dados do usuário existente se necessário
-      const updateData = {};
-      
-      if (userData.name) updateData.name = userData.name;
-      if (userData.financialGoalName) updateData.financial_goal_name = userData.financialGoalName;
-      if (userData.financialGoalAmount) updateData.financial_goal_amount = userData.financialGoalAmount;
-      if (userData.financialGoalDate) updateData.financial_goal_date = userData.financialGoalDate;
-      
-      if (Object.keys(updateData).length > 0) {
-        await user.update(updateData);
-        console.log('Usuário atualizado:', user.toJSON());
-      }
+      user = await User.create({
+        email,
+        name,
+        financial_goal_name: financialGoalName,
+        financial_goal_amount: financialGoalAmount,
+        financial_goal_date: financialGoalDate
+      }, { transaction: t });
     }
 
-    const token = generateJWT(user.id, user.email);
+    // Se houver bancos selecionados, salva os favoritos
+    if (selectedBanks && selectedBanks.length > 0) {
+      // Remove bancos favoritos existentes
+      await UserBank.destroy({
+        where: { user_id: user.id },
+        transaction: t
+      });
 
-    await VerificationCode.destroy({ where: { email } });
-    return res.json({ 
+      // Adiciona os novos bancos favoritos
+      await Promise.all(selectedBanks.map(bankId =>
+        UserBank.create({
+          user_id: user.id,
+          bank_id: bankId,
+          is_active: true
+        }, { transaction: t })
+      ));
+    }
+
+    // Gera o token JWT
+    const token = jwt.sign(
+      { userId: user.id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    await t.commit();
+
+    // Retorna o token e os dados do usuário
+    res.json({
       token,
       user: {
         id: user.id,
@@ -271,8 +271,9 @@ router.post('/verify-code', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Erro ao verificar código:', error);
-    return res.status(500).json({ message: 'Erro interno ao verificar o código' });
+    await t.rollback();
+    console.error('Erro na verificação:', error);
+    res.status(500).json({ message: 'Erro ao verificar código' });
   }
 });
 

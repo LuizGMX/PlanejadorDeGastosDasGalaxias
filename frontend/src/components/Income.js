@@ -39,6 +39,9 @@ const Income = () => {
     type: 'single'
   });
   const [noIncomesMessage, setNoIncomesMessage] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
+  const [banks, setBanks] = useState([]);
 
   // Lista de anos para o filtro
   const years = Array.from(
@@ -64,6 +67,44 @@ const Income = () => {
     { value: 11, label: 'Novembro' },
     { value: 12, label: 'Dezembro' }
   ];
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [categoriesResponse, banksResponse] = await Promise.all([
+          fetch(`${process.env.REACT_APP_API_URL}/api/categories`, {
+            headers: {
+              'Authorization': `Bearer ${auth.token}`
+            }
+          }),
+          fetch(`${process.env.REACT_APP_API_URL}/api/banks/favorites`, {
+            headers: {
+              'Authorization': `Bearer ${auth.token}`
+            }
+          })
+        ]);
+
+        if (!categoriesResponse.ok || !banksResponse.ok) {
+          throw new Error('Erro ao carregar dados');
+        }
+
+        const [categoriesData, banksData] = await Promise.all([
+          categoriesResponse.json(),
+          banksResponse.json()
+        ]);
+
+        setCategories(categoriesData);
+        setBanks(banksData);
+        setLoading(false);
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+        setError('Erro ao carregar dados. Por favor, tente novamente.');
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [auth.token]);
 
   useEffect(() => {
     const fetchIncomes = async () => {
@@ -170,7 +211,14 @@ const Income = () => {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
+    if (!dateString) return '-';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '-';
+      return date.toLocaleDateString('pt-BR');
+    } catch (error) {
+      return '-';
+    }
   };
 
   const handleSelectAll = (e) => {
@@ -612,14 +660,14 @@ const Income = () => {
                 <td data-label="Valor">R$ {Number(income.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                 <td data-label="Data">
                   {income.is_recurring 
-                    ? `${new Date(income.start_date).toLocaleDateString('pt-BR')} até ${new Date(income.end_date).toLocaleDateString('pt-BR')}`
-                    : new Date(income.date).toLocaleDateString('pt-BR')}
+                    ? formatDate(income.date)
+                    : formatDate(income.date)}
                 </td>
                 <td data-label="Categoria">
                   {income.Category?.category_name || '-'}
-                  {income.recurring_info && (
-                    <span className="material-icons" title={income.recurring_info.badge.tooltip}>
-                      <span className="material-icons">sync</span>
+                  {income.is_recurring && (
+                    <span className="material-icons" style={{ marginLeft: '4px', fontSize: '16px', verticalAlign: 'middle' }}>
+                      sync
                     </span>
                   )}
                 </td>

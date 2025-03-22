@@ -34,6 +34,9 @@ const Expenses = () => {
   const [messagePosition, setMessagePosition] = useState({ x: 0, y: 0 });
   const [deleteOption, setDeleteOption] = useState(null);
   const [noExpensesMessage, setNoExpensesMessage] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
+  const [banks, setBanks] = useState([]);
 
   const years = Array.from(
     { length: 11 },
@@ -70,34 +73,42 @@ const Expenses = () => {
     { value: 'no', label: 'Apenas Não Parceladas' }
   ];
 
-  const [categories, setCategories] = useState([
-    { value: 'all', label: 'Todas as Categorias' }
-  ]);
-
   useEffect(() => {
-    const fetchCategories = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/expenses/categories`, {
-          headers: {
-            'Authorization': `Bearer ${auth.token}`
-          }
-        });
+        const [categoriesResponse, banksResponse] = await Promise.all([
+          fetch(`${process.env.REACT_APP_API_URL}/api/categories`, {
+            headers: {
+              'Authorization': `Bearer ${auth.token}`
+            }
+          }),
+          fetch(`${process.env.REACT_APP_API_URL}/api/banks/favorites`, {
+            headers: {
+              'Authorization': `Bearer ${auth.token}`
+            }
+          })
+        ]);
 
-        if (!response.ok) {
-          throw new Error('Falha ao carregar categorias');
+        if (!categoriesResponse.ok || !banksResponse.ok) {
+          throw new Error('Erro ao carregar dados');
         }
 
-        const data = await response.json();
-        setCategories(data.map(category => ({
-          value: category.id,
-          label: category.category_name
-        })));
-      } catch (err) {
-        setError('Erro ao carregar categorias. Por favor, tente novamente.');
+        const [categoriesData, banksData] = await Promise.all([
+          categoriesResponse.json(),
+          banksResponse.json()
+        ]);
+
+        setCategories(categoriesData);
+        setBanks(banksData);
+        setLoading(false);
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+        setError('Erro ao carregar dados. Por favor, tente novamente.');
+        setLoading(false);
       }
     };
 
-    fetchCategories();
+    fetchData();
   }, [auth.token]);
 
   useEffect(() => {
@@ -135,43 +146,36 @@ const Expenses = () => {
   };
 
   const handleFilterChange = (type, value) => {
-    if (type === 'months' || type === 'years') {
-      if (value === 'all') {
-        setFilters(prev => ({
-          ...prev,
-          [type]: prev[type].length === (type === 'months' ? months.length : years.length) 
-            ? [] 
-            : type === 'months' 
-              ? months.map(m => m.value) 
-              : years.map(y => y.value)
-        }));
-      } else {
-        setFilters(prev => {
-          const newValues = prev[type].includes(value)
-            ? prev[type].filter(item => item !== value)
-            : [...prev[type], value];
+    if (type === 'description') {
+      setFilters(prev => ({ ...prev, description: value }));
+      return;
+    }
 
-          const totalItems = type === 'months' ? months.length : years.length;
-          if (newValues.length === totalItems - 1) {
-            return {
-              ...prev,
-              [type]: type === 'months' 
-                ? months.map(m => m.value)
-                : years.map(y => y.value)
-            };
-          }
+    if (type === 'category_id') {
+      setFilters(prev => ({ ...prev, category_id: value }));
+      return;
+    }
 
-          return {
-            ...prev,
-            [type]: newValues
-          };
-        });
-      }
-    } else {
+    if (value === 'all') {
       setFilters(prev => ({
         ...prev,
-        [type]: value
+        [type]: prev[type].length === (type === 'months' ? months.length : years.length) 
+          ? [] 
+          : type === 'months' 
+            ? months.map(m => m.value) 
+            : years.map(y => y.value)
       }));
+    } else {
+      setFilters(prev => {
+        const newValues = prev[type].includes(value)
+          ? prev[type].filter(item => item !== value)
+          : [...prev[type], value];
+
+        return {
+          ...prev,
+          [type]: newValues
+        };
+      });
     }
   };
 
@@ -551,6 +555,19 @@ const Expenses = () => {
     }
   };
 
+  const formatRecurrenceType = (type) => {
+    if (!type) return '';
+    const types = {
+      daily: 'Diária',
+      weekly: 'Semanal',
+      monthly: 'Mensal',
+      quarterly: 'Trimestral',
+      semiannual: 'Semestral',
+      annual: 'Anual'
+    };
+    return types[type] || '';
+  };
+
   if (loading) {
     return (
       <div className={styles.container}>
@@ -892,6 +909,8 @@ const Expenses = () => {
                   <th>Valor</th>
                   <th>Método</th>
                   <th>Parcelas</th>
+                  <th>Tipo</th>
+                  <th>Recorrência</th>
                   <th>Ações</th>
                 </tr>
               </thead>
@@ -932,6 +951,12 @@ const Expenses = () => {
                         ? `${expense.current_installment}/${expense.total_installments}`
                         : '-'
                       }
+                    </td>
+                    <td data-label="Tipo">
+                      {expense.is_recurring ? 'Fixo' : expense.has_installments ? 'Parcelado' : 'À Vista'}
+                    </td>
+                    <td data-label="Recorrência">
+                      {expense.is_recurring ? formatRecurrenceType(expense.recurrence_type) : '-'}
                     </td>
                     <td data-label="Ações">
                       <div className={styles.actionButtons}>

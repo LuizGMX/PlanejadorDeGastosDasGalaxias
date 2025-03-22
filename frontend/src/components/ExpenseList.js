@@ -140,16 +140,6 @@ const ExpenseList = () => {
           ? prev[type].filter(item => item !== value)
           : [...prev[type], value];
 
-        const totalItems = type === 'months' ? months.length : years.length;
-        if (newValues.length === totalItems - 1) {
-          return {
-            ...prev,
-            [type]: type === 'months' 
-              ? months.map(m => m.value)
-              : years.map(y => y.value)
-          };
-        }
-
         return {
           ...prev,
           [type]: newValues

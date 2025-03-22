@@ -8,7 +8,7 @@ import VerificationCodeModel from './verificationCode.js';
 import BankModel from './bank.js';
 import SubCategoryModel from './subcategory.js';
 import BudgetModel from './budget.js';
-
+import UserBankModel from './userBank.js';
 // Inicialização dos modelos
 const User = UserModel(sequelize);
 const Category = CategoryModel(sequelize);
@@ -18,6 +18,7 @@ const VerificationCode = VerificationCodeModel(sequelize);
 const Bank = BankModel(sequelize);
 const SubCategory = SubCategoryModel(sequelize);
 const Budget = BudgetModel(sequelize);
+const UserBank = UserBankModel(sequelize);
 
 // Relacionamentos
 Expense.belongsTo(User, {
@@ -88,6 +89,31 @@ Budget.belongsTo(User, {
   onUpdate: 'CASCADE'
 });
 
+// Relacionamento entre User e Bank através de UserBank
+User.belongsToMany(Bank, {
+  through: UserBank,
+  foreignKey: 'user_id',
+  otherKey: 'bank_id'
+});
+
+Bank.belongsToMany(User, {
+  through: UserBank,
+  foreignKey: 'bank_id',
+  otherKey: 'user_id'
+});
+
+UserBank.belongsTo(User, {
+  foreignKey: 'user_id',
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE'
+});
+
+UserBank.belongsTo(Bank, {
+  foreignKey: 'bank_id',
+  onDelete: 'NO ACTION',
+  onUpdate: 'CASCADE'
+});
+
 // Exportação dos modelos
 export {
   User,
@@ -97,7 +123,8 @@ export {
   Income,
   Bank,
   Budget,
-  VerificationCode
+  VerificationCode,
+  UserBank
 };
 
 // Exportação padrão
@@ -110,5 +137,6 @@ export default {
   Bank,
   SubCategory,
   Budget,
-  VerificationCode
+  VerificationCode,
+  UserBank
 };

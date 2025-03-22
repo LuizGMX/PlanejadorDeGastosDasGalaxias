@@ -102,8 +102,8 @@ router.post('/', authenticate, async (req, res) => {
       is_recurring,
       is_in_cash,
       start_date,
-      end_date
-
+      end_date,
+      recurrence_type
     } = req.body;
 
     // Validações básicas
@@ -117,11 +117,30 @@ router.post('/', authenticate, async (req, res) => {
       return res.status(400).json({ message: 'Para despesas parceladas, o número de parcelas deve ser maior que 1' });
     }
 
+    if (is_recurring && !recurrence_type) {
+      await t.rollback();
+      return res.status(400).json({ message: 'Para despesas recorrentes, a periodicidade é obrigatória' });
+    }
+
     const parsedAmount = Number(rawAmount);
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
       await t.rollback();
       return res.status(400).json({ message: 'O valor da despesa deve ser um número positivo' });
     }
+
+    // Validação e ajuste da data
+    const adjustDate = (dateStr) => {
+      if (!dateStr) throw new Error('Data inválida');
+      
+      // Garante que estamos trabalhando com a data local
+      const [year, month, day] = dateStr.split('-').map(Number);
+      if (!year || !month || !day) throw new Error('Data inválida');
+      
+      const date = new Date(year, month - 1, day);
+      if (isNaN(date.getTime())) throw new Error('Data inválida');
+      
+      return date;
+    };
 
     // Validação da data
     if (!expense_date || isNaN(new Date(expense_date).getTime())) {
@@ -145,7 +164,7 @@ router.post('/', authenticate, async (req, res) => {
       const roundingAdjustment = Number((parsedAmount - (installmentAmount * total_installments)).toFixed(2));
 
       for (let i = 0; i < total_installments; i++) {
-        const installmentDate = new Date(expense_date);
+        const installmentDate = adjustDate(expense_date);
         installmentDate.setMonth(installmentDate.getMonth() + i);
 
         expenses.push({
@@ -164,6 +183,62 @@ router.post('/', authenticate, async (req, res) => {
           is_recurring: false
         });
       }
+    } else if (is_recurring) {
+      const startDateObj = adjustDate(expense_date);
+      const endDateObj = end_date ? adjustDate(end_date) : new Date(startDateObj);
+      endDateObj.setFullYear(2099);
+      endDateObj.setMonth(11);
+      endDateObj.setDate(31);
+
+      let currentDate = new Date(startDateObj);
+      let count = 0;
+      const maxRecurrences = 500; // Limite de segurança
+
+      while (currentDate <= endDateObj && count < maxRecurrences) {
+        expenses.push({
+          user_id: req.user.id,
+          description,
+          amount: parsedAmount,
+          category_id,
+          subcategory_id,
+          bank_id,
+          expense_date: new Date(currentDate),
+          payment_method,
+          has_installments: false,
+          is_recurring: true,
+          recurring_group_id: recurringGroupId,
+          start_date: startDateObj,
+          end_date: endDateObj,
+          recurrence_type
+        });
+
+        // Atualiza a data baseado no tipo de recorrência
+        const nextDate = new Date(currentDate);
+        switch (recurrence_type) {
+          case 'daily':
+            nextDate.setDate(nextDate.getDate() + 1);
+            break;
+          case 'weekly':
+            nextDate.setDate(nextDate.getDate() + 7);
+            break;
+          case 'monthly':
+            nextDate.setMonth(nextDate.getMonth() + 1);
+            break;
+          case 'quarterly':
+            nextDate.setMonth(nextDate.getMonth() + 3);
+            break;
+          case 'semiannual':
+            nextDate.setMonth(nextDate.getMonth() + 6);
+            break;
+          case 'annual':
+            nextDate.setFullYear(nextDate.getFullYear() + 1);
+            break;
+          default:
+            nextDate.setMonth(nextDate.getMonth() + 1);
+        }
+        currentDate = nextDate;
+        count++;
+      }
     } else {
       expenses.push({
         user_id: req.user.id,
@@ -172,14 +247,11 @@ router.post('/', authenticate, async (req, res) => {
         category_id,
         subcategory_id,
         bank_id,
-        expense_date,
+        expense_date: adjustDate(expense_date),
         payment_method,
         has_installments: false,
-        is_recurring,
-        recurring_group_id: recurringGroupId,
-        is_in_cash,
-        start_date,
-        end_date
+        is_recurring: false,
+        is_in_cash
       });
     }
 

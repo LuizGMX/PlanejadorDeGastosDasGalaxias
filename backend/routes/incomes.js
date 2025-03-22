@@ -60,6 +60,15 @@ router.get('/', authenticate, async (req, res) => {
     // Buscar todas as ganhos
     const incomes = await Income.findAll({
       where,
+      attributes: [
+        'id',
+        'description',
+        'amount',
+        'date',
+        'is_recurring',
+        'recurring_group_id',
+        'recurrence_type'
+      ],
       include: [
         { 
           model: Category,
@@ -106,10 +115,7 @@ router.get('/', authenticate, async (req, res) => {
         recurring_info: income.is_recurring ? {
           is_recurring: true,
           recurring_group_id: income.recurring_group_id,
-          badge: {
-            text: 'Recorrente',
-            tooltip: 'Esta ganho faz parte de um grupo de ganhos recorrentes'
-          }
+          recurrence_type: income.recurrence_type
         } : null
       };
     });
@@ -156,7 +162,8 @@ router.post('/', authenticate, async (req, res) => {
       subcategory_id,
       bank_id,
       start_date,
-      end_date
+      end_date,
+      recurrence_type
     } = req.body;
 
     // Validações básicas
@@ -164,38 +171,103 @@ router.post('/', authenticate, async (req, res) => {
       return res.status(400).json({ message: 'Todos os campos obrigatórios devem ser preenchidos' });
     }
 
+    if (is_recurring && !recurrence_type) {
+      await t.rollback();
+      return res.status(400).json({ message: 'Para ganhos recorrentes, a periodicidade é obrigatória' });
+    }
+
     const parsedAmount = Number(rawAmount);
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
       return res.status(400).json({ message: 'O valor do ganho deve ser um número positivo' });
     }
 
-    // Validação da data
-    if (isNaN(new Date(date).getTime())) {
-      return res.status(400).json({ message: 'Data inválida' });
-    }
-
-    // Se for recorrente, define as datas de início e fim
-    let incomeData = {
-      user_id: req.user.id,
-      description,
-      amount: parsedAmount,
-      date,
-      is_recurring,
-      recurring_group_id: is_recurring ? uuidv4() : null,
-      category_id,
-      subcategory_id,
-      bank_id
+    // Validação e ajuste da data
+    const adjustDate = (dateStr) => {
+      if (!dateStr) throw new Error('Data inválida');
+      
+      // Garante que estamos trabalhando com a data local
+      const [year, month, day] = dateStr.split('-').map(Number);
+      if (!year || !month || !day) throw new Error('Data inválida');
+      
+      const date = new Date(year, month - 1, day);
+      if (isNaN(date.getTime())) throw new Error('Data inválida');
+      
+      return date;
     };
 
+    const incomes = [];
+    const recurringGroupId = is_recurring ? uuidv4() : null;
+
     if (is_recurring) {
-      incomeData.start_date = date;
-      incomeData.end_date = end_date || '2099-12-31';
+      const startDateObj = adjustDate(date);
+      const endDateObj = end_date ? adjustDate(end_date) : new Date(startDateObj);
+      endDateObj.setFullYear(2099);
+      endDateObj.setMonth(11);
+      endDateObj.setDate(31);
+
+      let currentDate = new Date(startDateObj);
+      let count = 0;
+      const maxRecurrences = 500; // Limite de segurança
+
+      while (currentDate <= endDateObj && count < maxRecurrences) {
+        incomes.push({
+          user_id: req.user.id,
+          description,
+          amount: parsedAmount,
+          date: new Date(currentDate),
+          is_recurring: true,
+          recurring_group_id: recurringGroupId,
+          category_id,
+          subcategory_id,
+          bank_id,
+          start_date: startDateObj,
+          end_date: endDateObj,
+          recurrence_type
+        });
+
+        // Atualiza a data baseado no tipo de recorrência
+        const nextDate = new Date(currentDate);
+        switch (recurrence_type) {
+          case 'daily':
+            nextDate.setDate(nextDate.getDate() + 1);
+            break;
+          case 'weekly':
+            nextDate.setDate(nextDate.getDate() + 7);
+            break;
+          case 'monthly':
+            nextDate.setMonth(nextDate.getMonth() + 1);
+            break;
+          case 'quarterly':
+            nextDate.setMonth(nextDate.getMonth() + 3);
+            break;
+          case 'semiannual':
+            nextDate.setMonth(nextDate.getMonth() + 6);
+            break;
+          case 'annual':
+            nextDate.setFullYear(nextDate.getFullYear() + 1);
+            break;
+          default:
+            nextDate.setMonth(nextDate.getMonth() + 1);
+        }
+        currentDate = nextDate;
+        count++;
+      }
+    } else {
+      incomes.push({
+        user_id: req.user.id,
+        description,
+        amount: parsedAmount,
+        date: adjustDate(date),
+        is_recurring: false,
+        category_id,
+        subcategory_id,
+        bank_id
+      });
     }
 
-    const income = await Income.create(incomeData, { transaction: t });
-
+    const createdIncomes = await Income.bulkCreate(incomes, { transaction: t });
     await t.commit();
-    res.status(201).json(income);
+    res.status(201).json(createdIncomes);
   } catch (error) {
     await t.rollback();
     console.error('Erro ao criar ganho:', error);
