@@ -32,6 +32,15 @@ router.get('/favorites', authenticate, async (req, res) => {
       order: [[Bank, 'name', 'ASC']]
     });
 
+    // Se não houver bancos favoritos, retorna todos os bancos
+    if (userBanks.length === 0) {
+      const allBanks = await Bank.findAll({
+        attributes: ['id', 'name', 'code'],
+        order: [['name', 'ASC']]
+      });
+      return res.json(allBanks);
+    }
+
     const banks = userBanks.map(ub => ub.Bank);
     res.json(banks);
   } catch (error) {
@@ -120,21 +129,34 @@ router.post('/favorites', authenticate, async (req, res) => {
   }
 
   try {
+    console.log('Atualizando banco favorito:', { bank_id, is_active, user_id });
+
     const bank = await Bank.findByPk(bank_id);
     if (!bank) {
       return res.status(404).json({ message: 'Banco não encontrado' });
     }
 
-    const [userBank, created] = await UserBank.findOrCreate({
+    const [userBank] = await UserBank.findOrCreate({
       where: { user_id, bank_id },
-      defaults: { is_active }
+      defaults: { is_active: false }
     });
 
-    if (!created) {
-      await userBank.update({ is_active });
-    }
+    await userBank.update({ is_active });
 
-    res.json({ message: 'Banco favorito atualizado com sucesso' });
+    // Busca os dados atualizados para retornar
+    const updatedUserBank = await UserBank.findOne({
+      where: { user_id, bank_id },
+      include: [{
+        model: Bank,
+        attributes: ['id', 'name', 'code']
+      }]
+    });
+
+    res.json({
+      message: 'Banco favorito atualizado com sucesso',
+      bank: updatedUserBank.Bank,
+      is_active: updatedUserBank.is_active
+    });
   } catch (error) {
     console.error('Erro ao atualizar banco favorito:', error);
     res.status(500).json({ message: 'Erro ao atualizar banco favorito' });

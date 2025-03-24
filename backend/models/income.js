@@ -72,6 +72,14 @@ export default (sequelize) => {
       allowNull: false,
       defaultValue: false
     },
+    recurrence_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'recurrence_rules',
+        key: 'id'
+      }
+    },
     recurrence_type: {
       type: DataTypes.ENUM('daily', 'weekly', 'monthly', 'quarterly', 'semiannual', 'annual'),
       allowNull: true

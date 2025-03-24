@@ -1,8 +1,19 @@
 import { Sequelize } from 'sequelize';
 import express from 'express';
-import { Expense, Income, Category, SubCategory, Bank, Budget, User } from '../models/index.js';
+import { 
+  Expense, 
+  Income, 
+  Category, 
+  SubCategory, 
+  Bank, 
+  Budget, 
+  User,
+  RecurrenceRule,
+  RecurrenceException 
+} from '../models/index.js';
 import { Op } from 'sequelize';
 import { authenticate } from '../middleware/auth.js';
+import { calculateOccurrences } from '../utils/recurrenceCalculator.js';
 
 const router = express.Router();
 
@@ -136,17 +147,221 @@ const calculateBudgetInfo = (totalBudget, totalExpenses) => {
 
 router.get('/', authenticate, async (req, res) => {
   try {
-    const { months, years } = req.query;
-    const whereExpenses = {
-      user_id: req.user.id,
-      ...buildDateConditions(months, years, 'expense_date')
-    };
-    const whereIncomes = {
-      user_id: req.user.id,
-      ...buildDateConditions(months, years, 'date')
-    };
-
+    console.log('\n=== INÍCIO DA REQUISIÇÃO DO DASHBOARD ===');
+    console.log('Query params:', req.query);
+    
     const user = await User.findByPk(req.user.id);
+    const { months, years } = req.query;
+
+    // Converte os parâmetros para arrays
+    const selectedMonths = Array.isArray(months) ? months.map(Number) : [];
+    const selectedYears = Array.isArray(years) ? years.map(Number) : [];
+
+    console.log('Meses selecionados:', selectedMonths);
+    console.log('Anos selecionados:', selectedYears);
+
+    // Define o período baseado nos filtros
+    let startDate, endDate;
+    
+    if (selectedYears.length > 0 && selectedMonths.length > 0) {
+      // Pega o menor ano e mês para a data inicial
+      const minYear = Math.min(...selectedYears);
+      const minMonth = Math.min(...selectedMonths) - 1; // Mês em JavaScript é 0-based
+      startDate = new Date(minYear, minMonth, 1);
+
+      // Pega o maior ano e mês para a data final
+      const maxYear = Math.max(...selectedYears);
+      const maxMonth = Math.max(...selectedMonths) - 1;
+      endDate = new Date(maxYear, maxMonth + 1, 0); // Último dia do mês
+      endDate.setHours(23, 59, 59, 999);
+    } else {
+      // Se não houver filtros, usa o mês atual
+      const today = new Date();
+      startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+      endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      endDate.setHours(23, 59, 59, 999);
+    }
+
+    console.log('Período de busca:');
+    console.log('De:', startDate);
+    console.log('Até:', endDate);
+
+    // Busca todas as regras de recorrência do usuário
+    const recurrenceRules = await RecurrenceRule.findAll({
+      where: {
+        user_id: req.user.id,
+        [Op.or]: [
+          { end_date: null },
+          { end_date: { [Op.gte]: startDate } }
+        ],
+        start_date: { [Op.lte]: endDate }
+      },
+      include: [
+        { 
+          model: Category,
+          attributes: ['id', 'category_name']
+        },
+        { 
+          model: SubCategory,
+          attributes: ['id', 'subcategory_name']
+        },
+        { 
+          model: Bank,
+          attributes: ['id', 'name']
+        }
+      ]
+    }).catch(error => {
+      console.error('Erro ao buscar regras de recorrência:', error);
+      throw error;
+    });
+
+    console.log('Regras de recorrência encontradas:', recurrenceRules.length);
+
+    // Busca todas as exceções do usuário para o período
+    const recurrenceExceptions = await RecurrenceException.findAll({
+      where: {
+        user_id: req.user.id,
+        exception_date: {
+          [Op.between]: [startDate, endDate]
+        }
+      },
+      include: [
+        {
+          model: RecurrenceRule,
+          include: [
+            { 
+              model: Category,
+              attributes: ['id', 'category_name']
+            },
+            { 
+              model: SubCategory,
+              attributes: ['id', 'subcategory_name']
+            },
+            { 
+              model: Bank,
+              attributes: ['id', 'name']
+            }
+          ]
+        }
+      ]
+    }).catch(error => {
+      console.error('Erro ao buscar exceções:', error);
+      throw error;
+    });
+
+    console.log('Exceções encontradas:', recurrenceExceptions.length);
+
+    // Calcula todas as ocorrências para cada regra
+    const recurrenceOccurrences = recurrenceRules.flatMap(rule =>
+      calculateOccurrences(rule, startDate, endDate, recurrenceExceptions)
+    );
+
+    // Separa as ocorrências em despesas e receitas
+    const recurrentExpenses = recurrenceOccurrences
+      .filter(occ => occ.rule.type === 'expense')
+      .map(occ => ({
+        id: `rec_${occ.rule.id}_${occ.date.getTime()}`,
+        amount: occ.amount,
+        description: occ.description,
+        date: occ.date,
+        category_id: occ.rule.category_id,
+        subcategory_id: occ.rule.subcategory_id,
+        bank_id: occ.rule.bank_id,
+        is_recurring: true,
+        recurrence_id: occ.rule.id,
+        Category: occ.rule.Category,
+        Subcategory: occ.rule.Subcategory,
+        Bank: occ.rule.Bank
+      }));
+
+    const recurrentIncomes = recurrenceOccurrences
+      .filter(occ => occ.rule.type === 'income')
+      .map(occ => ({
+        id: `rec_${occ.rule.id}_${occ.date.getTime()}`,
+        amount: occ.amount,
+        description: occ.description,
+        date: occ.date,
+        category_id: occ.rule.category_id,
+        subcategory_id: occ.rule.subcategory_id,
+        bank_id: occ.rule.bank_id,
+        is_recurring: true,
+        recurrence_id: occ.rule.id,
+        Category: occ.rule.Category,
+        Subcategory: occ.rule.Subcategory,
+        Bank: occ.rule.Bank
+      }));
+
+    // Busca despesas e receitas normais
+    const [expenses, incomes] = await Promise.all([
+      Expense.findAll({
+        where: {
+          user_id: req.user.id,
+          expense_date: {
+            [Op.between]: [startDate, endDate]
+          },
+          recurrence_id: null // Apenas as não recorrentes
+        },
+        include: [
+          { 
+            model: Category,
+            attributes: ['id', 'category_name']
+          },
+          { 
+            model: SubCategory,
+            attributes: ['id', 'subcategory_name']
+          },
+          { 
+            model: Bank,
+            attributes: ['id', 'name']
+          }
+        ]
+      }),
+      Income.findAll({
+        where: {
+          user_id: req.user.id,
+          date: {
+            [Op.between]: [startDate, endDate]
+          },
+          recurrence_id: null // Apenas as não recorrentes
+        },
+        include: [
+          { 
+            model: Category,
+            attributes: ['id', 'category_name']
+          },
+          { 
+            model: SubCategory,
+            attributes: ['id', 'subcategory_name']
+          },
+          { 
+            model: Bank,
+            attributes: ['id', 'name']
+          }
+        ]
+      })
+    ]).catch(error => {
+      console.error('Erro ao buscar despesas e receitas:', error);
+      throw error;
+    });
+
+    // Combina as despesas e receitas normais com as recorrentes
+    const allExpenses = [...expenses, ...recurrentExpenses];
+    const allIncomes = [...incomes, ...recurrentIncomes];
+
+    // Calcula totais gerais
+    const totalExpensesWithRecurrences = allExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
+    const totalIncomesWithRecurrences = allIncomes.reduce((sum, income) => sum + parseFloat(income.amount), 0);
+    const balance = totalIncomesWithRecurrences - totalExpensesWithRecurrences;
+
+    // Calcula informações por categoria e banco (apenas para itens não recorrentes)
+    const expensesByCategory = groupByCategory(expenses);
+    const incomesByCategory = groupByCategory(incomes);
+    const expensesByBank = groupByBank(expenses);
+    const incomesByBank = groupByBank(incomes);
+
+    // Calcula totais apenas dos itens não recorrentes para o orçamento
+    const totalExpenses = expenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
+    const totalIncomes = incomes.reduce((sum, income) => sum + parseFloat(income.amount), 0);
 
     // Calcula informações do objetivo financeiro
     let financialGoalInfo = null;
@@ -254,52 +469,21 @@ router.get('/', authenticate, async (req, res) => {
       };
     }
 
-    // Busca as despesas e receitas do período selecionado
-    const [expenses, incomes] = await Promise.all([
-      Expense.findAll({
-        where: whereExpenses,
-        include: [
-          { 
-            model: Category, 
-            where: { type: 'expense' },
-            attributes: ['category_name', 'type']
-          },
-          { model: SubCategory },
-          { model: Bank }
-        ],
-        order: [['expense_date', 'ASC']]
-      }),
-      Income.findAll({
-        where: whereIncomes,
-        include: [
-          { 
-            model: Category, 
-            where: { type: 'income' },
-            attributes: ['category_name', 'type']
-          },
-          { model: SubCategory },
-          { model: Bank }
-        ],
-        order: [['date', 'ASC']]
-      })
-    ]);
-
-    const expensesByCategory = groupByCategory(expenses);
-    const incomesByCategory = groupByCategory(incomes);
-    const totalIncomes = calculateTotals(incomes);
-    const totalExpenses = calculateTotals(expenses);
     const totalBudget = totalIncomes;
 
     const responseData = {
+      expenses: allExpenses,
+      incomes: allIncomes,
+      total_expenses: totalExpensesWithRecurrences,
+      total_incomes: totalIncomesWithRecurrences,
+      balance,
       expenses_by_category: expensesByCategory,
       incomes_by_category: incomesByCategory,
       expenses_by_date: groupByDate(expenses, 'expense_date'),
       incomes_by_date: groupByDate(incomes, 'date'),
-      expenses_by_bank: groupByBank(expenses),
-      incomes_by_bank: groupByBank(incomes),
+      expenses_by_bank: expensesByBank,
+      incomes_by_bank: incomesByBank,
       budget_info: calculateBudgetInfo(totalBudget, totalExpenses),
-      total_expenses: totalExpenses,
-      total_incomes: totalIncomes,
       financial_goal: financialGoalInfo,
       user: {
         id: req.user.id,
@@ -314,8 +498,15 @@ router.get('/', authenticate, async (req, res) => {
 
     res.json(responseData);
   } catch (error) {
-    console.error('Erro ao buscar dados do dashboard:', error);
-    res.status(500).json({ message: 'Erro ao buscar dados do dashboard' });
+    console.error('\n=== ERRO NO DASHBOARD ===');
+    console.error('Mensagem:', error.message);
+    console.error('Stack:', error.stack);
+    console.error('=== FIM DO ERRO ===\n');
+    
+    res.status(500).json({ 
+      message: 'Erro ao buscar dados do dashboard',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 

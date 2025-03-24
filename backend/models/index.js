@@ -9,6 +9,9 @@ import BankModel from './bank.js';
 import SubCategoryModel from './subcategory.js';
 import BudgetModel from './budget.js';
 import UserBankModel from './userBank.js';
+import RecurrenceRuleModel from './RecurrenceRule.js';
+import RecurrenceExceptionModel from './RecurrenceException.js';
+
 // Inicialização dos modelos
 const User = UserModel(sequelize);
 const Category = CategoryModel(sequelize);
@@ -19,6 +22,8 @@ const Bank = BankModel(sequelize);
 const SubCategory = SubCategoryModel(sequelize);
 const Budget = BudgetModel(sequelize);
 const UserBank = UserBankModel(sequelize);
+const RecurrenceRule = RecurrenceRuleModel(sequelize);
+const RecurrenceException = RecurrenceExceptionModel(sequelize);
 
 // Relacionamentos
 Expense.belongsTo(User, {
@@ -82,6 +87,19 @@ SubCategory.belongsTo(Category, {
   onUpdate: 'CASCADE'
 });
 
+// Relacionamento entre User e SubCategory
+SubCategory.belongsTo(User, {
+  foreignKey: 'user_id',
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE'
+});
+
+User.hasMany(SubCategory, {
+  foreignKey: 'user_id',
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE'
+});
+
 // Relacionamento do Budget com User
 Budget.belongsTo(User, {
   foreignKey: 'user_id',
@@ -114,6 +132,44 @@ UserBank.belongsTo(Bank, {
   onUpdate: 'CASCADE'
 });
 
+// Relacionamentos do RecurrenceRule
+RecurrenceRule.belongsTo(User, {
+  foreignKey: 'user_id',
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE'
+});
+
+RecurrenceRule.belongsTo(Category, {
+  foreignKey: 'category_id',
+  onDelete: 'NO ACTION',
+  onUpdate: 'CASCADE'
+});
+
+RecurrenceRule.belongsTo(SubCategory, {
+  foreignKey: 'subcategory_id',
+  onDelete: 'NO ACTION',
+  onUpdate: 'CASCADE'
+});
+
+RecurrenceRule.belongsTo(Bank, {
+  foreignKey: 'bank_id',
+  onDelete: 'NO ACTION',
+  onUpdate: 'CASCADE'
+});
+
+// Relacionamentos do RecurrenceException
+RecurrenceException.belongsTo(RecurrenceRule, {
+  foreignKey: 'recurrence_id',
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE'
+});
+
+RecurrenceRule.hasMany(RecurrenceException, {
+  foreignKey: 'recurrence_id',
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE'
+});
+
 // Exportação dos modelos
 export {
   User,
@@ -124,7 +180,9 @@ export {
   Bank,
   Budget,
   VerificationCode,
-  UserBank
+  UserBank,
+  RecurrenceRule,
+  RecurrenceException
 };
 
 // Exportação padrão
@@ -138,5 +196,7 @@ export default {
   SubCategory,
   Budget,
   VerificationCode,
-  UserBank
+  UserBank,
+  RecurrenceRule,
+  RecurrenceException
 };

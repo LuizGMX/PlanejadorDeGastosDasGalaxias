@@ -11,6 +11,8 @@ import budgetRoutes from './routes/budgets.js';
 import spreadsheetRoutes from './routes/spreadsheetRoutes.js';
 import userRoutes from './routes/users.js';
 import dotenv from 'dotenv';
+import subcategoriesRouter from './routes/subcategories.js';
+import recurrencesRouter from './routes/recurrences.js';
 
 dotenv.config();
 
@@ -46,6 +48,8 @@ app.use('/api/banks', bankRoutes);
 app.use('/api/budgets', budgetRoutes);
 app.use('/api/spreadsheet', spreadsheetRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/subcategories', subcategoriesRouter);
+app.use('/api/recurrences', recurrencesRouter);
 
 // Tratamento de erros
 app.use((err, req, res, next) => {
