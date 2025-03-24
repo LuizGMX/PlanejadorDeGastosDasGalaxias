@@ -18,7 +18,18 @@ export const authenticate = async (req, res, next) => {
     
     if (!user) {
       user = await User.findByPk(decoded.userId, {
-        attributes: ['id', 'name', 'email', 'created_at', 'updated_at', 'financial_goal_name', 'financial_goal_amount', 'financial_goal_date']
+        attributes: [
+          'id', 
+          'name', 
+          'email', 
+          'created_at', 
+          'updated_at', 
+          'financial_goal_name', 
+          'financial_goal_amount', 
+          'financial_goal_date',
+          'phone_number',
+          'telegram_verified'
+        ]
       });
       if (user) {
         await setCache(cacheKey, user);
@@ -35,7 +46,12 @@ export const authenticate = async (req, res, next) => {
       name: user.name,
       email: user.email,
       created_at: user.created_at,
-      updated_at: user.updated_at
+      updated_at: user.updated_at,
+      financial_goal_name: user.financial_goal_name,
+      financial_goal_amount: user.financial_goal_amount,
+      financial_goal_date: user.financial_goal_date,
+      phone_number: user.phone_number,
+      telegram_verified: user.telegram_verified
     };
     
     next();

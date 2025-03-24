@@ -188,7 +188,16 @@ router.post('/send-code', async (req, res) => {
 router.post('/verify-code', async (req, res) => {
   const t = await sequelize.transaction();
   try {
-    const { email, code, name, financialGoalName, financialGoalAmount, financialGoalDate, selectedBanks } = req.body;
+    const { 
+      email, 
+      code, 
+      name, 
+      financialGoalName, 
+      financialGoalAmount, 
+      financialGoalDate, 
+      selectedBanks,
+      phone_number // Número do Telegram opcional
+    } = req.body;
 
     // Validações básicas
     if (!email || !code) {
@@ -222,9 +231,18 @@ router.post('/verify-code', async (req, res) => {
         return res.status(400).json({ message: 'Nome é obrigatório para novos usuários' });
       }
 
+      // Valida o formato do número do Telegram se fornecido
+      if (phone_number && !/^\+?[1-9]\d{10,14}$/.test(phone_number)) {
+        return res.status(400).json({ 
+          message: 'Formato inválido do número do Telegram. Use o formato internacional (ex: +5511999999999)' 
+        });
+      }
+
       user = await User.create({
         email,
         name,
+        phone_number, // Número do Telegram opcional
+        telegram_verified: false, // Começa como false mesmo se fornecer o número
         financial_goal_name: financialGoalName,
         financial_goal_amount: financialGoalAmount,
         financial_goal_date: financialGoalDate
@@ -265,10 +283,15 @@ router.post('/verify-code', async (req, res) => {
         id: user.id,
         name: user.name,
         email: user.email,
+        phone_number: user.phone_number,
+        telegram_verified: user.telegram_verified,
         financial_goal_name: user.financial_goal_name,
         financial_goal_amount: user.financial_goal_amount,
         financial_goal_date: user.financial_goal_date
-      }
+      },
+      message: !user.phone_number ? 
+        'Você pode configurar seu número do Telegram mais tarde no seu perfil para receber notificações e registrar gastos/receitas via Telegram!' :
+        'Seu número do Telegram foi registrado! Em breve você receberá um código de verificação para ativar as funcionalidades do Telegram.'
     });
   } catch (error) {
     await t.rollback();
@@ -323,6 +346,8 @@ router.get('/me', authenticate, async (req, res) => {
   return res.json({ 
     name: req.user.name, 
     email: req.user.email,
+    phone_number: req.user.phone_number,
+    telegram_verified: req.user.telegram_verified,
     financial_goal_name: req.user.financial_goal_name,
     financial_goal_amount: parseInt(req.user.financial_goal_amount),
     financial_goal_date: req.user.financial_goal_date
@@ -335,14 +360,24 @@ router.put('/me', authenticate, async (req, res) => {
     const {
       name,
       email,
+      phone_number,
       financial_goal_name,
       financial_goal_amount,
       financial_goal_date,
     } = req.body;
 
+    // Valida o formato do número do Telegram se fornecido
+    if (phone_number && !/^\+?[1-9]\d{10,14}$/.test(phone_number)) {
+      return res.status(400).json({ 
+        message: 'Formato inválido do número do Telegram. Use o formato internacional (ex: +5511999999999)' 
+      });
+    }
+
     await req.user.update({
       name,
       email,
+      phone_number,
+      telegram_verified: phone_number ? false : req.user.telegram_verified, // Reseta a verificação se mudar o número
       financial_goal_name,
       financial_goal_amount: parseInt(financial_goal_amount),
       financial_goal_date,
@@ -352,9 +387,14 @@ router.put('/me', authenticate, async (req, res) => {
       id: req.user.id,
       name: req.user.name,
       email: req.user.email,
+      phone_number: req.user.phone_number,
+      telegram_verified: req.user.telegram_verified,
       financial_goal_name: req.user.financial_goal_name,
       financial_goal_amount: parseInt(req.user.financial_goal_amount),
       financial_goal_date: req.user.financial_goal_date,
+      message: phone_number ? 
+        'Seu número do Telegram foi atualizado! Em breve você receberá um código de verificação para ativar as funcionalidades do Telegram.' :
+        'Seu número do Telegram foi removido. Você pode configurá-lo novamente quando quiser!'
     });
   } catch (error) {
     console.error('Erro ao atualizar usuário:', error);

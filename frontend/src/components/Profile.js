@@ -4,7 +4,7 @@ import { AuthContext } from '../App';
 import styles from '../styles/shared.module.css';
 import CurrencyInput from 'react-currency-input-field';
 import { BsDoorOpen } from 'react-icons/bs';
-
+import TelegramLinking from './TelegramLinking';
 const Profile = () => {
   const navigate = useNavigate();
   const { auth, setAuth } = useContext(AuthContext);
@@ -524,6 +524,10 @@ const Profile = () => {
         </div>
       </div>
 
+      <div className={styles.formSection}>
+        <TelegramLinking />
+      </div>
+
       <div className={styles.buttonGroup}>
         <button className={styles.logoutButton} onClick={handleLogout}>
           <span className={styles.icon}><BsDoorOpen size={20} /></span>
@@ -531,7 +535,6 @@ const Profile = () => {
         </button>
       </div>
 
-    
     </div>
   );
 };

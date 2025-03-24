@@ -16,7 +16,8 @@ const Login = () => {
     financialGoalName: '',
     financialGoalAmount: '',
     financialGoalDate: '',
-    selectedBanks: []
+    selectedBanks: [],
+    phone_number: ''
   });
   const [banks, setBanks] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -26,6 +27,8 @@ const Login = () => {
   const [isNewUser, setIsNewUser] = useState(false);
   const [resendDisabled, setResendDisabled] = useState(false);
   const [resendCountdown, setResendCountdown] = useState(0);
+  const [telegramStep, setTelegramStep] = useState('input');
+  const [botLink, setBotLink] = useState('');
 
   useEffect(() => {
     const fetchBanks = async () => {
@@ -135,7 +138,6 @@ const Login = () => {
 
         const data = await response.json();
         
-        // Salvar token no localStorage
         localStorage.setItem('token', data.token);
         
         setAuth({
@@ -143,10 +145,13 @@ const Login = () => {
           user: data.user
         });
         
-        setSuccess('Login realizado com sucesso!');
+        setSuccess('Login realizado com sucesso! Agora vamos conectar seu Telegram...');
         setTimeout(() => {
-          navigate('/dashboard');
+          setStep('telegram');
         }, 1500);
+      } else if (step === 'telegram') {
+        // Handle Telegram connection logic
+        setSuccess('Telegram connection logic not implemented yet');
       }
     } catch (err) {
       setError(err.message || 'Ocorreu um erro. Por favor, tente novamente.');
@@ -247,6 +252,63 @@ const Login = () => {
       }, 1000);
     } catch (error) {
       setError(error.message);
+    }
+  };
+
+  const handleTelegramLink = async () => {
+    try {
+      // Primeiro atualiza o número do telefone
+      const updateResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/me`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          name: auth.user.name,
+          email: auth.user.email,
+          phone_number: formData.phone_number
+        })
+      });
+
+      if (!updateResponse.ok) {
+        const errorData = await updateResponse.json();
+        throw new Error(errorData.message || 'Erro ao atualizar número do telefone');
+      }
+
+      const updateData = await updateResponse.json();
+      setAuth(prev => ({
+        ...prev,
+        user: updateData
+      }));
+
+      // Depois inicia a verificação do Telegram
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/telegram/init-verification`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ phone_number: formData.phone_number })
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'Erro ao iniciar verificação do Telegram');
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setSuccess('Link gerado com sucesso! Clique no botão abaixo para abrir o Telegram.');
+        setBotLink(data.botLink);
+        setTelegramStep('link');
+      } else {
+        setError(data.message);
+      }
+    } catch (err) {
+      console.error('Erro ao vincular Telegram:', err);
+      setError(err.message);
     }
   };
 
@@ -450,7 +512,7 @@ const Login = () => {
             <div className={styles.loginHeader}>
               <h1 className={styles.loginTitle}>Digite o código de acesso</h1>
               <p className={styles.loginSubtitle}>
-                Enviamos um código para seu e-mail
+                Enviamos um código para seu e-mail {formData.email}
               </p>
             </div>
             <div className={styles.inputWrapper}>
@@ -466,17 +528,94 @@ const Login = () => {
             </div>
             <div className={styles.resendCode}>
               {resendDisabled ? (
-                <p>Reenviar código em {resendCountdown}s</p>
+                <p className={styles.resendDisabled}>Reenviar código em {resendCountdown}s</p>
               ) : (
                 <button
                   type="button"
                   onClick={requestAccessCode}
                   className={styles.resendButton}
+                  disabled={resendDisabled}
                 >
                   Reenviar código
                 </button>
               )}
             </div>
+          </>
+        );
+
+      case 'telegram':
+        return (
+          <>
+            <div className={styles.loginHeader}>
+              <h1 className={styles.loginTitle}>Conecte seu Telegram!</h1>
+              <p className={styles.loginSubtitle}>
+                Opcional: Use o Telegram para registrar gastos e receber notificações
+              </p>
+            </div>
+            <div className={styles.telegramInfo}>
+              <ul>
+                <li>📱 Registre gastos e receitas direto pelo Telegram</li>
+                <li>🔔 Receba notificações importantes</li>
+                <li>📊 Consulte seu saldo e relatórios</li>
+                <li>⚡ Mais praticidade no seu dia a dia</li>
+              </ul>
+            </div>
+            {telegramStep === 'input' ? (
+              <>
+                <div className={styles.inputWrapper}>
+                  <input
+                    type="tel"
+                    name="phone_number"
+                    value={formData.phone_number}
+                    onChange={handleChange}
+                    className={styles.loginInput}
+                    placeholder="+5511999999999"
+                  />
+                  <span className={styles.inputIcon}>📱</span>
+                </div>
+                <small className={styles.hint}>
+                  Use o formato internacional: +5511999999999
+                </small>
+                <div className={styles.buttonGroup}>
+                  {formData.phone_number ? (
+                    <button type="button" onClick={handleTelegramLink} className={styles.loginButton}>
+                      Próximo
+                    </button>
+                  ) : (
+                    <button type="button" onClick={() => navigate('/dashboard')} className={styles.loginButton}>
+                      Continuar sem Telegram
+                    </button>
+                  )}
+                  <button type="button" onClick={() => setStep('email')} className={styles.backButton}>
+                    Voltar
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className={styles.verificationSteps}>
+                  <p className={styles.verificationTitle}>Como funciona?</p>
+                  <ol>
+                    <li>1. Clique no botão abaixo para abrir o bot</li>
+                    <li>2. Envie /start para o bot</li>
+                    <li>3. Pronto! Seu Telegram estará conectado</li>
+                  </ol>
+                </div>
+                <div className={styles.buttonGroup}>
+                  <a 
+                    href={botLink} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className={styles.loginButton}
+                  >
+                    Abrir Bot no Telegram
+                  </a>
+                  <button type="button" onClick={() => navigate('/dashboard')} className={styles.backButton}>
+                    Ir para o Dashboard
+                  </button>
+                </div>
+              </>
+            )}
           </>
         );
 
@@ -498,24 +637,42 @@ const Login = () => {
           <form onSubmit={handleSubmit} className={styles.loginForm}>
             {renderStep()}
 
-            <div className={styles.buttonGroup}>
-              <button type="submit" className={styles.loginButton}>
-                {step === 'code' ? 'Entrar' : 'Continuar'}
-              </button>
-
-              {step !== 'email' && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (step === 'name') setStep('email');
-                    if (step === 'code') setStep(isNewUser ? 'goal' : 'email');
-                  }}
-                  className={`${styles.backButton}`}
-                >
-                  Voltar
-                </button>
-              )}
-            </div>
+            {step !== 'telegram' && (
+              <div className={styles.buttonGroup}>
+                {step === 'code' ? (
+                  <>
+                    <button type="submit" className={styles.loginButton}>
+                      Entrar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setStep('email')}
+                      className={styles.backButton}
+                    >
+                      Voltar
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button type="submit" className={styles.loginButton}>
+                      Continuar
+                    </button>
+                    {step !== 'email' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (step === 'name') setStep('email');
+                          if (step === 'code') setStep(isNewUser ? 'goal' : 'email');
+                        }}
+                        className={styles.backButton}
+                      >
+                        Voltar
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
           </form>
         </div>
       </div>

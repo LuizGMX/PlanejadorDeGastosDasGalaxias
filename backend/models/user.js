@@ -23,9 +23,27 @@ export default (sequelize) => {
         isEmail: true
       }
     },
-    password: {
+    phone_number: {
       type: DataTypes.STRING,
-      allowNull: false
+      allowNull: true,
+      unique: true,
+      validate: {
+        is: /^\+?[1-9]\d{10,14}$/
+      }
+    },
+    telegram_chat_id: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      unique: true
+    },
+    telegram_username: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      unique: true
+    },
+    telegram_verified: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false
     },
     financial_goal_name: {
       type: DataTypes.STRING,

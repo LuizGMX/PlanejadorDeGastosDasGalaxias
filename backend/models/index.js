@@ -11,6 +11,7 @@ import BudgetModel from './budget.js';
 import UserBankModel from './userBank.js';
 import RecurrenceRuleModel from './RecurrenceRule.js';
 import RecurrenceExceptionModel from './RecurrenceException.js';
+import TelegramVerificationCodeModel from './telegramVerificationCode.js';
 
 // Inicialização dos modelos
 const User = UserModel(sequelize);
@@ -24,6 +25,7 @@ const Budget = BudgetModel(sequelize);
 const UserBank = UserBankModel(sequelize);
 const RecurrenceRule = RecurrenceRuleModel(sequelize);
 const RecurrenceException = RecurrenceExceptionModel(sequelize);
+const TelegramVerificationCode = TelegramVerificationCodeModel(sequelize);
 
 // Relacionamentos
 Expense.belongsTo(User, {
@@ -182,7 +184,8 @@ export {
   VerificationCode,
   UserBank,
   RecurrenceRule,
-  RecurrenceException
+  RecurrenceException,
+  TelegramVerificationCode
 };
 
 // Exportação padrão
@@ -198,5 +201,6 @@ export default {
   VerificationCode,
   UserBank,
   RecurrenceRule,
-  RecurrenceException
+  RecurrenceException,
+  TelegramVerificationCode
 };
