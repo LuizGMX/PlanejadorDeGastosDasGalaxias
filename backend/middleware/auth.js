@@ -1,6 +1,5 @@
 import jwt from 'jsonwebtoken';
 import { User } from '../models/index.js';
-import { getCache, setCache } from '../config/cache.js';
 
 export const authenticate = async (req, res, next) => {
   try {
@@ -12,29 +11,20 @@ export const authenticate = async (req, res, next) => {
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
-    // Tenta buscar usuário do cache
-    const cacheKey = `user:${decoded.userId}`;
-    let user = await getCache(cacheKey);
-    
-    if (!user) {
-      user = await User.findByPk(decoded.userId, {
-        attributes: [
-          'id', 
-          'name', 
-          'email', 
-          'created_at', 
-          'updated_at', 
-          'financial_goal_name', 
-          'financial_goal_amount', 
-          'financial_goal_date',
-          'phone_number',
-          'telegram_verified'
-        ]
-      });
-      if (user) {
-        await setCache(cacheKey, user);
-      }
-    }
+    const user = await User.findByPk(decoded.userId, {
+      attributes: [
+        'id', 
+        'name', 
+        'email', 
+        'created_at', 
+        'updated_at', 
+        'financial_goal_name', 
+        'financial_goal_amount', 
+        'financial_goal_date',
+        'phone_number',
+        'telegram_verified'
+      ]
+    });
 
     if (!user) {
       return res.status(401).json({ message: 'Usuário não encontrado' });

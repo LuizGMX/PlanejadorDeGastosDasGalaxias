@@ -122,7 +122,7 @@ const Profile = () => {
           name: formData.name,
           email: formData.email,
           financial_goal_name: formData.financialGoalName,
-          financial_goal_amount: formData.financialGoalAmount,
+          financial_goal_amount: formData.financialGoalAmount ? parseFloat(formData.financialGoalAmount.toString().replace(/\./g, '').replace(',', '.')) : null,
           financial_goal_date: formData.financialGoalDate
         })
       });

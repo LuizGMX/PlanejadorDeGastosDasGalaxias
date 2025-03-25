@@ -52,24 +52,28 @@ export default (sequelize) => {
     financial_goal_amount: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: true,
-      validate: {
-        min: 0
+      defaultValue: 0,
+      get() {
+        const value = this.getDataValue('financial_goal_amount');
+        return value === null ? 0 : Number(value);
       }
     },
     financial_goal_date: {
       type: DataTypes.DATE,
-      allowNull: true,
-      validate: {
-        isAfterToday(value) {
-          if (value && new Date(value) <= new Date()) {
-            throw new Error('A data do objetivo deve ser futura');
-          }
-        }
-      }
+      allowNull: true
     },
     financial_goal_created_at: {
       type: DataTypes.DATE,
       allowNull: true
+    },
+    desired_budget: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+      defaultValue: 0,
+      get() {
+        const value = this.getDataValue('desired_budget');
+        return value === null ? 0 : Number(value);
+      }
     },
     created_at: {
       type: DataTypes.DATE,

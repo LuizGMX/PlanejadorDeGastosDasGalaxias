@@ -1,3 +1,6 @@
+// Este arquivo não é mais necessário pois sua lógica foi movida para server.js
+// Mantendo apenas para referência histórica
+
 import express from 'express';
 import cors from 'cors';
 import authRoutes from './routes/auth.js';
@@ -15,6 +18,7 @@ import recurrencesRouter from './routes/recurrences.js';
 import telegramRoutes from './routes/telegramRoutes.js';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+
 dotenv.config();
 
 const app = express();

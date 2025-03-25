@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import sgMail from '@sendgrid/mail';
 import { User, VerificationCode, UserBank } from '../models/index.js';
 import sequelize from '../config/db.js';
+import { Op } from 'sequelize';
 
 dotenv.config();
 
@@ -59,7 +60,7 @@ const sendVerificationEmail = async (email, name, code) => {
 };
 
 // Middleware de autenticação
-const authenticate = async (req, res, next) => {
+export const authenticate = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
@@ -87,7 +88,6 @@ const authenticate = async (req, res, next) => {
     res.status(500).json({ message: 'Erro ao autenticar usuário' });
   }
 };
-
 
 // Rotas
 router.post('/check-email', async (req, res) => {
@@ -148,7 +148,7 @@ router.post('/send-code', async (req, res) => {
     const verificationData = {
       email, 
       code,
-      userData: JSON.stringify({
+      user_data: JSON.stringify({
         name,
         financialGoalName,
         financialGoalAmount,
@@ -192,111 +192,106 @@ router.post('/verify-code', async (req, res) => {
       email, 
       code, 
       name, 
+      desired_budget,
       financialGoalName, 
       financialGoalAmount, 
       financialGoalDate, 
       selectedBanks,
-      phone_number // Número do Telegram opcional
+      phone_number
     } = req.body;
 
-    // Validações básicas
-    if (!email || !code) {
-      return res.status(400).json({ message: 'Email e código são obrigatórios' });
-    }
+    console.log('Dados recebidos em verify-code:', {
+      email,
+      code,
+      name,
+      desired_budget,
+      financialGoalName,
+      financialGoalAmount,
+      financialGoalDate
+    });
 
-    // Verifica o código
+    // Busca o código de verificação
     const verificationCode = await VerificationCode.findOne({
-      where: { email, code },
-      order: [['created_at', 'DESC']]
+      where: {
+        email,
+        code,
+        expires_at: { [Op.gt]: new Date() }
+      }
     });
 
     if (!verificationCode) {
-      return res.status(400).json({ message: 'Código inválido' });
+      await t.rollback();
+      return res.status(400).json({ message: 'Código inválido ou expirado' });
     }
 
-    // Verifica se o código não expirou (15 minutos)
-    const now = new Date();
-    const codeCreatedAt = new Date(verificationCode.created_at);
-    const diffInMinutes = (now - codeCreatedAt) / (1000 * 60);
+    // Converte os valores monetários para números
+    const parsedDesiredBudget = desired_budget ? parseFloat(desired_budget.toString().replace(/\./g, '').replace(',', '.')) : 0;
+    const parsedFinancialGoalAmount = financialGoalAmount ? parseFloat(financialGoalAmount.toString().replace(/\./g, '').replace(',', '.')) : 0;
 
-    if (diffInMinutes > 15) {
-      return res.status(400).json({ message: 'Código expirado' });
-    }
+    console.log('Valores convertidos:', {
+      parsedDesiredBudget,
+      parsedFinancialGoalAmount
+    });
 
     // Busca ou cria o usuário
     let user = await User.findOne({ where: { email } });
     
     if (!user) {
-      if (!name) {
-        return res.status(400).json({ message: 'Nome é obrigatório para novos usuários' });
-      }
-
-      // Valida o formato do número do Telegram se fornecido
-      if (phone_number && !/^\+?[1-9]\d{10,14}$/.test(phone_number)) {
-        return res.status(400).json({ 
-          message: 'Formato inválido do número do Telegram. Use o formato internacional (ex: +5511999999999)' 
-        });
-      }
-
       user = await User.create({
         email,
         name,
-        phone_number, // Número do Telegram opcional
-        telegram_verified: false, // Começa como false mesmo se fornecer o número
+        desired_budget: parsedDesiredBudget,
         financial_goal_name: financialGoalName,
-        financial_goal_amount: financialGoalAmount,
-        financial_goal_date: financialGoalDate
+        financial_goal_amount: parsedFinancialGoalAmount,
+        financial_goal_date: financialGoalDate,
+        phone_number
+      }, { transaction: t });
+    } else {
+      await user.update({
+        desired_budget: parsedDesiredBudget,
+        financial_goal_name: financialGoalName,
+        financial_goal_amount: parsedFinancialGoalAmount,
+        financial_goal_date: financialGoalDate,
+        phone_number
       }, { transaction: t });
     }
 
-    // Se houver bancos selecionados, salva os favoritos
+    // Associa os bancos selecionados ao usuário
     if (selectedBanks && selectedBanks.length > 0) {
-      // Remove bancos favoritos existentes
-      await UserBank.destroy({
-        where: { user_id: user.id },
-        transaction: t
-      });
-
-      // Adiciona os novos bancos favoritos
-      await Promise.all(selectedBanks.map(bankId =>
-        UserBank.create({
-          user_id: user.id,
-          bank_id: bankId,
-          is_active: true
-        }, { transaction: t })
-      ));
+      await UserBank.destroy({ where: { user_id: user.id }, transaction: t });
+      await Promise.all(
+        selectedBanks.map(bankId =>
+          UserBank.create({
+            user_id: user.id,
+            bank_id: bankId
+          }, { transaction: t })
+        )
+      );
     }
-
-    // Gera o token JWT
-    const token = jwt.sign(
-      { userId: user.id, email: user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
 
     await t.commit();
 
-    // Retorna o token e os dados do usuário
-    res.json({
+    // Gera o token JWT
+    const token = generateJWT(user.id, user.email);
+
+    return res.json({
+      message: 'Usuário verificado com sucesso',
       token,
       user: {
         id: user.id,
         name: user.name,
         email: user.email,
-        phone_number: user.phone_number,
-        telegram_verified: user.telegram_verified,
+        desired_budget: user.desired_budget,
         financial_goal_name: user.financial_goal_name,
         financial_goal_amount: user.financial_goal_amount,
-        financial_goal_date: user.financial_goal_date
-      },
-      message: !user.phone_number ? 
-        'Você pode configurar seu número do Telegram mais tarde no seu perfil para receber notificações e registrar gastos/receitas via Telegram!' :
-        'Seu número do Telegram foi registrado! Em breve você receberá um código de verificação para ativar as funcionalidades do Telegram.'
+        financial_goal_date: user.financial_goal_date,
+        telegram_verified: user.telegram_verified
+      }
     });
   } catch (error) {
     await t.rollback();
-    console.error('Erro na verificação:', error);
-    res.status(500).json({ message: 'Erro ao verificar código' });
+    console.error('Erro ao verificar código:', error);
+    return res.status(500).json({ message: 'Erro interno ao verificar código' });
   }
 });
 
@@ -343,15 +338,23 @@ router.post('/send-access-code', async (req, res) => {
 
 router.get('/me', authenticate, async (req, res) => {
   console.log('/api/auth/me chamado');
-  return res.json({ 
-    name: req.user.name, 
-    email: req.user.email,
-    phone_number: req.user.phone_number,
-    telegram_verified: req.user.telegram_verified,
-    financial_goal_name: req.user.financial_goal_name,
-    financial_goal_amount: parseInt(req.user.financial_goal_amount),
-    financial_goal_date: req.user.financial_goal_date
-   });
+  try {
+    const user = await User.findByPk(req.user.id);
+    return res.json({ 
+      id: user.id,
+      name: user.name, 
+      email: user.email,
+      phone_number: user.phone_number,
+      telegram_verified: user.telegram_verified,
+      financial_goal_name: user.financial_goal_name,
+      financial_goal_amount: parseInt(user.financial_goal_amount),
+      financial_goal_date: user.financial_goal_date,
+      desired_budget: user.desired_budget
+    });
+  } catch (error) {
+    console.error('Erro ao buscar usuário:', error);
+    return res.status(500).json({ message: 'Erro ao buscar dados do usuário' });
+  }
 });
 
 router.put('/me', authenticate, async (req, res) => {

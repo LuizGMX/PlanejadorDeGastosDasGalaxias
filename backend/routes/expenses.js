@@ -5,9 +5,10 @@ import { v4 as uuidv4 } from 'uuid';
 import { Op } from 'sequelize';
 import { Sequelize } from 'sequelize';
 import { literal } from 'sequelize';
-import { clearCache } from '../utils/cache.js';
+import { Router } from 'express';
+import sequelize from '../config/db.js';
 
-const router = express.Router();
+const router = Router();
 
 router.get('/', authenticate, async (req, res) => {
   try {
@@ -258,7 +259,6 @@ router.post('/', authenticate, async (req, res) => {
     const createdExpenses = await Expense.bulkCreate(expenses, { transaction: t });
     await t.commit();
 
-    clearCache(`expenses:${req.user.id}`);
     res.status(201).json(createdExpenses);
   } catch (error) {
     await t.rollback();
@@ -552,9 +552,6 @@ router.delete('/bulk', authenticate, async (req, res) => {
       },
       transaction
     });
-
-    // Limpa o cache relacionado
-    await clearCache(`expenses:${req.user.id}:*`);
 
     await transaction.commit();
     res.json({ 

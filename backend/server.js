@@ -7,96 +7,100 @@ import helmet from 'helmet';
 import cors from 'cors';
 import expressWinston from 'express-winston';
 import logger from './config/logger.js';
-import { getCache, setCache } from './config/cache.js';
 import jwt from 'jsonwebtoken';
-import db from './models/index.js';
+import { sequelize } from './models/index.js';
 import seedDatabase from './seeders/index.js';
-import spreadsheetRoutes from './routes/spreadsheetRoutes.js';
-import app from './app.js';
-import sequelize, { syncDatabase } from './config/db.js';
 import { writeFileSync } from 'fs';
-import telegramService from './services/telegramService.js';
+import router from './routes/index.js';
+import { telegramService } from './services/telegramService.js';
+import app from './app.js';
 
 dotenv.config();
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+// Configurar SendGrid
+if (process.env.SENDGRID_API_KEY) {
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+}
 
 // Salva o PID do processo em um arquivo
 writeFileSync('./pid.log', process.pid.toString());
 
-const PORT = process.env.PORT || 5000;
-
-// Função para encerrar o servidor graciosamente
-const gracefulShutdown = async (signal) => {
-  console.log(`\n🛑 Iniciando encerramento gracioso do servidor... (${signal})`);
+// Função para desligar o servidor graciosamente
+const gracefulShutdown = (server) => {
+  console.log('Iniciando desligamento gracioso...');
   
-  try {
-    // Para o bot do Telegram
-    await telegramService.stop();
+  server.close(() => {
+    console.log('Servidor HTTP fechado.');
     
-    // Fecha a conexão com o banco de dados
-    await sequelize.close();
-    console.log('✅ Conexão com o banco de dados fechada.');
-    
-    console.log('✅ Servidor encerrado com sucesso!');
-    process.exit(0);
-  } catch (error) {
-    console.error('❌ Erro ao encerrar o servidor:', error);
+    // Fechar conexão com banco de dados
+    sequelize.close().then(() => {
+      console.log('Conexão com banco de dados fechada.');
+      process.exit(0);
+    }).catch((err) => {
+      console.error('Erro ao fechar conexão com banco de dados:', err);
+      process.exit(1);
+    });
+  });
+
+  // Se o servidor não fechar em 10s, forçar
+  setTimeout(() => {
+    console.error('Não foi possível fechar conexões em tempo, forçando saída');
     process.exit(1);
-  }
+  }, 10000);
 };
 
-// Registra os handlers para diferentes sinais
-const signals = ['SIGTERM', 'SIGINT', 'SIGQUIT'];
-signals.forEach(signal => {
-  process.once(signal, () => gracefulShutdown(signal));
-});
-
-// Sincroniza o banco de dados e inicia o servidor
+// Função para iniciar o servidor
 const startServer = async () => {
   try {
-    // Testa a conexão com o banco de dados
+    // Autenticar conexão com banco
     await sequelize.authenticate();
-    console.log('✅ Conexão com o banco de dados estabelecida com sucesso!');
+    console.log('Conexão com banco estabelecida com sucesso.');
 
-    // Sincroniza o banco de dados
-    await syncDatabase();
-    console.log('Banco de dados sincronizado e populado com sucesso!');
-    
+    // Sincronizar modelos com banco
+    await sequelize.sync({ force: true });
+    console.log('Modelos sincronizados com banco de dados.');
+
+    // Executar seeders
     await seedDatabase();
-    console.log('Seed concluído');
+    console.log('Dados iniciais carregados com sucesso.');
 
-    // Inicia o servidor
-    const server = app.listen(PORT, '0.0.0.0', () => {
+    // Iniciar servidor HTTP
+    const server = app.listen(process.env.PORT || 5000, () => {
       console.log('=================================');
-      console.log(`🚀 Servidor rodando na porta ${PORT}`);
-      console.log(`📝 PID do processo: ${process.pid}`);
+      console.log(`🚀 Servidor rodando na porta ${process.env.PORT || 5000}`);
       console.log('=================================');
     });
 
-    // Adiciona handler para erros do servidor
-    server.on('error', (error) => {
-      console.error('❌ Erro no servidor:', error);
-      gracefulShutdown('SERVER_ERROR');
-    });
+    // Inicializar serviço do Telegram se token estiver configurado
+    if (process.env.TELEGRAM_BOT_TOKEN) {
+      try {
+        await telegramService.init();
+        console.log('Bot do Telegram inicializado com sucesso');
+      } catch (error) {
+        console.error('Erro ao inicializar bot do Telegram:', error);
+      }
+    }
 
-    // Adiciona handler para erros não tratados
-    process.on('uncaughtException', (error) => {
-      console.error('❌ Erro não tratado:', error);
-      gracefulShutdown('UNCAUGHT_EXCEPTION');
-    });
+    // Configurar handlers para desligamento gracioso
+    process.on('SIGTERM', () => gracefulShutdown(server));
+    process.on('SIGINT', () => gracefulShutdown(server));
 
-    process.on('unhandledRejection', (reason, promise) => {
-      console.error('❌ Promise rejeitada não tratada:', reason);
-      gracefulShutdown('UNHANDLED_REJECTION');
-    });
-
-    console.log('Iniciando serviço do Telegram...');
-    // Inicia o bot do Telegram
-    await telegramService.start();
   } catch (error) {
-    console.error('❌ Erro ao iniciar o servidor:', error);
+    console.error('Erro ao iniciar servidor:', error);
     process.exit(1);
   }
 };
 
+// Tratamento de erros não capturados
+process.on('uncaughtException', (error) => {
+  console.error('Erro não capturado:', error);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Promessa rejeitada não tratada:', reason);
+  process.exit(1);
+});
+
+// Iniciar servidor
 startServer();

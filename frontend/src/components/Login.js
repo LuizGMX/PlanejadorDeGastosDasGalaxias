@@ -17,7 +17,8 @@ const Login = () => {
     financialGoalAmount: '',
     financialGoalDate: '',
     selectedBanks: [],
-    phone_number: ''
+    phone_number: '',
+    desired_budget: ''
   });
   const [banks, setBanks] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -114,9 +115,46 @@ const Login = () => {
           setError('Nome é obrigatório');
           return;
         }
-        await requestCode();
+
+        // Converte os valores monetários antes de enviar
+        const parsedDesiredBudget = formData.desired_budget ? Number(formData.desired_budget.replace(/\./g, '').replace(',', '.')) : 0;
+        const parsedFinancialGoalAmount = formData.financialGoalAmount ? Number(formData.financialGoalAmount.replace(/\./g, '').replace(',', '.')) : 0;
+
+        console.log('Enviando dados para requestCode:', {
+          email: formData.email,
+          name: formData.name,
+          desired_budget: parsedDesiredBudget,
+          financialGoalName: formData.financialGoalName,
+          financialGoalAmount: parsedFinancialGoalAmount,
+          financialGoalDate: formData.financialGoalDate
+        });
+
+        const requestData = {
+          email: formData.email,
+          name: formData.name,
+          desired_budget: parsedDesiredBudget,
+          financialGoalName: formData.financialGoalName,
+          financialGoalAmount: parsedFinancialGoalAmount,
+          financialGoalDate: formData.financialGoalDate
+        };
+
+        await requestCode(requestData);
         setStep('code');
       } else if (step === 'code') {
+        // Converte os valores monetários para números antes de enviar
+        const parsedDesiredBudget = formData.desired_budget ? Number(formData.desired_budget.replace(/\./g, '').replace(',', '.')) : 0;
+        const parsedFinancialGoalAmount = formData.financialGoalAmount ? Number(formData.financialGoalAmount.replace(/\./g, '').replace(',', '.')) : 0;
+
+        console.log('Enviando dados para verify-code:', {
+          email: formData.email,
+          code,
+          name: formData.name,
+          desired_budget: parsedDesiredBudget,
+          financialGoalName: formData.financialGoalName,
+          financialGoalAmount: parsedFinancialGoalAmount,
+          financialGoalDate: formData.financialGoalDate
+        });
+
         const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/verify-code`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -124,8 +162,9 @@ const Login = () => {
             email: formData.email,
             code,
             name: formData.name,
+            desired_budget: parsedDesiredBudget,
             financialGoalName: formData.financialGoalName,
-            financialGoalAmount: formData.financialGoalAmount,
+            financialGoalAmount: parsedFinancialGoalAmount,
             financialGoalDate: formData.financialGoalDate,
             selectedBanks: formData.selectedBanks
           })
@@ -158,25 +197,14 @@ const Login = () => {
     }
   };
 
-  const requestCode = async () => {
+  const requestCode = async (data) => {
     try {
-      const requestData = isNewUser
-        ? {
-            email: formData.email,
-            name: formData.name,
-            financialGoalName: formData.financialGoalName,
-            financialGoalAmount: formData.financialGoalAmount,
-            financialGoalDate: formData.financialGoalDate,
-          }
-        : {
-            email: formData.email,
-            name: formData.name
-          };
+      console.log('Dados para envio do código:', data);
 
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/send-code`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestData)
+        body: JSON.stringify(data)
       });
 
       if (!response.ok) {
@@ -184,7 +212,7 @@ const Login = () => {
         throw new Error(errorData.message || 'Falha ao enviar código');
       }
 
-      const data = await response.json();
+      const responseData = await response.json();
       setSuccess('Código enviado com sucesso! Verifique seu email.');
       
       // Iniciar contagem regressiva
@@ -204,7 +232,7 @@ const Login = () => {
       return () => clearInterval(countdownInterval);
     } catch (error) {
       setError(error.message);
-      throw error; // Re-throw para ser tratado no handleSubmit
+      throw error;
     }
   };
 
@@ -344,7 +372,7 @@ const Login = () => {
             <div className={styles.loginHeader}>
               <h1 className={styles.loginTitle}>Como podemos te chamar?</h1>
               <p className={styles.loginSubtitle}>
-                Nos diga seu nome para personalizar sua experiência
+                Nos diga seu nome e quanto deseja gastar por mês
               </p>
             </div>
             <div className={styles.inputWrapper}>
@@ -358,6 +386,27 @@ const Login = () => {
                 required
               />
               <BsPerson className={styles.inputIcon} />
+            </div>
+            <div className={styles.inputWrapper}>
+              <CurrencyInput
+                name="desired_budget"
+                value={formData.desired_budget}
+                onValueChange={(value) => {
+                  console.log('Valor do orçamento:', value);
+                  setFormData(prev => ({
+                    ...prev,
+                    desired_budget: value || ''
+                  }));
+                }}
+                prefix="R$ "
+                decimalSeparator=","
+                groupSeparator="."
+                decimalsLimit={2}
+                className={styles.loginInput}
+                placeholder="Quanto deseja gastar por mês?"
+                required
+              />
+              <span className="material-icons">savings</span>
             </div>
           </>
         );
@@ -481,10 +530,17 @@ const Login = () => {
               <CurrencyInput
                 name="financialGoalAmount"
                 value={formData.financialGoalAmount}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, financialGoalAmount: value || '' }))}
+                onValueChange={(value) => {
+                  console.log('Valor do objetivo:', value);
+                  setFormData(prev => ({
+                    ...prev,
+                    financialGoalAmount: value || ''
+                  }));
+                }}
                 prefix="R$ "
                 decimalSeparator=","
                 groupSeparator="."
+                decimalsLimit={2}
                 className={styles.loginInput}
                 placeholder="Valor do objetivo"
                 required
@@ -549,7 +605,7 @@ const Login = () => {
             <div className={styles.loginHeader}>
               <h1 className={styles.loginTitle}>Conecte seu Telegram!</h1>
               <p className={styles.loginSubtitle}>
-                Opcional: Use o Telegram para registrar gastos e receber notificações
+                Use o Telegram para registrar gastos e receber notificações
               </p>
             </div>
             <div className={styles.telegramInfo}>
@@ -560,62 +616,33 @@ const Login = () => {
                 <li>⚡ Mais praticidade no seu dia a dia</li>
               </ul>
             </div>
-            {telegramStep === 'input' ? (
-              <>
-                <div className={styles.inputWrapper}>
-                  <input
-                    type="tel"
-                    name="phone_number"
-                    value={formData.phone_number}
-                    onChange={handleChange}
-                    className={styles.loginInput}
-                    placeholder="+5511999999999"
-                  />
-                  <span className={styles.inputIcon}>📱</span>
-                </div>
-                <small className={styles.hint}>
-                  Use o formato internacional: +5511999999999
-                </small>
-                <div className={styles.buttonGroup}>
-                  {formData.phone_number ? (
-                    <button type="button" onClick={handleTelegramLink} className={styles.loginButton}>
-                      Próximo
-                    </button>
-                  ) : (
-                    <button type="button" onClick={() => navigate('/dashboard')} className={styles.loginButton}>
-                      Continuar sem Telegram
-                    </button>
-                  )}
-                  <button type="button" onClick={() => setStep('email')} className={styles.backButton}>
-                    Voltar
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className={styles.verificationSteps}>
-                  <p className={styles.verificationTitle}>Como funciona?</p>
-                  <ol>
-                    <li>1. Clique no botão abaixo para abrir o bot</li>
-                    <li>2. Envie /start para o bot</li>
-                    <li>3. Pronto! Seu Telegram estará conectado</li>
-                  </ol>
-                </div>
-                <div className={styles.buttonGroup}>
-                  <a 
-                    href={botLink} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className={styles.loginButton}
-                  >
-                    Abrir Bot no Telegram
-                  </a>
-                  <button type="button" onClick={() => navigate('/dashboard')} className={styles.backButton}>
-                    Ir para o Dashboard
-                  </button>
-                </div>
-              </>
-            )}
+            <div className={styles.verificationSteps}>
+              <p className={styles.verificationTitle}>Siga os passos:</p>
+              <ol className={styles.stepsList}>
+                <li>1. Clique no botão "Abrir Bot no Telegram" abaixo</li>
+                <li>2. Digite /start para iniciar o bot</li>
+                <li>3. Use o comando /verificar {code} para vincular sua conta</li>
+                <li>4. Aguarde a confirmação automática</li>
+              </ol>
+            </div>
+            <div className={styles.buttonGroup}>
+              <a 
+                href={botLink} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className={`${styles.loginButton} ${styles.telegramButton}`}
+              >
+                <span className={styles.telegramIcon}>🤖</span>
+                Abrir Bot no Telegram
+              </a>
+              <button 
+                type="button" 
+                onClick={() => navigate('/dashboard')} 
+                className={styles.skipButton}
+              >
+                Pular por enquanto
+              </button>
+            </div>
           </>
         );
 
@@ -623,6 +650,41 @@ const Login = () => {
         return null;
     }
   };
+
+  useEffect(() => {
+    let checkTelegramInterval;
+    
+    if (telegramStep === 'link' && auth.user?.id) {
+      checkTelegramInterval = setInterval(async () => {
+        try {
+          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/me`, {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          });
+          
+          if (response.ok) {
+            const userData = await response.json();
+            if (userData.telegram_verified) {
+              clearInterval(checkTelegramInterval);
+              setSuccess('Telegram vinculado com sucesso!');
+              setTimeout(() => {
+                navigate('/dashboard');
+              }, 1500);
+            }
+          }
+        } catch (error) {
+          console.error('Erro ao verificar status do Telegram:', error);
+        }
+      }, 3000); // Verifica a cada 3 segundos
+    }
+
+    return () => {
+      if (checkTelegramInterval) {
+        clearInterval(checkTelegramInterval);
+      }
+    };
+  }, [telegramStep, auth.user?.id, navigate]);
 
   return (
     <div className={styles.loginContainer}>

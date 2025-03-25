@@ -133,7 +133,7 @@ router.put('/financial-goal', authenticate, async (req, res) => {
     }
 
     // Converte os valores para o formato correto
-    const parsedAmount = amount ? parseFloat(amount) : null;
+    const parsedAmount = amount ? parseFloat(amount.toString().replace(/\./g, '').replace(',', '.')) : null;
     const parsedDate = date ? new Date(date) : null;
 
     // Se não tinha objetivo antes ou a data de criação é inválida, define a data atual

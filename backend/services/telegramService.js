@@ -1,23 +1,70 @@
 import { Telegraf } from 'telegraf';
-import { User } from '../models/index.js';
+import { User, Expense, Income, Category, SubCategory, Bank, Budget, VerificationCode } from '../models/index.js';
 import { Op } from 'sequelize';
 import { sendVerificationEmail } from './emailService.js';
 import crypto from 'crypto';
 
-class TelegramService {
+// Função para gerar código de verificação
+const generateVerificationCode = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+export class TelegramService {
   constructor() {
     this.bot = null;
     this.isRunning = false;
     this.userStates = new Map();
-    this.verificationCodes = new Map(); // Armazena os códigos de verificação
   }
 
-  // Gera um código de verificação de 6 dígitos
-  generateVerificationCode() {
-    return crypto.randomInt(100000, 999999).toString();
+  async getUserState(userId) {
+    try {
+      const state = this.userStates.get(userId);
+      if (!state) return null;
+      
+      // Verifica se o estado expirou (1 hora)
+      if (state.timestamp && Date.now() - state.timestamp > 3600000) {
+        this.userStates.delete(userId);
+        return null;
+      }
+      
+      return state;
+    } catch (error) {
+      console.error('Erro ao obter estado do usuário:', error);
+      return null;
+    }
   }
 
-  async start() {
+  async setUserState(userId, state, data = {}) {
+    try {
+      this.userStates.set(userId, {
+        state,
+        data,
+        timestamp: Date.now()
+      });
+    } catch (error) {
+      console.error('Erro ao definir estado do usuário:', error);
+    }
+  }
+
+  async clearUserState(userId) {
+    try {
+      this.userStates.delete(userId);
+    } catch (error) {
+      console.error('Erro ao limpar estado do usuário:', error);
+    }
+  }
+
+  // Limpa estados expirados periodicamente
+  cleanExpiredStates() {
+    const now = Date.now();
+    for (const [userId, state] of this.userStates.entries()) {
+      if (state.timestamp && now - state.timestamp > 3600000) {
+        this.userStates.delete(userId);
+      }
+    }
+  }
+
+  async init() {
     if (this.isRunning) {
       console.log('🤖 Bot do Telegram já está rodando.');
       return;
@@ -41,14 +88,13 @@ class TelegramService {
       // Configura os comandos
       await this.setupTelegramBot();
       
+      // Inicia limpeza periódica de estados
+      setInterval(() => this.cleanExpiredStates(), 300000); // A cada 5 minutos
+      
       // Inicia o bot com polling otimizado
       await this.bot.launch({
         dropPendingUpdates: true,
-        allowedUpdates: ['message', 'callback_query'],
-        polling: {
-          timeout: 30,
-          limit: 100
-        }
+        allowedUpdates: ['message', 'callback_query']
       });
 
       this.isRunning = true;
@@ -59,362 +105,769 @@ class TelegramService {
       this.isRunning = false;
       this.bot = null;
       this.userStates.clear();
-      this.verificationCodes.clear();
     }
   }
 
   async stop() {
-    console.log('🛑 Iniciando processo de parada do bot...');
-    
+    if (!this.bot) return;
+
     try {
-      if (this.bot) {
-        // Para o polling e limpa updates pendentes
-        await this.bot.stop('SIGTERM');
-        
-        // Limpa todas as referências
-        this.bot.telegram = null;
-        this.bot = null;
-      }
-      
-      // Limpa estados
-      this.isRunning = false;
-      this.userStates.clear();
-      this.verificationCodes.clear();
-      
-      console.log('✅ Bot do Telegram parado com sucesso!');
-    } catch (error) {
-      console.error('❌ Erro ao parar bot do Telegram:', error);
-    } finally {
-      // Garante que tudo seja limpo mesmo com erro
+      await this.bot.stop();
       this.bot = null;
       this.isRunning = false;
       this.userStates.clear();
-      this.verificationCodes.clear();
-    }
-  }
-
-  // Método para processar updates do webhook
-  async handleUpdate(update) {
-    if (!this.bot) {
-      console.error('Bot não está inicializado');
-      return;
-    }
-
-    try {
-      await this.bot.handleUpdate(update);
+      
+      console.log('Bot do Telegram parado com sucesso!');
     } catch (error) {
-      console.error('Erro ao processar update do Telegram:', error);
+      console.error('Erro ao parar bot do Telegram:', error);
+      this.bot = null;
+      this.isRunning = false;
+      this.userStates.clear();
     }
   }
 
-  async setupTelegramBot() {
+  setupTelegramBot() {
     if (!this.bot) return;
 
-    // Comando /start
-    this.bot.command('start', async (ctx) => {
+    // Configura os comandos
+    this.bot.command('start', (ctx) => this.handleStart(ctx));
+    this.bot.command('codigo', (ctx) => this.handleVerify(ctx));
+    this.bot.command('gasto', (ctx) => this.handleExpense(ctx));
+    this.bot.command('receita', (ctx) => this.handleIncome(ctx));
+    this.bot.command('resumo', (ctx) => this.handleSummary(ctx));
+    this.bot.command('help', (ctx) => this.handleHelp(ctx));
+
+    // Registra o handler geral de mensagens
+    this.bot.on('message', async (ctx) => {
       try {
-        const telegramUsername = ctx.message.from.username;
-        if (!telegramUsername) {
-          await ctx.reply('❌ Você precisa ter um nome de usuário configurado no Telegram para usar este bot.');
-          return;
-        }
+        const chatId = ctx.chat.id;
+        const userState = await this.getUserState(chatId);
 
-        // Tenta encontrar usuário pelo username do Telegram
+        if (!userState) return;
+
         const user = await User.findOne({
-          where: {
-            telegram_username: telegramUsername
-          }
-        });
-
-        if (user) {
-          await ctx.reply('✅ Sua conta já está vinculada ao sistema!');
-          return;
-        }
-
-        // Tenta encontrar usuário pelo número de telefone
-        const phoneNumber = ctx.message.from.id.toString();
-        const userByPhone = await User.findOne({
-          where: {
-            phone_number: phoneNumber
-          }
-        });
-
-        if (userByPhone) {
-          // Atualiza o username do Telegram
-          await User.update(
-            { telegram_username: telegramUsername },
-            { where: { id: userByPhone.id } }
-          );
-          await ctx.reply('✅ Conta vinculada com sucesso!');
-          return;
-        }
-
-        // Se não encontrou o usuário, pede o código de verificação
-        await ctx.reply('Para vincular sua conta, preciso verificar seu email. Use o comando /verificar para receber um código no seu email.');
-
-      } catch (error) {
-        console.error('Erro no comando /start:', error);
-        await ctx.reply('❌ Ocorreu um erro ao processar seu comando. Tente novamente mais tarde.');
-      }
-    });
-
-    // Comando /verificar
-    this.bot.command('verificar', async (ctx) => {
-      try {
-        const telegramUsername = ctx.message.from.username;
-        if (!telegramUsername) {
-          await ctx.reply('❌ Você precisa ter um nome de usuário configurado no Telegram para usar este bot.');
-          return;
-        }
-
-        // Busca usuário pelo username do Telegram
-        const user = await User.findOne({
-          where: {
-            telegram_username: null, // Procura usuário que ainda não tem Telegram vinculado
-            phone_number: { [Op.not]: null } // Mas já tem número cadastrado
-          }
+          where: { telegram_chat_id: chatId }
         });
 
         if (!user) {
-          await ctx.reply('❌ Não encontrei nenhuma conta pendente de vinculação. Certifique-se de ter cadastrado seu número de telefone no site primeiro.');
+          ctx.reply('Você precisa vincular sua conta primeiro. Use /start para começar.');
           return;
         }
 
-        // Gera código de verificação
-        const verificationCode = this.generateVerificationCode();
-        
-        // Armazena o código e username do Telegram
-        this.verificationCodes.set(verificationCode, {
-          telegramUsername,
-          userId: user.id,
-          timestamp: Date.now()
-        });
-
-        // Envia o código por email
-        await sendVerificationEmail(user.email, verificationCode);
-
-        await ctx.reply('✅ Um código de verificação foi enviado para seu email cadastrado no sistema. Use o comando /codigo XXXXXX para validar (substitua XXXXXX pelo código recebido).');
-
-      } catch (error) {
-        console.error('Erro no comando /verificar:', error);
-        await ctx.reply('❌ Ocorreu um erro ao processar seu comando. Tente novamente mais tarde.');
-      }
-    });
-
-    // Comando /codigo
-    this.bot.command('codigo', async (ctx) => {
-      try {
-        const code = ctx.message.text.split(' ')[1];
-        if (!code) {
-          await ctx.reply('❌ Por favor, forneça o código de verificação. Exemplo: /codigo 123456');
-          return;
+        switch (userState.state) {
+          case 'AWAITING_EXPENSE_AMOUNT':
+            await this.handleExpenseAmount(ctx, user, userState);
+            break;
+          case 'AWAITING_EXPENSE_DESCRIPTION':
+            await this.handleExpenseDescription(ctx, user, userState);
+            break;
+          case 'AWAITING_EXPENSE_CATEGORY':
+            await this.handleExpenseCategory(ctx, user, userState);
+            break;
+          case 'AWAITING_EXPENSE_SUBCATEGORY':
+            await this.handleExpenseSubcategory(ctx, user, userState);
+            break;
+          case 'AWAITING_EXPENSE_BANK':
+            await this.handleExpenseBank(ctx, user, userState);
+            break;
+          case 'AWAITING_EXPENSE_PAYMENT_METHOD':
+            await this.handleExpensePaymentMethod(ctx, user, userState);
+            break;
+          case 'AWAITING_EXPENSE_CONFIRMATION':
+            await this.handleExpenseConfirmation(ctx, user, userState);
+            break;
+          case 'AWAITING_INCOME_AMOUNT':
+            await this.handleIncomeAmount(ctx, user, userState);
+            break;
+          case 'AWAITING_INCOME_DESCRIPTION':
+            await this.handleIncomeDescription(ctx, user, userState);
+            break;
+          case 'AWAITING_INCOME_CATEGORY':
+            await this.handleIncomeCategory(ctx, user, userState);
+            break;
+          case 'AWAITING_INCOME_SUBCATEGORY':
+            await this.handleIncomeSubcategory(ctx, user, userState);
+            break;
+          case 'AWAITING_INCOME_BANK':
+            await this.handleIncomeBank(ctx, user, userState);
+            break;
+          case 'AWAITING_INCOME_CONFIRMATION':
+            await this.handleIncomeConfirmation(ctx, user, userState);
+            break;
         }
-
-        const verification = this.verificationCodes.get(code);
-        if (!verification) {
-          await ctx.reply('❌ Código inválido ou expirado. Use /verificar para gerar um novo código.');
-          return;
-        }
-
-        // Verifica se o código não expirou (30 minutos)
-        if (Date.now() - verification.timestamp > 30 * 60 * 1000) {
-          this.verificationCodes.delete(code);
-          await ctx.reply('❌ Código expirado. Use /verificar para gerar um novo código.');
-          return;
-        }
-
-        // Atualiza o username do Telegram no usuário
-        const telegramUsername = ctx.message.from.username;
-        if (telegramUsername !== verification.telegramUsername) {
-          await ctx.reply('❌ Este código não pertence a este usuário do Telegram.');
-          return;
-        }
-
-        await User.update(
-          { telegram_username: telegramUsername },
-          { where: { id: verification.userId } }
-        );
-
-        // Limpa o código usado
-        this.verificationCodes.delete(code);
-
-        await ctx.reply('✅ Conta vinculada com sucesso! Agora você pode usar o bot para registrar gastos e ganhos.');
-
-      } catch (error) {
-        console.error('Erro no comando /codigo:', error);
-        await ctx.reply('❌ Ocorreu um erro ao processar seu comando. Tente novamente mais tarde.');
-      }
-    });
-
-    // Comando /ajuda
-    this.bot.command('ajuda', async (ctx) => {
-      const helpMessage = `
-📋 Comandos disponíveis:
-
-/start - Inicia o processo de vinculação
-/verificar - Solicita um código de verificação por email
-/codigo XXXXXX - Valida o código recebido
-/ajuda - Mostra esta mensagem de ajuda
-      `;
-      await ctx.reply(helpMessage);
-    });
-
-    // Processa todas as mensagens
-    this.bot.on('message', async (ctx) => {
-      try {
-        await this.handleMessage(ctx);
       } catch (error) {
         console.error('Erro ao processar mensagem:', error);
-        ctx.reply('Desculpe, ocorreu um erro ao processar sua mensagem. Tente novamente mais tarde.');
+        ctx.reply('Ops! Ocorreu um erro ao processar sua mensagem. Tente novamente mais tarde.');
       }
     });
   }
 
-  async handleMessage(ctx) {
-    const user = await User.findOne({
-      where: {
-        phone_number: ctx.from.username ? `+${ctx.from.username}` : null,
+  async handleStart(ctx) {
+    try {
+      const chatId = ctx.chat.id;
+      const telegramUsername = ctx.from.username;
+
+      // Verifica se já existe um usuário com este chatId
+      const existingUser = await User.findOne({
+        where: { telegram_chat_id: chatId }
+      });
+
+      if (existingUser) {
+        ctx.reply('Você já está conectado! Use /help para ver os comandos disponíveis.');
+        return;
+      }
+
+      // Solicita o código de verificação
+      ctx.reply(
+        'Bem-vindo ao Planejador de Gastos das Galáxias! 🚀\n\n' +
+        'Para conectar sua conta, digite o código de verificação que você recebeu por email usando o comando:\n\n' +
+        '/codigo CODIGO\n\n' +
+        'Exemplo: /codigo 123456'
+      );
+    } catch (error) {
+      console.error('Erro no comando /start:', error);
+      ctx.reply('Ops! Ocorreu um erro ao iniciar. Tente novamente mais tarde.');
+    }
+  }
+
+  async handleVerify(ctx) {
+    try {
+      const chatId = ctx.chat.id;
+      const code = ctx.message.text.split(' ')[1];
+
+      if (!code) {
+        ctx.reply(
+          'Por favor, forneça o código de verificação.\n\n' +
+          'Exemplo: /codigo 123456'
+        );
+        return;
+      }
+
+      // Busca o código de verificação
+      const verificationCode = await VerificationCode.findOne({
+        where: {
+          code: code,
+          expires_at: {
+            [Op.gt]: new Date()
+          }
+        }
+      });
+
+      if (!verificationCode) {
+        ctx.reply(
+          'Código inválido ou expirado.\n\n' +
+          'Acesse o site para gerar um novo código.'
+        );
+        return;
+      }
+
+      // Busca o usuário associado ao código
+      const user = await User.findOne({
+        where: { email: verificationCode.email }
+      });
+
+      if (!user) {
+        ctx.reply('Usuário não encontrado. Por favor, faça o cadastro no site primeiro.');
+        return;
+      }
+
+      // Atualiza o usuário com os dados do Telegram
+      await user.update({
+        telegram_chat_id: chatId,
+        telegram_username: ctx.from.username,
         telegram_verified: true
+      });
+
+      // Remove o código de verificação após o uso
+      await verificationCode.destroy();
+
+      ctx.reply(
+        '🎉 Conta conectada com sucesso!\n\n' +
+        'Agora você pode:\n' +
+        '- Registrar gastos com /gasto\n' +
+        '- Registrar receitas com /receita\n' +
+        '- Ver seu resumo financeiro com /resumo\n\n' +
+        'Use /help para ver todos os comandos disponíveis.'
+      );
+    } catch (error) {
+      console.error('Erro ao verificar código:', error);
+      ctx.reply('Ops! Ocorreu um erro ao verificar o código. Tente novamente mais tarde.');
+    }
+  }
+
+  async handleExpense(ctx) {
+    try {
+      const chatId = ctx.chat.id;
+      const user = await User.findOne({
+        where: { telegram_chat_id: chatId }
+      });
+
+      if (!user) {
+        ctx.reply('Você precisa vincular sua conta primeiro. Use /start para começar.');
+        return;
       }
-    });
 
-    if (!user) {
-      ctx.reply('Desculpe, você precisa vincular sua conta pelo site primeiro.');
-      return;
-    }
+      // Inicia o fluxo de registro de despesa
+      await this.setUserState(chatId, 'AWAITING_EXPENSE_AMOUNT', {
+        user_id: user.id
+      });
 
-    const userState = await this.getUserState(ctx.from.id);
-    
-    if (!userState) {
-      ctx.reply('Olá! O que você deseja fazer?\n1 - Cadastrar gasto\n2 - Cadastrar ganho');
-      await this.setUserState(ctx.from.id, 'AWAITING_TYPE');
-      return;
-    }
-
-    switch (userState.state) {
-      case 'AWAITING_TYPE':
-        await this.handleTypeSelection(ctx, user);
-        break;
-      case 'AWAITING_AMOUNT':
-        await this.handleAmount(ctx, user, userState);
-        break;
-      case 'AWAITING_DESCRIPTION':
-        await this.handleDescription(ctx, user, userState);
-        break;
-      case 'AWAITING_CONFIRMATION':
-        await this.handleConfirmation(ctx, user, userState);
-        break;
-      default:
-        ctx.reply('Olá! O que você deseja fazer?\n1 - Cadastrar gasto\n2 - Cadastrar ganho');
-        await this.setUserState(ctx.from.id, 'AWAITING_TYPE');
+      ctx.reply('💰 Digite o valor da despesa:');
+    } catch (error) {
+      console.error('Erro ao iniciar registro de despesa:', error);
+      ctx.reply('Ops! Ocorreu um erro. Tente novamente mais tarde.');
     }
   }
 
-  async handleTypeSelection(ctx, user) {
-    const choice = ctx.message.text.trim();
-    
-    if (choice === '1' || choice === '2') {
-      const type = choice === '1' ? 'expense' : 'income';
-      await this.setUserState(ctx.from.id, 'AWAITING_AMOUNT', { type });
-      ctx.reply('Por favor, digite o valor:');
-    } else {
-      ctx.reply('Opção inválida. Digite 1 para gasto ou 2 para ganho.');
+  async handleIncome(ctx) {
+    try {
+      const chatId = ctx.chat.id;
+      const user = await User.findOne({
+        where: { telegram_chat_id: chatId }
+      });
+
+      if (!user) {
+        ctx.reply('Você precisa vincular sua conta primeiro. Use /start para começar.');
+        return;
+      }
+
+      // Inicia o fluxo de registro de receita
+      await this.setUserState(chatId, 'AWAITING_INCOME_AMOUNT', {
+        user_id: user.id
+      });
+
+      ctx.reply('💰 Digite o valor da receita:');
+    } catch (error) {
+      console.error('Erro ao iniciar registro de receita:', error);
+      ctx.reply('Ops! Ocorreu um erro. Tente novamente mais tarde.');
     }
   }
 
-  async handleAmount(ctx, user, userState) {
+  async handleSummary(ctx) {
+    try {
+      const chatId = ctx.chat.id;
+      const user = await User.findOne({
+        where: { telegram_chat_id: chatId }
+      });
+
+      if (!user) {
+        ctx.reply('Você precisa vincular sua conta primeiro. Use /start para começar.');
+        return;
+      }
+
+      // Busca as despesas e receitas do mês atual
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const endOfMonth = new Date();
+      endOfMonth.setMonth(endOfMonth.getMonth() + 1);
+      endOfMonth.setDate(0);
+      endOfMonth.setHours(23, 59, 59, 999);
+
+      const now = new Date();
+      const remainingDays = endOfMonth.getDate() - now.getDate() + 1;
+
+      const [expenses, incomes] = await Promise.all([
+        Expense.sum('amount', {
+          where: {
+            user_id: user.id,
+            expense_date: {
+              [Op.between]: [startOfMonth, endOfMonth]
+            }
+          }
+        }),
+        Income.sum('amount', {
+          where: {
+            user_id: user.id,
+            date: {
+              [Op.between]: [startOfMonth, endOfMonth]
+            }
+          }
+        })
+      ]);
+
+      const totalExpenses = expenses || 0;
+      const totalIncomes = incomes || 0;
+      const balance = totalIncomes - totalExpenses;
+
+      // Calcula o orçamento restante
+      const remainingBudget = user.desired_budget - totalExpenses;
+      const dailyBudget = remainingBudget / remainingDays;
+
+      const message = `
+💡 Análise do Orçamento:
+📅 Dias restantes no mês: ${remainingDays}
+✨ Orçamento restante: R$ ${remainingBudget.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+${dailyBudget > 0 
+  ? `💫 Você ainda pode gastar R$ ${dailyBudget.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} por dia até o final do mês, para se manter no seu orçamento`
+  : `⚠️ Atenção! Você já ultrapassou seu orçamento em R$ ${Math.abs(remainingBudget).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+
+📊 Resumo do Mês:
+💰 Receitas: R$ ${totalIncomes.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+💸 Despesas: R$ ${totalExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+${balance >= 0 
+  ? `✅ Saldo: R$ ${balance.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  : `❌ Saldo: -R$ ${Math.abs(balance).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+`;
+
+      ctx.reply(message);
+    } catch (error) {
+      console.error('Erro ao gerar resumo:', error);
+      ctx.reply('Ops! Ocorreu um erro ao gerar o resumo. Tente novamente mais tarde.');
+    }
+  }
+
+  async handleHelp(ctx) {
+    const helpMessage = `
+🚀 Comandos Disponíveis:
+
+/start - Iniciar o bot
+/codigo - Vincular sua conta usando o código recebido por email
+/gasto - Registrar um gasto
+/receita - Registrar uma receita
+/resumo - Ver resumo financeiro
+/help - Ver esta mensagem de ajuda
+
+Para mais informações, acesse o site do Planejador de Gastos das Galáxias.
+`;
+
+    ctx.reply(helpMessage);
+  }
+
+  async handleExpenseAmount(ctx, user, userState) {
     const amount = parseFloat(ctx.message.text.replace(',', '.'));
     
     if (isNaN(amount) || amount <= 0) {
-      ctx.reply('Por favor, digite um valor válido maior que zero.');
+      ctx.reply('❌ Por favor, digite um valor válido maior que zero.');
       return;
     }
 
-    await this.setUserState(ctx.from.id, 'AWAITING_DESCRIPTION', {
+    await this.setUserState(ctx.chat.id, 'AWAITING_EXPENSE_DESCRIPTION', {
       ...userState.data,
       amount
     });
-    
-    ctx.reply('Digite uma descrição para o registro:');
+
+    ctx.reply('📝 Digite uma descrição para a despesa:');
   }
 
-  async handleDescription(ctx, user, userState) {
+  async handleExpenseDescription(ctx, user, userState) {
     const description = ctx.message.text.trim();
     
     if (description.length < 3) {
-      ctx.reply('Por favor, digite uma descrição com pelo menos 3 caracteres.');
+      ctx.reply('❌ A descrição deve ter pelo menos 3 caracteres.');
       return;
     }
 
-    const data = {
-      ...userState.data,
-      description
-    };
+    // Busca as categorias de despesa
+    const categories = await Category.findAll({
+      where: { type: 'expense' },
+      order: [['category_name', 'ASC']]
+    });
 
-    await this.setUserState(ctx.from.id, 'AWAITING_CONFIRMATION', data);
-    
-    const type = data.type === 'expense' ? 'gasto' : 'ganho';
-    ctx.reply(
-      `Confirme os dados:\nTipo: ${type}\nValor: R$ ${data.amount.toFixed(2)}\nDescrição: ${data.description}\n\nDigite SIM para confirmar ou NÃO para cancelar.`
-    );
+    if (!categories || categories.length === 0) {
+      ctx.reply('❌ Erro: Não há categorias de despesa cadastradas.');
+      return;
+    }
+
+    const categoriesMessage = categories
+      .map((category, index) => `${index + 1}. ${category.category_name}`)
+      .join('\n');
+
+    await this.setUserState(ctx.chat.id, 'AWAITING_EXPENSE_CATEGORY', {
+      ...userState.data,
+      description,
+      categories: categories.map(c => ({
+        id: c.id,
+        name: c.category_name
+      }))
+    });
+
+    ctx.reply(`📑 Escolha a categoria:\n\n${categoriesMessage}`);
   }
 
-  async handleConfirmation(ctx, user, userState) {
-    const confirmation = ctx.message.text.trim().toUpperCase();
+  async handleExpenseCategory(ctx, user, userState) {
+    const choice = parseInt(ctx.message.text) - 1;
     
+    if (isNaN(choice) || choice < 0 || choice >= userState.data.categories.length) {
+      ctx.reply('❌ Categoria inválida. Por favor, escolha uma das opções listadas.');
+      return;
+    }
+
+    const category = userState.data.categories[choice];
+
+    // Busca as subcategorias
+    const subcategories = await SubCategory.findAll({
+      where: { category_id: category.id },
+      order: [['subcategory_name', 'ASC']]
+    });
+
+    if (!subcategories || subcategories.length === 0) {
+      ctx.reply('❌ Esta categoria não possui subcategorias. Por favor, escolha outra categoria.');
+      return;
+    }
+
+    const subcategoriesMessage = subcategories
+      .map((subcategory, index) => `${index + 1}. ${subcategory.subcategory_name}`)
+      .join('\n');
+
+    await this.setUserState(ctx.chat.id, 'AWAITING_EXPENSE_SUBCATEGORY', {
+      ...userState.data,
+      category_id: category.id,
+      category_name: category.name,
+      subcategories: subcategories.map(s => ({
+        id: s.id,
+        name: s.subcategory_name
+      }))
+    });
+
+    ctx.reply(`📑 Escolha a subcategoria:\n\n${subcategoriesMessage}`);
+  }
+
+  async handleExpenseSubcategory(ctx, user, userState) {
+    const choice = parseInt(ctx.message.text) - 1;
+    
+    if (isNaN(choice) || choice < 0 || choice >= userState.data.subcategories.length) {
+      ctx.reply('❌ Subcategoria inválida. Por favor, escolha uma das opções listadas.');
+      return;
+    }
+
+    const subcategory = userState.data.subcategories[choice];
+
+    // Busca os bancos do usuário
+    const banks = await Bank.findAll({
+      order: [['code', 'ASC']]
+    });
+
+    if (!banks || banks.length === 0) {
+      ctx.reply('❌ Erro: Não há bancos cadastrados.');
+      return;
+    }
+
+    const banksMessage = banks
+      .map((bank, index) => `${index + 1}. ${bank.code} - ${bank.name}`)
+      .join('\n');
+
+    await this.setUserState(ctx.chat.id, 'AWAITING_EXPENSE_BANK', {
+      ...userState.data,
+      subcategory_id: subcategory.id,
+      subcategory_name: subcategory.name,
+      banks: banks.map(b => ({
+        id: b.id,
+        code: b.code,
+        name: b.name
+      }))
+    });
+
+    ctx.reply(`🏦 Escolha o banco:\n\n${banksMessage}`);
+  }
+
+  async handleExpenseBank(ctx, user, userState) {
+    const choice = parseInt(ctx.message.text) - 1;
+    
+    if (isNaN(choice) || choice < 0 || choice >= userState.data.banks.length) {
+      ctx.reply('❌ Banco inválido. Por favor, escolha uma das opções listadas.');
+      return;
+    }
+
+    const bank = userState.data.banks[choice];
+
+    await this.setUserState(ctx.chat.id, 'AWAITING_EXPENSE_PAYMENT_METHOD', {
+      ...userState.data,
+      bank_id: bank.id
+    });
+
+    const paymentMessage = `
+💳 Escolha a forma de pagamento:
+
+1. Dinheiro
+2. Débito
+3. Crédito
+4. Pix
+5. Transferência
+`;
+
+    ctx.reply(paymentMessage);
+  }
+
+  async handleExpensePaymentMethod(ctx, user, userState) {
+    const choice = parseInt(ctx.message.text);
+    let paymentMethod;
+    
+    switch (choice) {
+      case 1:
+        paymentMethod = 'card';
+        break;
+      case 2:
+        paymentMethod = 'card';
+        break;
+      case 3:
+        paymentMethod = 'card';
+        break;
+      case 4:
+        paymentMethod = 'pix';
+        break;
+      case 5:
+        paymentMethod = 'pix';
+        break;
+      default:
+        ctx.reply('❌ Opção inválida. Por favor, escolha uma das opções listadas.');
+        return;
+    }
+
+    await this.setUserState(ctx.chat.id, 'AWAITING_EXPENSE_CONFIRMATION', {
+      ...userState.data,
+      payment_method: paymentMethod,
+      is_in_cash: choice === 1
+    });
+
+    const paymentMethodNames = {
+      card: choice === 1 ? 'Dinheiro' : choice === 2 ? 'Débito' : 'Crédito',
+      pix: choice === 4 ? 'PIX' : 'Transferência'
+    };
+
+    const bank = userState.data.banks.find(b => b.id === userState.data.bank_id);
+
+    const confirmationMessage = `
+📋 Confirme os dados da despesa:
+
+Valor: R$ ${userState.data.amount.toFixed(2)}
+Descrição: ${userState.data.description}
+Categoria: ${userState.data.category_name}
+Subcategoria: ${userState.data.subcategory_name}
+Banco: ${bank.code} - ${bank.name}
+Forma de Pagamento: ${paymentMethodNames[paymentMethod]}
+
+Digite SIM para confirmar ou NÃO para cancelar.
+`;
+
+    ctx.reply(confirmationMessage);
+  }
+
+  async handleExpenseConfirmation(ctx, user, userState) {
+    const confirmation = ctx.message.text.trim().toUpperCase();
+
     if (confirmation === 'SIM') {
       try {
-        const data = {
+        // Cria a despesa
+        await Expense.create({
           user_id: user.id,
           amount: userState.data.amount,
           description: userState.data.description,
-          date: new Date()
-        };
+          category_id: userState.data.category_id,
+          subcategory_id: userState.data.subcategory_id,
+          bank_id: userState.data.bank_id,
+          payment_method: userState.data.payment_method,
+          expense_date: new Date(),
+          is_in_cash: userState.data.payment_method === 'cash',
+          has_installments: false,
+          is_recurring: false
+        });
 
-        if (userState.data.type === 'expense') {
-          await Expense.create({
-            ...data,
-            category_id: 1, // Categoria padrão
-            subcategory_id: 1, // Subcategoria padrão
-            bank_id: 1, // Banco padrão
-            payment_method: 'pix'
-          });
-        } else {
-          await Income.create(data);
-        }
-
-        ctx.reply('Registro criado com sucesso!');
+        ctx.reply('✅ Despesa registrada com sucesso!\n\nUse /menu para ver mais opções.');
       } catch (error) {
-        console.error('Erro ao criar registro:', error);
-        ctx.reply('Desculpe, ocorreu um erro ao criar o registro. Tente novamente mais tarde.');
+        console.error('Erro ao registrar despesa:', error);
+        ctx.reply('❌ Ocorreu um erro ao registrar a despesa. Tente novamente mais tarde.');
       }
     } else if (confirmation === 'NÃO') {
-      ctx.reply('Operação cancelada.');
+      ctx.reply('❌ Operação cancelada.\n\nUse /menu para ver as opções disponíveis.');
     } else {
-      ctx.reply('Por favor, digite SIM para confirmar ou NÃO para cancelar.');
+      ctx.reply('❌ Por favor, digite SIM para confirmar ou NÃO para cancelar.');
       return;
     }
 
-    await this.clearUserState(ctx.from.id);
-    ctx.reply('Digite 1 para cadastrar gasto ou 2 para cadastrar ganho:');
-    await this.setUserState(ctx.from.id, 'AWAITING_TYPE');
+    await this.clearUserState(ctx.chat.id);
   }
 
-  async getUserState(userId) {
-    return this.userStates.get(userId);
+  async handleIncomeAmount(ctx, user, userState) {
+    const amount = parseFloat(ctx.message.text.replace(',', '.'));
+    
+    if (isNaN(amount) || amount <= 0) {
+      ctx.reply('❌ Por favor, digite um valor válido maior que zero.');
+      return;
+    }
+
+    await this.setUserState(ctx.chat.id, 'AWAITING_INCOME_DESCRIPTION', {
+      ...userState.data,
+      amount
+    });
+
+    ctx.reply('📝 Digite uma descrição para a receita:');
   }
 
-  async setUserState(userId, state, data = {}) {
-    this.userStates.set(userId, { state, data });
+  async handleIncomeDescription(ctx, user, userState) {
+    const description = ctx.message.text.trim();
+    
+    if (description.length < 3) {
+      ctx.reply('❌ A descrição deve ter pelo menos 3 caracteres.');
+      return;
+    }
+
+    // Busca as categorias de receita
+    const categories = await Category.findAll({
+      where: { type: 'income' },
+      order: [['category_name', 'ASC']]
+    });
+
+    if (!categories || categories.length === 0) {
+      ctx.reply('❌ Erro: Não há categorias de receita cadastradas.');
+      return;
+    }
+
+    const categoriesMessage = categories
+      .map((category, index) => `${index + 1}. ${category.category_name}`)
+      .join('\n');
+
+    await this.setUserState(ctx.chat.id, 'AWAITING_INCOME_CATEGORY', {
+      ...userState.data,
+      description,
+      categories: categories.map(c => ({
+        id: c.id,
+        name: c.category_name
+      }))
+    });
+
+    ctx.reply(`📑 Escolha a categoria:\n\n${categoriesMessage}`);
   }
 
-  async clearUserState(userId) {
-    this.userStates.delete(userId);
+  async handleIncomeCategory(ctx, user, userState) {
+    const choice = parseInt(ctx.message.text) - 1;
+    
+    if (isNaN(choice) || choice < 0 || choice >= userState.data.categories.length) {
+      ctx.reply('❌ Categoria inválida. Por favor, escolha uma das opções listadas.');
+      return;
+    }
+
+    const category = userState.data.categories[choice];
+
+    // Busca as subcategorias
+    const subcategories = await SubCategory.findAll({
+      where: { category_id: category.id },
+      order: [['subcategory_name', 'ASC']]
+    });
+
+    if (!subcategories || subcategories.length === 0) {
+      ctx.reply('❌ Esta categoria não possui subcategorias. Por favor, escolha outra categoria.');
+      return;
+    }
+
+    const subcategoriesMessage = subcategories
+      .map((subcategory, index) => `${index + 1}. ${subcategory.subcategory_name}`)
+      .join('\n');
+
+    await this.setUserState(ctx.chat.id, 'AWAITING_INCOME_SUBCATEGORY', {
+      ...userState.data,
+      category_id: category.id,
+      category_name: category.name,
+      subcategories: subcategories.map(s => ({
+        id: s.id,
+        name: s.subcategory_name
+      }))
+    });
+
+    ctx.reply(`📑 Escolha a subcategoria:\n\n${subcategoriesMessage}`);
+  }
+
+  async handleIncomeSubcategory(ctx, user, userState) {
+    const choice = parseInt(ctx.message.text) - 1;
+    
+    if (isNaN(choice) || choice < 0 || choice >= userState.data.subcategories.length) {
+      ctx.reply('❌ Subcategoria inválida. Por favor, escolha uma das opções listadas.');
+      return;
+    }
+
+    const subcategory = userState.data.subcategories[choice];
+
+    // Busca os bancos do usuário
+    const banks = await Bank.findAll({
+      order: [['code', 'ASC']]
+    });
+
+    if (!banks || banks.length === 0) {
+      ctx.reply('❌ Erro: Não há bancos cadastrados.');
+      return;
+    }
+
+    const banksMessage = banks
+      .map((bank, index) => `${index + 1}. ${bank.code} - ${bank.name}`)
+      .join('\n');
+
+    await this.setUserState(ctx.chat.id, 'AWAITING_INCOME_BANK', {
+      ...userState.data,
+      subcategory_id: subcategory.id,
+      subcategory_name: subcategory.name,
+      banks: banks.map(b => ({
+        id: b.id,
+        code: b.code,
+        name: b.name
+      }))
+    });
+
+    ctx.reply(`🏦 Escolha o banco:\n\n${banksMessage}`);
+  }
+
+  async handleIncomeBank(ctx, user, userState) {
+    const choice = parseInt(ctx.message.text) - 1;
+    
+    if (isNaN(choice) || choice < 0 || choice >= userState.data.banks.length) {
+      ctx.reply('❌ Banco inválido. Por favor, escolha uma das opções listadas.');
+      return;
+    }
+
+    const bank = userState.data.banks[choice];
+
+    await this.setUserState(ctx.chat.id, 'AWAITING_INCOME_CONFIRMATION', {
+      ...userState.data,
+      bank_id: bank.id
+    });
+
+    const confirmationMessage = `
+📋 Confirme os dados da receita:
+
+Valor: R$ ${userState.data.amount.toFixed(2)}
+Descrição: ${userState.data.description}
+Categoria: ${userState.data.category_name}
+Subcategoria: ${userState.data.subcategory_name}
+Banco: ${bank.code} - ${bank.name}
+
+Digite SIM para confirmar ou NÃO para cancelar.
+`;
+
+    ctx.reply(confirmationMessage);
+  }
+
+  async handleIncomeConfirmation(ctx, user, userState) {
+    const confirmation = ctx.message.text.trim().toUpperCase();
+
+    if (confirmation === 'SIM') {
+      try {
+        // Cria a receita
+        await Income.create({
+          user_id: user.id,
+          amount: userState.data.amount,
+          description: userState.data.description,
+          category_id: userState.data.category_id,
+          subcategory_id: userState.data.subcategory_id,
+          bank_id: userState.data.bank_id,
+          date: new Date()
+        });
+
+        ctx.reply('✅ Receita registrada com sucesso!\n\nUse /menu para ver mais opções.');
+      } catch (error) {
+        console.error('Erro ao registrar receita:', error);
+        ctx.reply('❌ Ocorreu um erro ao registrar a receita. Tente novamente mais tarde.');
+      }
+    } else if (confirmation === 'NÃO') {
+      ctx.reply('❌ Operação cancelada.\n\nUse /menu para ver as opções disponíveis.');
+    } else {
+      ctx.reply('❌ Por favor, digite SIM para confirmar ou NÃO para cancelar.');
+      return;
+    }
+
+    await this.clearUserState(ctx.chat.id);
   }
 }
 
-// Cria uma única instância do serviço
+// Criar e exportar uma instância do TelegramService
 const telegramService = new TelegramService();
-
-// Exporta a instância única
-export default telegramService; 
+export { telegramService }; 

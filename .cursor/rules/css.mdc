@@ -1,4 +1,9 @@
 ---
+description: 
+globs: 
+alwaysApply: true
+---
+---
 description: rules hehehe
 globs: 
 alwaysApply: true

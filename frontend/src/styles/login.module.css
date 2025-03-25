@@ -451,6 +451,81 @@
 }
 
 .verificationSteps {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+.verificationTitle {
+  font-size: 1.2em;
+  color: #333;
+  margin-bottom: 15px;
+  font-weight: 600;
+}
+
+.stepsList {
+  padding-left: 20px;
+}
+
+.stepsList li {
+  margin-bottom: 10px;
+  color: #555;
+  line-height: 1.4;
+}
+
+.telegramButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background-color: #0088cc !important;
+  color: white !important;
+  text-decoration: none;
+  margin-bottom: 10px;
+}
+
+.telegramIcon {
+  font-size: 1.2em;
+}
+
+.skipButton {
+  background: transparent;
+  border: 1px solid #ddd;
+  color: #666;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.skipButton:hover {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.telegramInfo {
+  background: #e8f5fe;
+  padding: 20px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+.telegramInfo ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.telegramInfo li {
+  margin-bottom: 10px;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.verificationSteps {
   margin-top: 1.5rem;
   padding: 1rem;
   background: rgba(26, 27, 35, 0.8);

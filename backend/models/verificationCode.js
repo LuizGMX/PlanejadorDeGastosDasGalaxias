@@ -12,16 +12,32 @@ export default (sequelize) => {
       allowNull: false
     },
     code: {
-      type: DataTypes.STRING(6),
+      type: DataTypes.STRING,
       allowNull: false
     },
-    created_at: {
+    user_data: {
+      type: DataTypes.TEXT,
+      allowNull: true
+    },
+    expires_at: {
       type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW
+      allowNull: false,
+      defaultValue: () => {
+        const date = new Date();
+        date.setMinutes(date.getMinutes() + 15); // Expira em 15 minutos
+        return date;
+      }
     }
   }, {
+    tableName: 'verification_codes',
     timestamps: true,
-    tableName: 'verification_codes' // Adicionado para clareza
+    underscored: true,
+    indexes: [
+      {
+        unique: true,
+        fields: ['email', 'code']
+      }
+    ]
   });
 
   return VerificationCode;

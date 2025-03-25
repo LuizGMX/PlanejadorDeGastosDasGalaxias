@@ -1,10 +1,10 @@
-import express from 'express';
+import { Router } from 'express';
 import { User } from '../models/index.js';
-import telegramService from '../services/telegramService.js';
+import { telegramService } from '../services/telegramService.js';
 import { sendVerificationEmail } from '../services/emailService.js';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate } from './auth.js';
 
-const router = express.Router();
+const router = Router();
 
 // Rota para iniciar verificação do Telegram
 router.post('/init-verification', authenticate, async (req, res) => {

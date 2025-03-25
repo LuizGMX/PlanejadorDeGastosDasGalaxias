@@ -1,5 +1,8 @@
 // models/index.js
+import { DataTypes } from 'sequelize';
 import sequelize from '../config/db.js';
+
+// Importações diretas dos modelos
 import UserModel from './user.js';
 import CategoryModel from './category.js';
 import ExpenseModel from './expense.js';
@@ -13,7 +16,7 @@ import RecurrenceRuleModel from './RecurrenceRule.js';
 import RecurrenceExceptionModel from './RecurrenceException.js';
 import TelegramVerificationCodeModel from './telegramVerificationCode.js';
 
-// Inicialização dos modelos
+// Inicializa os modelos
 const User = UserModel(sequelize);
 const Category = CategoryModel(sequelize);
 const Expense = ExpenseModel(sequelize);
@@ -109,6 +112,14 @@ Budget.belongsTo(User, {
   onUpdate: 'CASCADE'
 });
 
+// Relacionamento do Budget com Category
+Budget.belongsTo(Category, {
+  foreignKey: 'category_id',
+  onDelete: 'NO ACTION',
+  onUpdate: 'CASCADE',
+  as: 'Category'
+});
+
 // Relacionamento entre User e Bank através de UserBank
 User.belongsToMany(Bank, {
   through: UserBank,
@@ -174,29 +185,13 @@ RecurrenceRule.hasMany(RecurrenceException, {
 
 // Exportação dos modelos
 export {
-  User,
-  Category,
-  SubCategory,
-  Expense,
-  Income,
-  Bank,
-  Budget,
-  VerificationCode,
-  UserBank,
-  RecurrenceRule,
-  RecurrenceException,
-  TelegramVerificationCode
-};
-
-// Exportação padrão
-export default {
   sequelize,
   User,
   Category,
+  SubCategory,
   Expense,
   Income,
   Bank,
-  SubCategory,
   Budget,
   VerificationCode,
   UserBank,
