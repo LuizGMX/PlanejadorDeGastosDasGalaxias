@@ -9,11 +9,13 @@ import { telegramService } from './services/telegramService.js';
 import app from './app.js';
 import https from 'https';
 import fs from 'fs';
+import http from 'http'; // Para desenvolvimento
 
 dotenv.config();
 
-// Definir as variáveis para os certificados SSL
+// Definir o servidor
 let server;
+
 if (process.env.NODE_ENV === 'production') {
   // Carregar certificados apenas se for ambiente de produção
   const privateKey = fs.readFileSync('/etc/letsencrypt/live/planejadordasgalaxias.com.br/privkey.pem', 'utf8');
@@ -22,14 +24,16 @@ if (process.env.NODE_ENV === 'production') {
 
   const credentials = { key: privateKey, cert: certificate, ca: ca };
 
-  // Iniciar servidor HTTPS se em produção
+  // Iniciar servidor HTTPS na porta 5000
   server = https.createServer(credentials, app);
+  server.listen(5000, () => {
+    console.log('🚀 Servidor HTTPS rodando na porta 5000 em modo produção');
+  });
 } else {
-  // Em desenvolvimento, usar HTTP
-  server = app.listen(process.env.PORT || 5000, () => {
-    console.log('=================================');
-    console.log(`🚀 Servidor rodando na porta ${process.env.PORT || 5000} em modo ${process.env.NODE_ENV}`);
-    console.log('=================================');
+  // Iniciar servidor HTTP na porta 5000 para desenvolvimento
+  server = http.createServer(app);
+  server.listen(5000, () => {
+    console.log('🚀 Servidor HTTP rodando na porta 5000 em modo desenvolvimento');
   });
 }
 
