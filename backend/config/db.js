@@ -1,5 +1,6 @@
 import { Sequelize } from 'sequelize';
 import dotenv from 'dotenv';
+import path from 'path';
 
 dotenv.config();
 
@@ -27,6 +28,18 @@ export const syncDatabase = async () => {
     console.log('✅ Banco de dados sincronizado com sucesso!');
   } catch (error) {
     console.error('❌ Erro ao sincronizar o banco de dados:', error);
+    throw error;
+  }
+};
+
+// Função para testar a conexão
+export const testConnection = async () => {
+  try {
+    await sequelize.authenticate();
+    console.log('✅ Conexão com o banco de dados estabelecida com sucesso!');
+  } catch (error) {
+    console.error('❌ Erro ao conectar com o banco de dados:', error);
+    throw error;
   }
 };
 

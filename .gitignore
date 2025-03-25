@@ -40,3 +40,4 @@ coverage/
 *.temp
 .cache/
 .env.example
+backend/.env.production
