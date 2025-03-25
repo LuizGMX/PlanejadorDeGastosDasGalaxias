@@ -12,8 +12,8 @@ import BankModel from './bank.js';
 import SubCategoryModel from './subcategory.js';
 import BudgetModel from './budget.js';
 import UserBankModel from './userBank.js';
-import RecurrenceRuleModel from './RecurrenceRule.js';
-import RecurrenceExceptionModel from './RecurrenceException.js';
+import RecurrenceRuleModel from './recurrenceRule.js';
+import RecurrenceExceptionModel from './recurrenceException.js';
 import TelegramVerificationCodeModel from './telegramVerificationCode.js';
 
 // Inicializa os modelos

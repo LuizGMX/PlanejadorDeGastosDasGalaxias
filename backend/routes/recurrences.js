@@ -1,7 +1,7 @@
 import express from 'express';
 import { authenticate } from '../middleware/auth.js';
-import RecurrenceRule from '../models/RecurrenceRule.js';
-import RecurrenceException from '../models/RecurrenceException.js';
+import RecurrenceRule from '../models/recurrenceRule.js';
+import RecurrenceException from '../models/recurrenceException.js ';
 import { calculateOccurrences } from '../utils/recurrenceCalculator.js';
 
 const router = express.Router();
