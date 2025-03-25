@@ -1,21 +1,37 @@
 // server.js
-import express from 'express';
+
 import dotenv from 'dotenv';
 import sgMail from '@sendgrid/mail';
-import rateLimit from 'express-rate-limit';
-import helmet from 'helmet';
-import cors from 'cors';
-import expressWinston from 'express-winston';
-import logger from './config/logger.js';
-import jwt from 'jsonwebtoken';
 import { sequelize } from './models/index.js';
 import seedDatabase from './seeders/index.js';
 import { writeFileSync } from 'fs';
-import router from './routes/index.js';
 import { telegramService } from './services/telegramService.js';
 import app from './app.js';
+import https from 'https';
+import fs from 'fs';
 
 dotenv.config();
+
+// Definir as variáveis para os certificados SSL
+let server;
+if (process.env.NODE_ENV === 'production') {
+  // Carregar certificados apenas se for ambiente de produção
+  const privateKey = fs.readFileSync('/etc/letsencrypt/live/planejadordasgalaxias.com.br/privkey.pem', 'utf8');
+  const certificate = fs.readFileSync('/etc/letsencrypt/live/planejadordasgalaxias.com.br/cert.pem', 'utf8');
+  const ca = fs.readFileSync('/etc/letsencrypt/live/planejadordasgalaxias.com.br/chain.pem', 'utf8');
+
+  const credentials = { key: privateKey, cert: certificate, ca: ca };
+
+  // Iniciar servidor HTTPS se em produção
+  server = https.createServer(credentials, app);
+} else {
+  // Em desenvolvimento, usar HTTP
+  server = app.listen(process.env.PORT || 5000, () => {
+    console.log('=================================');
+    console.log(`🚀 Servidor rodando na porta ${process.env.PORT || 5000} em modo ${process.env.NODE_ENV}`);
+    console.log('=================================');
+  });
+}
 
 // Configurar SendGrid
 if (process.env.SENDGRID_API_KEY) {
@@ -63,13 +79,6 @@ const startServer = async () => {
     // Executar seeders
     await seedDatabase();
     console.log('Dados iniciais carregados com sucesso.');
-
-    // Iniciar servidor HTTP
-    const server = app.listen(process.env.PORT || 5000, () => {
-      console.log('=================================');
-      console.log(`🚀 Servidor rodando na porta ${process.env.PORT || 5000}`);
-      console.log('=================================');
-    });
 
     // Inicializar serviço do Telegram se token estiver configurado
     if (process.env.TELEGRAM_BOT_TOKEN) {
