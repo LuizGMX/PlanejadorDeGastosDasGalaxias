@@ -63,8 +63,10 @@ const Expenses = () => {
 
   const paymentMethods = [
     { value: 'all', label: 'Todos os Métodos' },
-    { value: 'card', label: 'Cartão' },
-    { value: 'pix', label: 'PIX' }
+    { value: 'credit_card', label: 'Cartão de Crédito' },
+    { value: 'debit_card', label: 'Cartão de Débito' },
+    { value: 'pix', label: 'PIX' },
+    { value: 'money', label: 'Dinheiro' }
   ];
 
   const installmentOptions = [
@@ -932,19 +934,29 @@ const Expenses = () => {
                     <td data-label="Subcategoria">{expense.SubCategory?.subcategory_name}</td>
                     <td data-label="Valor">{formatCurrency(expense.amount)}</td>
                     <td data-label="Método">
-                      {expense.payment_method === 'card' ? (
-                        <span className="material-icons">credit_card</span>
-                      ) : (
-                        <span className="material-icons">pix</span>
-                      )}
-                      {expense.is_recurring && (
-                        <span 
-                          className="material-icons" 
-                          title="Despesa Fixa"
-                        >
-                          sync
-                        </span>
-                      )}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        {expense.payment_method === 'credit_card' ? (
+                          <span className="material-icons" style={{ color: 'var(--primary-color)' }}>credit_card</span>
+                        ) : expense.payment_method === 'debit_card' ? (
+                          <span className="material-icons" style={{ color: 'var(--primary-color)' }}>credit_card</span>
+                        ) : expense.payment_method === 'pix' ? (
+                          <span className="material-icons" style={{ color: 'var(--success-color)' }}>pix</span>
+                        ) : (
+                          <span className="material-icons" style={{ color: 'var(--primary-color)' }}>payments</span>
+                        )}
+                        {expense.payment_method === 'credit_card' ? 'Crédito' :
+                         expense.payment_method === 'debit_card' ? 'Débito' :
+                         expense.payment_method === 'pix' ? 'Pix' : 'Dinheiro'}
+                        {expense.is_recurring && (
+                          <span 
+                            className="material-icons" 
+                            title="Despesa Fixa"
+                            style={{ marginLeft: '4px' }}
+                          >
+                            sync
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td data-label="Parcelas">
                       {expense.has_installments 

@@ -108,8 +108,13 @@
   letter-spacing: 1px;
   cursor: pointer;
   transition: all 0.3s;
-  background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+  background: var(--primary-color);
   color: var(--secondary-color);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   margin-top: 32px;
 }
 
@@ -402,7 +407,17 @@
 }
 
 .telegramInfo {
+  background: rgba(26, 27, 35, 0.8);
+  padding: 24px;
+  border-radius: 12px;
   margin: 24px 0;
+  border: 1px solid var(--border-color);
+}
+
+.telegramInfo h3 {
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  font-size: 18px;
 }
 
 .telegramInfo ul {
@@ -412,16 +427,127 @@
 }
 
 .telegramInfo li {
-  margin: 12px 0;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
   font-size: 16px;
-  color: var(--text-color);
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  line-height: 1.5;
 }
 
-.telegramInfo li:before {
-  margin-right: 8px;
+.telegramInfo li:last-child {
+  margin-bottom: 0;
+}
+
+.verificationSteps {
+  background: rgba(26, 27, 35, 0.8);
+  padding: 24px;
+  border-radius: 12px;
+  margin: 24px 0;
+  border: 1px solid var(--border-color);
+}
+
+.stepsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.step {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+  background: rgba(42, 43, 51, 0.8);
+  border-radius: 8px;
+}
+
+.stepNumber {
+  width: 24px;
+  height: 24px;
+  background: var(--primary-color);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.stepContent h4 {
+  color: var(--text-primary);
+  margin: 0 0 4px 0;
+  font-size: 16px;
+}
+
+.stepContent p {
+  color: var(--text-secondary);
+  margin: 0;
+  font-size: 14px;
+}
+
+.buttonGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 32px;
+}
+
+.telegramButton {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.3s;
+  background: #0088cc;
+  color: white;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.telegramButton:hover {
+  background: #006699;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 136, 204, 0.2);
+}
+
+.telegramButton:active {
+  transform: translateY(0);
+}
+
+.skipButton {
+  width: 100%;
+  padding: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.3s;
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.skipButton:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  border-color: var(--text-primary);
+  transform: translateY(-2px);
+}
+
+.skipButton:active {
+  transform: translateY(0);
 }
 
 .hint {
@@ -430,31 +556,6 @@
   font-size: 0.9rem;
   color: var(--text-secondary);
   text-align: center;
-}
-
-.skipButton {
-  display: block;
-  width: 100%;
-  padding: 0.5rem;
-  margin-top: 1rem;
-  background: transparent;
-  border: none;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  cursor: pointer;
-  text-decoration: underline;
-  transition: color 0.2s;
-}
-
-.skipButton:hover {
-  color: var(--text-color);
-}
-
-.verificationSteps {
-  background: #f8f9fa;
-  padding: 20px;
-  border-radius: 10px;
-  margin-bottom: 20px;
 }
 
 .verificationTitle {
@@ -474,41 +575,20 @@
   line-height: 1.4;
 }
 
-.telegramButton {
+.telegramIconContainer {
   display: flex;
-  align-items: center;
   justify-content: center;
-  gap: 10px;
-  background-color: #0088cc !important;
-  color: white !important;
-  text-decoration: none;
-  margin-bottom: 10px;
+  margin-bottom: 2rem;
 }
 
 .telegramIcon {
-  font-size: 1.2em;
+  font-size: 4rem;
+  animation: bounce 2s infinite;
 }
 
-.skipButton {
-  background: transparent;
-  border: 1px solid #ddd;
-  color: #666;
-  padding: 10px 20px;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.skipButton:hover {
-  background: #f5f5f5;
-  color: #333;
-}
-
-.telegramInfo {
-  background: #e8f5fe;
-  padding: 20px;
-  border-radius: 10px;
-  margin-bottom: 20px;
+.featureIcon {
+  margin-right: 0.5rem;
+  font-size: 1.2rem;
 }
 
 .telegramInfo ul {
@@ -518,150 +598,73 @@
 }
 
 .telegramInfo li {
-  margin-bottom: 10px;
-  color: #333;
   display: flex;
   align-items: center;
-  gap: 10px;
-}
-
-.verificationSteps {
-  margin-top: 1.5rem;
-  padding: 1rem;
-  background: rgba(26, 27, 35, 0.8);
-  border: 1px solid var(--border-color);
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background: var(--background-secondary);
   border-radius: 8px;
+  transition: transform 0.2s;
 }
 
-.verificationTitle {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text-color);
-  margin-bottom: 0.5rem;
+.telegramInfo li:hover {
+  transform: translateX(5px);
 }
 
-.verificationSteps ol {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  counter-reset: step;
+.stepsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin: 2rem 0;
 }
 
-.verificationSteps li {
-  margin: 0.75rem 0;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
+.step {
   display: flex;
   align-items: flex-start;
-  line-height: 1.4;
-}
-
-.verificationSteps li:before {
-  content: counter(step);
-  counter-increment: step;
-  min-width: 24px;
-  height: 24px;
-  background: var(--primary-color);
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 0.5rem;
-  font-size: 0.8rem;
-  color: var(--secondary-color);
-}
-
-.verificationSteps strong {
-  color: #0088cc;
-  font-weight: 600;
-}
-
-.telegramButtons {
-  display: flex;
-  flex-direction: column;
   gap: 1rem;
-  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--background-secondary);
+  border-radius: 8px;
+  transition: transform 0.2s;
 }
 
-.botButton {
+.step:hover {
+  transform: translateX(5px);
+}
+
+.stepNumber {
+  width: 32px;
+  height: 32px;
+  background: var(--primary);
+  color: white;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  background: #0088cc;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  text-decoration: none;
-  transition: all 0.2s;
+  font-weight: bold;
+  flex-shrink: 0;
 }
 
-.botButton:hover {
-  background: #006699;
-  transform: translateY(-2px);
+.stepContent {
+  flex: 1;
 }
 
-.codeDisplay {
-  background: rgba(0, 136, 204, 0.1);
-  border: 1px solid #0088cc;
-  border-radius: 8px;
-  padding: 1rem;
-  margin: 1rem 0;
-  text-align: center;
+.stepContent h4 {
+  margin: 0 0 0.5rem 0;
+  color: var(--text-primary);
 }
 
-.code {
-  font-family: monospace;
-  font-size: 2rem;
-  color: #0088cc;
-  padding: 1rem;
-  margin: 0.5rem 0;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 4px;
-  letter-spacing: 2px;
-}
-
-.codeInstructions {
+.stepContent p {
+  margin: 0;
   color: var(--text-secondary);
   font-size: 0.9rem;
-  margin-top: 0.5rem;
 }
 
-.resendCode {
-  text-align: center;
-  margin-top: 16px;
-}
-
-.resendDisabled {
-  color: var(--text-secondary);
-  font-size: 0.9em;
-}
-
-.buttonGroup {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-top: 32px;
-}
-
-.error {
-  background: rgba(255, 0, 0, 0.1);
-  border: 1px solid rgba(255, 0, 0, 0.2);
-  color: #ff4444;
-  padding: 12px;
-  border-radius: 8px;
-  margin-bottom: 24px;
-  font-size: 14px;
-}
-
-.success {
-  background: rgba(0, 255, 133, 0.1);
-  border: 1px solid rgba(0, 255, 133, 0.2);
-  color: #00ff85;
-  padding: 12px;
-  border-radius: 8px;
-  margin-bottom: 24px;
-  font-size: 14px;
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 } 

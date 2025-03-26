@@ -90,9 +90,9 @@ export default (sequelize) => {
       defaultValue: DataTypes.NOW
     },
     payment_method: {
-      type: DataTypes.ENUM('pix', 'card'),
+      type: DataTypes.ENUM('credit_card', 'debit_card', 'pix', 'money'),
       allowNull: false,
-      defaultValue: 'card'
+      defaultValue: 'credit_card'
     },
     is_in_cash: {
       type: DataTypes.BOOLEAN,

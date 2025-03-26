@@ -131,8 +131,8 @@ export class TelegramService {
 
     // Configura os comandos
     this.bot.command('start', (ctx) => this.handleStart(ctx));
-    this.bot.command('codigo', (ctx) => this.handleVerify(ctx));
-    this.bot.command('gasto', (ctx) => this.handleExpense(ctx));
+    this.bot.command('verificar', (ctx) => this.handleVerify(ctx));
+    this.bot.command('despesa', (ctx) => this.handleExpense(ctx));
     this.bot.command('receita', (ctx) => this.handleIncome(ctx));
     this.bot.command('resumo', (ctx) => this.handleSummary(ctx));
     this.bot.command('help', (ctx) => this.handleHelp(ctx));
@@ -221,8 +221,8 @@ export class TelegramService {
       ctx.reply(
         'Bem-vindo ao Planejador de Gastos das Galáxias! 🚀\n\n' +
         'Para conectar sua conta, digite o código de verificação que você recebeu por email usando o comando:\n\n' +
-        '/codigo CODIGO\n\n' +
-        'Exemplo: /codigo 123456'
+        '/verificar CODIGO\n\n' +
+        'Exemplo: /verificar 123456'
       );
     } catch (error) {
       console.error('Erro no comando /start:', error);
@@ -238,7 +238,7 @@ export class TelegramService {
       if (!code) {
         ctx.reply(
           'Por favor, forneça o código de verificação.\n\n' +
-          'Exemplo: /codigo 123456'
+          'Exemplo: /verificar 123456'
         );
         return;
       }
@@ -284,7 +284,7 @@ export class TelegramService {
       ctx.reply(
         '🎉 Conta conectada com sucesso!\n\n' +
         'Agora você pode:\n' +
-        '- Registrar gastos com /gasto\n' +
+        '- Registrar despesas com /despesa\n' +
         '- Registrar receitas com /receita\n' +
         '- Ver seu resumo financeiro com /resumo\n\n' +
         'Use /help para ver todos os comandos disponíveis.'
@@ -423,8 +423,8 @@ ${balance >= 0
 🚀 Comandos Disponíveis:
 
 /start - Iniciar o bot
-/codigo - Vincular sua conta usando o código recebido por email
-/gasto - Registrar um gasto
+/verificar - Vincular sua conta usando o código recebido por email
+/despesa - Registrar uma despesa
 /receita - Registrar uma receita
 /resumo - Ver resumo financeiro
 /help - Ver esta mensagem de ajuda
@@ -545,7 +545,7 @@ Para mais informações, acesse o site do Planejador de Gastos das Galáxias.
     }
 
     const banksMessage = banks
-      .map((bank, index) => `${index + 1}. ${bank.code} - ${bank.name}`)
+      .map((bank, index) => `${index + 1}. ${bank.name}`)
       .join('\n');
 
     await this.setUserState(ctx.chat.id, 'AWAITING_EXPENSE_BANK', {
@@ -580,11 +580,10 @@ Para mais informações, acesse o site do Planejador de Gastos das Galáxias.
     const paymentMessage = `
 💳 Escolha a forma de pagamento:
 
-1. Dinheiro
-2. Débito
-3. Crédito
-4. Pix
-5. Transferência
+1. Cartão de Crédito
+2. Cartão de Débito
+3. Pix
+4. Dinheiro
 `;
 
     ctx.reply(paymentMessage);
@@ -596,19 +595,16 @@ Para mais informações, acesse o site do Planejador de Gastos das Galáxias.
     
     switch (choice) {
       case 1:
-        paymentMethod = 'card';
+        paymentMethod = 'credit_card';
         break;
       case 2:
-        paymentMethod = 'card';
+        paymentMethod = 'debit_card';
         break;
       case 3:
-        paymentMethod = 'card';
+        paymentMethod = 'pix';
         break;
       case 4:
-        paymentMethod = 'pix';
-        break;
-      case 5:
-        paymentMethod = 'pix';
+        paymentMethod = 'money';
         break;
       default:
         ctx.reply('❌ Opção inválida. Por favor, escolha uma das opções listadas.');
@@ -618,12 +614,14 @@ Para mais informações, acesse o site do Planejador de Gastos das Galáxias.
     await this.setUserState(ctx.chat.id, 'AWAITING_EXPENSE_CONFIRMATION', {
       ...userState.data,
       payment_method: paymentMethod,
-      is_in_cash: choice === 1
+      is_in_cash: paymentMethod === 'money'
     });
 
     const paymentMethodNames = {
-      card: choice === 1 ? 'Dinheiro' : choice === 2 ? 'Débito' : 'Crédito',
-      pix: choice === 4 ? 'PIX' : 'Transferência'
+      credit_card: 'Cartão de Crédito',
+      debit_card: 'Cartão de Débito',
+      pix: 'Pix',
+      money: 'Dinheiro'
     };
 
     const bank = userState.data.banks.find(b => b.id === userState.data.bank_id);
@@ -635,7 +633,7 @@ Valor: R$ ${userState.data.amount.toFixed(2)}
 Descrição: ${userState.data.description}
 Categoria: ${userState.data.category_name}
 Subcategoria: ${userState.data.subcategory_name}
-Banco: ${bank.code} - ${bank.name}
+Banco: ${bank.name}
 Forma de Pagamento: ${paymentMethodNames[paymentMethod]}
 
 Digite SIM para confirmar ou NÃO para cancelar.
@@ -659,7 +657,7 @@ Digite SIM para confirmar ou NÃO para cancelar.
           bank_id: userState.data.bank_id,
           payment_method: userState.data.payment_method,
           expense_date: new Date(),
-          is_in_cash: userState.data.payment_method === 'cash',
+          is_in_cash: false,
           has_installments: false,
           is_recurring: false
         });
@@ -789,7 +787,7 @@ Digite SIM para confirmar ou NÃO para cancelar.
     }
 
     const banksMessage = banks
-      .map((bank, index) => `${index + 1}. ${bank.code} - ${bank.name}`)
+      .map((bank, index) => `${index + 1}. ${bank.name}`)
       .join('\n');
 
     await this.setUserState(ctx.chat.id, 'AWAITING_INCOME_BANK', {

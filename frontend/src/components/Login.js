@@ -185,7 +185,7 @@ const Login = () => {
           user: data.user
         });
         
-        setSuccess('Login realizado com sucesso! Agora vamos conectar seu Telegram...');
+        setSuccess('Conta criada com sucesso! Agora vamos conectar seu Telegram...');
         setTimeout(() => {
           setStep('telegram');
         }, 1500);
@@ -389,6 +389,7 @@ const Login = () => {
               <BsPerson className={styles.inputIcon} />
             </div>
             <div className={styles.inputWrapper}>
+              <span className="material-icons" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }}>savings</span>
               <CurrencyInput
                 name="desired_budget"
                 value={formData.desired_budget}
@@ -407,7 +408,6 @@ const Login = () => {
                 placeholder="Quanto deseja gastar por mês?"
                 required
               />
-              <span className="material-icons">savings</span>
             </div>
           </>
         );
@@ -549,16 +549,17 @@ const Login = () => {
               <BsShieldLock className={styles.inputIcon} />
             </div>
             <div className={styles.inputWrapper}>
+              <span className="material-icons" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }}>calendar_today</span>
               <input
                 type="date"
                 name="financialGoalDate"
                 value={formData.financialGoalDate}
                 onChange={handleChange}
                 className={styles.loginInput}
+                style={{ paddingLeft: '40px' }}
                 min={new Date().toISOString().split('T')[0]}
                 required
               />
-              <span className="material-icons">calendar_today</span>
             </div>
           </>
         );
@@ -604,44 +605,97 @@ const Login = () => {
         return (
           <>
             <div className={styles.loginHeader}>
-              <h1 className={styles.loginTitle}>Conecte seu Telegram!</h1>
+              <h1 className={styles.loginTitle}>Conecte seu Telegram</h1>
               <p className={styles.loginSubtitle}>
-                Use o Telegram para registrar gastos e receber notificações
+                Deseja vincular seu Telegram agora para registrar gastos e receber notificações?
               </p>
             </div>
             <div className={styles.telegramInfo}>
+              <h3>Benefícios:</h3>
               <ul>
                 <li>📱 Registre gastos e receitas direto pelo Telegram</li>
-                <li>🔔 Receba notificações importantes</li>
-                <li>📊 Consulte seu saldo e relatórios</li>
+                <li>🔔 Receba notificações importantes sobre seus gastos</li>
+                <li>📊 Consulte seu saldo e relatórios em tempo real</li>
                 <li>⚡ Mais praticidade no seu dia a dia</li>
               </ul>
             </div>
-            <div className={styles.verificationSteps}>
-              <p className={styles.verificationTitle}>Siga os passos:</p>
-              <ol className={styles.stepsList}>
-                <li>1. Clique no botão "Abrir Bot no Telegram" abaixo</li>
-                <li>2. Digite /start para iniciar o bot</li>
-                <li>3. Use o comando /verificar {code} para vincular sua conta</li>
-                <li>4. Aguarde a confirmação automática</li>
-              </ol>
-            </div>
             <div className={styles.buttonGroup}>
-              <a 
-                href={botLink} 
-                target="_blank" 
-                rel="noopener noreferrer"
+              <button 
+                type="button"
+                onClick={() => {
+                  setStep('telegram-steps');
+                }}
                 className={`${styles.loginButton} ${styles.telegramButton}`}
               >
-                <span className={styles.telegramIcon}>🤖</span>
-                Abrir Bot no Telegram
-              </a>
+                Sim, vincular agora
+              </button>
               <button 
                 type="button" 
                 onClick={() => navigate('/dashboard')} 
                 className={styles.skipButton}
               >
-                Pular por enquanto
+                Depois, vou fazer depois
+              </button>
+            </div>
+          </>
+        );
+
+      case 'telegram-steps':
+        return (
+          <>
+            <div className={styles.loginHeader}>
+              <h1 className={styles.loginTitle}>Vamos vincular seu Telegram</h1>
+              <p className={styles.loginSubtitle}>
+                Siga os passos abaixo para conectar seu Telegram
+              </p>
+            </div>
+            <div className={styles.verificationSteps}>
+              <div className={styles.stepsContainer}>
+                <div className={styles.step}>
+                  <div className={styles.stepNumber}>1</div>
+                  <div className={styles.stepContent}>
+                    <h4>Clique no botão abaixo</h4>
+                    <p>Isso abrirá nosso bot no Telegram</p>
+                  </div>
+                </div>
+                <div className={styles.step}>
+                  <div className={styles.stepNumber}>2</div>
+                  <div className={styles.stepContent}>
+                    <h4>Digite /start</h4>
+                    <p>Para iniciar a conversa com o bot</p>
+                  </div>
+                </div>
+                <div className={styles.step}>
+                  <div className={styles.stepNumber}>3</div>
+                  <div className={styles.stepContent}>
+                    <h4>Use o comando /verificar</h4>
+                    <p>Digite: /verificar {code}</p>
+                  </div>
+                </div>
+                <div className={styles.step}>
+                  <div className={styles.stepNumber}>4</div>
+                  <div className={styles.stepContent}>
+                    <h4>Aguarde a confirmação</h4>
+                    <p>O bot confirmará automaticamente</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className={styles.buttonGroup}>
+              <a 
+                href="https://t.me/PlanejadorDasGalaxiasBot" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className={styles.loginButton}
+              >
+                ABRIR BOT NO TELEGRAM
+              </a>
+              <button 
+                type="button" 
+                onClick={() => navigate('/dashboard')} 
+                className={styles.backButton}
+              >
+                PULAR POR ENQUANTO
               </button>
             </div>
           </>
@@ -700,7 +754,7 @@ const Login = () => {
           <form onSubmit={handleSubmit} className={styles.loginForm}>
             {renderStep()}
 
-            {step !== 'telegram' && (
+            {step !== 'telegram' && step !== 'telegram-steps' && (
               <div className={styles.buttonGroup}>
                 {step === 'code' ? (
                   <>

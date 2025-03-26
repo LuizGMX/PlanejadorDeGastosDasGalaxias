@@ -439,7 +439,11 @@ const ExpenseList = () => {
                   <td>{expense.Category.category_name}</td>
                   <td>{expense.SubCategory.subcategory_name}</td>
                   <td>R$ {parseFloat(expense.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                  <td>{expense.payment_method === 'card' ? '💳 Cartão' : '📱 Pix'}</td>
+                  <td>
+                    {expense.payment_method === 'credit_card' ? '💳 Crédito' :
+                     expense.payment_method === 'debit_card' ? '💳 Débito' :
+                     expense.payment_method === 'pix' ? '📱 Pix' : '💵 Dinheiro'}
+                  </td>
                   <td>
                     {expense.has_installments 
                       ? `${expense.current_installment}/${expense.total_installments}`

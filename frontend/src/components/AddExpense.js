@@ -23,7 +23,8 @@ const AddExpense = () => {
     total_installments: '',
     current_installment: '',
     end_date: '',
-    payment_method: 'card',
+    payment_method: 'credit_card',
+    card_type: 'credit_card',
     recurrence_type: null
   });
   const [categories, setCategories] = useState([]);
@@ -623,8 +624,13 @@ const AddExpense = () => {
             <div className={styles.paymentButtons}>
               <button
                 type="button"
-                className={`${styles.paymentButton} ${formData.payment_method === 'card' ? styles.active : ''}`}
-                onClick={() => handlePaymentMethod('card')}
+                className={`${styles.paymentButton} ${formData.payment_method === 'credit_card' || formData.payment_method === 'debit_card' ? styles.active : ''}`}
+                onClick={() => {
+                  setFormData(prev => ({
+                    ...prev,
+                    payment_method: prev.card_type
+                  }));
+                }}
               >
                 <BsCreditCard2Front size={24} className={styles.cardIcon} />
                 <span>Cartão</span>
@@ -637,8 +643,55 @@ const AddExpense = () => {
                 <SiPix size={24} className={styles.pixIcon} />
                 <span>Pix</span>
               </button>
+              <button
+                type="button"
+                className={`${styles.paymentButton} ${formData.payment_method === 'money' ? styles.active : ''}`}
+                onClick={() => handlePaymentMethod('money')}
+              >
+                <span className="material-icons" style={{ color: 'var(--primary-color)' }}>payments</span>
+                <span>Dinheiro</span>
+              </button>
             </div>
           </div>
+
+          {(formData.payment_method === 'credit_card' || formData.payment_method === 'debit_card') && (
+            <div className={styles.paymentMethodGroup}>
+              <label className={styles.label}>
+                <span className="material-icons">credit_card</span>
+                Tipo de Cartão
+              </label>
+              <div className={styles.paymentButtons}>
+                <button
+                  type="button"
+                  className={`${styles.paymentButton} ${formData.card_type === 'credit_card' ? styles.active : ''}`}
+                  onClick={() => {
+                    setFormData(prev => ({
+                      ...prev,
+                      card_type: 'credit_card',
+                      payment_method: 'credit_card'
+                    }));
+                  }}
+                >
+                  <BsCreditCard2Front size={32} className={styles.cardIcon} />
+                  <span>Crédito</span>
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.paymentButton} ${formData.card_type === 'debit_card' ? styles.active : ''}`}
+                  onClick={() => {
+                    setFormData(prev => ({
+                      ...prev,
+                      card_type: 'debit_card',
+                      payment_method: 'debit_card'
+                    }));
+                  }}
+                >
+                  <BsCreditCard2Front size={32} className={styles.cardIcon} />
+                  <span>Débito</span>
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className={styles.buttonGroup}>
             <button

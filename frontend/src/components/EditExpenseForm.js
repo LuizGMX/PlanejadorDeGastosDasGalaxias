@@ -13,6 +13,7 @@ const EditExpenseForm = ({ expense, onSave, onCancel }) => {
     subcategory_id: expense.subcategory_id,
     bank_id: expense.bank_id,
     payment_method: expense.payment_method,
+    card_type: expense.payment_method === 'credit_card' || expense.payment_method === 'debit_card' ? expense.payment_method : 'credit_card',
     is_recurring: expense.is_recurring,
     has_installments: expense.has_installments,
     start_date: expense.start_date || expense.expense_date,
@@ -425,10 +426,8 @@ const EditExpenseForm = ({ expense, onSave, onCancel }) => {
                     {
                       'credit_card': 'Cartão de Crédito',
                       'debit_card': 'Cartão de Débito',
-                      'money': 'Dinheiro',
                       'pix': 'PIX',
-                      'transfer': 'Transferência',
-                      'other': 'Outro'
+                      'money': 'Dinheiro'
                     }[formData.payment_method]
                   }</strong></span>
                 </li>

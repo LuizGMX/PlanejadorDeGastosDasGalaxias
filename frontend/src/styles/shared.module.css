@@ -462,13 +462,6 @@
   margin-bottom: 2rem;
 }
 
-.paymentMethodGroup .label {
-  display: block;
-  margin-bottom: 1rem;
-  color: var(--text-color);
-  font-weight: 500;
-}
-
 .paymentButtons {
   display: flex;
   gap: 1rem;
@@ -487,7 +480,7 @@
   background: var(--card-background);
   color: var(--text-secondary);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .paymentButton:hover {
