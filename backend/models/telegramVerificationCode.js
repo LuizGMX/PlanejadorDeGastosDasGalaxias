@@ -7,7 +7,7 @@ const TelegramVerificationCode = (sequelize) => {
       primaryKey: true,
       autoIncrement: true
     },
-    phone_number: {
+    email: {
       type: DataTypes.STRING,
       allowNull: false
     },

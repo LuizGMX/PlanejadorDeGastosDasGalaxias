@@ -17,7 +17,6 @@ const Login = () => {
     financialGoalAmount: '',
     financialGoalDate: '',
     selectedBanks: [],
-    phone_number: '',
     desired_budget: ''
   });
   const [banks, setBanks] = useState([]);
@@ -78,7 +77,7 @@ const Login = () => {
 
     try {
       if (step === 'email') {
-        console.log('REACT_APP_API_URL: ' + process.env.REACT_APP_API_URL);
+        console.log('Enviando email para verificação:', formData.email);
         const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/check-email`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -86,60 +85,37 @@ const Login = () => {
         });
 
         if (!response.ok) {
-          throw new Error('Falha ao verificar email');
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Erro ao verificar email');
         }
 
         const data = await response.json();
+        console.log('Resposta do check-email:', data);
         setIsNewUser(data.isNewUser);
+        setFormData(prev => ({ ...prev, name: data.name || '' }));
         
+        // Se for um novo usuário, vai para o passo de nome
         if (data.isNewUser) {
           setStep('name');
         } else {
-          setFormData(prev => ({ ...prev, name: data.name }));
-          await requestCode();
+          // Se for usuário existente, vai direto para o código
           setStep('code');
         }
       } else if (step === 'name') {
-        if (!formData.name.trim()) {
-          setError('Nome é obrigatório');
-          return;
-        }
+        // Após preencher nome e orçamento, vai para o passo de bancos
         setStep('banks');
       } else if (step === 'banks') {
-        if (formData.selectedBanks.length === 0) {
-          setError('Selecione pelo menos um banco');
-          return;
-        }
+        // Após selecionar bancos, vai para o passo de objetivo
         setStep('goal');
       } else if (step === 'goal') {
-        if (!formData.name.trim()) {
-          setError('Nome é obrigatório');
-          return;
-        }
-
-        // Converte os valores monetários antes de enviar
-        const parsedDesiredBudget = formData.desired_budget ? Number(formData.desired_budget.replace(/\./g, '').replace(',', '.')) : 0;
-        const parsedFinancialGoalAmount = formData.financialGoalAmount ? Number(formData.financialGoalAmount.replace(/\./g, '').replace(',', '.')) : 0;
-
-        console.log('Enviando dados para requestCode:', {
+        // Após definir objetivo, envia o código
+        await requestCode({
           email: formData.email,
           name: formData.name,
-          desired_budget: parsedDesiredBudget,
           financialGoalName: formData.financialGoalName,
-          financialGoalAmount: parsedFinancialGoalAmount,
+          financialGoalAmount: formData.financialGoalAmount,
           financialGoalDate: formData.financialGoalDate
         });
-
-        const requestData = {
-          email: formData.email,
-          name: formData.name,
-          desired_budget: parsedDesiredBudget,
-          financialGoalName: formData.financialGoalName,
-          financialGoalAmount: parsedFinancialGoalAmount,
-          financialGoalDate: formData.financialGoalDate
-        };
-
-        await requestCode(requestData);
         setStep('code');
       } else if (step === 'code') {
         // Converte os valores monetários para números antes de enviar
@@ -153,7 +129,8 @@ const Login = () => {
           desired_budget: parsedDesiredBudget,
           financialGoalName: formData.financialGoalName,
           financialGoalAmount: parsedFinancialGoalAmount,
-          financialGoalDate: formData.financialGoalDate
+          financialGoalDate: formData.financialGoalDate,
+          selectedBanks: formData.selectedBanks
         });
 
         const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/verify-code`, {
@@ -177,6 +154,7 @@ const Login = () => {
         }
 
         const data = await response.json();
+        console.log('Resposta do verify-code:', data);
         
         localStorage.setItem('token', data.token);
         
@@ -189,11 +167,12 @@ const Login = () => {
         setTimeout(() => {
           setStep('telegram');
         }, 1500);
-      } else if (step === 'telegram') {
+      } else {
         // Handle Telegram connection logic
         setSuccess('Telegram connection logic not implemented yet');
       }
     } catch (err) {
+      console.error('Erro no handleSubmit:', err);
       setError(err.message || 'Ocorreu um erro. Por favor, tente novamente.');
     }
   };
@@ -286,50 +265,17 @@ const Login = () => {
 
   const handleTelegramLink = async () => {
     try {
-      // Primeiro atualiza o número do telefone
-      const updateResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/me`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          name: auth.user.name,
-          email: auth.user.email,
-          phone_number: formData.phone_number
-        })
-      });
-
-      if (!updateResponse.ok) {
-        const errorData = await updateResponse.json();
-        throw new Error(errorData.message || 'Erro ao atualizar número do telefone');
-      }
-
-      const updateData = await updateResponse.json();
-      setAuth(prev => ({
-        ...prev,
-        user: updateData
-      }));
-
-      // Depois inicia a verificação do Telegram
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/telegram/init-verification`, {
+      // Inicia a verificação do Telegram
+      const verificationResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/telegram/init-verification`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ phone_number: formData.phone_number })
+        }
       });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Erro ao iniciar verificação do Telegram');
-      }
-
-      const data = await response.json();
-      
+      const data = await verificationResponse.json();
       if (data.success) {
-        setSuccess('Link gerado com sucesso! Clique no botão abaixo para abrir o Telegram.');
         setBotLink(data.botLink);
         setTelegramStep('link');
       } else {

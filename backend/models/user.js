@@ -23,14 +23,6 @@ export default (sequelize) => {
         isEmail: true
       }
     },
-    phone_number: {
-      type: DataTypes.STRING,
-      allowNull: true,
-      unique: true,
-      validate: {
-        is: /^\+?[1-9]\d{10,14}$/
-      }
-    },
     telegram_chat_id: {
       type: DataTypes.STRING,
       allowNull: true,

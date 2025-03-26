@@ -94,10 +94,15 @@ router.post('/check-email', async (req, res) => {
   console.log('/api/auth/check-email chamado');
   try {
     const { email } = req.body;
+    console.log('Email recebido:', email);
+    
     if (!email) {
       return res.status(400).json({ message: 'E-mail é obrigatório' });
     }
+    
     const user = await User.findOne({ where: { email } });
+    console.log('Usuário encontrado:', user ? 'Sim' : 'Não');
+    
     return res.json({
       isNewUser: !user,
       name: user ? user.name : null,
@@ -143,6 +148,7 @@ router.post('/send-code', async (req, res) => {
 
     // Remove códigos antigos
     await VerificationCode.destroy({ where: { email } });
+    console.log('Códigos antigos removidos');
     
     // Armazena os dados do usuário temporariamente junto com o código
     const verificationData = {
@@ -159,7 +165,8 @@ router.post('/send-code', async (req, res) => {
 
     console.log('Dados de verificação:', verificationData);
 
-    await VerificationCode.create(verificationData);
+    const savedCode = await VerificationCode.create(verificationData);
+    console.log('Código salvo no banco:', savedCode);
 
     // Tenta enviar o email
     try {
@@ -196,8 +203,7 @@ router.post('/verify-code', async (req, res) => {
       financialGoalName, 
       financialGoalAmount, 
       financialGoalDate, 
-      selectedBanks,
-      phone_number
+      selectedBanks
     } = req.body;
 
     console.log('Dados recebidos em verify-code:', {
@@ -207,7 +213,8 @@ router.post('/verify-code', async (req, res) => {
       desired_budget,
       financialGoalName,
       financialGoalAmount,
-      financialGoalDate
+      financialGoalDate,
+      selectedBanks
     });
 
     // Busca o código de verificação
@@ -219,9 +226,25 @@ router.post('/verify-code', async (req, res) => {
       }
     });
 
+    console.log('Código de verificação encontrado:', verificationCode ? 'Sim' : 'Não');
+
     if (!verificationCode) {
+      console.log('Código não encontrado ou expirado');
       await t.rollback();
       return res.status(400).json({ message: 'Código inválido ou expirado' });
+    }
+
+    console.log('Código válido, continuando com a verificação...');
+
+    // Tenta recuperar os dados do usuário do código de verificação
+    let userData = {};
+    try {
+      if (verificationCode.user_data) {
+        userData = JSON.parse(verificationCode.user_data);
+        console.log('Dados do usuário recuperados do código:', userData);
+      }
+    } catch (error) {
+      console.error('Erro ao parsear dados do usuário:', error);
     }
 
     // Converte os valores monetários para números
@@ -235,57 +258,98 @@ router.post('/verify-code', async (req, res) => {
 
     // Busca ou cria o usuário
     let user = await User.findOne({ where: { email } });
-    
+    console.log('Usuário encontrado:', user ? 'Sim' : 'Não');
+
     if (!user) {
-      user = await User.create({
-        email,
-        name,
-        desired_budget: parsedDesiredBudget,
-        financial_goal_name: financialGoalName,
-        financial_goal_amount: parsedFinancialGoalAmount,
-        financial_goal_date: financialGoalDate,
-        phone_number
-      }, { transaction: t });
+      console.log('Criando novo usuário...');
+      try {
+        // Usa os dados do código de verificação se disponíveis
+        const userCreateData = {
+          email,
+          name: name || userData.name,
+          desired_budget: parsedDesiredBudget || userData.desired_budget || 0,
+          financial_goal_name: financialGoalName || userData.financialGoalName,
+          financial_goal_amount: parsedFinancialGoalAmount || userData.financialGoalAmount || 0,
+          financial_goal_date: financialGoalDate || userData.financialGoalDate
+        };
+
+        console.log('Dados para criar usuário:', userCreateData);
+
+        user = await User.create(userCreateData, { transaction: t });
+        console.log('Novo usuário criado:', user.id);
+
+        // Se houver bancos selecionados, cria as associações
+        if (selectedBanks && selectedBanks.length > 0) {
+          console.log('Criando associações com bancos...');
+          await UserBank.bulkCreate(
+            selectedBanks.map(bankId => ({
+              user_id: user.id,
+              bank_id: bankId,
+              is_active: true
+            })),
+            { transaction: t }
+          );
+        }
+      } catch (error) {
+        console.error('Erro ao criar usuário:', error);
+        await t.rollback();
+        return res.status(500).json({ message: 'Erro ao criar usuário' });
+      }
     } else {
-      await user.update({
-        desired_budget: parsedDesiredBudget,
-        financial_goal_name: financialGoalName,
-        financial_goal_amount: parsedFinancialGoalAmount,
-        financial_goal_date: financialGoalDate,
-        phone_number
-      }, { transaction: t });
+      console.log('Atualizando usuário existente...');
+      try {
+        const updateData = {
+          desired_budget: parsedDesiredBudget || userData.desired_budget || user.desired_budget,
+          financial_goal_name: financialGoalName || userData.financialGoalName || user.financial_goal_name,
+          financial_goal_amount: parsedFinancialGoalAmount || userData.financialGoalAmount || user.financial_goal_amount,
+          financial_goal_date: financialGoalDate || userData.financialGoalDate || user.financial_goal_date
+        };
+
+        console.log('Dados para atualizar usuário:', updateData);
+
+        await user.update(updateData, { transaction: t });
+
+        // Atualiza as associações com bancos
+        if (selectedBanks && selectedBanks.length > 0) {
+          console.log('Atualizando associações com bancos...');
+          await UserBank.destroy({ where: { user_id: user.id }, transaction: t });
+          await UserBank.bulkCreate(
+            selectedBanks.map(bankId => ({
+              user_id: user.id,
+              bank_id: bankId,
+              is_active: true
+            })),
+            { transaction: t }
+          );
+        }
+      } catch (error) {
+        console.error('Erro ao atualizar usuário:', error);
+        await t.rollback();
+        return res.status(500).json({ message: 'Erro ao atualizar usuário' });
+      }
     }
 
-    // Associa os bancos selecionados ao usuário
-    if (selectedBanks && selectedBanks.length > 0) {
-      await UserBank.destroy({ where: { user_id: user.id }, transaction: t });
-      await Promise.all(
-        selectedBanks.map(bankId =>
-          UserBank.create({
-            user_id: user.id,
-            bank_id: bankId
-          }, { transaction: t })
-        )
-      );
-    }
-
-    await t.commit();
+    // Remove o código de verificação
+    await verificationCode.destroy({ transaction: t });
 
     // Gera o token JWT
     const token = generateJWT(user.id, user.email);
 
+    // Commit da transação
+    await t.commit();
+
+    console.log('Usuário processado com sucesso:', user.id);
+
     return res.json({
-      message: 'Usuário verificado com sucesso',
       token,
       user: {
         id: user.id,
         name: user.name,
         email: user.email,
-        desired_budget: user.desired_budget,
         financial_goal_name: user.financial_goal_name,
         financial_goal_amount: user.financial_goal_amount,
         financial_goal_date: user.financial_goal_date,
-        telegram_verified: user.telegram_verified
+        desired_budget: user.desired_budget
       }
     });
   } catch (error) {
@@ -344,7 +408,6 @@ router.get('/me', authenticate, async (req, res) => {
       id: user.id,
       name: user.name, 
       email: user.email,
-      phone_number: user.phone_number,
       telegram_verified: user.telegram_verified,
       financial_goal_name: user.financial_goal_name,
       financial_goal_amount: parseInt(user.financial_goal_amount),
@@ -363,24 +426,14 @@ router.put('/me', authenticate, async (req, res) => {
     const {
       name,
       email,
-      phone_number,
       financial_goal_name,
       financial_goal_amount,
       financial_goal_date,
     } = req.body;
 
-    // Valida o formato do número do Telegram se fornecido
-    if (phone_number && !/^\+?[1-9]\d{10,14}$/.test(phone_number)) {
-      return res.status(400).json({ 
-        message: 'Formato inválido do número do Telegram. Use o formato internacional (ex: +5511999999999)' 
-      });
-    }
-
     await req.user.update({
       name,
       email,
-      phone_number,
-      telegram_verified: phone_number ? false : req.user.telegram_verified, // Reseta a verificação se mudar o número
       financial_goal_name,
       financial_goal_amount: parseInt(financial_goal_amount),
       financial_goal_date,
@@ -390,14 +443,11 @@ router.put('/me', authenticate, async (req, res) => {
       id: req.user.id,
       name: req.user.name,
       email: req.user.email,
-      phone_number: req.user.phone_number,
       telegram_verified: req.user.telegram_verified,
       financial_goal_name: req.user.financial_goal_name,
       financial_goal_amount: parseInt(req.user.financial_goal_amount),
       financial_goal_date: req.user.financial_goal_date,
-      message: phone_number ? 
-        'Seu número do Telegram foi atualizado! Em breve você receberá um código de verificação para ativar as funcionalidades do Telegram.' :
-        'Seu número do Telegram foi removido. Você pode configurá-lo novamente quando quiser!'
+      message: 'Perfil atualizado com sucesso!'
     });
   } catch (error) {
     console.error('Erro ao atualizar usuário:', error);

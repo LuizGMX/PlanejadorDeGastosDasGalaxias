@@ -12,7 +12,7 @@ export default (sequelize) => {
       allowNull: false
     },
     code: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(6),
       allowNull: false
     },
     user_data: {
@@ -24,9 +24,13 @@ export default (sequelize) => {
       allowNull: false,
       defaultValue: () => {
         const date = new Date();
-        date.setMinutes(date.getMinutes() + 15); // Expira em 15 minutos
+        date.setMinutes(date.getMinutes() + 10); // Expira em 10 minutos
         return date;
       }
+    },
+    used: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false
     }
   }, {
     tableName: 'verification_codes',

@@ -14,6 +14,7 @@ export class TelegramService {
     this.bot = null;
     this.isRunning = false;
     this.userStates = new Map();
+    this.verificationCodes = new Map();
   }
 
   async getUserState(userId) {

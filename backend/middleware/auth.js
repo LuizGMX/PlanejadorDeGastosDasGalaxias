@@ -2,14 +2,21 @@ import jwt from 'jsonwebtoken';
 import { User } from '../models/index.js';
 
 export const authenticate = async (req, res, next) => {
+  console.log('Iniciando autenticação...');
   try {
     const authHeader = req.headers.authorization;
+    console.log('Header de autorização:', authHeader ? 'Presente' : 'Ausente');
+    
     if (!authHeader) {
+      console.log('Token não fornecido');
       return res.status(401).json({ message: 'Token não fornecido' });
     }
 
     const token = authHeader.split(' ')[1];
+    console.log('Token extraído');
+    
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('Token decodificado:', { userId: decoded.userId });
     
     const user = await User.findByPk(decoded.userId, {
       attributes: [
@@ -21,12 +28,14 @@ export const authenticate = async (req, res, next) => {
         'financial_goal_name', 
         'financial_goal_amount', 
         'financial_goal_date',
-        'phone_number',
         'telegram_verified'
       ]
     });
 
+    console.log('Usuário encontrado:', user ? 'Sim' : 'Não');
+
     if (!user) {
+      console.log('Usuário não encontrado no banco de dados');
       return res.status(401).json({ message: 'Usuário não encontrado' });
     }
 
@@ -40,19 +49,24 @@ export const authenticate = async (req, res, next) => {
       financial_goal_name: user.financial_goal_name,
       financial_goal_amount: user.financial_goal_amount,
       financial_goal_date: user.financial_goal_date,
-      phone_number: user.phone_number,
       telegram_verified: user.telegram_verified
     };
     
+    console.log('Autenticação concluída com sucesso');
     next();
   } catch (error) {
+    console.error('Erro durante a autenticação:', error);
+    
     if (error.name === 'JsonWebTokenError') {
+      console.log('Erro de token inválido');
       return res.status(401).json({ message: 'Token inválido' });
     }
     if (error.name === 'TokenExpiredError') {
+      console.log('Erro de token expirado');
       return res.status(401).json({ message: 'Token expirado' });
     }
-    console.error('Erro na autenticação:', error);
-    res.status(500).json({ message: 'Erro ao autenticar usuário' });
+    
+    console.error('Erro não tratado na autenticação:', error);
+    res.status(500).json({ message: 'Erro ao autenticar usuário: ' + error.message });
   }
 }; 
