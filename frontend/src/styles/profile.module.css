@@ -1,1 +1,17 @@
- 
+.goalDates {
+  margin: 20px 0;
+  padding: 15px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+}
+
+.goalDates p {
+  margin: 5px 0;
+  color: #333;
+  font-size: 14px;
+}
+
+.goalDates strong {
+  color: #1a73e8;
+  margin-right: 8px;
+} 

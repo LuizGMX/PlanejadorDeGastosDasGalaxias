@@ -365,9 +365,9 @@ router.get('/', authenticate, async (req, res) => {
 
     // Calcula informações do objetivo financeiro
     let financialGoalInfo = null;
-    if (user.financial_goal_amount && user.financial_goal_date) {
+    if (user.financial_goal_amount && user.financial_goal_end_date) {
       const today = new Date();
-      const goalDate = new Date(user.financial_goal_date);
+      const goalDate = new Date(user.financial_goal_end_date);
       const monthsUntilGoal = (goalDate.getFullYear() - today.getFullYear()) * 12 + 
                              (goalDate.getMonth() - today.getMonth());
 
@@ -455,7 +455,8 @@ router.get('/', authenticate, async (req, res) => {
       financialGoalInfo = {
         name: user.financial_goal_name,
         amount: goalAmount,
-        date: user.financial_goal_date,
+        start_date: user.financial_goal_start_date,
+        end_date: user.financial_goal_end_date,
         months_remaining: monthsUntilGoal,
         months_needed_with_current_savings: monthsNeededWithCurrentSavings,
         monthly_balance: averageMonthlyBalance,
@@ -492,7 +493,8 @@ router.get('/', authenticate, async (req, res) => {
         total_income: totalIncomes,
         financial_goal_name: user.financial_goal_name,
         financial_goal_amount: user.financial_goal_amount,
-        financial_goal_date: user.financial_goal_date
+        financial_goal_start_date: user.financial_goal_start_date,
+        financial_goal_end_date: user.financial_goal_end_date
       }
     };
 

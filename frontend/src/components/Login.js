@@ -15,7 +15,8 @@ const Login = () => {
     name: '',
     financialGoalName: '',
     financialGoalAmount: '',
-    financialGoalDate: '',
+    financialGoalPeriodType: '',
+    financialGoalPeriodValue: '',
     selectedBanks: [],
     desired_budget: ''
   });
@@ -114,7 +115,8 @@ const Login = () => {
           name: formData.name,
           financialGoalName: formData.financialGoalName,
           financialGoalAmount: formData.financialGoalAmount,
-          financialGoalDate: formData.financialGoalDate
+          financialGoalPeriodType: formData.financialGoalPeriodType,
+          financialGoalPeriodValue: formData.financialGoalPeriodValue
         });
         setStep('code');
       } else if (step === 'code') {
@@ -129,7 +131,8 @@ const Login = () => {
           desired_budget: parsedDesiredBudget,
           financialGoalName: formData.financialGoalName,
           financialGoalAmount: parsedFinancialGoalAmount,
-          financialGoalDate: formData.financialGoalDate,
+          financialGoalPeriodType: formData.financialGoalPeriodType,
+          financialGoalPeriodValue: formData.financialGoalPeriodValue,
           selectedBanks: formData.selectedBanks
         });
 
@@ -143,7 +146,8 @@ const Login = () => {
             desired_budget: parsedDesiredBudget,
             financialGoalName: formData.financialGoalName,
             financialGoalAmount: parsedFinancialGoalAmount,
-            financialGoalDate: formData.financialGoalDate,
+            financialGoalPeriodType: formData.financialGoalPeriodType,
+            financialGoalPeriodValue: formData.financialGoalPeriodValue,
             selectedBanks: formData.selectedBanks
           })
         });
@@ -224,7 +228,8 @@ const Login = () => {
             name: formData.name,
             financialGoalName: formData.financialGoalName,
             financialGoalAmount: formData.financialGoalAmount,
-            financialGoalDate: formData.financialGoalDate,
+            financialGoalPeriodType: formData.financialGoalPeriodType,
+            financialGoalPeriodValue: formData.financialGoalPeriodValue,
           }
         : {
             email: formData.email,
@@ -461,7 +466,9 @@ const Login = () => {
                 Vamos te ajudar a alcançar suas metas financeiras
               </p>
             </div>
+            
             <div className={styles.inputWrapper}>
+              <p className={styles.fieldHelp}>Digite um nome que identifique seu objetivo (ex: Comprar um carro)</p>
               <input
                 type="text"
                 name="financialGoalName"
@@ -474,6 +481,7 @@ const Login = () => {
               <BsPerson className={styles.inputIcon} />
             </div>
             <div className={styles.inputWrapper}>
+              <p className={styles.fieldHelp}>Valor total que você quer economizar</p>
               <CurrencyInput
                 name="financialGoalAmount"
                 value={formData.financialGoalAmount}
@@ -494,18 +502,40 @@ const Login = () => {
               />
               <BsShieldLock className={styles.inputIcon} />
             </div>
-            <div className={styles.inputWrapper}>
-              <span className="material-icons" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }}>calendar_today</span>
-              <input
-                type="date"
-                name="financialGoalDate"
-                value={formData.financialGoalDate}
-                onChange={handleChange}
-                className={styles.loginInput}
-                style={{ paddingLeft: '40px' }}
-                min={new Date().toISOString().split('T')[0]}
-                required
-              />
+            <div className={styles.periodContainer}>
+              <div className={styles.inputWrapper}>
+                <p className={styles.fieldHelp}>Digite o número de dias/meses/anos para atingir o objetivo</p>
+                <div className={styles.inputWithIcon}>
+                  <input
+                    type="number"
+                    name="financialGoalPeriodValue"
+                    value={formData.financialGoalPeriodValue}
+                    onChange={handleChange}
+                    className={styles.loginInput}
+                    min="1"
+                    placeholder="Ex: 2"
+                    required
+                  />
+                  <span className="material-icons">schedule</span>
+                </div>
+              </div>
+              <div className={styles.inputWrapper}>
+                <p className={styles.fieldHelp}>Escolha se quer atingir em dias, meses ou anos</p>
+                <div className={styles.inputWithIcon}>
+                  <select
+                    name="financialGoalPeriodType"
+                    value={formData.financialGoalPeriodType || 'years'}
+                    onChange={handleChange}
+                    className={styles.loginInput}
+                    required
+                  >
+                    <option value="days">Dias</option>
+                    <option value="months">Meses</option>
+                    <option value="years" selected>Anos</option>
+                  </select>
+                  <span className="material-icons">schedule</span>
+                </div>
+              </div>
             </div>
           </>
         );

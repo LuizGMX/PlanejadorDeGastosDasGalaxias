@@ -548,7 +548,7 @@ const Dashboard = () => {
         <div className={styles.chartHeader}>
           <h3>Progresso do Objetivo Financeiro</h3>
           <p className={styles.goalInfo}>
-            Meta: {formatCurrency(goal.amount)} até {new Date(goal.date).toLocaleDateString('pt-BR')}
+            Meta: {formatCurrency(goal.amount)} em {goal.period_value} {goal.period_type === 'days' ? 'dias' : goal.period_type === 'months' ? 'meses' : 'anos'}
           </p>
         </div>
 

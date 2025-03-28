@@ -80,7 +80,8 @@ router.get('/me', authenticate, async (req, res) => {
       email: user.email,
       financial_goal_name: user.financial_goal_name,
       financial_goal_amount: user.financial_goal_amount,
-      financial_goal_date: user.financial_goal_date
+      financial_goal_start_date: user.financial_goal_start_date,
+      financial_goal_end_date: user.financial_goal_end_date
     });
   } catch (error) {
     console.error('Erro ao buscar usuário:', error);
@@ -92,11 +93,38 @@ router.get('/me', authenticate, async (req, res) => {
 router.put('/me', authenticate, async (req, res) => {
   try {
     const user = req.user;
-    const { name, financial_goal_name, financial_goal_amount, financial_goal_date } = req.body;
+    const { 
+      name, 
+      financial_goal_name, 
+      financial_goal_amount, 
+      financialGoalPeriodType,
+      financialGoalPeriodValue 
+    } = req.body;
 
     // Validações
     if (!name) {
       return res.status(400).json({ message: 'Nome é obrigatório' });
+    }
+
+    // Calcula as datas do objetivo financeiro
+    let startDate = null;
+    let endDate = null;
+    
+    if (financialGoalPeriodType && financialGoalPeriodValue) {
+      startDate = new Date();
+      endDate = new Date(startDate);
+
+      switch (financialGoalPeriodType) {
+        case 'days':
+          endDate.setDate(startDate.getDate() + parseInt(financialGoalPeriodValue));
+          break;
+        case 'months':
+          endDate.setMonth(startDate.getMonth() + parseInt(financialGoalPeriodValue));
+          break;
+        case 'years':
+          endDate.setFullYear(startDate.getFullYear() + parseInt(financialGoalPeriodValue));
+          break;
+      }
     }
 
     // Atualiza os dados do usuário
@@ -104,7 +132,8 @@ router.put('/me', authenticate, async (req, res) => {
       name,
       financial_goal_name: financial_goal_name || null,
       financial_goal_amount: financial_goal_amount || null,
-      financial_goal_date: financial_goal_date || null
+      financial_goal_start_date: startDate,
+      financial_goal_end_date: endDate
     });
 
     // Retorna os dados atualizados
@@ -114,7 +143,8 @@ router.put('/me', authenticate, async (req, res) => {
       email: updatedUser.email,
       financial_goal_name: updatedUser.financial_goal_name,
       financial_goal_amount: updatedUser.financial_goal_amount,
-      financial_goal_date: updatedUser.financial_goal_date
+      financial_goal_start_date: updatedUser.financial_goal_start_date,
+      financial_goal_end_date: updatedUser.financial_goal_end_date
     });
   } catch (error) {
     console.error('Erro ao atualizar usuário:', error);
@@ -125,7 +155,7 @@ router.put('/me', authenticate, async (req, res) => {
 // Rota para atualizar objetivo financeiro do usuário logado
 router.put('/financial-goal', authenticate, async (req, res) => {
   try {
-    const { name, amount, date } = req.body;
+    const { name, amount, time } = req.body;
     const user = await User.findByPk(req.user.id);
 
     if (!user) {
@@ -134,7 +164,6 @@ router.put('/financial-goal', authenticate, async (req, res) => {
 
     // Converte os valores para o formato correto
     const parsedAmount = amount ? parseFloat(amount.toString().replace(/\./g, '').replace(',', '.')) : null;
-    const parsedDate = date ? new Date(date) : null;
 
     // Se não tinha objetivo antes ou a data de criação é inválida, define a data atual
     if ((!user.financial_goal_amount && parsedAmount) || 
@@ -146,13 +175,13 @@ router.put('/financial-goal', authenticate, async (req, res) => {
     const updatedUser = await user.update({
       financial_goal_name: name,
       financial_goal_amount: parsedAmount,
-      financial_goal_date: parsedDate
+      financial_goal_time: time
     });
 
     console.log('Objetivo financeiro atualizado:', {
       name: updatedUser.financial_goal_name,
       amount: updatedUser.financial_goal_amount,
-      date: updatedUser.financial_goal_date,
+      time: updatedUser.financial_goal_time,
       created_at: updatedUser.financial_goal_created_at
     });
 
@@ -161,7 +190,7 @@ router.put('/financial-goal', authenticate, async (req, res) => {
       financial_goal: {
         name: updatedUser.financial_goal_name,
         amount: updatedUser.financial_goal_amount,
-        date: updatedUser.financial_goal_date,
+        time: updatedUser.financial_goal_time,
         created_at: updatedUser.financial_goal_created_at
       }
     });
@@ -248,7 +277,8 @@ router.post('/change-email/verify', authenticate, async (req, res) => {
         email: user.email,
         financial_goal_name: user.financial_goal_name,
         financial_goal_amount: user.financial_goal_amount,
-        financial_goal_date: user.financial_goal_date
+        financial_goal_start_date: user.financial_goal_start_date,
+        financial_goal_end_date: user.financial_goal_end_date
       }
     });
   } catch (error) {

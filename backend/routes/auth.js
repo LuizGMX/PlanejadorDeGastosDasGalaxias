@@ -78,13 +78,13 @@ export const authenticate = async (req, res, next) => {
     req.user = user;
     next();
   } catch (error) {
+    console.error('Erro detalhado na autenticação:', error);
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({ message: 'Token inválido' });
     }
     if (error.name === 'TokenExpiredError') {
       return res.status(401).json({ message: 'Token expirado' });
     }
-    console.error('Erro na autenticação:', error);
     res.status(500).json({ message: 'Erro ao autenticar usuário' });
   }
 };
@@ -121,10 +121,10 @@ router.post('/send-code', async (req, res) => {
       name,      
       financialGoalName,
       financialGoalAmount,
-      financialGoalDate
+      financialGoalTime
     } = req.body;
 
-    console.log('Dados recebidos:', { email, name, financialGoalName, financialGoalAmount, financialGoalDate });
+    console.log('Dados recebidos:', { email, name, financialGoalName, financialGoalAmount, financialGoalTime });
 
     // Validação básica do email
     if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
@@ -158,7 +158,7 @@ router.post('/send-code', async (req, res) => {
         name,
         financialGoalName,
         financialGoalAmount,
-        financialGoalDate
+        financialGoalTime
       }),
       expires_at: new Date(Date.now() + 10 * 60 * 1000)
     };
@@ -195,29 +195,9 @@ router.post('/send-code', async (req, res) => {
 router.post('/verify-code', async (req, res) => {
   const t = await sequelize.transaction();
   try {
-    const { 
-      email, 
-      code, 
-      name, 
-      desired_budget,
-      financialGoalName, 
-      financialGoalAmount, 
-      financialGoalDate, 
-      selectedBanks
-    } = req.body;
+    const { email, code, name, desired_budget, financialGoalName, financialGoalAmount, financialGoalPeriodType, financialGoalPeriodValue, selectedBanks } = req.body;
 
-    console.log('Dados recebidos em verify-code:', {
-      email,
-      code,
-      name,
-      desired_budget,
-      financialGoalName,
-      financialGoalAmount,
-      financialGoalDate,
-      selectedBanks
-    });
-
-    // Busca o código de verificação
+    // Validação do código de verificação
     const verificationCode = await VerificationCode.findOne({
       where: {
         email,
@@ -226,119 +206,72 @@ router.post('/verify-code', async (req, res) => {
       }
     });
 
-    console.log('Código de verificação encontrado:', verificationCode ? 'Sim' : 'Não');
-
     if (!verificationCode) {
-      console.log('Código não encontrado ou expirado');
       await t.rollback();
       return res.status(400).json({ message: 'Código inválido ou expirado' });
     }
 
-    console.log('Código válido, continuando com a verificação...');
+    // Calcula a data final do objetivo
+    const startDate = new Date();
+    let endDate = new Date(startDate);
 
-    // Tenta recuperar os dados do usuário do código de verificação
-    let userData = {};
-    try {
-      if (verificationCode.user_data) {
-        userData = JSON.parse(verificationCode.user_data);
-        console.log('Dados do usuário recuperados do código:', userData);
+    if (financialGoalPeriodType && financialGoalPeriodValue) {
+      switch (financialGoalPeriodType) {
+        case 'days':
+          endDate.setDate(startDate.getDate() + parseInt(financialGoalPeriodValue));
+          break;
+        case 'months':
+          endDate.setMonth(startDate.getMonth() + parseInt(financialGoalPeriodValue));
+          break;
+        case 'years':
+          endDate.setFullYear(startDate.getFullYear() + parseInt(financialGoalPeriodValue));
+          break;
       }
-    } catch (error) {
-      console.error('Erro ao parsear dados do usuário:', error);
     }
-
-    // Converte os valores monetários para números
-    const parsedDesiredBudget = desired_budget ? parseFloat(desired_budget.toString().replace(/\./g, '').replace(',', '.')) : 0;
-    const parsedFinancialGoalAmount = financialGoalAmount ? parseFloat(financialGoalAmount.toString().replace(/\./g, '').replace(',', '.')) : 0;
-
-    console.log('Valores convertidos:', {
-      parsedDesiredBudget,
-      parsedFinancialGoalAmount
-    });
 
     // Busca ou cria o usuário
     let user = await User.findOne({ where: { email } });
-    console.log('Usuário encontrado:', user ? 'Sim' : 'Não');
-
+    
     if (!user) {
-      console.log('Criando novo usuário...');
-      try {
-        // Usa os dados do código de verificação se disponíveis
-        const userCreateData = {
-          email,
-          name: name || userData.name,
-          desired_budget: parsedDesiredBudget || userData.desired_budget || 0,
-          financial_goal_name: financialGoalName || userData.financialGoalName,
-          financial_goal_amount: parsedFinancialGoalAmount || userData.financialGoalAmount || 0,
-          financial_goal_date: financialGoalDate || userData.financialGoalDate
-        };
-
-        console.log('Dados para criar usuário:', userCreateData);
-
-        user = await User.create(userCreateData, { transaction: t });
-        console.log('Novo usuário criado:', user.id);
-
-        // Se houver bancos selecionados, cria as associações
-        if (selectedBanks && selectedBanks.length > 0) {
-          console.log('Criando associações com bancos...');
-          await UserBank.bulkCreate(
-            selectedBanks.map(bankId => ({
-              user_id: user.id,
-              bank_id: bankId,
-              is_active: true
-            })),
-            { transaction: t }
-          );
-        }
-      } catch (error) {
-        console.error('Erro ao criar usuário:', error);
-        await t.rollback();
-        return res.status(500).json({ message: 'Erro ao criar usuário' });
-      }
+      // Cria um novo usuário
+      user = await User.create({
+        email,
+        name,
+        desired_budget: desired_budget ? parseFloat(desired_budget.toString().replace(/\./g, '').replace(',', '.')) : null,
+        financial_goal_name: financialGoalName,
+        financial_goal_amount: financialGoalAmount ? parseFloat(financialGoalAmount.toString().replace(/\./g, '').replace(',', '.')) : null,
+        financial_goal_start_date: startDate,
+        financial_goal_end_date: endDate
+      }, { transaction: t });
     } else {
-      console.log('Atualizando usuário existente...');
-      try {
-        const updateData = {
-          desired_budget: parsedDesiredBudget || userData.desired_budget || user.desired_budget,
-          financial_goal_name: financialGoalName || userData.financialGoalName || user.financial_goal_name,
-          financial_goal_amount: parsedFinancialGoalAmount || userData.financialGoalAmount || user.financial_goal_amount,
-          financial_goal_date: financialGoalDate || userData.financialGoalDate || user.financial_goal_date
-        };
+      // Atualiza o usuário existente
+      await user.update({
+        name,
+        desired_budget: desired_budget ? parseFloat(desired_budget.toString().replace(/\./g, '').replace(',', '.')) : null,
+        financial_goal_name: financialGoalName,
+        financial_goal_amount: financialGoalAmount ? parseFloat(financialGoalAmount.toString().replace(/\./g, '').replace(',', '.')) : null,
+        financial_goal_start_date: startDate,
+        financial_goal_end_date: endDate
+      }, { transaction: t });
+    }
 
-        console.log('Dados para atualizar usuário:', updateData);
-
-        await user.update(updateData, { transaction: t });
-
-        // Atualiza as associações com bancos
-        if (selectedBanks && selectedBanks.length > 0) {
-          console.log('Atualizando associações com bancos...');
-          await UserBank.destroy({ where: { user_id: user.id }, transaction: t });
-          await UserBank.bulkCreate(
-            selectedBanks.map(bankId => ({
-              user_id: user.id,
-              bank_id: bankId,
-              is_active: true
-            })),
-            { transaction: t }
-          );
-        }
-      } catch (error) {
-        console.error('Erro ao atualizar usuário:', error);
-        await t.rollback();
-        return res.status(500).json({ message: 'Erro ao atualizar usuário' });
-      }
+    // Associa os bancos selecionados ao usuário
+    if (selectedBanks && selectedBanks.length > 0) {
+      await user.setBanks(selectedBanks, { transaction: t });
     }
 
     // Remove o código de verificação
     await verificationCode.destroy({ transaction: t });
 
     // Gera o token JWT
-    const token = generateJWT(user.id, user.email);
+    const token = jwt.sign(
+      { userId: user.id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
 
     // Commit da transação
     await t.commit();
-
-    console.log('Usuário processado com sucesso:', user.id);
 
     return res.json({
       token,
@@ -346,16 +279,18 @@ router.post('/verify-code', async (req, res) => {
         id: user.id,
         name: user.name,
         email: user.email,
+        desired_budget: user.desired_budget,
         financial_goal_name: user.financial_goal_name,
         financial_goal_amount: user.financial_goal_amount,
-        financial_goal_date: user.financial_goal_date,
-        desired_budget: user.desired_budget
+        financial_goal_start_date: user.financial_goal_start_date,
+        financial_goal_end_date: user.financial_goal_end_date,
+        telegram_verified: user.telegram_verified
       }
     });
   } catch (error) {
     await t.rollback();
     console.error('Erro ao verificar código:', error);
-    return res.status(500).json({ message: 'Erro interno ao verificar código' });
+    return res.status(500).json({ message: 'Erro ao verificar código' });
   }
 });
 
@@ -411,7 +346,7 @@ router.get('/me', authenticate, async (req, res) => {
       telegram_verified: user.telegram_verified,
       financial_goal_name: user.financial_goal_name,
       financial_goal_amount: parseInt(user.financial_goal_amount),
-      financial_goal_date: user.financial_goal_date,
+      financial_goal_time: user.financial_goal_time,
       desired_budget: user.desired_budget
     });
   } catch (error) {
@@ -421,37 +356,89 @@ router.get('/me', authenticate, async (req, res) => {
 });
 
 router.put('/me', authenticate, async (req, res) => {
-  console.log('/api/auth/me chamado');
   try {
+    console.log('Dados recebidos na atualização:', req.body);
     const {
       name,
       email,
       financial_goal_name,
       financial_goal_amount,
-      financial_goal_date,
+      financial_goal_period_type,
+      financial_goal_period_value
     } = req.body;
 
-    await req.user.update({
+    if (!name) {
+      return res.status(400).json({ message: 'Nome é obrigatório' });
+    }
+
+    // Calcula as datas do objetivo financeiro
+    let startDate = new Date();
+    let endDate = new Date(startDate);
+    
+    if (financial_goal_period_type && financial_goal_period_value) {
+      console.log('Calculando datas do objetivo:', { financial_goal_period_type, financial_goal_period_value });
+      
+      const periodValue = parseInt(financial_goal_period_value);
+      if (isNaN(periodValue)) {
+        return res.status(400).json({ message: 'Período inválido' });
+      }
+
+      switch (financial_goal_period_type) {
+        case 'days':
+          endDate.setDate(startDate.getDate() + periodValue);
+          break;
+        case 'months':
+          endDate.setMonth(startDate.getMonth() + periodValue);
+          break;
+        case 'years':
+          endDate.setFullYear(startDate.getFullYear() + periodValue);
+          break;
+        default:
+          return res.status(400).json({ message: 'Tipo de período inválido' });
+      }
+    }
+
+    console.log('Datas calculadas:', { startDate, endDate });
+
+    // Processa o valor do objetivo financeiro
+    let processedAmount = null;
+    if (financial_goal_amount) {
+      processedAmount = parseFloat(financial_goal_amount.toString().replace(/\./g, '').replace(',', '.'));
+      if (isNaN(processedAmount)) {
+        return res.status(400).json({ message: 'Valor do objetivo inválido' });
+      }
+    }
+
+    // Atualiza o usuário
+    const updatedUser = await req.user.update({
       name,
       email,
-      financial_goal_name,
-      financial_goal_amount: parseInt(financial_goal_amount),
-      financial_goal_date,
+      financial_goal_name: financial_goal_name || null,
+      financial_goal_amount: processedAmount,
+      financial_goal_start_date: startDate,
+      financial_goal_end_date: endDate
     });
 
-    res.json({
-      id: req.user.id,
-      name: req.user.name,
-      email: req.user.email,
-      telegram_verified: req.user.telegram_verified,
-      financial_goal_name: req.user.financial_goal_name,
-      financial_goal_amount: parseInt(req.user.financial_goal_amount),
-      financial_goal_date: req.user.financial_goal_date,
+    console.log('Usuário atualizado:', updatedUser.toJSON());
+
+    // Retorna os dados atualizados
+    return res.json({
+      id: updatedUser.id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      telegram_verified: updatedUser.telegram_verified,
+      financial_goal_name: updatedUser.financial_goal_name,
+      financial_goal_amount: updatedUser.financial_goal_amount,
+      financial_goal_start_date: updatedUser.financial_goal_start_date,
+      financial_goal_end_date: updatedUser.financial_goal_end_date,
       message: 'Perfil atualizado com sucesso!'
     });
   } catch (error) {
-    console.error('Erro ao atualizar usuário:', error);
-    res.status(500).json({ message: 'Erro ao atualizar usuário' });
+    console.error('Erro detalhado ao atualizar usuário:', error);
+    return res.status(500).json({ 
+      message: 'Erro ao atualizar usuário',
+      error: error.message 
+    });
   }
 });
 

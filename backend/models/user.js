@@ -50,7 +50,19 @@ export default (sequelize) => {
         return value === null ? 0 : Number(value);
       }
     },
-    financial_goal_date: {
+    financial_goal_period_type: {
+      type: DataTypes.ENUM('days', 'months', 'years'),
+      allowNull: true
+    },
+    financial_goal_period_value: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
+    financial_goal_start_date: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
+    financial_goal_end_date: {
       type: DataTypes.DATE,
       allowNull: true
     },

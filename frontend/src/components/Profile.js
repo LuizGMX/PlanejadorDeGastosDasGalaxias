@@ -11,11 +11,12 @@ const Profile = () => {
 
   // Estados do perfil
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    financialGoalName: '',
-    financialGoalAmount: '',
-    financialGoalDate: ''
+    name: auth.user?.name || '',
+    email: auth.user?.email || '',
+    financialGoalName: auth.user?.financial_goal_name || '',
+    financialGoalAmount: auth.user?.financial_goal_amount?.toString() || '',
+    financialGoalPeriodType: auth.user?.financial_goal_period_type || 'years',
+    financialGoalPeriodValue: auth.user?.financial_goal_period_value || ''
   });
 
   // Estados dos bancos
@@ -46,18 +47,13 @@ const Profile = () => {
   // Efeitos
   useEffect(() => {
     if (auth.user) {
-      const formatDate = (dateString) => {
-        if (!dateString) return '';
-        const date = new Date(dateString);
-        return date.toISOString().split('T')[0];
-      };
-
       setFormData({
         name: auth.user.name || '',
         email: auth.user.email || '',
         financialGoalName: auth.user.financial_goal_name || '',
-        financialGoalAmount: auth.user.financial_goal_amount ? auth.user.financial_goal_amount.toString() : '',
-        financialGoalDate: formatDate(auth.user.financial_goal_date) || ''
+        financialGoalAmount: auth.user.financial_goal_amount?.toString() || '',
+        financialGoalPeriodType: auth.user.financial_goal_period_type || 'years',
+        financialGoalPeriodValue: auth.user.financial_goal_period_value || ''
       });
       setEmailChangeData(prev => ({
         ...prev,
@@ -132,13 +128,10 @@ const Profile = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = useCallback(async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setMessage('');
-
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/user/me`, {
+      const response = await fetch('http://localhost:5000/api/auth/me', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -149,27 +142,27 @@ const Profile = () => {
           email: formData.email,
           financial_goal_name: formData.financialGoalName,
           financial_goal_amount: formData.financialGoalAmount ? parseFloat(formData.financialGoalAmount.toString().replace(/\./g, '').replace(',', '.')) : null,
-          financial_goal_date: formData.financialGoalDate
+          financial_goal_period_type: formData.financialGoalPeriodType || null,
+          financial_goal_period_value: formData.financialGoalPeriodValue ? parseInt(formData.financialGoalPeriodValue) : null
         })
       });
 
-      const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.message || 'Erro ao atualizar perfil');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao atualizar perfil');
       }
 
+      const data = await response.json();
       setAuth(prev => ({
         ...prev,
         user: data
       }));
-
-      setMessage('Perfil atualizado com sucesso!');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch (err) {
-      setError(err.message);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setMessage({ type: 'success', text: 'Perfil atualizado com sucesso!' });
+    } catch (error) {
+      console.error('Erro ao atualizar perfil:', error);
+      setMessage({ type: 'error', text: error.message || 'Erro ao atualizar perfil' });
     }
-  }, [auth.token, formData, setAuth]);
+  };
 
   // Handlers de mudança de email
   const handleEmailChange = (e) => {
@@ -196,9 +189,15 @@ const Profile = () => {
           })
         });
 
-        const data = await response.json();
+        let data;
+        try {
+          data = await response.json();
+        } catch (jsonError) {
+          throw new Error('Erro ao processar resposta do servidor');
+        }
+
         if (!response.ok) {
-          throw new Error(data.message || 'Erro ao solicitar mudança de email');
+          throw new Error(data?.message || 'Muitas requisições. Por favor, aguarde alguns minutos antes de tentar novamente.');
         }
 
         setEmailChangeData(prev => ({ ...prev, step: 'verify' }));
@@ -229,9 +228,15 @@ const Profile = () => {
           })
         });
 
-        const data = await response.json();
+        let data;
+        try {
+          data = await response.json();
+        } catch (jsonError) {
+          throw new Error('Erro ao processar resposta do servidor');
+        }
+
         if (!response.ok) {
-          throw new Error(data.message || 'Erro ao verificar código');
+          throw new Error(data?.message || 'Erro ao verificar código. Por favor, tente novamente.');
         }
 
         setAuth(prev => ({
@@ -249,7 +254,8 @@ const Profile = () => {
         setMessage('Email atualizado com sucesso!');
       }
     } catch (err) {
-      setError(err.message);
+      console.error('Erro na mudança de email:', err);
+      setError(err.message || 'Erro ao processar sua solicitação. Por favor, tente novamente.');
     }
   }, [auth.token, emailChangeData, setAuth]);
 
@@ -608,7 +614,7 @@ const Profile = () => {
         </button>
       </div>
 
-      {message && <p className={styles.successMessage}>{message}</p>}
+      {message && <p className={styles.successMessage}>{message.text}</p>}
       {error && <p className={styles.errorMessage}>{error}</p>}
 
       <div className={styles.content}>
@@ -652,6 +658,7 @@ const Profile = () => {
               </div>
               <div className={styles.cardBody}>
                 <div className={styles.formGroup}>
+                  <p className={styles.fieldHelp}>Digite um nome que identifique seu objetivo (ex: Comprar um carro)</p>
                   <label htmlFor="financialGoalName">Nome da Meta</label>
                   <input
                     type="text"
@@ -665,6 +672,7 @@ const Profile = () => {
                 </div>
 
                 <div className={styles.formGroup}>
+                  <p className={styles.fieldHelp}>Valor total que você quer economizar</p>
                   <label htmlFor="financialGoalAmount">Valor da Meta</label>
                   <CurrencyInput
                     id="financialGoalAmount"
@@ -681,17 +689,55 @@ const Profile = () => {
                   />
                 </div>
 
-                <div className={styles.formGroup}>
-                  <label htmlFor="financialGoalDate">Data da Meta</label>
-                  <input
-                    type="date"
-                    id="financialGoalDate"
-                    name="financialGoalDate"
-                    value={formData.financialGoalDate}
-                    onChange={handleChange}
-                    className={styles.input}
-                  />
+                <div className={styles.periodContainer}>
+                  <div className={styles.formGroup}>
+                    <p className={styles.fieldHelp}>Digite o número de dias/meses/anos para atingir o objetivo</p>
+                    <label htmlFor="financialGoalPeriodValue">Quantidade</label>
+                    <div className={styles.inputWithIcon}>
+                      <input
+                        type="number"
+                        id="financialGoalPeriodValue"
+                        name="financialGoalPeriodValue"
+                        value={formData.financialGoalPeriodValue}
+                        onChange={handleChange}
+                        className={styles.input}
+                        min="1"
+                        placeholder="Ex: 2"
+                      />
+                      <span className="material-icons">schedule</span>
+                    </div>
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <p className={styles.fieldHelp}>Escolha se quer atingir em dias, meses ou anos</p>
+                    <label htmlFor="financialGoalPeriodType">Período</label>
+                    <div className={styles.inputWithIcon}>
+                      <select
+                        id="financialGoalPeriodType"
+                        name="financialGoalPeriodType"
+                        value={formData.financialGoalPeriodType || 'years'}
+                        onChange={handleChange}
+                        className={styles.input}
+                      >
+                        <option value="days">Dias</option>
+                        <option value="months">Meses</option>
+                        <option value="years" selected>Anos</option>
+                      </select>
+                      <span className="material-icons">schedule</span>
+                    </div>
+                  </div>
                 </div>
+
+                {auth.user?.financial_goal_start_date && auth.user?.financial_goal_end_date && (
+                  <div className={styles.goalDates}>
+                    <p>
+                      <strong>Início:</strong> {new Date(auth.user.financial_goal_start_date).toLocaleDateString('pt-BR')}
+                    </p>
+                    <p>
+                      <strong>Término:</strong> {new Date(auth.user.financial_goal_end_date).toLocaleDateString('pt-BR')}
+                    </p>
+                  </div>
+                )}
 
                 <button type="button" onClick={handleSubmit} className={styles.submitButton}>
                   Salvar Meta

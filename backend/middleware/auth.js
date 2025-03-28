@@ -25,11 +25,13 @@ export const authenticate = async (req, res, next) => {
         'email', 
         'created_at', 
         'updated_at', 
-        'financial_goal_name', 
-        'financial_goal_amount', 
-        'financial_goal_date',
+        'financial_goal_name',
+        'financial_goal_amount',
+        'financial_goal_start_date',
+        'financial_goal_end_date',
         'telegram_verified'
-      ]
+      ],
+      where: { id: decoded.userId }
     });
 
     console.log('Usuário encontrado:', user ? 'Sim' : 'Não');
@@ -39,17 +41,15 @@ export const authenticate = async (req, res, next) => {
       return res.status(401).json({ message: 'Usuário não encontrado' });
     }
 
-    // Garante que todos os atributos necessários estão presentes
     req.user = {
       id: user.id,
       name: user.name,
       email: user.email,
-      created_at: user.created_at,
-      updated_at: user.updated_at,
+      telegram_verified: user.telegram_verified,
       financial_goal_name: user.financial_goal_name,
       financial_goal_amount: user.financial_goal_amount,
-      financial_goal_date: user.financial_goal_date,
-      telegram_verified: user.telegram_verified
+      financial_goal_start_date: user.financial_goal_start_date,
+      financial_goal_end_date: user.financial_goal_end_date
     };
     
     console.log('Autenticação concluída com sucesso');
