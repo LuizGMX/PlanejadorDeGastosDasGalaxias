@@ -357,7 +357,11 @@ router.get('/me', authenticate, async (req, res) => {
 
 router.put('/me', authenticate, async (req, res) => {
   try {
-    console.log('Dados recebidos na atualização:', req.body);
+    console.log('=================================');
+    console.log('=== ATUALIZAÇÃO DE PERFIL ===');
+    console.log('Dados recebidos:', req.body);
+    console.log('=================================');
+
     const {
       name,
       email,
@@ -367,7 +371,9 @@ router.put('/me', authenticate, async (req, res) => {
       financial_goal_period_value
     } = req.body;
 
+    // Validação dos campos obrigatórios
     if (!name) {
+      console.log('Erro: Nome é obrigatório');
       return res.status(400).json({ message: 'Nome é obrigatório' });
     }
 
@@ -380,21 +386,28 @@ router.put('/me', authenticate, async (req, res) => {
       
       const periodValue = parseInt(financial_goal_period_value);
       if (isNaN(periodValue)) {
+        console.log('Erro: Período inválido');
         return res.status(400).json({ message: 'Período inválido' });
       }
 
-      switch (financial_goal_period_type) {
-        case 'days':
-          endDate.setDate(startDate.getDate() + periodValue);
-          break;
-        case 'months':
-          endDate.setMonth(startDate.getMonth() + periodValue);
-          break;
-        case 'years':
-          endDate.setFullYear(startDate.getFullYear() + periodValue);
-          break;
-        default:
-          return res.status(400).json({ message: 'Tipo de período inválido' });
+      try {
+        switch (financial_goal_period_type) {
+          case 'days':
+            endDate.setDate(startDate.getDate() + periodValue);
+            break;
+          case 'months':
+            endDate.setMonth(startDate.getMonth() + periodValue);
+            break;
+          case 'years':
+            endDate.setFullYear(startDate.getFullYear() + periodValue);
+            break;
+          default:
+            console.log('Erro: Tipo de período inválido');
+            return res.status(400).json({ message: 'Tipo de período inválido' });
+        }
+      } catch (dateError) {
+        console.error('Erro ao calcular datas:', dateError);
+        return res.status(400).json({ message: 'Erro ao calcular datas do objetivo' });
       }
     }
 
@@ -403,38 +416,59 @@ router.put('/me', authenticate, async (req, res) => {
     // Processa o valor do objetivo financeiro
     let processedAmount = null;
     if (financial_goal_amount) {
-      processedAmount = parseFloat(financial_goal_amount.toString().replace(/\./g, '').replace(',', '.'));
-      if (isNaN(processedAmount)) {
-        return res.status(400).json({ message: 'Valor do objetivo inválido' });
+      try {
+        processedAmount = parseFloat(financial_goal_amount.toString().replace(/\./g, '').replace(',', '.'));
+        if (isNaN(processedAmount)) {
+          console.log('Erro: Valor do objetivo inválido');
+          return res.status(400).json({ message: 'Valor do objetivo inválido' });
+        }
+      } catch (amountError) {
+        console.error('Erro ao processar valor:', amountError);
+        return res.status(400).json({ message: 'Erro ao processar valor do objetivo' });
       }
     }
 
     // Atualiza o usuário
-    const updatedUser = await req.user.update({
-      name,
-      email,
-      financial_goal_name: financial_goal_name || null,
-      financial_goal_amount: processedAmount,
-      financial_goal_start_date: startDate,
-      financial_goal_end_date: endDate
-    });
+    try {
+      const updatedUser = await req.user.update({
+        name,
+        email,
+        financial_goal_name: financial_goal_name || null,
+        financial_goal_amount: processedAmount,
+        financial_goal_start_date: startDate,
+        financial_goal_end_date: endDate
+      });
 
-    console.log('Usuário atualizado:', updatedUser.toJSON());
+      console.log('Usuário atualizado:', updatedUser.toJSON());
+      console.log('=================================');
 
-    // Retorna os dados atualizados
-    return res.json({
-      id: updatedUser.id,
-      name: updatedUser.name,
-      email: updatedUser.email,
-      telegram_verified: updatedUser.telegram_verified,
-      financial_goal_name: updatedUser.financial_goal_name,
-      financial_goal_amount: updatedUser.financial_goal_amount,
-      financial_goal_start_date: updatedUser.financial_goal_start_date,
-      financial_goal_end_date: updatedUser.financial_goal_end_date,
-      message: 'Perfil atualizado com sucesso!'
-    });
+      // Retorna os dados atualizados
+      return res.json({
+        id: updatedUser.id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        telegram_verified: updatedUser.telegram_verified,
+        financial_goal_name: updatedUser.financial_goal_name,
+        financial_goal_amount: updatedUser.financial_goal_amount,
+        financial_goal_start_date: updatedUser.financial_goal_start_date,
+        financial_goal_end_date: updatedUser.financial_goal_end_date,
+        message: 'Perfil atualizado com sucesso!'
+      });
+    } catch (updateError) {
+      console.error('Erro ao atualizar usuário:', updateError);
+      return res.status(500).json({ 
+        message: 'Erro ao atualizar usuário',
+        error: updateError.message 
+      });
+    }
   } catch (error) {
-    console.error('Erro detalhado ao atualizar usuário:', error);
+    console.error('=================================');
+    console.error('=== ERRO NA ATUALIZAÇÃO DE PERFIL ===');
+    console.error('Mensagem:', error.message);
+    console.error('Stack:', error.stack);
+    console.error('=================================');
+    
+    // Garante que sempre retorne JSON
     return res.status(500).json({ 
       message: 'Erro ao atualizar usuário',
       error: error.message 
@@ -449,21 +483,28 @@ router.post('/change-email/request', authenticate, async (req, res) => {
     const user = req.user;
 
     console.log('=================================');
-    console.log('Solicitação de mudança de email');
-    console.log('Email atual:', current_email);
-    console.log('Novo email:', new_email);
-    console.log('Usuário:', user.id);
+    console.log('=== SOLICITAÇÃO DE MUDANÇA DE EMAIL ===');
+    console.log('Data/Hora:', new Date().toISOString());
+    console.log('ID do Usuário:', user.id);
+    console.log('Nome do Usuário:', user.name);
+    console.log('Email Atual:', current_email);
+    console.log('Novo Email:', new_email);
+    console.log('=================================');
 
     // Verifica se o email atual está correto
     if (user.email !== current_email) {
-      console.log('Email atual incorreto');
+      console.log('ERRO: Email atual incorreto');
+      console.log('Email do usuário:', user.email);
+      console.log('Email fornecido:', current_email);
       return res.status(400).json({ message: 'Email atual incorreto' });
     }
 
     // Verifica se o novo email já está em uso
     const existingUser = await User.findOne({ where: { email: new_email } });
     if (existingUser) {
-      console.log('Email já em uso:', new_email);
+      console.log('ERRO: Email já em uso');
+      console.log('Email:', new_email);
+      console.log('ID do usuário que já usa:', existingUser.id);
       return res.status(400).json({ message: 'Este email já está em uso' });
     }
 
@@ -472,11 +513,14 @@ router.post('/change-email/request', authenticate, async (req, res) => {
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + 30); // Código expira em 30 minutos
 
-    console.log('Código gerado:', code);
-    console.log('Expira em:', expiresAt);
+    console.log('=================================');
+    console.log('=== CÓDIGO DE VERIFICAÇÃO GERADO ===');
+    console.log('Código:', code);
+    console.log('Expira em:', expiresAt.toISOString());
+    console.log('=================================');
 
     // Salva o código de verificação
-    await VerificationCode.create({
+    const savedCode = await VerificationCode.create({
       email: new_email,
       code,
       expires_at: expiresAt,
@@ -486,16 +530,29 @@ router.post('/change-email/request', authenticate, async (req, res) => {
       })
     });
 
-    console.log('Código salvo no banco de dados');
+    console.log('=================================');
+    console.log('=== CÓDIGO SALVO NO BANCO ===');
+    console.log('ID do código:', savedCode.id);
+    console.log('Email:', savedCode.email);
+    console.log('Data de expiração:', savedCode.expires_at);
+    console.log('=================================');
 
     // Envia o email com o código
     await sendVerificationEmail(new_email, user.name, code);
-    console.log('Email enviado com sucesso');
+    
+    console.log('=================================');
+    console.log('=== EMAIL ENVIADO COM SUCESSO ===');
+    console.log('Para:', new_email);
+    console.log('Nome:', user.name);
     console.log('=================================');
 
     res.json({ message: 'Código de verificação enviado para o novo email' });
   } catch (error) {
-    console.error('Erro ao solicitar mudança de email:', error);
+    console.error('=================================');
+    console.error('=== ERRO NA MUDANÇA DE EMAIL ===');
+    console.error('Mensagem:', error.message);
+    console.error('Stack:', error.stack);
+    console.error('=================================');
     res.status(500).json({ message: 'Erro ao processar solicitação' });
   }
 });
@@ -507,10 +564,14 @@ router.post('/change-email/verify', authenticate, async (req, res) => {
     const user = req.user;
 
     console.log('=================================');
-    console.log('Verificação de código para mudança de email');
-    console.log('Novo email:', new_email);
-    console.log('Código recebido:', code);
-    console.log('Usuário:', user.id);
+    console.log('=== VERIFICAÇÃO DE CÓDIGO DE EMAIL ===');
+    console.log('Data/Hora:', new Date().toISOString());
+    console.log('ID do Usuário:', user.id);
+    console.log('Nome do Usuário:', user.name);
+    console.log('Email Atual:', user.email);
+    console.log('Novo Email:', new_email);
+    console.log('Código Recebido:', code);
+    console.log('=================================');
 
     // Busca o código de verificação
     const verificationCode = await VerificationCode.findOne({
@@ -522,19 +583,38 @@ router.post('/change-email/verify', authenticate, async (req, res) => {
     });
 
     if (!verificationCode) {
-      console.log('Código inválido ou expirado');
+      console.log('=================================');
+      console.log('=== ERRO: CÓDIGO INVÁLIDO OU EXPIRADO ===');
+      console.log('Email:', new_email);
+      console.log('Código:', code);
+      console.log('Data Atual:', new Date().toISOString());
+      console.log('=================================');
       return res.status(400).json({ message: 'Código inválido ou expirado' });
     }
 
-    console.log('Código válido encontrado');
+    console.log('=================================');
+    console.log('=== CÓDIGO VÁLIDO ENCONTRADO ===');
+    console.log('ID do código:', verificationCode.id);
+    console.log('Email:', verificationCode.email);
+    console.log('Data de expiração:', verificationCode.expires_at);
+    console.log('=================================');
 
     // Atualiza o email do usuário
+    const oldEmail = user.email;
     await user.update({ email: new_email });
-    console.log('Email do usuário atualizado');
+    
+    console.log('=================================');
+    console.log('=== EMAIL DO USUÁRIO ATUALIZADO ===');
+    console.log('Email Antigo:', oldEmail);
+    console.log('Novo Email:', new_email);
+    console.log('=================================');
 
     // Remove o código de verificação
     await verificationCode.destroy();
-    console.log('Código de verificação removido');
+    
+    console.log('=================================');
+    console.log('=== CÓDIGO DE VERIFICAÇÃO REMOVIDO ===');
+    console.log('ID do código removido:', verificationCode.id);
     console.log('=================================');
 
     res.json({
@@ -551,7 +631,11 @@ router.post('/change-email/verify', authenticate, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Erro ao verificar código de mudança de email:', error);
+    console.error('=================================');
+    console.error('=== ERRO NA VERIFICAÇÃO DE CÓDIGO ===');
+    console.error('Mensagem:', error.message);
+    console.error('Stack:', error.stack);
+    console.error('=================================');
     res.status(500).json({ message: 'Erro ao processar solicitação' });
   }
 });
