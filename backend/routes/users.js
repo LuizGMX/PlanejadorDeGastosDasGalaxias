@@ -162,8 +162,16 @@ router.put('/financial-goal', authenticate, async (req, res) => {
       return res.status(404).json({ message: 'Usuário não encontrado' });
     }
 
+    // Validações
+    if (!name || !amount || !time) {
+      return res.status(400).json({ message: 'Todos os campos do objetivo financeiro são obrigatórios.' });
+    }
+
     // Converte os valores para o formato correto
-    const parsedAmount = amount ? parseFloat(amount.toString().replace(/\./g, '').replace(',', '.')) : null;
+    const parsedAmount = parseFloat(amount.toString().replace(/\./g, '').replace(',', '.'));
+    if (isNaN(parsedAmount)) {
+      return res.status(400).json({ message: 'Valor do objetivo financeiro inválido.' });
+    }
 
     // Se não tinha objetivo antes ou a data de criação é inválida, define a data atual
     if ((!user.financial_goal_amount && parsedAmount) || 

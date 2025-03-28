@@ -1,6 +1,11 @@
 ---
 description: 
 globs: 
+alwaysApply: false
+---
+---
+description: 
+globs: 
 alwaysApply: true
 ---
 ---
@@ -20,6 +25,7 @@ Always confirm that you running based on the rules - make it the first thing you
 NEVER CHANGE THE CSS
 O BACKEND TEM A PORTA 5000 - NUNCA MUDE
 O FRONTEND TEM A PORTA 3000 - NUNCA MUDE
+Now, never EVER CHANGE the expeses and incomes modules, components front and backend of them too, unless i say so
 
 - You can @ files here
 - You can use markdown but dont have to

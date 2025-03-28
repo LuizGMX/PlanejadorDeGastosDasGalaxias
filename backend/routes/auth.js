@@ -442,4 +442,118 @@ router.put('/me', authenticate, async (req, res) => {
   }
 });
 
+// Rota para solicitar mudança de email
+router.post('/change-email/request', authenticate, async (req, res) => {
+  try {
+    const { current_email, new_email } = req.body;
+    const user = req.user;
+
+    console.log('=================================');
+    console.log('Solicitação de mudança de email');
+    console.log('Email atual:', current_email);
+    console.log('Novo email:', new_email);
+    console.log('Usuário:', user.id);
+
+    // Verifica se o email atual está correto
+    if (user.email !== current_email) {
+      console.log('Email atual incorreto');
+      return res.status(400).json({ message: 'Email atual incorreto' });
+    }
+
+    // Verifica se o novo email já está em uso
+    const existingUser = await User.findOne({ where: { email: new_email } });
+    if (existingUser) {
+      console.log('Email já em uso:', new_email);
+      return res.status(400).json({ message: 'Este email já está em uso' });
+    }
+
+    // Gera um código de verificação
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 30); // Código expira em 30 minutos
+
+    console.log('Código gerado:', code);
+    console.log('Expira em:', expiresAt);
+
+    // Salva o código de verificação
+    await VerificationCode.create({
+      email: new_email,
+      code,
+      expires_at: expiresAt,
+      user_data: JSON.stringify({
+        current_email,
+        new_email
+      })
+    });
+
+    console.log('Código salvo no banco de dados');
+
+    // Envia o email com o código
+    await sendVerificationEmail(new_email, user.name, code);
+    console.log('Email enviado com sucesso');
+    console.log('=================================');
+
+    res.json({ message: 'Código de verificação enviado para o novo email' });
+  } catch (error) {
+    console.error('Erro ao solicitar mudança de email:', error);
+    res.status(500).json({ message: 'Erro ao processar solicitação' });
+  }
+});
+
+// Rota para verificar o código e mudar o email
+router.post('/change-email/verify', authenticate, async (req, res) => {
+  try {
+    const { new_email, code } = req.body;
+    const user = req.user;
+
+    console.log('=================================');
+    console.log('Verificação de código para mudança de email');
+    console.log('Novo email:', new_email);
+    console.log('Código recebido:', code);
+    console.log('Usuário:', user.id);
+
+    // Busca o código de verificação
+    const verificationCode = await VerificationCode.findOne({
+      where: {
+        email: new_email,
+        code,
+        expires_at: { [Op.gt]: new Date() }
+      }
+    });
+
+    if (!verificationCode) {
+      console.log('Código inválido ou expirado');
+      return res.status(400).json({ message: 'Código inválido ou expirado' });
+    }
+
+    console.log('Código válido encontrado');
+
+    // Atualiza o email do usuário
+    await user.update({ email: new_email });
+    console.log('Email do usuário atualizado');
+
+    // Remove o código de verificação
+    await verificationCode.destroy();
+    console.log('Código de verificação removido');
+    console.log('=================================');
+
+    res.json({
+      message: 'Email atualizado com sucesso',
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        telegram_verified: user.telegram_verified,
+        financial_goal_name: user.financial_goal_name,
+        financial_goal_amount: user.financial_goal_amount,
+        financial_goal_start_date: user.financial_goal_start_date,
+        financial_goal_end_date: user.financial_goal_end_date
+      }
+    });
+  } catch (error) {
+    console.error('Erro ao verificar código de mudança de email:', error);
+    res.status(500).json({ message: 'Erro ao processar solicitação' });
+  }
+});
+
 export default router;
