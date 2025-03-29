@@ -3,10 +3,12 @@
   align-items: center;
   justify-content: space-between;
   gap: 64px;
-  max-width: 1200px;
+  max-width: 1400px;
+  width: 100%;
   margin: 0 auto;
   padding: 32px;
   min-height: 100vh;
+  box-sizing: border-box;
 }
 
 .loginIllustration {
@@ -27,7 +29,8 @@
 
 .formContainer {
   flex: 1;
-  max-width: 480px;
+  max-width: 600px;
+  width: 100%;
 }
 
 .loginCard {
@@ -39,6 +42,8 @@
   padding: 48px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   animation: slideIn 0.6s ease-out;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .loginHeader {
@@ -197,6 +202,7 @@
     flex-direction: column;
     gap: 32px;
     padding: 16px;
+    max-width: 100%;
   }
 
   .loginIllustration {
@@ -209,6 +215,7 @@
 
   .formContainer {
     width: 100%;
+    max-width: 100%;
   }
 
   .loginCard {
@@ -226,15 +233,19 @@
 
 .banksContainer {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 2rem;
   margin-top: 1rem;
   max-height: 60vh;
   overflow-y: auto;
   padding-right: 1rem;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .banksList {
+  flex: 1;
   background: rgba(26, 27, 35, 0.8);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -243,6 +254,11 @@
   padding: 1.5rem;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   transition: all 0.3s ease;
+  min-width: 0;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .selectedBanksList {
@@ -270,6 +286,8 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
+  flex: 1;
 }
 
 .usageCount {
@@ -290,6 +308,9 @@
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .bankCard:hover {
@@ -340,6 +361,10 @@
 .bankName {
   font-size: 1rem;
   color: var(--text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .emptyMessage {
@@ -729,4 +754,585 @@
   background-repeat: no-repeat;
   background-position: right 16px center;
   padding-right: 48px;
+}
+
+@media (max-width: 768px) {
+  .banksContainer {
+    flex-direction: column;
+  }
+  
+  .banksList {
+    min-width: 100%;
+  }
+}
+
+.banksGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.bankCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background: rgba(42, 43, 51, 0.8);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.bankInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.bankName {
+  font-size: 1rem;
+  color: var(--text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.banksContainer {
+  display: flex;
+  flex-direction: row;
+  gap: 2rem;
+  margin-top: 1rem;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-right: 1rem;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.banksList {
+  flex: 1;
+  background: rgba(26, 27, 35, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  min-width: 0;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.selectedBanksList {
+  border: 1px solid var(--primary-color);
+  background: rgba(26, 27, 35, 0.9);
+}
+
+.selectedBanksHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.selectedCount {
+  font-size: 0.9rem;
+  color: var(--primary-color);
+  background: var(--primary-color-light);
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.usageCount {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 8px;
+  border-radius: 8px;
+}
+
+.bankCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background: rgba(42, 43, 51, 0.8);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.bankCard:hover {
+  transform: translateY(-2px);
+  background: rgba(42, 43, 51, 0.9);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  border-color: var(--primary-color);
+}
+
+.bankCard.selected {
+  background: var(--primary-color-light);
+  border-color: var(--primary-color);
+  animation: pulse 2s infinite;
+}
+
+.bankCard.selected:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 255, 133, 0.2);
+}
+
+.bankCard.selected .bankName {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.bankCard .material-icons {
+  color: var(--primary-color);
+  font-size: 1.2rem;
+  transition: all 0.3s ease;
+}
+
+.bankCard:hover .material-icons {
+  transform: scale(1.2);
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(0, 255, 133, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(0, 255, 133, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 255, 133, 0);
+  }
+}
+
+.bankName {
+  font-size: 1rem;
+  color: var(--text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.emptyMessage {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 1rem;
+  background: var(--background-color);
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+/* Estilização da scrollbar para a lista de bancos */
+.banksContainer::-webkit-scrollbar {
+  width: 8px;
+}
+
+.banksContainer::-webkit-scrollbar-track {
+  background: var(--background-color);
+  border-radius: 4px;
+}
+
+.banksContainer::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+.banksContainer::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+.searchContainer {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 12px 40px 12px 16px;
+  background: var(--background-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 1rem;
+  color: var(--text-color);
+  transition: all 0.2s ease;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px var(--primary-color-light);
+}
+
+.searchContainer .material-icons {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  font-size: 1.2rem;
+}
+
+.searchInput:focus + .material-icons {
+  color: var(--primary-color);
+}
+
+.telegramInfo {
+  background: rgba(26, 27, 35, 0.8);
+  padding: 24px;
+  border-radius: 12px;
+  margin: 24px 0;
+  border: 1px solid var(--border-color);
+}
+
+.telegramInfo h3 {
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  font-size: 18px;
+}
+
+.telegramInfo ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.telegramInfo li {
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.telegramInfo li:last-child {
+  margin-bottom: 0;
+}
+
+.verificationSteps {
+  background: rgba(26, 27, 35, 0.8);
+  padding: 24px;
+  border-radius: 12px;
+  margin: 24px 0;
+  border: 1px solid var(--border-color);
+}
+
+.stepsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.step {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+  background: rgba(42, 43, 51, 0.8);
+  border-radius: 8px;
+}
+
+.stepNumber {
+  width: 24px;
+  height: 24px;
+  background: var(--primary-color);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.stepContent h4 {
+  color: var(--text-primary);
+  margin: 0 0 4px 0;
+  font-size: 16px;
+}
+
+.stepContent p {
+  color: var(--text-secondary);
+  margin: 0;
+  font-size: 14px;
+}
+
+.buttonGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 32px;
+}
+
+.telegramButton {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.3s;
+  background: #0088cc;
+  color: white;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.telegramButton:hover {
+  background: #006699;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 136, 204, 0.2);
+}
+
+.telegramButton:active {
+  transform: translateY(0);
+}
+
+.skipButton {
+  width: 100%;
+  padding: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.3s;
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.skipButton:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  border-color: var(--text-primary);
+  transform: translateY(-2px);
+}
+
+.skipButton:active {
+  transform: translateY(0);
+}
+
+.hint {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.verificationTitle {
+  font-size: 1.2em;
+  color: #333;
+  margin-bottom: 15px;
+  font-weight: 600;
+}
+
+.stepsList {
+  padding-left: 20px;
+}
+
+.stepsList li {
+  margin-bottom: 10px;
+  color: #555;
+  line-height: 1.4;
+}
+
+.telegramIconContainer {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.telegramIcon {
+  font-size: 4rem;
+  animation: bounce 2s infinite;
+}
+
+.featureIcon {
+  margin-right: 0.5rem;
+  font-size: 1.2rem;
+}
+
+.telegramInfo ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.telegramInfo li {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background: var(--background-secondary);
+  border-radius: 8px;
+  transition: transform 0.2s;
+}
+
+.telegramInfo li:hover {
+  transform: translateX(5px);
+}
+
+.stepsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+.step {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--background-secondary);
+  border-radius: 8px;
+  transition: transform 0.2s;
+}
+
+.step:hover {
+  transform: translateX(5px);
+}
+
+.stepNumber {
+  width: 32px;
+  height: 32px;
+  background: var(--primary);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.stepContent {
+  flex: 1;
+}
+
+.stepContent h4 {
+  margin: 0 0 0.5rem 0;
+  color: var(--text-primary);
+}
+
+.stepContent p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.periodContainer {
+  display: flex;
+  gap: 1rem;
+  width: 100%;
+  align-items: flex-end;
+}
+
+.periodContainer .inputWrapper {
+  flex: 1;
+  margin-bottom: 0;
+  position: relative;
+}
+
+.periodContainer .fieldHelp {
+  margin-bottom: 0.5rem;
+}
+
+.periodContainer .inputWithIcon {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.periodContainer .inputWithIcon .material-icons {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  font-size: 20px;
+  pointer-events: none;
+  z-index: 1;
+  line-height: 1;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.periodContainer .loginInput {
+  width: 100%;
+  height: 56px;
+  padding: 0 16px 0 48px;
+  background-color: rgba(42, 43, 51, 0.8);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  font-size: 16px;
+  color: var(--text-color);
+  transition: all 0.2s;
+}
+
+.periodContainer select.loginInput {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%238B8D97' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  padding-right: 48px;
+}
+
+@media (max-width: 768px) {
+  .banksContainer {
+    flex-direction: column;
+  }
+  
+  .banksList {
+    min-width: 100%;
+  }
 } 

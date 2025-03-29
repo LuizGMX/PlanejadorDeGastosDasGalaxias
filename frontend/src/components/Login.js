@@ -67,6 +67,7 @@ const Login = () => {
   };
 
   const filteredBanks = banks.filter(bank => 
+    !formData.selectedBanks.includes(bank.id) && 
     bank.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -425,31 +426,29 @@ const Login = () => {
               <div className={styles.banksList}>
                 <h3>Bancos Disponíveis</h3>
                 <p className={styles.banksDescription}>
-                  Selecione os bancos que você utiliza para facilitar o registro de receitas e despesas. Você poderá alterar isso posteriormente.
+                  Selecione os bancos que você utiliza para facilitar o registro de receitas e despesas.
                 </p>
                 <div className={styles.banksGrid}>
-                  {filteredBanks
-                    .filter(bank => !formData.selectedBanks.includes(bank.id))
-                    .map(bank => (
-                      <div
-                        key={bank.id}
-                        className={styles.bankCard}
-                        onClick={() => handleBankSelection(bank.id)}
-                      >
-                        <div className={styles.bankInfo}>
-                          <span className={styles.bankName}>{bank.name}</span>
-                        </div>
-                        <span className="material-icons">add_circle_outline</span>
+                  {filteredBanks.map(bank => (
+                    <div
+                      key={bank.id}
+                      className={styles.bankCard}
+                      onClick={() => handleBankSelection(bank.id)}
+                    >
+                      <div className={styles.bankInfo}>
+                        <span className={styles.bankName}>{bank.name}</span>
                       </div>
-                    ))}
-                  {filteredBanks.length === 0 && (
+                      <span className="material-icons">add_circle_outline</span>
+                    </div>
+                  ))}
+                  {banks.filter(bank => !formData.selectedBanks.includes(bank.id)).length === 0 && (
                     <p className={styles.emptyMessage}>
-                      Nenhum banco encontrado com este nome
+                      Nenhum banco disponível
                     </p>
                   )}
-                  {filteredBanks.length > 0 && filteredBanks.length === formData.selectedBanks.length && (
+                  {filteredBanks.length === 0 && searchTerm !== '' && (
                     <p className={styles.emptyMessage}>
-                      Todos os bancos já estão selecionados
+                      Nenhum banco encontrado com este nome
                     </p>
                   )}
                 </div>
@@ -466,7 +465,7 @@ const Login = () => {
                   Estes bancos aparecerão ao registrar suas movimentações financeiras
                 </p>
                 <div className={styles.banksGrid}>
-                  {filteredBanks
+                  {banks
                     .filter(bank => formData.selectedBanks.includes(bank.id))
                     .map(bank => (
                       <div
@@ -567,6 +566,7 @@ const Login = () => {
                     required
                     disabled={loading}
                   >
+                  <option value="">Selecione</option>
                     <option value="days">Dias</option>
                     <option value="months">Meses</option>
                     <option value="years" selected>Anos</option>
