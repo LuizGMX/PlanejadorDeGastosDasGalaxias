@@ -315,19 +315,7 @@ const Profile = () => {
       setTelegramLoading(false);
     }
   }, [telegramLoading, auth.token, verificationCode, remainingTime]);
-
-  const logout = useCallback(() => {
-    setAuth({ token: null, user: null });
-    localStorage.removeItem('token');
-    navigate('/login');
-  }, [navigate, setAuth]);
-
-  const getRemainingTime = useCallback(() => {
-    const minutes = Math.floor(remainingTime / 60);
-    const seconds = remainingTime % 60;
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  }, [remainingTime]);
-
+  
   // Refresh user data from the server
   const refreshUserData = useCallback(async () => {
     try {
@@ -356,6 +344,52 @@ const Profile = () => {
       setError('Falha ao verificar status do Telegram. Tente novamente.');
     }
   }, [auth, setAuth]);
+
+  const disconnectTelegram = useCallback(async () => {
+    if (telegramLoading) return;
+    
+    try {
+      setTelegramLoading(true);
+      setTelegramError('');
+      
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/telegram/disconnect`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${auth.token}`
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Erro ao desconectar Telegram');
+      }
+      
+      // Atualiza o usuário com os dados atualizados
+      await refreshUserData();
+      
+      // Exibe mensagem de sucesso
+      setMessage({ type: 'success', text: 'Telegram desconectado com sucesso!' });
+    } catch (err) {
+      setTelegramError(err.message || 'Erro ao desconectar Telegram');
+      setTimeout(() => setTelegramError(''), 3000);
+    } finally {
+      setTelegramLoading(false);
+    }
+  }, [telegramLoading, auth.token, refreshUserData]);
+
+  const logout = useCallback(() => {
+    setAuth({ token: null, user: null });
+    localStorage.removeItem('token');
+    navigate('/login');
+  }, [navigate, setAuth]);
+
+  const getRemainingTime = useCallback(() => {
+    const minutes = Math.floor(remainingTime / 60);
+    const seconds = remainingTime % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  }, [remainingTime]);
 
   return (
     <div className={styles.mainContainer}>
@@ -404,6 +438,7 @@ const Profile = () => {
               telegramError={telegramError}
               telegramLoading={telegramLoading}
               requestTelegramCode={requestTelegramCode}
+              disconnectTelegram={disconnectTelegram}
               getRemainingTime={getRemainingTime}
               refreshUserData={refreshUserData}
             />

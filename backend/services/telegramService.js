@@ -1,5 +1,5 @@
 import { Telegraf } from 'telegraf';
-import { User, Expense, Income, Category, SubCategory, Bank, Budget, VerificationCode } from '../models/index.js';
+import { User, Expense, Income, Category, SubCategory, Bank, Budget, VerificationCode, UserBank } from '../models/index.js';
 import { Op } from 'sequelize';
 import { sendVerificationEmail } from './emailService.js';
 import crypto from 'crypto';
@@ -137,6 +137,7 @@ export class TelegramService {
     this.bot.command('receita', (ctx) => this.handleIncome(ctx));
     this.bot.command('resumo', (ctx) => this.handleSummary(ctx));
     this.bot.command('help', (ctx) => this.handleHelp(ctx));
+    this.bot.command('bancos', (ctx) => this.handleBancos(ctx));
 
     // Registra o handler geral de mensagens
     this.bot.on('message', async (ctx) => {
@@ -499,20 +500,18 @@ ${balance >= 0
   }
 
   async handleHelp(ctx) {
-    const helpMessage = `
-🚀 Comandos Disponíveis:
-
-/start - Iniciar o bot
-/verificar - Vincular sua conta usando o código recebido por email
-/despesa - Registrar uma despesa
-/receita - Registrar uma receita
-/resumo - Ver resumo financeiro
-/help - Ver esta mensagem de ajuda
-
-Para mais informações, acesse o site do Planejador de Gastos das Galáxias.
-`;
-
-    ctx.reply(helpMessage);
+    try {
+      ctx.reply(
+        'Comandos disponíveis:\n\n' +
+        '/start - Iniciar o bot\n' +
+        '/verificar - Verificar sua conta\n' +
+        '/bancos - Listar seus bancos cadastrados\n' +
+        '/help - Mostrar esta ajuda'
+      );
+    } catch (error) {
+      console.error('Erro ao processar comando de ajuda:', error);
+      ctx.reply('Ops! Ocorreu um erro ao processar o comando. Tente novamente mais tarde.');
+    }
   }
 
   async handleExpenseAmount(ctx, user, userState) {
@@ -943,6 +942,68 @@ Digite SIM para confirmar ou NÃO para cancelar.
     }
 
     await this.clearUserState(ctx.chat.id);
+  }
+
+  async handleBancos(ctx) {
+    try {
+      const chatId = ctx.chat.id;
+      
+      // Busca o usuário pelo chat ID
+      const user = await User.findOne({
+        where: { 
+          telegram_chat_id: chatId,
+          telegram_verified: true
+        }
+      });
+      
+      if (!user) {
+        ctx.reply(
+          'Você precisa verificar sua conta antes de usar este comando.\n' +
+          'Use /verificar para conectar sua conta.'
+        );
+        return;
+      }
+      
+      // Busca os bancos associados ao usuário através da relação UserBank
+      const userBanks = await UserBank.findAll({
+        where: { user_id: user.id },
+        include: [{
+          model: Bank,
+          required: true
+        }]
+      });
+      
+      if (!userBanks || userBanks.length === 0) {
+        ctx.reply(
+          'Você não tem bancos cadastrados.\n' +
+          'Acesse o site para adicionar bancos à sua conta.'
+        );
+        return;
+      }
+      
+      // Formata a mensagem com os bancos
+      let message = '🏦 *Seus Bancos Cadastrados*\n\n';
+      
+      userBanks.forEach((userBank, index) => {
+        message += `${index + 1}. *${userBank.Bank.name}* (${userBank.Bank.code})`;
+        if (userBank.account_number) {
+          message += ` - Conta: ${userBank.account_number}`;
+        }
+        if (userBank.agency) {
+          message += ` - Agência: ${userBank.agency}`;
+        }
+        message += '\n';
+      });
+      
+      message += '\nPara adicionar ou remover bancos, acesse o site.';
+      
+      // Envia a mensagem formatada
+      ctx.replyWithMarkdown(message);
+      
+    } catch (error) {
+      console.error('Erro ao processar comando de bancos:', error);
+      ctx.reply('Ops! Ocorreu um erro ao listar seus bancos. Tente novamente mais tarde.');
+    }
   }
 }
 

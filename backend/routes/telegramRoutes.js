@@ -87,4 +87,38 @@ router.post('/init-verification', authenticate, async (req, res) => {
   }
 });
 
+// Rota para desconectar o Telegram
+router.post('/disconnect', authenticate, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    console.log('Desconectando Telegram para usuário:', userId);
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuário não encontrado'
+      });
+    }
+
+    // Limpa os dados do Telegram do usuário
+    await user.update({
+      telegram_chat_id: null,
+      telegram_username: null,
+      telegram_verified: false
+    });
+
+    res.json({
+      success: true,
+      message: 'Telegram desconectado com sucesso!'
+    });
+  } catch (error) {
+    console.error('Erro ao desconectar Telegram:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao desconectar o Telegram'
+    });
+  }
+});
+
 export default router; 

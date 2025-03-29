@@ -1,6 +1,6 @@
 import React from 'react';
 import styles from '../../styles/shared.module.css';
-import { BsTelegram, BsCheckCircle, BsArrowRepeat, BsKey, BsX, BsChat, BsAlarm, BsGraphUp } from 'react-icons/bs';
+import { BsTelegram, BsCheckCircle, BsArrowRepeat, BsKey, BsX } from 'react-icons/bs';
 
 const TelegramVerification = ({ 
   user, 
@@ -16,19 +16,17 @@ const TelegramVerification = ({
   return (
     <div className={styles.dashboardCard}>
       <div className={styles.dashboardTitle}>
-        <h2><BsTelegram /> Integração Telegram</h2>
+        <h2><BsTelegram /> Telegram</h2>
       </div>
       <div className={styles.cardBody}>
         <div className={styles.communicationSection}>
-          <h3>Adicione gastos rapidamente via Telegram</h3>
+          <h3>Usar Telegram para adicionar gastos rapidamente</h3>
           <div className={styles.telegramSection}>
             <div className={styles.telegramHeader}>
               <div className={styles.telegramStatus}>
                 <span>Status:</span>
                 <span className={user?.telegram_verified ? styles.statusVerified : styles.statusUnverified}>
-                  {user?.telegram_verified ? 
-                    <><BsCheckCircle /> Verificado</> : 
-                    <><BsX /> Não verificado</>}
+                  {user?.telegram_verified ? 'Verificado ✓' : 'Não verificado'}
                 </span>
               </div>
             </div>
@@ -100,7 +98,7 @@ const TelegramVerification = ({
                   <div className={styles.verificationCode}>
                     <span className={styles.code}>{verificationCode}</span>
                     {remainingTime > 0 && (
-                      <span className={styles.codeTimer}><BsAlarm /> Expira em {getRemainingTime()}</span>
+                      <span className={styles.codeTimer}><BsArrowRepeat /> Expira em {getRemainingTime()}</span>
                     )}
                   </div>
                 )}
@@ -108,11 +106,11 @@ const TelegramVerification = ({
             )}
             {user?.telegram_verified && (
               <div className={styles.telegramConnected}>
-                <p><BsCheckCircle /> Seu Telegram está conectado e pronto para uso!</p>
+                <p>Seu Telegram está conectado! Agora você pode:</p>
                 <ul className={styles.telegramFeatures}>
-                  <li><BsChat /> Registrar despesas pelo bot</li>
-                  <li><BsAlarm /> Receber lembretes de pagamentos</li>
-                  <li><BsGraphUp /> Consultar seu orçamento a qualquer momento</li>
+                  <li>Registrar despesas pelo bot</li>
+                  <li>Receber lembretes de pagamentos</li>
+                  <li>Consultar seu orçamento a qualquer momento</li>
                 </ul>
                 <div className={styles.telegramButtonGroup}>
                   <button
@@ -139,15 +137,15 @@ const TelegramVerification = ({
                 {telegramError && <p className={styles.telegramError}>{telegramError}</p>}
                 {verificationCode && (
                   <div className={styles.verificationCode}>
-                    <p className={styles.reconnectInstructions}><BsArrowRepeat /> Para reconectar, siga os passos:</p>
+                    <p className={styles.reconnectInstructions}>Para reconectar, siga os passos:</p>
                     <ol className={styles.reconnectSteps}>
-                      <li>Acesse <a href="https://t.me/PlanejadorDasGalaxiasBot" target="_blank" rel="noopener noreferrer" className={styles.botLink}>@PlanejadorDasGalaxiasBot</a></li>
+                      <li>Acesse <a href="https://t.me/PlanejadorDasGalaxiasBot" target="_blank" rel="noopener noreferrer">@PlanejadorDasGalaxiasBot</a></li>
                       <li>Envie /start para o bot</li>
                       <li>Envie /verificar para o bot</li>
                       <li>Quando solicitado, envie este código: <span className={styles.code}>{verificationCode}</span></li>
                     </ol>
                     {remainingTime > 0 && (
-                      <span className={styles.codeTimer}><BsAlarm /> Expira em {getRemainingTime()}</span>
+                      <span className={styles.codeTimer}><BsArrowRepeat /> Expira em {getRemainingTime()}</span>
                     )}
                   </div>
                 )}

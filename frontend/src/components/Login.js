@@ -324,12 +324,39 @@ const Login = () => {
       if (data.success) {
         setBotLink(data.botLink);
         setTelegramStep('link');
+        setCode(data.code);
       } else {
         setError(data.message);
       }
     } catch (err) {
       console.error('Erro ao vincular Telegram:', err);
       setError(err.message);
+    }
+  };
+
+  const requestTelegramCode = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/telegram/init-verification`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setCode(data.code);
+        setSuccess('Código gerado com sucesso!');
+      } else {
+        setError(data.message || 'Erro ao gerar código');
+      }
+    } catch (err) {
+      console.error('Erro ao gerar código de verificação:', err);
+      setError(err.message || 'Erro ao gerar código');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -732,7 +759,33 @@ const Login = () => {
                   <div className={styles.stepNumber}>4</div>
                   <div className={styles.stepContent}>
                     <h4>Copie este código</h4>
-                    <p className={styles.verificationCodeDisplay}>{code}</p>
+                    <div className={styles.verificationCodeWrapper}>
+                      <p className={styles.verificationCodeDisplay}>
+                        {code || (
+                          <button
+                            type="button"
+                            onClick={requestTelegramCode} 
+                            className={styles.generateCodeButton}
+                            disabled={loading}
+                          >
+                            {loading ? 'Gerando...' : 'Gerar Código de Verificação'}
+                          </button>
+                        )}
+                      </p>
+                      {code && (
+                        <button
+                          type="button" 
+                          onClick={() => {
+                            navigator.clipboard.writeText(code);
+                            setSuccess('Código copiado!');
+                            setTimeout(() => setSuccess(''), 2000);
+                          }}
+                          className={styles.copyCodeButton}
+                        >
+                          Copiar
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div className={styles.step}>
@@ -997,6 +1050,13 @@ const Login = () => {
       }
     };
   }, [telegramStep, auth.user?.id, navigate]);
+
+  // Gerar código de verificação quando entrar na tela de telegram-steps
+  useEffect(() => {
+    if (step === 'telegram-steps' && !code && auth.token) {
+      requestTelegramCode();
+    }
+  }, [step, code, auth.token]);
 
   return (
     <div className={styles.loginContainer}>

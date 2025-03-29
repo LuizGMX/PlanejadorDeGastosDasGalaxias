@@ -1817,11 +1817,12 @@
 }
 
 .telegramConnected {
-  background-color: rgba(0, 255, 133, 0.05);
-  border-radius: 12px;
-  padding: 1.5rem;
-  border: 1px solid var(--primary-color);
-  animation: fadeIn 0.5s ease;
+  background-color: var(--card-background);
+  border-radius: 8px;
+  padding: 15px;
+  margin-top: 15px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-color);
 }
 
 .telegramConnected p {
@@ -1831,25 +1832,154 @@
 }
 
 .telegramFeatures {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+  margin: 15px 0;
+  padding-left: 25px;
 }
 
 .telegramFeatures li {
+  margin-bottom: 8px;
   position: relative;
-  padding-left: 1.5rem;
-  font-size: 0.95rem;
-  color: var(--text-secondary);
+  color: var(--text-color);
 }
 
 .telegramFeatures li::before {
   content: "✓";
   position: absolute;
-  left: 0;
+  left: -20px;
+  color: var(--primary-color);
+  font-weight: bold;
+}
+
+.reconnectInstructions {
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: var(--text-color);
+}
+
+.reconnectSteps {
+  background-color: var(--card-background);
+  border-radius: 5px;
+  padding: 12px 12px 12px 30px;
+  margin-bottom: 10px;
+  border-left: 3px solid #17a2b8;
+}
+
+.reconnectSteps li {
+  margin-bottom: 8px;
+  color: var(--text-color);
+}
+
+.verificationCode {
+  margin-top: 15px;
+  padding: 15px;
+  background-color: var(--card-background);
+  border-radius: 8px;
+  border-left: 4px solid var(--primary-color);
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.code {
+  font-family: monospace;
+  font-size: 1.8rem;
+  font-weight: bold;
+  letter-spacing: 2px;
+  color: var(--primary-color);
+  padding: 5px 10px;
+  background-color: var(--input-background);
+  border-radius: 4px;
+}
+
+.codeTimer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 0.9rem;
+  color: var(--text-color);
+  margin-top: 10px;
+}
+
+.telegramError {
+  color: var(--error-color);
+  background-color: rgba(255, 107, 107, 0.1);
+  padding: 10px;
+  border-radius: 5px;
+  margin-top: 10px;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.telegramStatus {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 500;
+}
+
+.statusVerified {
+  color: var(--success-color);
+  font-weight: 600;
+}
+
+.statusUnverified {
+  color: var(--error-color);
+  font-weight: normal;
+}
+
+.telegramInstructions {
+  margin: 15px 0;
+}
+
+.instructionStep {
+  display: flex;
+  margin-bottom: 10px;
+  align-items: center;
+}
+
+.stepNumber {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 25px;
+  height: 25px;
+  background-color: var(--primary-color);
+  color: white;
+  border-radius: 50%;
+  font-weight: bold;
+  margin-right: 10px;
+  font-size: 0.8rem;
+}
+
+.stepText {
+  flex: 1;
+}
+
+.botLink {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.botLink:hover {
+  text-decoration: underline;
+}
+
+.telegramFeatures {
+  margin: 15px 0;
+  padding-left: 25px;
+}
+
+.telegramFeatures li {
+  margin-bottom: 8px;
+  position: relative;
+  color: var(--text-color);
+}
+
+.telegramFeatures li::before {
+  content: "✓";
+  position: absolute;
+  left: -20px;
   color: var(--primary-color);
   font-weight: bold;
 }
@@ -1862,11 +1992,103 @@
 
 .dashboardTitle h2 svg {
   font-size: 1.2rem;
-  color: #0088cc;
+  color: var(--primary-color);
 }
 
 .telegramButton svg,
 .verifiedButton svg {
   margin-right: 0.5rem;
   font-size: 1.1rem;
+}
+
+/* Telegram buttons */
+.telegramButtonGroup {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+  flex-wrap: wrap;
+}
+
+.telegramButtons {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+  flex-wrap: wrap;
+}
+
+.telegramButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 15px;
+  border-radius: 5px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: #229ED9;
+  color: white;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.telegramButton:hover {
+  background-color: #1a89bd;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.telegramButton:active {
+  transform: translateY(0);
+}
+
+.telegramButton.waiting {
+  background-color: #a7a7a7;
+  cursor: not-allowed;
+}
+
+.telegramButton svg {
+  font-size: 1.1rem;
+}
+
+.verifiedButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 15px;
+  border-radius: 5px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: #28a745;
+  color: white;
+}
+
+.verifiedButton:hover {
+  background-color: #218838;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.verifiedButton svg {
+  font-size: 1.1rem;
+}
+
+.reconnectButton {
+  background-color: #17a2b8;
+}
+
+.reconnectButton:hover {
+  background-color: #138496;
+}
+
+.disconnectButton {
+  background-color: #dc3545;
+}
+
+.disconnectButton:hover {
+  background-color: #c82333;
 }
