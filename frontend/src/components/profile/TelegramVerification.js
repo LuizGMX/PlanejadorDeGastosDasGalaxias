@@ -1,5 +1,6 @@
 import React from 'react';
 import styles from '../../styles/shared.module.css';
+import { BsTelegram, BsCheckCircle, BsArrowRepeat, BsKey } from 'react-icons/bs';
 
 const TelegramVerification = ({ 
   user, 
@@ -8,12 +9,13 @@ const TelegramVerification = ({
   telegramError, 
   telegramLoading, 
   requestTelegramCode,
-  getRemainingTime 
+  getRemainingTime,
+  refreshUserData
 }) => {
   return (
     <div className={styles.dashboardCard}>
       <div className={styles.dashboardTitle}>
-        <h2>Telegram</h2>
+        <h2><BsTelegram /> Telegram</h2>
       </div>
       <div className={styles.cardBody}>
         <div className={styles.communicationSection}>
@@ -35,12 +37,12 @@ const TelegramVerification = ({
                     <span className={styles.stepText}>
                       Acesse{' '}
                       <a
-                        href="https://t.me/PlanejadorDeGastosBot"
+                        href="https://t.me/PlanejadorDasGalaxiasBot"
                         target="_blank"
                         rel="noopener noreferrer"
                         className={styles.botLink}
                       >
-                        @PlanejadorDeGastosBot
+                        @PlanejadorDasGalaxiasBot
                       </a>
                     </span>
                   </div>
@@ -50,35 +52,66 @@ const TelegramVerification = ({
                   </div>
                   <div className={styles.instructionStep}>
                     <span className={styles.stepNumber}>3</span>
-                    <span className={styles.stepText}>Gere seu código de verificação</span>
+                    <span className={styles.stepText}>Gere seu código de verificação abaixo</span>
                   </div>
                   <div className={styles.instructionStep}>
                     <span className={styles.stepNumber}>4</span>
-                    <span className={styles.stepText}>Envie o código para o bot</span>
+                    <span className={styles.stepText}>Envie /verificar para o bot</span>
+                  </div>
+                  <div className={styles.instructionStep}>
+                    <span className={styles.stepNumber}>5</span>
+                    <span className={styles.stepText}>Quando solicitado, envie apenas o código</span>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  className={`${styles.telegramButton} ${remainingTime > 0 ? styles.waiting : ''}`}
-                  onClick={requestTelegramCode}
-                  disabled={telegramLoading || remainingTime > 0}
-                >
-                  {telegramLoading
-                    ? 'Gerando código...'
-                    : remainingTime > 0
-                    ? `Aguarde ${getRemainingTime()}`
-                    : 'GERAR CÓDIGO DE VERIFICAÇÃO'}
-                </button>
+                <div className={styles.telegramButtons}>
+                  <a
+                    href="https://t.me/PlanejadorDasGalaxiasBot"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.telegramButton}
+                  >
+                    <BsTelegram /> ABRIR BOT NO TELEGRAM
+                  </a>
+                  <button
+                    type="button"
+                    className={`${styles.telegramButton} ${remainingTime > 0 ? styles.waiting : ''}`}
+                    onClick={requestTelegramCode}
+                    disabled={telegramLoading || remainingTime > 0}
+                  >
+                    {telegramLoading
+                      ? 'Gerando código...'
+                      : remainingTime > 0
+                      ? `Aguarde ${getRemainingTime()}`
+                      : <><BsKey /> GERAR CÓDIGO DE VERIFICAÇÃO</>}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={refreshUserData}
+                    className={styles.verifiedButton}
+                  >
+                    <BsCheckCircle /> JÁ VERIFIQUEI MEU TELEGRAM
+                  </button>
+                </div>
                 {telegramError && <p className={styles.telegramError}>{telegramError}</p>}
                 {verificationCode && (
                   <div className={styles.verificationCode}>
                     <span className={styles.code}>{verificationCode}</span>
                     {remainingTime > 0 && (
-                      <span className={styles.codeTimer}>Expira em {getRemainingTime()}</span>
+                      <span className={styles.codeTimer}><BsArrowRepeat /> Expira em {getRemainingTime()}</span>
                     )}
                   </div>
                 )}
               </>
+            )}
+            {user?.telegram_verified && (
+              <div className={styles.telegramConnected}>
+                <p>Seu Telegram está conectado! Agora você pode:</p>
+                <ul className={styles.telegramFeatures}>
+                  <li>Registrar despesas pelo bot</li>
+                  <li>Receber lembretes de pagamentos</li>
+                  <li>Consultar seu orçamento a qualquer momento</li>
+                </ul>
+              </div>
             )}
           </div>
         </div>

@@ -34,7 +34,7 @@ const Login = () => {
   const [lastSubmitTime, setLastSubmitTime] = useState(0);
   const SUBMIT_DELAY = 3000; // 3 segundos entre submissões
 
-  const fetchBanks = async () => {
+  const fetchBanks = async (retryCount = 0, delay = 1000) => {
     try {
       console.log('Iniciando busca de bancos...');
       const apiUrl = `${process.env.REACT_APP_API_URL}/api/banks`;
@@ -42,6 +42,17 @@ const Login = () => {
       
       const response = await fetch(apiUrl);
       console.log('Status da resposta:', response.status);
+      
+      if (response.status === 429 && retryCount < 3) {
+        console.log(`Recebido erro 429, aguardando ${delay}ms antes de tentar novamente...`);
+        setError(`Muitas requisições. Tentando novamente em ${delay/1000} segundos...`);
+        
+        // Espera pelo tempo de delay antes de tentar novamente
+        await new Promise(resolve => setTimeout(resolve, delay));
+        
+        // Tenta novamente com backoff exponencial (dobra o tempo de espera)
+        return fetchBanks(retryCount + 1, delay * 2);
+      }
       
       if (!response.ok) {
         throw new Error(`Erro ao carregar bancos: ${response.status}`);
@@ -405,88 +416,113 @@ const Login = () => {
                 Escolha os bancos que você mais utiliza para facilitar o registro de receitas e despesas
               </p>
             </div>
+            
+            <div className={styles.searchContainer}>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className={styles.searchInput}
+                placeholder="Buscar banco..."
+                disabled={loading}
+              />
+              <span className="material-icons">search</span>
+            </div>
+            
             {loading ? (
-              <div className={styles.loadingMessage}>Carregando bancos...</div>
+              <div className={styles.loadingContainer}>
+                <div className={styles.loadingSpinner}></div>
+                <p className={styles.loadingMessage}>Carregando bancos...</p>
+              </div>
+            ) : error && error.includes("Muitas requisições") ? (
+              <div className={styles.retryContainer}>
+                <p className={styles.errorMessage}>{error}</p>
+                <button 
+                  type="button" 
+                  className={styles.retryButton}
+                  onClick={() => fetchBanks()}
+                >
+                  Tentar novamente
+                </button>
+              </div>
             ) : banks.length === 0 ? (
-              <div className={styles.errorMessage}>Nenhum banco encontrado. Por favor, tente novamente.</div>
+              <div className={styles.retryContainer}>
+                <p className={styles.errorMessage}>Não foi possível carregar os bancos.</p>
+                <button 
+                  type="button" 
+                  className={styles.retryButton}
+                  onClick={() => fetchBanks()}
+                >
+                  Tentar novamente
+                </button>
+              </div>
             ) : (
-              <div className={styles.searchContainer}>
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className={styles.searchInput}
-                  placeholder="Buscar banco..."
-                  disabled={loading}
-                />
-                <span className="material-icons">search</span>
-              </div>
-            )}
-            <div className={styles.banksContainer}>
-              <div className={styles.banksList}>
-                <h3>Bancos Disponíveis</h3>
-                <p className={styles.banksDescription}>
-                  Selecione os bancos que você utiliza para facilitar o registro de receitas e despesas.
-                </p>
-                <div className={styles.banksGrid}>
-                  {filteredBanks.map(bank => (
-                    <div
-                      key={bank.id}
-                      className={styles.bankCard}
-                      onClick={() => handleBankSelection(bank.id)}
-                    >
-                      <div className={styles.bankInfo}>
-                        <span className={styles.bankName}>{bank.name}</span>
-                      </div>
-                      <span className="material-icons">add_circle_outline</span>
-                    </div>
-                  ))}
-                  {banks.filter(bank => !formData.selectedBanks.includes(bank.id)).length === 0 && (
-                    <p className={styles.emptyMessage}>
-                      Nenhum banco disponível
-                    </p>
-                  )}
-                  {filteredBanks.length === 0 && searchTerm !== '' && (
-                    <p className={styles.emptyMessage}>
-                      Nenhum banco encontrado com este nome
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className={`${styles.banksList} ${styles.selectedBanksList}`}>
-                <div className={styles.selectedBanksHeader}>
-                  <h3>Meus Bancos</h3>
-                  <span className={styles.selectedCount}>
-                    {formData.selectedBanks.length} selecionado(s)
-                  </span>
-                </div>
-                <p className={styles.banksDescription}>
-                  Estes bancos aparecerão ao registrar suas movimentações financeiras
-                </p>
-                <div className={styles.banksGrid}>
-                  {banks
-                    .filter(bank => formData.selectedBanks.includes(bank.id))
-                    .map(bank => (
+              <div className={styles.banksContainer}>
+                <div className={styles.banksList}>
+                  <h3>Bancos Disponíveis</h3>
+                  <p className={styles.banksDescription}>
+                    Selecione os bancos que você utiliza para facilitar o registro de receitas e despesas.
+                  </p>
+                  <div className={styles.banksGrid}>
+                    {filteredBanks.map(bank => (
                       <div
                         key={bank.id}
-                        className={`${styles.bankCard} ${styles.selected}`}
+                        className={styles.bankCard}
                         onClick={() => handleBankSelection(bank.id)}
                       >
                         <div className={styles.bankInfo}>
                           <span className={styles.bankName}>{bank.name}</span>
                         </div>
-                        <span className="material-icons">check_circle</span>
+                        <span className="material-icons">add_circle_outline</span>
                       </div>
                     ))}
-                  {formData.selectedBanks.length === 0 && (
-                    <p className={styles.emptyMessage}>
-                      Nenhum banco selecionado ainda
-                    </p>
-                  )}
+                    {banks.filter(bank => !formData.selectedBanks.includes(bank.id)).length === 0 && (
+                      <p className={styles.emptyMessage}>
+                        Nenhum banco disponível
+                      </p>
+                    )}
+                    {filteredBanks.length === 0 && searchTerm !== '' && (
+                      <p className={styles.emptyMessage}>
+                        Nenhum banco encontrado com este nome
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className={`${styles.banksList} ${styles.selectedBanksList}`}>
+                  <div className={styles.selectedBanksHeader}>
+                    <h3>Meus Bancos</h3>
+                    <span className={styles.selectedCount}>
+                      {formData.selectedBanks.length} selecionado(s)
+                    </span>
+                  </div>
+                  <p className={styles.banksDescription}>
+                    Estes bancos aparecerão ao registrar suas movimentações financeiras
+                  </p>
+                  <div className={styles.banksGrid}>
+                    {banks
+                      .filter(bank => formData.selectedBanks.includes(bank.id))
+                      .map(bank => (
+                        <div
+                          key={bank.id}
+                          className={`${styles.bankCard} ${styles.selected}`}
+                          onClick={() => handleBankSelection(bank.id)}
+                        >
+                          <div className={styles.bankInfo}>
+                            <span className={styles.bankName}>{bank.name}</span>
+                          </div>
+                          <span className="material-icons">check_circle</span>
+                        </div>
+                      ))}
+                    {formData.selectedBanks.length === 0 && (
+                      <p className={styles.emptyMessage}>
+                        Nenhum banco selecionado ainda
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </>
         );
 
@@ -512,7 +548,6 @@ const Login = () => {
                 required
                 disabled={loading}
               />
-              <BsPerson className={styles.inputIcon} />
             </div>
             <div className={styles.inputWrapper}>
               <p className={styles.fieldHelp}>Valor total que você quer economizar</p>
@@ -535,7 +570,6 @@ const Login = () => {
                 required
                 disabled={loading}
               />
-              <BsShieldLock className={styles.inputIcon} />
             </div>
             <div className={styles.periodContainer}>
               <div className={styles.inputWrapper}>
@@ -552,15 +586,15 @@ const Login = () => {
                     required
                     disabled={loading}
                   />
-                  <span className="material-icons">schedule</span>
+                  
                 </div>
               </div>
               <div className={styles.inputWrapper}>
-                <p className={styles.fieldHelp}>Escolha se quer atingir em dias, meses ou anos</p>
+                
                 <div className={styles.inputWithIcon}>
                   <select
                     name="financialGoalPeriodType"
-                    value={formData.financialGoalPeriodType || 'years'}
+                    value={formData.financialGoalPeriodType || ''}
                     onChange={handleChange}
                     className={styles.loginInput}
                     required
@@ -571,7 +605,7 @@ const Login = () => {
                     <option value="months">Meses</option>
                     <option value="years" selected>Anos</option>
                   </select>
-                  <span className="material-icons">schedule</span>
+                  
                 </div>
               </div>
             </div>
@@ -669,8 +703,15 @@ const Login = () => {
                 <div className={styles.step}>
                   <div className={styles.stepNumber}>1</div>
                   <div className={styles.stepContent}>
-                    <h4>Clique no botão abaixo</h4>
-                    <p>Isso abrirá nosso bot no Telegram</p>
+                    <a 
+                      href="https://t.me/PlanejadorDasGalaxiasBot" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
+                    >
+                      <h4>Clique aqui ou no botão abaixo</h4>
+                      <p>Isso abrirá nosso bot no Telegram</p>
+                    </a>
                   </div>
                 </div>
                 <div className={styles.step}>
@@ -683,15 +724,34 @@ const Login = () => {
                 <div className={styles.step}>
                   <div className={styles.stepNumber}>3</div>
                   <div className={styles.stepContent}>
-                    <h4>Use o comando /verificar</h4>
-                    <p>Digite: /verificar {code}</p>
+                    <h4>Digite /verificar</h4>
+                    <p>O bot vai pedir seu código de verificação</p>
                   </div>
                 </div>
                 <div className={styles.step}>
                   <div className={styles.stepNumber}>4</div>
                   <div className={styles.stepContent}>
-                    <h4>Aguarde a confirmação</h4>
-                    <p>O bot confirmará automaticamente</p>
+                    <h4>Copie este código</h4>
+                    <p className={styles.verificationCodeDisplay}>{code}</p>
+                  </div>
+                </div>
+                <div className={styles.step}>
+                  <div className={styles.stepNumber}>5</div>
+                  <div className={styles.stepContent}>
+                    <h4>Envie o código quando solicitado</h4>
+                    <p>Envie apenas o código, sem comandos adicionais</p>
+                  </div>
+                </div>
+                <div className={styles.step}>
+                  <div className={styles.stepNumber}>6</div>
+                  <div className={styles.stepContent}>
+                    <div 
+                      onClick={() => navigate('/dashboard')} 
+                      style={{ cursor: 'pointer', textDecoration: 'none', color: 'inherit' }}
+                    >
+                      <h4>Clique aqui se já vinculou seu Telegram</h4>
+                      <p>Ir para o dashboard</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -735,8 +795,19 @@ const Login = () => {
           setError('Por favor, preencha todos os campos');
           return;
         }
-        await fetchBanks(); // Primeiro buscamos os bancos
-        setStep('banks'); // Depois mudamos o step
+        
+        setLoading(true);
+        try {
+          // Primeiro buscamos os bancos
+          await fetchBanks();
+          // Só avançamos para a próxima etapa se conseguirmos carregar os bancos
+          setStep('banks');
+        } catch (error) {
+          console.error('Erro ao carregar bancos:', error);
+          // Não avançamos a etapa se houver erro ao carregar os bancos
+        } finally {
+          setLoading(false);
+        }
       } else if (step === 'banks') {
         if (formData.selectedBanks.length === 0) {
           setError('Por favor, selecione pelo menos um banco');
@@ -771,6 +842,7 @@ const Login = () => {
 
         // Se chegou aqui, todos os campos estão preenchidos
         try {
+          setLoading(true);
           const parsedFinancialGoalAmount = formData.financialGoalAmount ? 
             Number(formData.financialGoalAmount.replace(/\./g, '').replace(',', '.')) : 0;
           
@@ -789,6 +861,11 @@ const Login = () => {
             })
           });
 
+          if (response.status === 429) {
+            setError('Muitas requisições. Por favor, aguarde alguns segundos antes de tentar novamente.');
+            return;
+          }
+
           if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.message || 'Falha ao enviar código');
@@ -800,7 +877,8 @@ const Login = () => {
         } catch (error) {
           console.error('Erro ao enviar código:', error);
           setError(error.message);
-          throw error;
+        } finally {
+          setLoading(false);
         }
       } else if (step === 'code') {
         if (!code) {

@@ -141,10 +141,23 @@ export class TelegramService {
     // Registra o handler geral de mensagens
     this.bot.on('message', async (ctx) => {
       try {
+        // Se for um comando, ignora (já tratado pelos handlers específicos)
+        if (ctx.message.text && ctx.message.text.startsWith('/')) {
+          return;
+        }
+        
         const chatId = ctx.chat.id;
         const userState = await this.getUserState(chatId);
 
-        if (!userState) return;
+        if (!userState) {
+          return;
+        }
+        
+        // Verifica se está aguardando código de verificação
+        if (userState.state === 'AWAITING_VERIFICATION_CODE') {
+          await this.handleMessage(ctx);
+          return;
+        }
 
         const user = await User.findOne({
           where: { telegram_chat_id: chatId }
@@ -195,6 +208,9 @@ export class TelegramService {
           case 'AWAITING_INCOME_CONFIRMATION':
             await this.handleIncomeConfirmation(ctx, user, userState);
             break;
+          default:
+            await this.handleMessage(ctx);
+            break;
         }
       } catch (error) {
         console.error('Erro ao processar mensagem:', error);
@@ -221,9 +237,10 @@ export class TelegramService {
       // Solicita o código de verificação
       ctx.reply(
         'Bem-vindo ao Planejador de Gastos das Galáxias! 🚀\n\n' +
-        'Para conectar sua conta, digite o código de verificação que você recebeu por email usando o comando:\n\n' +
-        '/verificar CODIGO\n\n' +
-        'Exemplo: /verificar 123456'
+        'Para conectar sua conta, você vai precisar seguir dois passos simples:\n\n' +
+        '1. Digite /verificar\n' +
+        '2. Quando solicitado, envie o código de verificação que você recebeu no site\n\n' +
+        'Vamos começar?'
       );
     } catch (error) {
       console.error('Erro no comando /start:', error);
@@ -234,65 +251,127 @@ export class TelegramService {
   async handleVerify(ctx) {
     try {
       const chatId = ctx.chat.id;
-      const code = ctx.message.text.split(' ')[1];
-
-      if (!code) {
+      const messageText = ctx.message.text.trim();
+      const parts = messageText.split(' ');
+      
+      // Verifica se o usuário está tentando enviar o código junto com o comando
+      if (parts.length > 1) {
         ctx.reply(
-          'Por favor, forneça o código de verificação.\n\n' +
-          'Exemplo: /verificar 123456'
+          'Agora você só precisa digitar /verificar sem adicionar o código.\n' +
+          'Eu vou solicitar o código em seguida.'
         );
         return;
       }
-
-      // Busca o código de verificação
-      const verificationCode = await VerificationCode.findOne({
-        where: {
-          code: code,
-          expires_at: {
-            [Op.gt]: new Date()
-          }
-        }
+      
+      // Configura o estado do usuário para esperar o código
+      this.userStates.set(chatId, {
+        state: 'AWAITING_VERIFICATION_CODE',
+        timestamp: Date.now()
       });
-
-      if (!verificationCode) {
-        ctx.reply(
-          'Código inválido ou expirado.\n\n' +
-          'Acesse o site para gerar um novo código.'
-        );
-        return;
-      }
-
-      // Busca o usuário associado ao código
-      const user = await User.findOne({
-        where: { email: verificationCode.email }
-      });
-
-      if (!user) {
-        ctx.reply('Usuário não encontrado. Por favor, faça o cadastro no site primeiro.');
-        return;
-      }
-
-      // Atualiza o usuário com os dados do Telegram
-      await user.update({
-        telegram_chat_id: chatId,
-        telegram_username: ctx.from.username,
-        telegram_verified: true
-      });
-
-      // Remove o código de verificação após o uso
-      await verificationCode.destroy();
-
+      
+      // Solicita o código
       ctx.reply(
-        '🎉 Conta conectada com sucesso!\n\n' +
-        'Agora você pode:\n' +
-        '- Registrar despesas com /despesa\n' +
-        '- Registrar receitas com /receita\n' +
-        '- Ver seu resumo financeiro com /resumo\n\n' +
-        'Use /help para ver todos os comandos disponíveis.'
+        'Por favor, digite seu código de verificação:'
       );
     } catch (error) {
-      console.error('Erro ao verificar código:', error);
-      ctx.reply('Ops! Ocorreu um erro ao verificar o código. Tente novamente mais tarde.');
+      console.error('Erro ao processar comando de verificação:', error);
+      ctx.reply('Ops! Ocorreu um erro ao processar o comando. Tente novamente mais tarde.');
+    }
+  }
+
+  async handleMessage(ctx) {
+    try {
+      const chatId = ctx.chat.id;
+      const messageText = ctx.message.text;
+      
+      // Ignorar comandos
+      if (messageText.startsWith('/')) {
+        return;
+      }
+      
+      // Obter o estado atual do usuário
+      const userState = await this.getUserState(chatId);
+      
+      if (!userState) {
+        // Usuário não tem um estado ativo
+        ctx.reply(
+          'Não entendi o que você quis dizer.\n' +
+          'Use /help para ver os comandos disponíveis.'
+        );
+        return;
+      }
+      
+      // Verificar se o usuário está aguardando fornecer um código
+      if (userState.state === 'AWAITING_VERIFICATION_CODE') {
+        const code = messageText.trim();
+        
+        // Valida o formato do código (apenas números e tamanho correto)
+        if (!/^\d{6}$/.test(code)) {
+          ctx.reply(
+            'O código deve conter exatamente 6 dígitos numéricos.\n' +
+            'Por favor, tente novamente.'
+          );
+          return;
+        }
+        
+        // Busca o código de verificação
+        const verificationCode = await VerificationCode.findOne({
+          where: {
+            code: code,
+            expires_at: {
+              [Op.gt]: new Date()
+            }
+          }
+        });
+
+        if (!verificationCode) {
+          ctx.reply(
+            'Código inválido ou expirado.\n\n' +
+            'Acesse o site para gerar um novo código.'
+          );
+          return;
+        }
+
+        // Busca o usuário associado ao código
+        const user = await User.findOne({
+          where: { email: verificationCode.email }
+        });
+
+        if (!user) {
+          ctx.reply('Usuário não encontrado. Por favor, faça o cadastro no site primeiro.');
+          return;
+        }
+
+        // Atualiza o usuário com os dados do Telegram
+        await user.update({
+          telegram_chat_id: chatId,
+          telegram_username: ctx.from.username,
+          telegram_verified: true
+        });
+
+        // Remove o código de verificação após o uso
+        await verificationCode.destroy();
+        
+        // Limpa o estado do usuário
+        this.userStates.delete(chatId);
+
+        ctx.reply(
+          '🎉 Conta conectada com sucesso!\n\n' +
+          'Agora você pode:\n' +
+          '- Registrar despesas com /despesa\n' +
+          '- Registrar receitas com /receita\n' +
+          '- Ver seu resumo financeiro com /resumo\n\n' +
+          'Use /help para ver todos os comandos disponíveis.'
+        );
+        
+        return;
+      }
+      
+      // Processa outros estados aqui...
+      
+    } catch (error) {
+      console.error('Erro ao processar mensagem:', error);
+      ctx.reply('Ops! Ocorreu um erro ao processar sua mensagem. Tente novamente mais tarde.');
     }
   }
 

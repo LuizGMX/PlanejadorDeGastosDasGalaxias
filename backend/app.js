@@ -17,7 +17,7 @@ import subcategoriesRouter from './routes/subcategories.js';
 import recurrencesRouter from './routes/recurrences.js';
 import telegramRoutes from './routes/telegramRoutes.js';
 import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
+import configureRateLimit, { authLimiter } from './middleware/rateLimit.js';
 
 dotenv.config();
 
@@ -34,13 +34,8 @@ app.use(cors({
 // Importante: Adicionar o middleware json antes das rotas
 app.use(express.json());
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100 // limite de 100 requisições por IP
-});
-
-app.use(limiter);
+// Rate limiting - usando nosso middleware configurável
+app.use(configureRateLimit());
 
 // Criar diretório de uploads se não existir
 import { mkdirSync } from 'fs';
@@ -53,12 +48,17 @@ try {
 }
 
 // Rotas
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authLimiter, authRoutes); // Aplicamos um rate limit mais restrito para autenticação
 app.use('/api/categories', categoryRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/incomes', incomeRoutes);
 app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/banks', bankRoutes);
+app.use('/api/banks', configureRateLimit({
+  // Esta configuração só será aplicada em produção, devido à lógica do middleware
+  windowMs: 10 * 60 * 1000, // 10 minutos
+  max: 50, // Um limite um pouco maior para bancos
+  message: 'Muitas requisições para bancos, tente novamente em alguns minutos.',
+}), bankRoutes);
 app.use('/api/budgets', budgetRoutes);
 app.use('/api/spreadsheet', spreadsheetRoutes);
 app.use('/api/users', userRoutes);

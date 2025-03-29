@@ -328,6 +328,35 @@ const Profile = () => {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   }, [remainingTime]);
 
+  // Refresh user data from the server
+  const refreshUserData = useCallback(async () => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/me`, {
+        headers: {
+          'Authorization': `Bearer ${auth.token}`
+        }
+      });
+      
+      if (response.ok) {
+        const userData = await response.json();
+        setAuth({
+          ...auth,
+          user: userData
+        });
+        
+        if (userData.telegram_verified) {
+          setMessage({
+            type: 'success',
+            text: 'Telegram verificado com sucesso!'
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar dados do usuário:', error);
+      setError('Falha ao verificar status do Telegram. Tente novamente.');
+    }
+  }, [auth, setAuth]);
+
   return (
     <div className={styles.mainContainer}>
       <div className={styles.pageHeader}>
@@ -376,6 +405,7 @@ const Profile = () => {
               telegramLoading={telegramLoading}
               requestTelegramCode={requestTelegramCode}
               getRemainingTime={getRemainingTime}
+              refreshUserData={refreshUserData}
             />
           </div>
         </div>
