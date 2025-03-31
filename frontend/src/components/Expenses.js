@@ -17,6 +17,7 @@ const Expenses = () => {
   const [expenseToDelete, setExpenseToDelete] = useState(null);
   const [editingExpense, setEditingExpense] = useState(null);
   const [deleteSuccess, setDeleteSuccess] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [filters, setFilters] = useState({
     months: [new Date().getMonth() + 1],
     years: [new Date().getFullYear()],
@@ -300,27 +301,7 @@ const Expenses = () => {
   const handleDeleteClick = (expense = null) => {
     if (expense) {
       setExpenseToDelete(expense);
-      if (expense.is_recurring) {
-        setDeleteOptions({
-          type: 'recurring',
-          showModal: true,
-          options: [
-            { id: 'all', label: 'Excluir todos os gastos fixos (passados e futuros)' },
-            { id: 'past', label: 'Excluir somente gastos fixos passados' },
-            { id: 'future', label: 'Excluir somente gastos fixos futuros' }
-          ],
-          message: 'Para excluir um gasto fixo específico, encontre-o na lista de gastos do mês desejado.'
-        });
-      } else if (expense.has_installments) {
-        setDeleteOptions({
-          type: 'installment',
-          installmentGroupId: expense.installment_group_id
-        });
-      } else {
-        setDeleteOptions({
-          type: 'single'
-        });
-      }
+      setShowDeleteModal(true);
     } else {
       // Deleção em massa
       setExpenseToDelete(null);
@@ -328,80 +309,38 @@ const Expenses = () => {
         type: 'bulk',
         ids: selectedExpenses
       });
+      setShowDeleteModal(true);
     }
-    setShowDeleteModal(true);
   };
 
-  const handleDelete = async (expense) => {
-    if (expense.is_recurring) {
-      setExpenseToDelete(expense);
-      setDeleteOptions({
-        type: 'recurring',
-        showModal: true,
-        options: [
-          { id: 'all', label: 'Excluir todos os gastos fixos (passados e futuros)' },
-          { id: 'past', label: 'Excluir somente gastos fixos passados' },
-          { id: 'future', label: 'Excluir somente gastos fixos futuros' }
-        ],
-        message: 'Para excluir um gasto fixo específico, encontre-o na lista de gastos do mês desejado.'
-      });
-      return;
-    }
+  const handleDeleteConfirm = async (option) => {
     try {
-      if (deleteOptions.type === 'bulk') {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/expenses/bulk`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${auth.token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ ids: deleteOptions.ids })
-        });
-
-        if (!response.ok) {
-          throw new Error('Falha ao excluir despesas');
-        }
-
-        const data = await response.json();
-
-        // Limpa os estados do modal
-        setShowDeleteModal(false);
-        setExpenseToDelete(null);
-        setDeleteOptions({ type: 'single' });
-        setSelectedExpenses([]);
-
-        // Mostra mensagem de sucesso
-        setDeleteSuccess({
-          message: data.message,
-          count: data.count
-        });
-
-        // Remove a mensagem após 3 segundos
-        setTimeout(() => {
-          setDeleteSuccess(null);
-        }, 3000);
-
-        // Recarrega a lista de despesas
-        await fetchExpenses();
-        return;
-      }
+      if (!expenseToDelete) return;
+      setIsDeleting(true);
 
       let url = `${process.env.REACT_APP_API_URL}/api/expenses/${expenseToDelete.id}`;
       const queryParams = new URLSearchParams();
 
-      if (deleteOptions.type === 'recurring') {
-        switch (deleteOption) {
-          case 'future':
-            queryParams.append('delete_future', 'true');
-            break;
-          case 'past':
-            queryParams.append('delete_past', 'true');
-            break;
+      if (expenseToDelete.is_recurring) {
+        // Para despesas fixas
+        switch (option) {
           case 'all':
             queryParams.append('delete_all', 'true');
             break;
+          case 'past':
+            queryParams.append('delete_past', 'true');
+            queryParams.append('reference_date', expenseToDelete.expense_date);
+            break;
+          case 'future':
+            queryParams.append('delete_future', 'true');
+            queryParams.append('reference_date', expenseToDelete.expense_date);
+            break;
+          default:
+            // Exclusão simples
+            break;
         }
-      } else if (deleteOptions.type === 'installment' && deleteOption === 'all') {
+      } else if (expenseToDelete.has_installments) {
+        // Para despesas parceladas
         queryParams.append('delete_all_installments', 'true');
       }
 
@@ -417,102 +356,50 @@ const Expenses = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Falha ao excluir despesa');
-      }
-
-      const data = await response.json();
-
-      // Limpa os estados do modal
-      setShowDeleteModal(false);
-      setExpenseToDelete(null);
-      setDeleteOptions({ type: 'single' });
-      setDeleteOption(null);
-
-      // Mostra mensagem de sucesso
-      setDeleteSuccess({
-        message: data.message,
-        count: data.count || 1
-      });
-
-      // Remove a mensagem após 3 segundos
-      setTimeout(() => {
-        setDeleteSuccess(null);
-      }, 3000);
-
-      // Recarrega a lista de despesas
-      await fetchExpenses();
-    } catch (err) {
-      setError('Erro ao excluir despesa. Por favor, tente novamente.');
-    }
-  };
-
-  const handleSave = async (expenseData) => {
-    try {
-      const payload = {
-        ...expenseData,
-        user_id: auth.user.id
-      };
-
-      if (expenseData.is_recurring) {
-        payload.start_date = expenseData.expense_date;
-        payload.end_date = '2099-12-31';
-      }
-
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/expenses/${editingExpense ? editingExpense.id : ''}`, {
-        method: editingExpense ? 'PUT' : 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${auth.token}`
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        throw new Error('Erro ao salvar despesa');
-      }
-
-      setShowDeleteModal(false);
-      setEditingExpense(null);
-      fetchExpenses();
-      toast.success(editingExpense ? 'Despesa atualizada com sucesso!' : 'Despesa criada com sucesso!');
-    } catch (error) {
-      console.error('Erro:', error);
-      toast.error('Erro ao salvar despesa');
-    }
-  };
-
-  const handleDeleteConfirm = async (option) => {
-    try {
-      if (!expenseToDelete) return;
-
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/expenses/${expenseToDelete.id}/recurring`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${auth.token}`
-        },
-        body: JSON.stringify({ deleteType: option })
-      });
-
-      if (!response.ok) {
         throw new Error('Erro ao excluir despesa');
       }
 
-      setDeleteOptions({ showModal: false });
+      setShowDeleteModal(false);
       setExpenseToDelete(null);
       fetchExpenses();
       toast.success('Despesa(s) excluída(s) com sucesso!');
     } catch (error) {
       console.error('Erro:', error);
       toast.error('Erro ao excluir despesa');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
   const handleEditClick = (expense) => {
-    if (expense.is_recurring || expense.has_installments) {
-      navigate('/edit-recurring-expenses');
-    } else {
-      setEditingExpense(expense);
+    setEditingExpense(expense);
+  };
+
+  const handleSave = async (expenseData) => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/expenses/${expenseData.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${auth.token}`
+        },
+        body: JSON.stringify(expenseData)
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao atualizar despesa');
+      }
+
+      setEditingExpense(null);
+      // Atualiza a lista de despesas após a edição
+      const updatedExpenses = expenses.map(expense => 
+        expense.id === expenseData.id ? expenseData : expense
+      );
+      setExpenses(updatedExpenses);
+      toast.success('Despesa atualizada com sucesso!');
+    } catch (error) {
+      console.error('Erro:', error);
+      toast.error('Erro ao atualizar despesa');
     }
   };
 
@@ -996,31 +883,83 @@ const Expenses = () => {
         </>
       )}
 
-      {deleteOptions.showModal && (
-        <div className={styles.modal}>
+      {showDeleteModal && (
+        <div className={styles.modalOverlay}>
           <div className={styles.modalContent}>
-            <h2>Excluir Despesa Fixa</h2>
-            <p>{deleteOptions.message}</p>
-            <div className={styles.optionsContainer}>
-              {deleteOptions.options.map(option => (
-                <button
-                  key={option.id}
-                  className={styles.optionButton}
-                  onClick={() => handleDeleteConfirm(option.id)}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-            <button 
-              className={styles.cancelButton}
-              onClick={() => {
-                setDeleteOptions({ showModal: false });
-                setExpenseToDelete(null);
-              }}
-            >
-              Cancelar
-            </button>
+            <h2 className={styles.modalTitle}>
+              <span className="material-icons">warning</span>
+              Confirmar Exclusão
+            </h2>
+            {expenseToDelete?.is_recurring ? (
+              <>
+                <p className={styles.modalMessage}>
+                  Como você deseja excluir a despesa fixa <strong>{expenseToDelete.description}</strong>?
+                  <br />
+                  <small style={{ color: '#8B8D97', display: 'block', marginTop: '0.5rem' }}>
+                    Data de referência: {formatDate(expenseToDelete.expense_date)}
+                  </small>
+                </p>
+                <div className={styles.deleteOptions}>
+                  <button
+                    className={`${styles.modalButton} ${styles.deleteOption}`}
+                    onClick={() => handleDeleteConfirm('all')}
+                    disabled={isDeleting}
+                  >
+                    <span className="material-icons">delete_forever</span>
+                    Excluir todos os gastos fixos (passados e futuros)
+                  </button>
+                  <button
+                    className={`${styles.modalButton} ${styles.deleteOption}`}
+                    onClick={() => handleDeleteConfirm('past')}
+                    disabled={isDeleting}
+                  >
+                    <span className="material-icons">history</span>
+                    Excluir somente gastos fixos passados até {formatDate(expenseToDelete.expense_date)}
+                  </button>
+                  <button
+                    className={`${styles.modalButton} ${styles.deleteOption}`}
+                    onClick={() => handleDeleteConfirm('future')}
+                    disabled={isDeleting}
+                  >
+                    <span className="material-icons">schedule</span>
+                    Excluir somente gastos fixos futuros a partir de {formatDate(expenseToDelete.expense_date)}
+                  </button>
+                </div>
+                <div className={styles.modalButtons}>
+                  <button
+                    className={`${styles.modalButton} ${styles.cancelButton}`}
+                    onClick={() => setShowDeleteModal(false)}
+                  >
+                    <span className="material-icons">close</span>
+                    Cancelar
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className={styles.modalMessage}>
+                  Tem certeza que deseja excluir a despesa <strong>{expenseToDelete.description}</strong>?
+                  Esta ação não pode ser desfeita.
+                </p>
+                <div className={styles.modalButtons}>
+                  <button
+                    className={`${styles.modalButton} ${styles.cancelButton}`}
+                    onClick={() => setShowDeleteModal(false)}
+                  >
+                    <span className="material-icons">close</span>
+                    Cancelar
+                  </button>
+                  <button
+                    className={`${styles.modalButton} ${styles.confirmButton}`}
+                    onClick={() => handleDeleteConfirm('single')}
+                    disabled={isDeleting}
+                  >
+                    <span className="material-icons">delete</span>
+                    {isDeleting ? 'Excluindo...' : 'Excluir'}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

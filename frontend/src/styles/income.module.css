@@ -347,161 +347,156 @@
   }
 }
 
-.modal {
+.modalOverlay {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  right: 0;
+  bottom: 0;
+  background-color: rgba(26, 27, 35, 0.95);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  backdrop-filter: blur(5px);
+  padding: 1rem;
 }
 
 .modalContent {
-  background-color: var(--card-background);
+  background-color: #1A1B23;
+  border-radius: 8px;
   padding: 2rem;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  width: 100%;
   max-width: 500px;
-  width: 90%;
-  z-index: 1001;
-  animation: modalSlideIn 0.3s ease-out;
-  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  position: relative;
 }
 
-@keyframes modalSlideIn {
-  from {
-    transform: translateY(-20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-.modalContent h2 {
-  color: var(--primary-color);
+.modalTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #fff;
+  margin-bottom: 1.5rem;
   font-size: 1.5rem;
-  margin-bottom: 1.5rem;
-  font-weight: 600;
 }
 
-.modalContent p {
-  color: var(--text-color);
+.modalTitle .material-icons {
+  color: #FF4444;
+}
+
+.modalMessage {
+  color: #fff;
   margin-bottom: 1.5rem;
-  font-size: 1rem;
   line-height: 1.5;
+}
+
+.modalButtons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.modalButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.cancelButton {
+  background-color: #1A1B23;
+  color: #00FF85;
+  border: 1px solid #00FF85;
+}
+
+.cancelButton:hover {
+  background-color: rgba(0, 255, 133, 0.1);
+}
+
+.confirmButton {
+  background-color: #FF4444;
+  color: #fff;
+}
+
+.confirmButton:hover {
+  background-color: #ff3333;
+}
+
+.confirmButton:disabled {
+  background-color: #666;
+  cursor: not-allowed;
 }
 
 .deleteOptions {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  margin: 1.5rem 0;
+  gap: 1rem;
+  margin-bottom: 2rem;
 }
 
 .deleteOption {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  background-color: #1A1B23;
+  color: #fff;
+  border: 1px solid #FF4444;
   padding: 1rem;
   border-radius: 8px;
-  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
   transition: all 0.2s ease;
-  color: var(--text-color);
-  background-color: var(--card-background);
-  border: 1px solid var(--border-color);
+  text-align: left;
+  width: 100%;
 }
 
 .deleteOption:hover {
-  border-color: var(--primary-color);
-  background-color: var(--input-background);
+  background-color: rgba(255, 68, 68, 0.1);
 }
 
-.deleteOption input[type="radio"],
-.deleteOption input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  accent-color: var(--primary-color);
-  cursor: pointer;
+.deleteOption .material-icons {
+  color: #FF4444;
+  font-size: 1.5rem;
 }
 
-.deleteOption label {
-  cursor: pointer;
-  font-size: 0.95rem;
-  user-select: none;
-  flex: 1;
-  color: var(--text-color);
-}
-
-.modalButtons {
-  display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
-  margin-top: 2rem;
-}
-
-.modalButtons button {
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  min-width: 120px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-}
-
-.modalButtons .cancelButton {
-  background-color: var(--card-background);
-  color: var(--text-color);
-  border: 1px solid var(--border-color);
-}
-
-.modalButtons .cancelButton:hover {
-  border-color: var(--primary-color);
-  background-color: var(--input-background);
-}
-
-.modalButtons .deleteButton {
-  background-color: var(--primary-color);
-  color: var(--secondary-color);
-  border: none;
-}
-
-.modalButtons .deleteButton:hover {
-  background-color: var(--hover-color);
-  transform: translateY(-1px);
-}
-
-.modalButtons .deleteButton:disabled {
+.deleteOption:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  transform: none;
+}
+
+.deleteOption:disabled:hover {
+  background-color: #1A1B23;
 }
 
 @media (max-width: 768px) {
   .modalContent {
     padding: 1.5rem;
-    margin: 1rem;
-    width: calc(100% - 2rem);
   }
-  .deleteOption {
-    padding: 0.75rem;
+
+  .modalTitle {
+    font-size: 1.25rem;
   }
+
+  .modalMessage {
+    font-size: 0.9rem;
+  }
+
   .modalButtons {
     flex-direction: column;
   }
-  .modalButtons button {
+
+  .modalButton {
     width: 100%;
+    justify-content: center;
+  }
+
+  .deleteOption {
+    padding: 0.8rem;
+    font-size: 0.9rem;
   }
 }
 

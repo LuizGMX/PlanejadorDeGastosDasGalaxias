@@ -13,19 +13,17 @@ const AddExpense = () => {
   const [formData, setFormData] = useState({
     description: '',
     amount: '',
-    date: '',
+    expense_date: new Date().toISOString().split('T')[0],
     category_id: '',
     subcategory_id: '',
     bank_id: '',
+    payment_method: '',
+    card_type: '',
     is_recurring: false,
     has_installments: false,
-    is_in_cash: false,
-    total_installments: '',
-    current_installment: '',
-    end_date: '',
-    payment_method: 'credit_card',
-    card_type: 'credit_card',
-    recurrence_type: null
+    start_date: null,
+    end_date: null,
+    total_installments: 2
   });
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
@@ -136,7 +134,8 @@ const AddExpense = () => {
   const handlePaymentMethod = (method) => {
     setFormData(prev => ({
       ...prev,
-      payment_method: method
+      payment_method: method,
+      card_type: method === 'credit_card' || method === 'debit_card' ? method : ''
     }));
   };
 
@@ -166,8 +165,8 @@ const AddExpense = () => {
 
     try {
       // Validação do tipo de pagamento
-      if (!formData.is_recurring && !formData.has_installments && !formData.is_in_cash) {
-        throw new Error('Selecione uma forma de pagamento: Recorrente, Parcelado ou À Vista');
+      if (!formData.is_recurring && !formData.has_installments) {
+        throw new Error('Selecione uma forma de pagamento: Recorrente ou Parcelado');
       }
 
       // Validação da data para pagamento à vista
@@ -622,12 +621,7 @@ const AddExpense = () => {
               <button
                 type="button"
                 className={`${styles.paymentButton} ${formData.payment_method === 'credit_card' || formData.payment_method === 'debit_card' ? styles.active : ''}`}
-                onClick={() => {
-                  setFormData(prev => ({
-                    ...prev,
-                    payment_method: prev.card_type
-                  }));
-                }}
+                onClick={() => handlePaymentMethod('credit_card')}
               >
                 <BsCreditCard2Front size={24} className={styles.cardIcon} />
                 <span>Cartão</span>
@@ -661,13 +655,7 @@ const AddExpense = () => {
                 <button
                   type="button"
                   className={`${styles.paymentButton} ${formData.card_type === 'credit_card' ? styles.active : ''}`}
-                  onClick={() => {
-                    setFormData(prev => ({
-                      ...prev,
-                      card_type: 'credit_card',
-                      payment_method: 'credit_card'
-                    }));
-                  }}
+                  onClick={() => handlePaymentMethod('credit_card')}
                 >
                   <BsCreditCard2Front size={32} className={styles.cardIcon} />
                   <span>Crédito</span>
@@ -675,13 +663,7 @@ const AddExpense = () => {
                 <button
                   type="button"
                   className={`${styles.paymentButton} ${formData.card_type === 'debit_card' ? styles.active : ''}`}
-                  onClick={() => {
-                    setFormData(prev => ({
-                      ...prev,
-                      card_type: 'debit_card',
-                      payment_method: 'debit_card'
-                    }));
-                  }}
+                  onClick={() => handlePaymentMethod('debit_card')}
                 >
                   <BsCreditCard2Front size={32} className={styles.cardIcon} />
                   <span>Débito</span>

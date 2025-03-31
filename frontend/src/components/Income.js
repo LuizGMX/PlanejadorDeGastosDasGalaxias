@@ -42,6 +42,7 @@ const Income = () => {
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
   const [banks, setBanks] = useState([]);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Lista de anos para o filtro
   const years = Array.from(
@@ -106,57 +107,57 @@ const Income = () => {
     fetchData();
   }, [auth.token]);
 
-  useEffect(() => {
-    const fetchIncomes = async () => {
-      try {
-        const queryParams = new URLSearchParams();
-        
-        // Adiciona meses e anos como arrays
-        filters.months.forEach(month => queryParams.append('months[]', month));
-        filters.years.forEach(year => queryParams.append('years[]', year));
-        
-        // Adiciona outros filtros
-        if (filters.category_id) queryParams.append('category_id', filters.category_id);
-        if (filters.description) queryParams.append('description', filters.description);
-        if (filters.is_recurring !== '') queryParams.append('is_recurring', filters.is_recurring);
+  const fetchIncomes = async () => {
+    try {
+      const queryParams = new URLSearchParams();
+      
+      // Adiciona meses e anos como arrays
+      filters.months.forEach(month => queryParams.append('months[]', month));
+      filters.years.forEach(year => queryParams.append('years[]', year));
+      
+      // Adiciona outros filtros
+      if (filters.category_id) queryParams.append('category_id', filters.category_id);
+      if (filters.description) queryParams.append('description', filters.description);
+      if (filters.is_recurring !== '') queryParams.append('is_recurring', filters.is_recurring);
 
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/incomes?${queryParams}`, {
-          headers: {
-            'Authorization': `Bearer ${auth.token}`
-          }
-        });
-        
-        if (response.status === 401) {
-          navigate('/login');
-          return;
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/incomes?${queryParams}`, {
+        headers: {
+          'Authorization': `Bearer ${auth.token}`
         }
-        
-        if (!response.ok) {
-          throw new Error('Erro ao carregar ganhos');
-        }
-        
-        const data = await response.json();
-        const incomesData = data.incomes || [];
-        setIncomes(incomesData);
-        setSelectedIncomes([]);
-        setMetadata(data.metadata || { filters: { categories: [], recurring: [] }, total: 0 });
-
-        // Define a mensagem quando não há ganhos
-        if (!incomesData || incomesData.length === 0) {
-          setNoIncomesMessage({
-            message: 'Nenhum ganho encontrado para os filtros selecionados.',
-            suggestion: 'Tente ajustar os filtros para ver mais resultados.'
-          });
-        } else {
-          setNoIncomesMessage(null);
-        }
-      } catch (err) {
-        setError('Erro ao carregar ganhos');
-      } finally {
-        setLoading(false);
+      });
+      
+      if (response.status === 401) {
+        navigate('/login');
+        return;
       }
-    };
+      
+      if (!response.ok) {
+        throw new Error('Erro ao carregar ganhos');
+      }
+      
+      const data = await response.json();
+      const incomesData = data.incomes || [];
+      setIncomes(incomesData);
+      setSelectedIncomes([]);
+      setMetadata(data.metadata || { filters: { categories: [], recurring: [] }, total: 0 });
 
+      // Define a mensagem quando não há ganhos
+      if (!incomesData || incomesData.length === 0) {
+        setNoIncomesMessage({
+          message: 'Nenhum ganho encontrado para os filtros selecionados.',
+          suggestion: 'Tente ajustar os filtros para ver mais resultados.'
+        });
+      } else {
+        setNoIncomesMessage(null);
+      }
+    } catch (err) {
+      setError('Erro ao carregar ganhos');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchIncomes();
   }, [auth.token, filters, navigate]);
 
@@ -383,72 +384,87 @@ const Income = () => {
   };
 
   const handleEditClick = (income) => {
-    if (income.is_recurring) {
-      navigate('/edit-recurring-incomes');
-    } else {
-      setEditingIncome(income);
-    }
+    setEditingIncome(income);
   };
 
   const handleSave = async (incomeData) => {
     try {
-      const payload = {
-        ...incomeData,
-        user_id: auth.userId
-      };
-
-      if (incomeData.is_recurring) {
-        payload.start_date = incomeData.date;
-        payload.end_date = '2099-12-31';
-      }
-
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/incomes${editingIncome ? `/${editingIncome.id}` : ''}`, {
-        method: editingIncome ? 'PUT' : 'POST',
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/incomes/${incomeData.id}`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${auth.token}`
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(incomeData)
       });
 
       if (!response.ok) {
-        throw new Error('Erro ao salvar ganho');
+        throw new Error('Erro ao atualizar receita');
       }
 
-      setShowDeleteModal(false);
       setEditingIncome(null);
-      fetchIncomes();
-      toast.success(editingIncome ? 'Ganho atualizado com sucesso!' : 'Ganho criado com sucesso!');
+      // Atualiza a lista de receitas após a edição
+      const updatedIncomes = incomes.map(income => 
+        income.id === incomeData.id ? incomeData : income
+      );
+      setIncomes(updatedIncomes);
+      toast.success('Receita atualizada com sucesso!');
     } catch (error) {
       console.error('Erro:', error);
-      toast.error('Erro ao salvar ganho');
+      toast.error('Erro ao atualizar receita');
     }
   };
 
   const handleDeleteConfirm = async (option) => {
     try {
       if (!incomeToDelete) return;
+      setIsDeleting(true);
 
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/incomes/${incomeToDelete.id}/recurring`, {
+      let url = `${process.env.REACT_APP_API_URL}/api/incomes/${incomeToDelete.id}`;
+      const queryParams = new URLSearchParams();
+
+      if (incomeToDelete.is_recurring) {
+        switch (option) {
+          case 'all':
+            queryParams.append('delete_all', 'true');
+            break;
+          case 'past':
+            queryParams.append('delete_past', 'true');
+            queryParams.append('reference_date', incomeToDelete.date);
+            break;
+          case 'future':
+            queryParams.append('delete_future', 'true');
+            queryParams.append('reference_date', incomeToDelete.date);
+            break;
+          default:
+            break;
+        }
+
+        if (queryParams.toString()) {
+          url += `?${queryParams.toString()}`;
+        }
+      }
+
+      const response = await fetch(url, {
         method: 'DELETE',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${auth.token}`
-        },
-        body: JSON.stringify({ deleteType: option })
+        }
       });
 
       if (!response.ok) {
-        throw new Error('Erro ao excluir ganho');
+        throw new Error('Erro ao excluir receita');
       }
 
-      setDeleteOptions({ showModal: false });
+      setShowDeleteModal(false);
       setIncomeToDelete(null);
-      fetchIncomes();
-      toast.success('Ganho(s) excluído(s) com sucesso!');
+      await fetchIncomes();
+      toast.success('Receita(s) excluída(s) com sucesso!');
     } catch (error) {
       console.error('Erro:', error);
-      toast.error('Erro ao excluir ganho');
+      toast.error('Erro ao excluir receita');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -711,31 +727,58 @@ const Income = () => {
         </div>
       )}
 
-      {deleteOptions.showModal && (
-        <div className={styles.modal}>
+      {showDeleteModal && (
+        <div className={styles.modalOverlay}>
           <div className={styles.modalContent}>
-            <h2>Excluir Ganho Fixo</h2>
-            <p>{deleteOptions.message}</p>
-            <div className={styles.optionsContainer}>
-              {deleteOptions.options.map(option => (
-                <button
-                  key={option.id}
-                  className={styles.optionButton}
-                  onClick={() => handleDeleteConfirm(option.id)}
-                >
-                  {option.label}
-                </button>
-              ))}
+            <div className={styles.modalTitle}>
+              <span className="material-icons">warning</span>
+              <h2>Confirmar Exclusão</h2>
             </div>
-            <button 
-              className={styles.cancelButton}
-              onClick={() => {
-                setDeleteOptions({ showModal: false });
-                setIncomeToDelete(null);
-              }}
-            >
-              Cancelar
-            </button>
+            <div className={styles.modalMessage}>
+              <p>Como você deseja excluir a receita fixa {incomeToDelete?.description}?</p>
+              <small style={{ color: '#8B8D97', display: 'block', marginTop: '0.5rem' }}>
+                Data de referência: {incomeToDelete?.date ? new Date(incomeToDelete.date).toLocaleDateString('pt-BR') : '-'}
+              </small>
+            </div>
+            <div className={styles.deleteOptions}>
+              <button
+                className={styles.deleteOption}
+                onClick={() => handleDeleteConfirm('all')}
+                disabled={isDeleting}
+              >
+                <span className="material-icons">delete_forever</span>
+                Excluir todas as receitas fixas (passadas e futuras)
+              </button>
+              <button
+                className={styles.deleteOption}
+                onClick={() => handleDeleteConfirm('past')}
+                disabled={isDeleting}
+              >
+                <span className="material-icons">history</span>
+                Excluir somente receitas fixas passadas até {incomeToDelete?.date ? new Date(incomeToDelete.date).toLocaleDateString('pt-BR') : '-'}
+              </button>
+              <button
+                className={styles.deleteOption}
+                onClick={() => handleDeleteConfirm('future')}
+                disabled={isDeleting}
+              >
+                <span className="material-icons">update</span>
+                Excluir somente receitas fixas futuras a partir de {incomeToDelete?.date ? new Date(incomeToDelete.date).toLocaleDateString('pt-BR') : '-'}
+              </button>
+            </div>
+            <div className={styles.modalButtons}>
+              <button
+                className={`${styles.modalButton} ${styles.cancelButton}`}
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setIncomeToDelete(null);
+                }}
+                disabled={isDeleting}
+              >
+                <span className="material-icons">close</span>
+                Cancelar
+              </button>
+            </div>
           </div>
         </div>
       )}

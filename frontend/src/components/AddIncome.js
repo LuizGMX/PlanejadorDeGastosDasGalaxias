@@ -29,6 +29,7 @@ const AddIncome = () => {
   const [banks, setBanks] = useState([]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -134,6 +135,7 @@ const AddIncome = () => {
     e.preventDefault();
     setError('');
     setSuccess('');
+    setLoading(true);
 
     try {
       // Define as datas para ganhos fixos
@@ -174,6 +176,8 @@ const AddIncome = () => {
       }, 2000);
     } catch (err) {
       setError(err.message || 'Erro ao adicionar ganho. Por favor, tente novamente.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -381,12 +385,31 @@ const AddIncome = () => {
             </div>
           )}
 
-          <div className={styles.buttonGroup}>
+          <div className={styles.buttonContainer}>
+            <button
+              type="button"
+              className={`${styles.button} ${styles.cancelButton}`}
+              onClick={() => navigate('/incomes')}
+            >
+              <span className="material-icons">close</span>
+              Cancelar
+            </button>
             <button
               type="submit"
-              className={styles.submitButton}
+              className={`${styles.button} ${styles.submitButton}`}
+              disabled={loading}
             >
-              Adicionar Ganho
+              {loading ? (
+                <>
+                  <span className="material-icons spinning">sync</span>
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <span className="material-icons">save</span>
+                  Salvar
+                </>
+              )}
             </button>
           </div>
         </form>
