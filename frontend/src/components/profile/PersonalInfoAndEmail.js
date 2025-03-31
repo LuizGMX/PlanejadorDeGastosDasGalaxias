@@ -78,27 +78,31 @@ const PersonalInfoAndEmail = ({
               placeholder="Digite o código recebido"
               required
             />
-            {resendDisabled ? (
-              <p className={styles.resendInfo}>Reenviar código em {resendCountdown}s</p>
-            ) : (
-              <button type="button" onClick={resendCode} className={styles.resendButton}>
-                Reenviar Código
-              </button>
-            )}
+            <div className={styles.resendContainer}>
+              {resendDisabled ? (
+                <p className={styles.resendInfo}>Reenviar código em {resendCountdown}s</p>
+              ) : (
+                <button type="button" onClick={resendCode} className={styles.resendButton}>
+                  Reenviar Código
+                </button>
+              )}
+            </div>
           </div>
         )}
-        <button type="button" onClick={handleChangeEmail} className={styles.submitButton}>
-          {emailChangeData.step === 'input' ? 'Solicitar Mudança' : 'Verificar Código'}
-        </button>
-        {emailChangeData.step === 'verify' && (
-          <button
-            type="button"
-            onClick={() => setEmailChangeData(prev => ({ ...prev, step: 'input' }))}
-            className={`${styles.button} ${styles.secondary}`}
-          >
-            Voltar
+        <div className={styles.buttonGroup}>
+          <button type="button" onClick={handleChangeEmail} className={styles.submitButton}>
+            {emailChangeData.step === 'input' ? 'Solicitar Mudança' : 'Verificar Código'}
           </button>
-        )}
+          {emailChangeData.step === 'verify' && (
+            <button
+              type="button"
+              onClick={() => setEmailChangeData(prev => ({ ...prev, step: 'input' }))}
+              className={`${styles.button} ${styles.secondary}`}
+            >
+              Voltar
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

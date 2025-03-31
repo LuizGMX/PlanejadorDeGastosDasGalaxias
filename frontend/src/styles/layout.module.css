@@ -2,15 +2,26 @@
   display: flex;
   min-height: 100vh;
   background-color: var(--background-color);
+  position: relative;
+  overflow-x: hidden; /* Prevenir scroll horizontal */
+  padding-bottom: 80px; /* Espaço para a navbar mobile */
 }
 
 .mainContent {
   flex: 1;
   margin-left: 280px;
   padding: 2rem;
+  min-height: calc(100vh - 80px); /* Altura ajustada para considerar a navbar */
+  overflow-y: auto; /* Permitir rolagem dentro do conteúdo */
 }
 
 /* Responsividade */
+@media (max-width: 1280px) {
+  .mainContent {
+    margin-left: 100px;
+  }
+}
+
 @media (max-width: 768px) {
   .layout {
     flex-direction: column;
@@ -19,5 +30,10 @@
   .mainContent {
     margin-left: 0;
     padding: 1rem;
+  }
+  
+  /* Garantindo que a sidebar não seja visível no mobile */
+  .desktopNavbar {
+    display: none !important;
   }
 } 

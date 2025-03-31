@@ -392,11 +392,11 @@ const Profile = () => {
   }, [remainingTime]);
 
   return (
-    <div className={styles.mainContainer}>
+    <div className={`${styles.mainContainer} withMobileNav`}>
       <div className={styles.pageHeader}>
-        <h1>Meu Perfil</h1>
-        <button onClick={logout} className={styles.logoutButton}>
-          <BsDoorOpen /> Sair
+        <h1 className={styles.profileTitle}>Meu Perfil</h1>
+        <button onClick={logout} className={`${styles.logoutButton} desktopLogoutButton`}>
+          <BsDoorOpen /> <span>Sair</span>
         </button>
       </div>
       {message && <p className={styles.successMessage}>{message.text}</p>}
@@ -443,6 +443,13 @@ const Profile = () => {
               refreshUserData={refreshUserData}
             />
           </div>
+        </div>
+        
+        {/* Botão de Logout Mobile */}
+        <div className={`${styles.mobileLogoutContainer}`}>
+          <button onClick={logout} className={`${styles.mobileLogoutButton}`}>
+            <BsDoorOpen size={20} /> <span>Sair da Conta</span>
+          </button>
         </div>
       </div>
     </div>

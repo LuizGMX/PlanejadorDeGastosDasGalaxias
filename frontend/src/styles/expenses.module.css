@@ -27,6 +27,7 @@
   margin: 0 auto;
   border: 1px solid var(--border-color);
   max-width: 1200px;
+  margin-bottom: 90px;
 }
 
 .header {
@@ -298,11 +299,11 @@
 }
 
 .tableContainer {
-  margin-top: 1rem;
   overflow-x: auto;
-  background-color: var(--card-background);
-  border-radius: 8px;
   border: 1px solid var(--border-color);
+  border-radius: 8px;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
 }
 
 .table {
@@ -580,6 +581,7 @@
   }
   .table {
     border: 0;
+    margin-bottom: 1rem;
   }
 
   .table thead {
@@ -660,6 +662,10 @@
 
   .filterButton {
     width: 100%;
+  }
+
+  .container {
+    margin-bottom: 100px;
   }
 }
 
@@ -822,5 +828,15 @@
     padding: 0.8rem;
     font-size: 0.9rem;
   }
+}
+
+.expensesContainer {
+  padding-bottom: 100px; /* Espaço adicional na parte inferior do container principal */
+}
+
+.bottomSpace {
+  height: 80px; /* Altura correspondente à navbar móvel */
+  width: 100%;
+  margin-top: 20px; /* Espaço adicional acima */
 }
 

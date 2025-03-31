@@ -375,7 +375,7 @@ const AddExpense = () => {
                     onChange={() => {}}
                     className={styles.checkbox}
                   />
-                  <span className={styles.checkmark}></span>
+                  <span className={styles.checkboxCheckmark}></span>
                 </div>
                 <label htmlFor="is_recurring" className={styles.optionLabel} style={{fontSize: '15px'}}>
                   <span className="material-icons">sync</span>
@@ -446,7 +446,7 @@ const AddExpense = () => {
                     onChange={() => {}}
                     className={styles.checkbox}
                   />
-                  <span className={styles.checkmark}></span>
+                  <span className={styles.checkboxCheckmark}></span>
                 </div>
                 <label htmlFor="has_installments" className={styles.optionLabel}>
                   <span className="material-icons">credit_card</span>
@@ -518,7 +518,7 @@ const AddExpense = () => {
                     onChange={() => {}}
                     className={styles.checkbox}
                   />
-                  <span className={styles.checkmark}></span>
+                  <span className={styles.checkboxCheckmark}></span>
                 </div>
                 <label htmlFor="is_in_cash" className={styles.optionLabel}>
                   <span className="material-icons">payments</span>

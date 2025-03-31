@@ -9,10 +9,11 @@ import Profile from './components/Profile';
 import Income from './components/Income';
 import AddIncome from './components/AddIncome';
 import SpreadsheetUpload from './components/SpreadsheetUpload';
-import Sidebar from './components/Sidebar';
+import Layout from './components/Layout';
 import EditRecurringExpenses from './components/EditRecurringExpenses';
 import EditRecurringIncomes from './components/EditRecurringIncomes';
 import styles from './styles/app.module.css';
+import './styles/navbar.mobile.css';
 
 export const AuthContext = React.createContext();
 
@@ -67,12 +68,9 @@ function App() {
     }
     
     return auth.token ? (
-      <div className={styles.appContainer}>
-        <Sidebar />
-        <div className={styles.mainContent}>
-          {children}
-        </div>
-      </div>
+      <Layout>
+        {children}
+      </Layout>
     ) : (
       <Navigate to="/login" />
     );

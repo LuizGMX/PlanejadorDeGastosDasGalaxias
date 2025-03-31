@@ -1,3 +1,8 @@
+/* Garantindo que todos os elementos respeitem as bordas */
+* {
+  box-sizing: border-box;
+}
+
 /* Variáveis de cores */
 :root {
   --primary-color: #00FF85;
@@ -50,6 +55,18 @@
   font-size: 1.75rem;
   font-weight: 600;
   color: var(--text-color);
+}
+
+.profileTitle {
+  color: var(--primary-color) !important;
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin: 0;
+  background: linear-gradient(90deg, var(--primary-color) 0%, var(--gradient-end) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
 }
 
 /* Card */
@@ -185,35 +202,129 @@
 /* Grid de bancos */
 .bankGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 16px;
   margin-top: 16px;
+  max-height: 350px;
+  overflow-y: auto;
+  padding-right: 8px;
 }
 
 .bankCard {
-  padding: 16px;
-  background-color: var(--input-background);
+  background-color: var(--card-background);
   border: 1px solid var(--border-color);
   border-radius: 12px;
+  padding: 12px;
   cursor: pointer;
-  transition: all 0.2s;
-  text-align: center;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  height: auto;
+  min-height: 60px;
 }
 
 .bankCard:hover {
   border-color: var(--primary-color);
   background-color: rgba(0, 255, 133, 0.05);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Animação de pulsação para os bancos selecionados */
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(0, 255, 133, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 5px rgba(0, 255, 133, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 255, 133, 0);
+  }
 }
 
 .bankCard.selected {
   border-color: var(--primary-color);
-  background-color: rgba(0, 255, 133, 0.1);
+  background-color: rgba(0, 255, 133, 0.08);
+  animation: pulse 2s infinite;
+}
+
+.bankCard.selected:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.bankCardContent {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: left;
+  gap: 12px;
+  width: 100%;
+}
+
+.bankIconContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.bankInfo {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
 }
 
 .bankName {
   font-size: 14px;
   font-weight: 500;
   color: var(--text-color);
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-height: 36px;
+  margin: 0;
+}
+
+.bankStatus {
+  color: var(--primary-color);
+  font-size: 18px;
+  font-weight: bold;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.checkmark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background-color: var(--primary-color);
+  color: var(--secondary-color);
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+/* Estilo para o ícone do banco */
+.bankIcon {
+  font-size: 24px;
+  color: var(--primary-color);
+  transition: transform 0.2s ease;
+}
+
+.bankCard:hover .bankIcon,
+.bankCard:hover .bankInitials {
+  transform: scale(1.1);
 }
 
 /* Animações */
@@ -251,6 +362,9 @@
     }
   }
   
+  .mainContainer {
+    padding: 1rem;
+  }
 
   .container {
     padding: 1rem;
@@ -266,6 +380,214 @@
 
   .button {
     padding: 14px 20px;
+  }
+  
+  /* Adaptações para tela de perfil - Mobile */
+  .cardsGrid.twoColumns {
+    grid-template-columns: 1fr;
+  }
+  
+  .cardColumn {
+    margin-bottom: 1rem;
+  }
+  
+  .pageHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .pageHeader h1 {
+    font-size: 1.5rem;
+  }
+  
+  .content {
+    padding: 0 0.5rem;
+  }
+  
+  .formSection {
+    padding: 1rem;
+  }
+  
+  .formSection h2 {
+    font-size: 1.2rem;
+  }
+  
+  .inputGroup {
+    gap: 6px;
+  }
+  
+  .input {
+    padding: 12px;
+    font-size: 14px;
+  }
+  
+  .buttonGroup {
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 20px;
+  }
+  
+  /* Adaptações para os componentes do perfil */
+  .telegramHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .telegramButtons {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .telegramButton, .verifiedButton {
+    width: 100%;
+    font-size: 14px;
+    padding: 12px;
+  }
+  
+  .telegramInstructions {
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .instructionStep {
+    padding: 0.5rem;
+  }
+  
+  .banksGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .periodContainer {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .periodContainer .formGroup {
+    width: 100%;
+  }
+  
+  /* Adaptações para resendContainer */
+  .resendContainer {
+    justify-content: center;
+    margin-top: 12px;
+  }
+  
+  .resendButton {
+    padding: 8px 12px;
+    background-color: var(--input-background);
+    border-radius: 8px;
+    text-decoration: none;
+  }
+  
+  /* Ajustes adicionais para o formulário de email */
+  .formGroup {
+    margin-bottom: 1rem;
+    padding: 0 0.25rem;
+  }
+  
+  .telegramFeatures li span {
+    font-size: 14px;
+  }
+  
+  .code {
+    font-size: 20px;
+    padding: 10px;
+  }
+  
+  .codeTimer {
+    font-size: 12px;
+  }
+  
+  .goalDates {
+    padding: 8px;
+  }
+  
+  .goalDates p {
+    font-size: 12px;
+  }
+
+  .cardBody {
+    padding: 0.25rem;
+  }
+
+  .dashboardCard {
+    padding: 1rem;
+    margin: 0 0.25rem 1rem 0.25rem;
+    border-radius: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .banksGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .telegramSection {
+    padding: 1rem;
+  }
+  
+  .verificationCode {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .code {
+    font-size: 16px;
+    padding: 0.5rem;
+  }
+  
+  .logoutButton {
+    position: static;
+    margin-top: 1rem;
+    width: 100%;
+    border-radius: 12px;
+    background-color: var(--input-background);
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  
+  .logoutButton span {
+    display: inline-block;
+    color: var(--text-color);
+  }
+  
+  .telegramButton span, .verifiedButton span {
+    font-size: 12px;
+  }
+  
+  .reconnectSteps li {
+    margin-bottom: 8px;
+  }
+  
+  .telegramFeatures li {
+    margin-bottom: 8px;
+  }
+  
+  .instructionStep {
+    margin-bottom: 10px;
+  }
+
+  .mainContainer {
+    padding: 0.75rem;
+  }
+  
+  .dashboardCard {
+    margin: 0 0.125rem 1rem 0.125rem;
+  }
+
+  .cardBody {
+    padding: 0.125rem;
+  }
+
+  .formGroup {
+    padding: 0 0.125rem;
   }
 }
 
@@ -285,16 +607,41 @@
 }
 
 .dashboardCard {
-  background: var(--card-background);
-  border-radius: 16px;
-  padding: 24px;
+  background-color: var(--card-background);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  margin-bottom: 24px;
   border: 1px solid var(--border-color);
+  overflow: hidden;
 }
 
 .dashboardTitle {
-  font-size: 20px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.dashboardTitle h2 {
+  margin: 0;
+  font-size: 18px;
   font-weight: 600;
   color: var(--text-color);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dashboardTitle h2 svg {
+  color: var(--primary-color);
+}
+
+.cardBody {
+  padding: 20px;
+}
+
+.banksDescription {
+  color: var(--text-secondary);
+  font-size: 14px;
   margin-bottom: 16px;
 }
 
@@ -724,6 +1071,10 @@
   opacity: 0.5;
 }
 
+.searchContainer {
+  margin-bottom: 16px;
+}
+
 .searchInput {
   width: 100%;
   padding: 12px 16px;
@@ -731,125 +1082,142 @@
   border-radius: 8px;
   background-color: var(--input-background);
   color: var(--text-color);
-  font-size: 0.95rem;
-  transition: all 0.2s ease;
+  font-size: 14px;
+  transition: all 0.2s;
 }
 
 .searchInput:hover,
 .searchInput:focus {
   border-color: var(--primary-color);
   outline: none;
-  box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.1);
 }
 
 .searchInput::placeholder {
   color: var(--text-secondary);
 }
 
-.tableContainer {
+.banksGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+  max-height: 350px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.bankCard {
   background-color: var(--card-background);
-  border-radius: 8px;
   border: 1px solid var(--border-color);
-  overflow: hidden;
-  margin-top: 1rem;
-}
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.table th,
-.table td {
-  padding: 1rem;
-  text-align: left;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.table th {
-  background-color: var(--input-background);
-  font-weight: 600;
-  color: var(--text-color);
-}
-
-.table tr:hover {
-  background-color: rgba(var(--primary-color-rgb), 0.05);
-}
-
-.deleteButton {
-  background: none;
-  border: none;
+  border-radius: 12px;
+  padding: 12px;
   cursor: pointer;
-  color: var(--error-color);
-  padding: 0.5rem;
-  border-radius: 4px;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  height: auto;
+  min-height: 60px;
 }
 
-.deleteButton:hover {
-  background-color: rgba(var(--error-color-rgb), 0.1);
+.bankCard:hover {
+  border-color: var(--primary-color);
+  background-color: rgba(0, 255, 133, 0.05);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.bulkActions {
-  margin: 1rem 0;
-  padding: 1rem;
-  background-color: var(--card-background);
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
+.bankCard.selected {
+  border-color: var(--primary-color);
+  background-color: rgba(0, 255, 133, 0.08);
 }
 
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.bankCardContent {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: left;
+  gap: 12px;
+  width: 100%;
 }
 
-@media (max-width: 768px) {
-  .container {
-    padding: 1rem;
-  }
+.bankIconContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
 
-  .filtersContainer {
-    flex-direction: column;
-  }
+.bankInfo {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
 
-  .filterGroup {
-    width: 100%;
-  }
+.bankName {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-color);
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-height: 36px;
+  margin: 0;
+}
 
-  .modernSelect {
-    min-width: 100%;
-  }
+.bankStatus {
+  color: var(--primary-color);
+  font-size: 18px;
+  font-weight: bold;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-  .modernSelectDropdown {
-    position: fixed;
-    top: auto;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    border-radius: 16px 16px 0 0;
-    max-height: 60vh;
-    animation: slideUp 0.3s ease;
-  }
+.checkmark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background-color: var(--primary-color);
+  color: var(--secondary-color);
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: bold;
+}
 
-  @keyframes slideUp {
-    from {
-      transform: translateY(100%);
-    }
-    to {
-      transform: translateY(0);
-    }
+@media (max-width: 480px) {
+  .searchInput {
+    padding: 10px 12px;
+    font-size: 13px;
   }
-
-  .table {
-    display: block;
-    overflow-x: auto;
-    white-space: nowrap;
+  
+  .banksGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  
+  .bankCard {
+    padding: 12px 8px;
+  }
+  
+  .bankCardContent {
+    gap: 8px;
+  }
+  
+  .bankIcon {
+    font-size: 20px;
+  }
+  
+  .bankName {
+    font-size: 12px;
+    max-height: 32px;
   }
 }
 
@@ -900,7 +1268,8 @@
   width: 0;
 }
 
-.checkmark {
+/* Renomeando para evitar conflito com .checkmark global */
+.checkboxCheckmark {
   position: absolute;
   top: 0;
   left: 0;
@@ -912,12 +1281,12 @@
   transition: all 0.2s ease;
 }
 
-.checkboxWrapper input[type="checkbox"]:checked ~ .checkmark {
+.checkboxWrapper input[type="checkbox"]:checked ~ .checkboxCheckmark {
   background-color: var(--primary-color);
   border-color: var(--primary-color);
 }
 
-.checkmark:after {
+.checkboxCheckmark:after {
   content: "";
   position: absolute;
   display: none;
@@ -930,11 +1299,11 @@
   transform: rotate(45deg);
 }
 
-.checkboxWrapper input[type="checkbox"]:checked ~ .checkmark:after {
+.checkboxWrapper input[type="checkbox"]:checked ~ .checkboxCheckmark:after {
   display: block;
 }
 
-.checkboxWrapper input[type="checkbox"]:disabled ~ .checkmark {
+.checkboxWrapper input[type="checkbox"]:disabled ~ .checkboxCheckmark {
   background-color: var(--border-color);
   border-color: var(--border-color);
   cursor: not-allowed;
@@ -1010,10 +1379,15 @@
   font-size: 1.5rem;
 }
 
+.resendContainer {
+  margin-top: 8px;
+  display: flex;
+  justify-content: flex-end;
+}
+
 .resendInfo {
-  color: var(--text-color);
-  text-align: center;
-  margin: 10px 0;
+  color: var(--text-secondary);
+  font-size: 14px;
 }
 
 .resendButton {
@@ -1021,17 +1395,14 @@
   border: none;
   color: var(--primary-color);
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 14px;
   text-decoration: underline;
-  margin: 10px 0;
-  display: block;
-  width: 100%;
-  text-align: center;
+  transition: all 0.2s;
 }
 
 .resendButton:hover {
-  color: var(--primary-color-dark);
-} 
+  color: var(--hover-color);
+}
 
 .profileContainer {
   max-width: 600px;
@@ -1282,813 +1653,888 @@
 
 .banksDescription {
   color: var(--text-secondary);
-  font-size: 0.9rem;
-  margin-bottom: 1rem;
+  font-size: 14px;
+  margin-bottom: 16px;
 }
 
 .banksGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 1rem;
-  max-height: 400px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+  max-height: 350px;
   overflow-y: auto;
-  padding-right: 0.5rem;
+  padding-right: 8px;
 }
 
 .bankCard {
   background-color: var(--card-background);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 1rem;
+  border-radius: 12px;
+  padding: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
-  height: 60px;
   display: flex;
   align-items: center;
+  justify-content: flex-start;
+  height: auto;
+  min-height: 60px;
 }
 
 .bankCard:hover {
+  border-color: var(--primary-color);
+  background-color: rgba(0, 255, 133, 0.05);
   transform: translateY(-2px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .bankCard.selected {
   border-color: var(--primary-color);
-  background-color: rgba(99, 102, 241, 0.1);
+  background-color: rgba(0, 255, 133, 0.08);
 }
 
 .bankCardContent {
   display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: 1rem;
+  justify-content: flex-start;
+  text-align: left;
+  gap: 12px;
   width: 100%;
 }
 
-.bankIcon {
-  font-size: 1.5rem;
-  color: var(--primary-color);
+.bankIconContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
 }
 
 .bankInfo {
   flex: 1;
   min-width: 0;
+  text-align: left;
 }
 
 .bankName {
+  font-size: 14px;
   font-weight: 500;
   color: var(--text-color);
-  white-space: nowrap;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-height: 36px;
+  margin: 0;
 }
 
 .bankStatus {
-  width: 24px;
+  color: var(--primary-color);
+  font-size: 18px;
+  font-weight: bold;
   height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--primary-color);
+}
+
+.checkmark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background-color: var(--primary-color);
+  color: var(--secondary-color);
+  border-radius: 50%;
+  font-size: 12px;
   font-weight: bold;
-  flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+  .searchInput {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+  
+  .banksGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  
+  .bankCard {
+    padding: 12px 8px;
+  }
+  
+  .bankCardContent {
+    gap: 8px;
+  }
+  
+  .bankIcon {
+    font-size: 20px;
+  }
+  
+  .bankName {
+    font-size: 12px;
+    max-height: 32px;
+  }
+}
+
+.mobileLogoutContainer {
+  display: none;
+  margin-top: 2rem;
+  padding: 0 1rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.mobileLogoutButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 1rem;
+  background-color: var(--error-color);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+}
+
+.mobileLogoutButton:hover, 
+.mobileLogoutButton:active {
+  background-color: #ff3b3b;
+  transform: translateY(-1px);
+}
+
+/* Mostrar apenas em telas mobile */
+@media (max-width: 768px) {
+  .mobileLogoutContainer {
+    display: block;
+  }
+  
+  /* Escondendo o botão de logout da versão desktop */
+  .desktopLogoutButton {
+    display: none !important;
+  }
 }
 
 .emptyMessage {
-  grid-column: 1 / -1;
   text-align: center;
   color: var(--text-secondary);
-  padding: 1rem;
-  background: var(--background-color);
+  padding: 20px;
+  background-color: var(--input-background);
   border-radius: 8px;
-  font-size: 0.9rem;
-}
-
-.code {
-  font-size: 2rem;
-  font-weight: bold;
-  color: var(--primary-color);
-  text-align: center;
-  padding: 1rem;
-  background-color: rgba(0, 255, 133, 0.1);
-  border-radius: 8px;
-  margin: 1rem 0;
-  font-family: monospace;
-}
-
-.command {
-  font-family: monospace;
-  background-color: #2c2c2c;
-  padding: 1rem;
-  border-radius: 8px;
-  color: #fff;
-  text-align: center;
-  margin: 1rem 0;
-}
-
-.verificationNote {
-  color: var(--primary-color);
-  text-align: center;
-  font-size: 0.9rem;
-  margin-top: 1rem;
-  font-family: monospace;
-}
-
-.codeBox {
-  background-color: var(--background-secondary);
-  padding: 2rem;
-  border-radius: 12px;
-  margin: 2rem 0;
-  text-align: center;
-}
-
-.cardsGrid.twoColumns {
-  display: flex;
-  gap: 2rem;
-  margin: 2rem 0;
-}
-
-.cardColumn {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
-.cardMargin {
-  margin-bottom: 2rem;
-}
-
-.card {
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-}
-
-.cardHeader {
-  background: #f8f9fa;
-  padding: 1rem;
-  border-bottom: 1px solid #e9ecef;
+  width: 100%;
+  font-size: 14px;
 }
 
 .cardBody {
-  padding: 1.5rem;
+  padding: 20px;
 }
 
-.banksSection {
-  width: 100%;
+/* Classes para o Telegram Integration Component - Versão aprimorada */
+.telegramBadge {
+  display: flex;
+  align-items: center;
+  padding: 4px 0;
 }
 
-.searchContainer {
-  margin-bottom: 1rem;
+.telegramIntro {
+  margin-bottom: 20px;
+  text-align: center;
 }
 
-.searchInput {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  background-color: var(--input-background);
+.telegramIntro h3 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 10px;
   color: var(--text-color);
-  font-size: 1rem;
 }
 
-.searchInput:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
-}
-
-.communicationSection {
-  margin-top: 1rem;
-}
-
-.communicationSection h3 {
-  color: var(--text-color);
-  font-size: 1.1rem;
-  margin-bottom: 1rem;
-  font-weight: 500;
+.telegramIntro p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.5;
 }
 
 .telegramSection {
+  border: 1px solid var(--border-color);
   border-radius: 16px;
-  overflow: hidden;
+  padding: 24px;
+  margin-top: 16px;
+  background-color: var(--input-background);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
+}
+
+.telegramSection:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
 }
 
 .telegramHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.telegramStatus {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.statusVerified {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 12px;
-  background-color: rgba(0, 255, 133, 0.1);
-  color: var(--primary-color);
-  font-weight: 600;
-  border-radius: 20px;
-  font-size: 0.9rem;
-}
-
-.statusUnverified {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 12px;
-  background-color: rgba(255, 107, 107, 0.1);
-  color: var(--error-color);
-  font-weight: 600;
-  border-radius: 20px;
-  font-size: 0.9rem;
-}
-
-.telegramInstructions {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  background-color: var(--input-background);
-  border-radius: 12px;
-  padding: 1.25rem;
-  border: 1px solid var(--border-color);
-}
-
-.instructionStep {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  transition: all 0.2s ease;
-  padding: 0.5rem;
-  border-radius: 8px;
-}
-
-.instructionStep:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-  transform: translateX(5px);
-}
-
-.stepNumber {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  background-color: var(--primary-color);
-  color: var(--background-color);
-  border-radius: 50%;
-  font-weight: 600;
-  font-size: 0.9rem;
-  flex-shrink: 0;
-}
-
-.stepText {
-  font-size: 0.95rem;
-  line-height: 1.5;
-  color: var(--text-color);
-}
-
-.botLink {
-  color: #0088cc;
-  font-weight: 600;
-  text-decoration: none;
-  transition: all 0.2s ease;
-}
-
-.botLink:hover {
-  color: #0099ff;
-  text-decoration: underline;
-}
-
-.telegramButtons {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-top: 1.5rem;
-}
-
-.telegramButton {
-  display: inline-block;
-  background-color: #0088cc;
-  color: white;
-  border: none;
-  border-radius: 12px;
-  padding: 12px 20px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-align: center;
-  text-decoration: none;
-  width: 100%;
-  border: 1px solid transparent;
-  box-shadow: 0 4px 6px rgba(0, 136, 204, 0.1);
-}
-
-.telegramButton:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(0, 136, 204, 0.2);
-  background-color: #0099ff;
-}
-
-.telegramButton:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(0, 136, 204, 0.1);
-}
-
-.telegramButton:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.telegramButton.waiting {
-  background-color: var(--input-background);
-  color: var(--text-color);
-  border: 1px solid var(--border-color);
-}
-
-.verifiedButton {
-  background-color: rgba(42, 43, 51, 0.7);
-  color: var(--text-color);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 12px 20px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-align: center;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-}
-
-.verifiedButton:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  transform: translateY(-2px);
-  border-color: var(--primary-color);
-  color: var(--primary-color);
-}
-
-.verifiedButton:active {
-  transform: translateY(0);
-}
-
-.telegramError {
-  margin-top: 1rem;
-  padding: 0.75rem;
-  background-color: rgba(255, 107, 107, 0.1);
-  border: 1px solid var(--error-color);
-  border-radius: 8px;
-  color: var(--error-color);
-  font-size: 0.9rem;
-  text-align: center;
-}
-
-.verificationCode {
-  margin-top: 1.5rem;
-  padding: 1.5rem;
-  background-color: var(--input-background);
-  border-radius: 12px;
-  text-align: center;
-  border: 1px solid var(--border-color);
-  animation: fadeIn 0.5s ease;
-}
-
-.code {
-  display: block;
-  font-size: 2rem;
-  font-weight: 600;
-  color: var(--primary-color);
-  font-family: monospace;
-  letter-spacing: 4px;
-  margin-bottom: 0.5rem;
-  background-color: rgba(0, 255, 133, 0.05);
-  padding: 0.5rem;
-  border-radius: 8px;
-}
-
-.codeTimer {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  margin-top: 0.75rem;
-}
-
-.periodContainer {
-  display: flex;
-  gap: 1rem;
-  width: 100%;
-  align-items: flex-end;
-}
-
-.periodContainer .formGroup {
-  flex: 1;
-  margin-bottom: 0;
-  position: relative;
-}
-
-.periodContainer .fieldHelp {
-  margin-bottom: 0.5rem;
-}
-
-.periodContainer .inputWithIcon {
-  position: relative;
-  width: 100%;
-  display: flex;
-  align-items: center;
-}
-
-.periodContainer .inputWithIcon .material-icons {
-  position: absolute;
-  left: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-secondary);
-  font-size: 20px;
-  pointer-events: none;
-  z-index: 1;
-  line-height: 1;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.periodContainer .input {
-  width: 100%;
-  height: 56px;
-  padding: 0 16px 0 48px;
-  background-color: var(--input-background);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  font-size: 16px;
-  color: var(--text-color);
-  transition: all 0.2s;
-}
-
-.periodContainer select.input {
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%238B8D97' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 16px center;
-  padding-right: 48px;
-}
-
-.section {
-  padding: 1.5rem;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.section:last-child {
-  border-bottom: none;
-}
-
-.section h3 {
-  color: var(--text-color);
-  font-size: 1.2rem;
-  margin-bottom: 1.5rem;
-  font-weight: 500;
-}
-
-.telegramButtons {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-top: 1.5rem;
-}
-
-.verifiedButton {
-  background-color: var(--button-secondary-bg);
-  color: var(--text-color);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 12px 20px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-align: center;
-  width: 100%;
-}
-
-.verifiedButton:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  transform: translateY(-2px);
-}
-
-.telegramButton {
-  display: inline-block;
-  background-color: #0088cc;
-  color: white;
-  border: none;
-  border-radius: 12px;
-  padding: 12px 20px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-align: center;
-  text-decoration: none;
-  width: 100%;
-}
-
-.telegramButton:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 255, 133, 0.2);
-}
-
-.telegramConnected {
-  background-color: var(--card-background);
-  border-radius: 8px;
-  padding: 15px;
-  margin-top: 15px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  border: 1px solid var(--border-color);
-}
-
-.telegramConnected p {
-  font-size: 1rem;
-  margin-bottom: 1rem;
-  color: var(--text-color);
-}
-
-.telegramFeatures {
-  margin: 15px 0;
-  padding-left: 25px;
-}
-
-.telegramFeatures li {
-  margin-bottom: 8px;
-  position: relative;
-  color: var(--text-color);
-}
-
-.telegramFeatures li::before {
-  content: "✓";
-  position: absolute;
-  left: -20px;
-  color: var(--primary-color);
-  font-weight: bold;
-}
-
-.reconnectInstructions {
-  font-weight: 600;
-  margin-bottom: 10px;
-  color: var(--text-color);
-}
-
-.reconnectSteps {
-  background-color: var(--card-background);
-  border-radius: 5px;
-  padding: 12px 12px 12px 30px;
-  margin-bottom: 10px;
-  border-left: 3px solid #17a2b8;
-}
-
-.reconnectSteps li {
-  margin-bottom: 8px;
-  color: var(--text-color);
-}
-
-.verificationCode {
-  margin-top: 15px;
-  padding: 15px;
-  background-color: var(--card-background);
-  border-radius: 8px;
-  border-left: 4px solid var(--primary-color);
-  text-align: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.code {
-  font-family: monospace;
-  font-size: 1.8rem;
-  font-weight: bold;
-  letter-spacing: 2px;
-  color: var(--primary-color);
-  padding: 5px 10px;
-  background-color: var(--input-background);
-  border-radius: 4px;
-}
-
-.codeTimer {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  font-size: 0.9rem;
-  color: var(--text-color);
-  margin-top: 10px;
-}
-
-.telegramError {
-  color: var(--error-color);
-  background-color: rgba(255, 107, 107, 0.1);
-  padding: 10px;
-  border-radius: 5px;
-  margin-top: 10px;
-  font-size: 0.9rem;
-  text-align: center;
+  margin-bottom: 20px;
 }
 
 .telegramStatus {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-weight: 500;
 }
 
 .statusVerified {
   color: var(--success-color);
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-weight: 600;
+  background-color: rgba(64, 179, 86, 0.1);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 14px;
 }
 
 .statusUnverified {
   color: var(--error-color);
-  font-weight: normal;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  background-color: rgba(255, 107, 107, 0.1);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 14px;
 }
 
 .telegramInstructions {
-  margin: 15px 0;
+  margin-bottom: 28px;
+  padding: 24px;
+  background-color: rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  position: relative;
+}
+
+.telegramInstructions::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(to bottom, var(--primary-color), rgba(0, 255, 133, 0.4));
+  border-radius: 4px 0 0 4px;
 }
 
 .instructionStep {
   display: flex;
-  margin-bottom: 10px;
   align-items: center;
+  margin-bottom: 18px;
+  padding: 8px 12px;
+  transition: all 0.25s ease;
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.instructionStep:last-child {
+  margin-bottom: 0;
+}
+
+.instructionStep:hover {
+  transform: translateX(8px);
+  background-color: rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .stepNumber {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 25px;
-  height: 25px;
-  background-color: var(--primary-color);
-  color: white;
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, var(--primary-color) 0%, #00cc6a 100%);
+  color: var(--secondary-color);
   border-radius: 50%;
+  margin-right: 16px;
   font-weight: bold;
-  margin-right: 10px;
-  font-size: 0.8rem;
+  font-size: 15px;
+  box-shadow: 0 4px 10px rgba(0, 255, 133, 0.3);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.stepNumber::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(rgba(255, 255, 255, 0.2), transparent);
+  border-radius: 50%;
+  z-index: 1;
+}
+
+.instructionStep:hover .stepNumber {
+  transform: scale(1.1);
+  box-shadow: 0 6px 12px rgba(0, 255, 133, 0.4);
 }
 
 .stepText {
-  flex: 1;
+  color: var(--text-color);
+  font-size: 15px;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.stepText code {
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-family: 'Consolas', monospace;
+  font-weight: 600;
+  color: var(--primary-color);
+  margin: 0 2px;
+  border: 1px solid rgba(0, 255, 133, 0.3);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) inset;
+  letter-spacing: 0.5px;
 }
 
 .botLink {
   color: var(--primary-color);
   text-decoration: none;
   font-weight: 600;
+  transition: all 0.2s ease;
+  border-bottom: 1px dashed var(--primary-color);
+  padding-bottom: 1px;
 }
 
 .botLink:hover {
-  text-decoration: underline;
+  color: #00cc6a;
+  text-decoration: none;
+  border-bottom: 1px solid #00cc6a;
 }
 
-.telegramFeatures {
-  margin: 15px 0;
-  padding-left: 25px;
-}
-
-.telegramFeatures li {
-  margin-bottom: 8px;
-  position: relative;
-  color: var(--text-color);
-}
-
-.telegramFeatures li::before {
-  content: "✓";
-  position: absolute;
-  left: -20px;
-  color: var(--primary-color);
-  font-weight: bold;
-}
-
-.dashboardTitle h2 {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.dashboardTitle h2 svg {
-  font-size: 1.2rem;
+.inlineCode {
+  background-color: rgba(0, 0, 0, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-weight: 600;
   color: var(--primary-color);
 }
 
-.telegramButton svg,
-.verifiedButton svg {
-  margin-right: 0.5rem;
-  font-size: 1.1rem;
-}
-
-/* Telegram buttons */
-.telegramButtonGroup {
+.telegramActionButtons {
   display: flex;
-  gap: 10px;
-  margin-top: 15px;
+  gap: 14px;
+  margin-bottom: 24px;
   flex-wrap: wrap;
 }
 
-.telegramButtons {
-  display: flex;
-  gap: 10px;
-  margin-top: 15px;
-  flex-wrap: wrap;
-}
-
-.telegramButton {
+.telegramButton, .verifiedButton {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 10px 15px;
-  border-radius: 5px;
-  font-weight: 600;
+  padding: 12px 18px;
+  border-radius: 12px;
   border: none;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  background-color: #229ED9;
-  color: white;
+  gap: 10px;
   text-decoration: none;
-  font-size: 0.9rem;
+  flex: 1;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  min-width: 120px;
+}
+
+.telegramButton {
+  background-color: #0088cc;
+  color: white;
+}
+
+.telegramButton.generateButton {
+  background-color: var(--primary-color);
+  color: var(--secondary-color);
 }
 
 .telegramButton:hover {
-  background-color: #1a89bd;
+  background-color: #0077b5;
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .telegramButton:active {
   transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 .telegramButton.waiting {
-  background-color: #a7a7a7;
+  background-color: var(--border-color);
+  color: var(--text-secondary);
   cursor: not-allowed;
 }
 
-.telegramButton svg {
-  font-size: 1.1rem;
+.telegramButton.waiting:hover {
+  transform: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.loadingText {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.loadingDots {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  position: relative;
+  animation: loadingDots 1s infinite linear;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-top-color: white;
+}
+
+@keyframes loadingDots {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.telegramButton.openBotButton {
+  background-color: #0088cc;
+}
+
+.telegramButton.reconnectButton {
+  background-color: var(--primary-color);
+  color: var(--secondary-color);
+}
+
+.telegramButton.disconnectButton {
+  background-color: var(--error-color);
 }
 
 .verifiedButton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 10px 15px;
-  border-radius: 5px;
-  font-weight: 600;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  background-color: #28a745;
-  color: white;
+  background-color: var(--success-color);
+  color: var(--secondary-color);
 }
 
 .verifiedButton:hover {
-  background-color: #218838;
+  background-color: #40b356;
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-.verifiedButton svg {
-  font-size: 1.1rem;
+.telegramError {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--error-color);
+  font-size: 14px;
+  margin: 16px 0;
+  padding: 12px 16px;
+  background-color: rgba(255, 107, 107, 0.1);
+  border-radius: 10px;
+  border-left: 4px solid var(--error-color);
+  animation: fadeIn 0.3s ease;
 }
 
-.reconnectButton {
-  background-color: #17a2b8;
+.verificationCode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 28px;
+  padding: 24px;
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  border: 1px solid rgba(0, 255, 133, 0.3);
+  animation: pulseCode 2.5s infinite;
+  position: relative;
+  overflow: hidden;
 }
 
-.reconnectButton:hover {
-  background-color: #138496;
+.verificationCode::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(to right, var(--primary-color), rgba(0, 255, 133, 0.4), var(--primary-color));
+  animation: shimmer 2s infinite;
+  z-index: 1;
 }
 
-.disconnectButton {
-  background-color: #dc3545;
+@keyframes shimmer {
+  0% {
+    background-position: -100% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
-.disconnectButton:hover {
-  background-color: #c82333;
+@keyframes pulseCode {
+  0% {
+    box-shadow: 0 0 0 0 rgba(0, 255, 133, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(0, 255, 133, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 255, 133, 0);
+  }
+}
+
+.codeHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  color: var(--text-color);
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.codeWrapper {
+  padding: 8px;
+  background-color: rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  width: 100%;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.codeWrapper::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--primary-color), transparent);
+}
+
+.code {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  padding: 14px 28px;
+  background-color: var(--card-background);
+  border-radius: 12px;
+  color: var(--primary-color);
+  border: 1px dashed var(--primary-color);
+  font-family: 'Consolas', monospace;
+  user-select: all;
+  text-align: center;
+  min-width: 180px;
+  display: inline-block;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+  position: relative;
+}
+
+.code::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  right: -1px;
+  bottom: -1px;
+  border: 1px solid var(--primary-color);
+  border-radius: 12px;
+  opacity: 0.3;
+  pointer-events: none;
+  animation: borderPulse 2s infinite;
+}
+
+@keyframes borderPulse {
+  0% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 0.3;
+  }
+}
+
+.codeTimer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-secondary);
+  font-size: 15px;
+  margin-top: 14px;
+  background-color: rgba(0, 0, 0, 0.1);
+  padding: 8px 14px;
+  border-radius: 20px;
+}
+
+.codeTimer b {
+  color: var(--primary-color);
+  font-weight: 600;
+  animation: timerPulse 1s infinite;
+}
+
+@keyframes timerPulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.telegramConnected {
+  padding: 20px;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.connectedHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.connectedHeader h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--success-color);
+  margin: 0;
+}
+
+.checkIcon {
+  color: var(--success-color);
+}
+
+.featureContainer, .commandsContainer {
+  margin-bottom: 24px;
+}
+
+.featureContainer h4, .commandsContainer h4 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text-color);
+}
+
+.telegramFeatures {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.telegramFeatures li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  color: var(--text-color);
+  background-color: rgba(0, 0, 0, 0.03);
+  padding: 10px 14px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.telegramFeatures li:hover {
+  background-color: rgba(0, 0, 0, 0.06);
+  transform: translateX(4px);
+}
+
+.telegramFeatures li .featureIcon {
+  color: var(--primary-color);
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.commands {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.command {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background-color: rgba(0, 0, 0, 0.03);
+  padding: 10px 14px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.command:hover {
+  background-color: rgba(0, 0, 0, 0.06);
+  transform: translateY(-2px);
+}
+
+.command code {
+  background-color: rgba(0, 0, 0, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-weight: 600;
+  color: var(--primary-color);
+  display: inline-block;
+  margin-bottom: 4px;
+}
+
+.command span {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.telegramButtonGroup {
+  display: flex;
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.reconnectInstructionsContainer {
+  margin-top: 24px;
+  padding: 14px;
+  background-color: rgba(0, 0, 0, 0.03);
+  border-radius: 10px;
+  border-left: 4px solid var(--primary-color);
+}
+
+.reconnectInstructions {
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.reconnectSteps {
+  padding-left: 24px;
+  margin-bottom: 0;
+  margin-top: 12px;
+}
+
+.reconnectSteps li {
+  margin-bottom: 10px;
+  color: var(--text-color);
+}
+
+.reconnectSteps li:last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 768px) {
+  .telegramActionButtons, .telegramButtonGroup {
+    flex-direction: column;
+  }
+  
+  .telegramFeatures li {
+    padding: 12px;
+  }
+  
+  .commands {
+    grid-template-columns: 1fr;
+  }
+  
+  .telegramInstructions {
+    padding: 20px;
+  }
+  
+  .telegramSection {
+    padding: 16px;
+  }
+  
+  .verificationCode {
+    padding: 20px;
+  }
+  
+  .code {
+    font-size: 24px;
+    padding: 12px 20px;
+    letter-spacing: 2px;
+  }
+  
+  .codeTimer {
+    font-size: 13px;
+    padding: 6px 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .telegramInstructions {
+    padding: 16px;
+  }
+  
+  .instructionStep {
+    padding: 8px;
+    margin-bottom: 12px;
+  }
+  
+  .stepNumber {
+    width: 24px;
+    height: 24px;
+    margin-right: 10px;
+    font-size: 12px;
+    box-shadow: 0 2px 6px rgba(0, 255, 133, 0.3);
+  }
+  
+  .stepText {
+    font-size: 14px;
+  }
+  
+  .stepText code {
+    padding: 2px 6px;
+    font-size: 12px;
+  }
+  
+  .verificationCode {
+    padding: 16px;
+  }
+  
+  .code {
+    font-size: 20px;
+    padding: 10px 16px;
+    letter-spacing: 1px;
+    min-width: auto;
+    width: 100%;
+  }
+  
+  .codeHeader {
+    font-size: 14px;
+  }
+  
+  .codeTimer {
+    font-size: 12px;
+    padding: 4px 10px;
+  }
 }

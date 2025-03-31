@@ -80,45 +80,47 @@ const FinancialGoal = ({ formData, handleChange, handleCurrencyChange, saveFinan
             required
           />
         </div>
-        <div className={styles.formGroup}>
-          <p className={styles.fieldHelp}>
-            Digite o número de dias/meses/anos para atingir o objetivo
-          </p>
-          <label htmlFor="financialGoalPeriodValue">Quantidade</label>
-          <div className={styles.inputWithIcon}>
-            <input
-              type="number"
-              id="financialGoalPeriodValue"
-              name="financialGoalPeriodValue"
-              value={formData.financialGoalPeriodValue}
-              onChange={handleChange}
-              className={styles.input}
-              min="1"
-              placeholder="Ex: 2"
-              required
-            />
-            <span className="material-icons">schedule</span>
+        <div className={styles.periodContainer}>
+          <div className={styles.formGroup}>
+            <p className={styles.fieldHelp}>
+              Digite o número de dias/meses/anos para atingir o objetivo
+            </p>
+            <label htmlFor="financialGoalPeriodValue">Quantidade</label>
+            <div className={styles.inputWithIcon}>
+              <input
+                type="number"
+                id="financialGoalPeriodValue"
+                name="financialGoalPeriodValue"
+                value={formData.financialGoalPeriodValue}
+                onChange={handleChange}
+                className={styles.input}
+                min="1"
+                placeholder="Ex: 2"
+                required
+              />
+              <span className="material-icons">schedule</span>
+            </div>
           </div>
-        </div>
-        <div className={styles.formGroup}>
-          <p className={styles.fieldHelp}>
-            Escolha se quer atingir em dias, meses ou anos
-          </p>
-          <label htmlFor="financialGoalPeriodType">Período</label>
-          <div className={styles.inputWithIcon}>
-            <select
-              id="financialGoalPeriodType"
-              name="financialGoalPeriodType"
-              value={formData.financialGoalPeriodType || 'years'}
-              onChange={handleChange}
-              className={styles.input}
-              required
-            >
-              <option value="days">Dias</option>
-              <option value="months">Meses</option>
-              <option value="years">Anos</option>
-            </select>
-            <span className="material-icons">schedule</span>
+          <div className={styles.formGroup}>
+            <p className={styles.fieldHelp}>
+              Escolha se quer atingir em dias, meses ou anos
+            </p>
+            <label htmlFor="financialGoalPeriodType">Período</label>
+            <div className={styles.inputWithIcon}>
+              <select
+                id="financialGoalPeriodType"
+                name="financialGoalPeriodType"
+                value={formData.financialGoalPeriodType || 'years'}
+                onChange={handleChange}
+                className={styles.input}
+                required
+              >
+                <option value="days">Dias</option>
+                <option value="months">Meses</option>
+                <option value="years">Anos</option>
+              </select>
+              <span className="material-icons">schedule</span>
+            </div>
           </div>
         </div>
         {user.financial_goal_start_date && user.financial_goal_end_date && (

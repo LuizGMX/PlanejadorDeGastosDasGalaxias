@@ -6,7 +6,7 @@ import { BsGraphUp, BsListUl, BsPlusCircle, BsDoorOpen, BsCashCoin, BsChevronDow
 import logo from '../assets/logo.svg';
 import { GiPayMoney, GiReceiveMoney, } from "react-icons/gi";
 
-const Sidebar = () => {
+const Sidebar = ({ className }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { auth, setAuth } = useContext(AuthContext);
@@ -14,6 +14,7 @@ const Sidebar = () => {
 
   const handleLogout = () => {
     setAuth({ token: null, user: null });
+    localStorage.removeItem('token');
     navigate('/login');
   };
 
@@ -81,7 +82,7 @@ const Sidebar = () => {
   };
 
   return (
-    <div className={styles.sidebar}>
+    <div className={`${styles.sidebar} ${className || ''}`}>
       <div className={styles.logo}>
         <img src={logo} alt="Logo do Planejador de Gastos das Galáxias" className={styles.logoImage} />        
       </div>
@@ -127,7 +128,14 @@ const Sidebar = () => {
         ))}
       </nav>
 
-      
+      {/* Botão de logout para desktop */}
+      <button 
+        onClick={handleLogout} 
+        className={`${styles.logoutButton} desktopLogoutButton`}
+      >
+        <BsDoorOpen size={20} />
+        <span>Sair</span>
+      </button>
     </div>
   );
 };

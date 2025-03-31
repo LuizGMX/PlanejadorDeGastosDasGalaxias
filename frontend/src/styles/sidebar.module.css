@@ -59,11 +59,17 @@
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
-  margin-bottom: 3rem;
+  margin-top: auto;
+  margin-bottom: 2rem;
+  width: 100%;
 }
 
 .logoutButton:hover {
   background-color: rgba(255, 107, 107, 0.1);
+}
+
+.logoutButton span {
+  display: inline-block;
 }
 
 .menu {
@@ -316,5 +322,9 @@
 
   .submenu.active {
     display: block;
+  }
+  
+  .mainContent {
+    margin-left: 0;
   }
 }

@@ -251,7 +251,7 @@ const AddIncome = () => {
                     onChange={() => {}}
                     className={styles.checkbox}
                   />
-                  <span className={styles.checkmark}></span>
+                  <span className={styles.checkboxCheckmark}></span>
                 </div>
                 <label htmlFor="is_recurring" className={styles.optionLabel}>
                   <span className="material-icons">sync</span>

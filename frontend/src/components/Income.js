@@ -472,7 +472,7 @@ const Income = () => {
   if (error) return <div className={styles.error}>{error}</div>;
 
   return (
-    <div className={styles.container}>
+    <div className={`${styles.container} ${styles.incomeContainer}`}>
       <div className={styles.header}>
         <h1>Meus Ganhos</h1>
         <button
@@ -790,6 +790,38 @@ const Income = () => {
           onCancel={() => setEditingIncome(null)}
         />
       )}
+
+      {incomes.length === 0 && (
+        <div className={styles.noData}>
+          <div className={styles.emoji}>🔍</div>
+          <h3>Nenhum ganho encontrado para os filtros selecionados.</h3>
+          <p>Tente mudar os filtros ou adicionar um novo ganho.</p>
+          <div className={styles.noDataActions}>
+            <button 
+              className={styles.addButton}
+              onClick={() => navigate('/add-income')}
+            >
+              Adicionar Novo Ganho
+            </button>
+            <button 
+              className={styles.backToCurrentMonth}
+              onClick={() => {
+                setFilters({
+                  months: [new Date().getMonth() + 1],
+                  years: [new Date().getFullYear()],
+                  category_id: '',
+                  description: '',
+                  is_recurring: ''
+                });
+              }}
+            >
+              Voltar para Mês Atual
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className={styles.bottomSpace}></div>
     </div>
   );
 };
