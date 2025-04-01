@@ -1,9 +1,18 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../App';
-import styles from '../styles/addIncome.module.css';
+import dataTableStyles from '../styles/dataTable.module.css';
 import sharedStyles from '../styles/shared.module.css';
 import CurrencyInput from 'react-currency-input-field';
-import { BsPlusCircle } from 'react-icons/bs';
+import { 
+  BsPlusCircle, 
+  BsCurrencyDollar, 
+  BsPencil, 
+  BsCheck2, 
+  BsRepeat, 
+  BsCalendar3, 
+  BsXLg,
+  BsListCheck
+} from 'react-icons/bs';
 
 const EditIncomeForm = ({ income, onSave, onCancel }) => {
   const { auth } = useContext(AuthContext);
@@ -126,24 +135,59 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
 
   const handleConfirmSubmit = () => {
     try {
-      // Define as datas para ganhos fixos
-      let start_date = formData.start_date;
-      let end_date = null;
+      console.log('Confirmando alterações com dados:', formData);
       
-      if (income.is_recurring) {
-        const endDateObj = new Date(start_date);
-        endDateObj.setMonth(11); // Define o mês como dezembro
-        endDateObj.setDate(31); // Define o dia como 31
-        endDateObj.setYear(2099);
-        end_date = endDateObj.toISOString().split('T')[0];
+      // Garante que todos os IDs sejam numéricos
+      let category_id = formData.category_id;
+      let subcategory_id = formData.subcategory_id;
+      let bank_id = formData.bank_id;
+      
+      if (category_id && typeof category_id === 'string') {
+        category_id = Number(category_id);
+      }
+      
+      if (subcategory_id && typeof subcategory_id === 'string') {
+        subcategory_id = Number(subcategory_id);
+      }
+      
+      if (bank_id && typeof bank_id === 'string') {
+        bank_id = Number(bank_id);
       }
 
-      onSave({
-        ...income,
+      // Define as datas para ganhos fixos
+      let start_date = formData.start_date;
+      let end_date = formData.end_date;
+      
+      if (formData.is_recurring) {
+        if (!end_date) {
+          const endDateObj = new Date();
+          endDateObj.setMonth(11); // Define o mês como dezembro
+          endDateObj.setDate(31); // Define o dia como 31
+          endDateObj.setFullYear(2099);
+          end_date = endDateObj.toISOString().split('T')[0];
+        }
+      }
+
+      // Certifique-se de que o valor seja um número
+      let amount = formData.amount;
+      if (typeof amount === 'string') {
+        amount = parseFloat(amount.replace(/[^0-9.-]+/g, ''));
+      }
+
+      const updatedIncome = {
         ...formData,
+        id: income.id, // Garante que o ID é enviado
+        category_id,
+        subcategory_id,
+        bank_id,
+        amount,
         start_date,
         end_date
-      });
+      };
+
+      console.log('Enviando dados atualizados:', updatedIncome);
+      
+      onSave(updatedIncome);
       setShowConfirmModal(false);
     } catch (err) {
       console.error('Erro na atualização:', err);
@@ -151,16 +195,23 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
     }
   };
 
+  const handleUpdateWithConfirmation = () => {
+    handleSubmit({ preventDefault: () => {} });
+  };
+
   return (
-    <div className={styles.container}>
-      <div className={`${styles.card} ${styles.fadeIn}`}>
-        <h1 className={styles.title}>Editar Ganho</h1>
-        {error && <p className={styles.error}>{error}</p>}
+    <div className={dataTableStyles.modalOverlay}>
+      <div className={`${dataTableStyles.modalContent} ${dataTableStyles.formModal}`}>
+        <div className={dataTableStyles.modalHeader}>
+          <BsPencil size={20} />
+          <h3>Editar Ganho</h3>
+        </div>
+
+        {error && <p className={dataTableStyles.errorMessage}>{error}</p>}
         
-        <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.inputGroup}>
-            <label className={styles.label}>
-              <span className="material-icons">description</span>
+        <form onSubmit={handleSubmit} className={dataTableStyles.formGrid}>
+          <div className={dataTableStyles.formGroup}>
+            <label className={dataTableStyles.formLabel}>
               Descrição
             </label>
             <input
@@ -168,114 +219,57 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
               name="description"
               value={formData.description}
               onChange={handleChange}
-              className={styles.input}
+              className={dataTableStyles.formInput}
               required
             />
           </div>
 
-          <div className={styles.inputGroup}>
-            <label className={styles.label}>
-              <span className="material-icons">attach_money</span>
+          <div className={dataTableStyles.formGroup}>
+            <label className={dataTableStyles.formLabel}>
               Valor
             </label>
-            <CurrencyInput
-              name="amount"
-              value={formData.amount}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, amount: value || 0 }))}
-              prefix="R$ "
-              decimalsLimit={2}
-              decimalSeparator=","
-              groupSeparator="."
-              className={styles.input}
-              required
-            />
+            <div className={dataTableStyles.inputWithIcon}>
+              <BsCurrencyDollar className={dataTableStyles.inputIcon} />
+              <CurrencyInput
+                name="amount"
+                value={formData.amount}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, amount: value || 0 }))}
+                prefix="R$ "
+                decimalsLimit={2}
+                decimalSeparator=","
+                groupSeparator="."
+                className={dataTableStyles.formInput}
+                required
+              />
+            </div>
           </div>
 
-          <div className={styles.paymentOptions}>
-            {income.is_recurring ? (
-              <div className={`${styles.paymentOption} ${styles.active}`}>
-                <div className={styles.optionHeader}>
-                  <div className={styles.checkboxWrapper}>
-                    <input
-                      type="checkbox"
-                      id="is_recurring"
-                      name="is_recurring"
-                      checked={true}
-                      disabled
-                      className={styles.checkbox}
-                    />
-                    <span className={styles.checkboxCheckmark}></span>
-                  </div>
-                  <label htmlFor="is_recurring" className={styles.optionLabel}>
-                    <span className="material-icons">sync</span>
-                    Receita Fixa
-                  </label>
-                </div>
-
-                <div className={styles.optionContent}>
-                  <div className={styles.inputGroup}>
-                    <label className={styles.label}>
-                      <span className="material-icons">event_repeat</span>
-                      Data de Início
-                    </label>
-                    <input
-                      type="date"
-                      name="start_date"
-                      value={formData.start_date ? formData.start_date.substring(0, 10) : ''}
-                      onChange={handleChange}
-                      className={styles.input}
-                      required
-                    />
-                  </div>
-
-                  <div className={styles.inputGroup}>
-                    <label className={styles.label}>
-                      <span className="material-icons">repeat</span>
-                      Tipo de Recorrência
-                    </label>
-                    <select
-                      name="recurrence_type"
-                      value={formData.recurrence_type}
-                      onChange={handleChange}
-                      className={styles.input}
-                      required
-                    >
-                      <option value="monthly">Mensal</option>
-                      <option value="weekly">Semanal</option>
-                      <option value="yearly">Anual</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            ) : null}
-          </div>
-
-          {!formData.is_recurring && (
-            <div className={styles.inputGroup}>
-              <label className={styles.label}>
-                <span className="material-icons">event</span>
-                Data
-              </label>
+          <div className={dataTableStyles.formGroup}>
+            <label className={dataTableStyles.formLabel}>
+              Data
+            </label>
+            <div className={dataTableStyles.inputWithIcon}>
+              <BsCalendar3 className={dataTableStyles.inputIcon} />
               <input
                 type="date"
                 name="date"
                 value={formData.date ? formData.date.substring(0, 10) : ''}
                 onChange={handleChange}
-                className={styles.input}
+                className={dataTableStyles.formInput}
+                required
               />
             </div>
-          )}
+          </div>
 
-          <div className={styles.inputGroup}>
-            <label className={styles.label}>
-              <span className="material-icons">category</span>
+          <div className={dataTableStyles.formGroup}>
+            <label className={dataTableStyles.formLabel}>
               Categoria
             </label>
             <select
               name="category_id"
               value={formData.category_id}
               onChange={handleChange}
-              className={styles.input}
+              className={dataTableStyles.formInput}
               required
             >
               <option value="">Selecione uma categoria</option>
@@ -287,17 +281,16 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
             </select>
           </div>
 
-          {formData.category_id && (
-            <div className={styles.inputGroup}>
-              <label className={styles.label}>
-                <span className="material-icons">sell</span>
+          {subcategories.length > 0 && (
+            <div className={dataTableStyles.formGroup}>
+              <label className={dataTableStyles.formLabel}>
                 Subcategoria
               </label>
               <select
                 name="subcategory_id"
                 value={formData.subcategory_id || ''}
                 onChange={handleChange}
-                className={styles.input}
+                className={dataTableStyles.formInput}
               >
                 <option value="">Selecione uma subcategoria</option>
                 {subcategories.map(subcategory => (
@@ -309,17 +302,15 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
             </div>
           )}
 
-          <div className={styles.inputGroup}>
-            <label className={styles.label}>
-              <span className="material-icons">account_balance</span>
-              Banco/Carteira
+          <div className={dataTableStyles.formGroup}>
+            <label className={dataTableStyles.formLabel}>
+              Banco
             </label>
             <select
               name="bank_id"
-              value={formData.bank_id}
+              value={formData.bank_id || ''}
               onChange={handleChange}
-              className={styles.input}
-              required
+              className={dataTableStyles.formInput}
             >
               <option value="">Selecione um banco</option>
               {banks.map(bank => (
@@ -330,99 +321,139 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
             </select>
           </div>
 
-          <div className={styles.buttonGroup}>
-            <button type="button" style={{backgroundColor: '#1A1B23', color: '#00FF85'}} onClick={onCancel} className={`${styles.submitButton} ${styles.secondary}`}>
-              Cancelar
+          {income.is_recurring && (
+            <div className={dataTableStyles.formGroup}>
+              <label className={dataTableStyles.formLabel}>
+                <div className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
+                  <BsRepeat /> Ganho Fixo
+                </div>
+              </label>
+              <div className={dataTableStyles.formGroupRow}>
+                <div className={dataTableStyles.formGroupHalf}>
+                  <label className={dataTableStyles.formLabel}>Data de Início</label>
+                  <input
+                    type="date"
+                    name="start_date"
+                    value={formData.start_date ? formData.start_date.substring(0, 10) : ''}
+                    onChange={handleChange}
+                    className={dataTableStyles.formInput}
+                    required
+                  />
+                </div>
+                
+                <div className={dataTableStyles.formGroupHalf}>
+                  <label className={dataTableStyles.formLabel}>Tipo de Recorrência</label>
+                  <select
+                    name="recurrence_type"
+                    value={formData.recurrence_type}
+                    onChange={handleChange}
+                    className={dataTableStyles.formInput}
+                    required
+                  >
+                    <option value="monthly">Mensal</option>
+                    <option value="weekly">Semanal</option>
+                    <option value="yearly">Anual</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className={dataTableStyles.modalActions}>
+            <button 
+              type="button" 
+              onClick={onCancel} 
+              className={dataTableStyles.secondaryButton}
+            >
+              <BsXLg /> Cancelar
             </button>
-            <button type="submit" className={styles.submitButton}>
-              Salvar
+            <button 
+              type="button" 
+              onClick={handleUpdateWithConfirmation}
+              className={dataTableStyles.primaryButton}
+            >
+              <BsCheck2 /> Salvar Alterações
             </button>
           </div>
         </form>
       </div>
 
       {showConfirmModal && (
-        <div className={sharedStyles.modalOverlay}>
-          <div className={`${sharedStyles.modalContent} ${styles.fadeIn}`}>
-            <div className={styles.modalHeader}>
-              <span className="material-icons">warning</span>
-              <h3>Confirmar Edição</h3>
+        <div className={dataTableStyles.modalOverlay}>
+          <div className={`${dataTableStyles.modalContent} ${dataTableStyles.confirmModal}`}>
+            <div className={dataTableStyles.modalHeader}>
+              <BsCheck2 size={24} />
+              <h3>Confirmar Alteração</h3>
+              <button 
+                onClick={() => setShowConfirmModal(false)} 
+                className={dataTableStyles.closeButton}
+              >
+                <BsXLg size={20} />
+              </button>
             </div>
-            
-            <div className={styles.modalBody}>
-              <p>Você está editando os seguintes dados:</p>
-              
-              <ul className={styles.changesList}>
-                <li>
-                  <span className="material-icons">description</span>
-                  <span>Descrição: <strong>{formData.description}</strong></span>
-                </li>
-                <li>
-                  <span className="material-icons">attach_money</span>
-                  <span>Valor: <strong>R$ {Number(formData.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></span>
-                </li>
-                {!formData.is_recurring && (
-                  <li>
-                    <span className="material-icons">event</span>
-                    <span>Data: <strong>{new Date(formData.date).toLocaleDateString('pt-BR')}</strong></span>
-                  </li>
-                )}
-                {formData.is_recurring && (
-                  <>
-                    <li>
-                      <span className="material-icons">event_repeat</span>
-                      <span>Data de Início: <strong>{new Date(formData.start_date).toLocaleDateString('pt-BR')}</strong></span>
-                    </li>
-                  </>
-                )}
-                <li>
-                  <span className="material-icons">category</span>
-                  <span>Categoria: <strong>{categories.find(c => c.id === Number(formData.category_id))?.category_name}</strong></span>
-                </li>
-                {formData.subcategory_id && (
-                  <li>
-                    <span className="material-icons">sell</span>
-                    <span>Subcategoria: <strong>{subcategories.find(s => s.id === Number(formData.subcategory_id))?.subcategory_name}</strong></span>
-                  </li>
-                )}
-                <li>
-                  <span className="material-icons">account_balance</span>
-                  <span>Banco/Carteira: <strong>{banks.find(b => b.id === Number(formData.bank_id))?.name}</strong></span>
-                </li>
-              </ul>
+            <div className={dataTableStyles.modalBody}>
+              <div className={dataTableStyles.confirmMessage}>
+                <p>Tem certeza que deseja salvar as alterações nesta receita?</p>
+              </div>
 
-              {formData.is_recurring && (
-                <div className={styles.warningBox}>
-                  <span className="material-icons">info</span>
-                  <p>Esta é uma receita fixa. As alterações serão aplicadas a todas as receitas futuras deste grupo.</p>
+              {income.is_recurring && (
+                <div className={dataTableStyles.optionsContainer}>
+                  <div className={dataTableStyles.optionHeader}>
+                    <div className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
+                      <BsRepeat size={14} /> Receita fixa mensal
+                    </div>
+                  </div>
+                  <div className={dataTableStyles.warningText} style={{padding: '10px'}}>
+                    As alterações serão aplicadas a todas as ocorrências futuras.
+                  </div>
                 </div>
               )}
-            </div>
 
-            <div className={styles.modalFooter}>
-              <button
-                onClick={() => setShowConfirmModal(false)}
-                className={sharedStyles.cancelButton}
-                style={{
-                  backgroundColor: '#1A1B23',
-                  color: '#00FF85',
-                  border: '1px solid #00FF85'
-                }}
+              <div className={dataTableStyles.modalDetails}>
+                <div className={dataTableStyles.detailRow}>
+                  <span className={dataTableStyles.detailLabel}>Descrição:</span> 
+                  <span className={dataTableStyles.detailValue}>{formData.description}</span>
+                </div>
+                <div className={dataTableStyles.detailRow}>
+                  <span className={dataTableStyles.detailLabel}>Valor:</span> 
+                  <span className={dataTableStyles.detailValue}>R$ {typeof formData.amount === 'number' 
+                    ? formData.amount.toFixed(2) 
+                    : parseFloat(formData.amount).toFixed(2)}</span>
+                </div>
+                <div className={dataTableStyles.detailRow}>
+                  <span className={dataTableStyles.detailLabel}>Data:</span>
+                  <span className={dataTableStyles.detailValue}>{new Date(formData.date).toLocaleDateString('pt-BR')}</span>
+                </div>
+                {categories.find(c => c.id === (typeof formData.category_id === 'string' ? parseInt(formData.category_id) : formData.category_id)) && (
+                  <div className={dataTableStyles.detailRow}>
+                    <span className={dataTableStyles.detailLabel}>Categoria:</span>
+                    <span className={dataTableStyles.detailValue}>
+                      {categories.find(c => c.id === (typeof formData.category_id === 'string' ? parseInt(formData.category_id) : formData.category_id))?.category_name}
+                    </span>
+                  </div>
+                )}
+                {banks.find(b => b.id === (typeof formData.bank_id === 'string' ? parseInt(formData.bank_id) : formData.bank_id)) && (
+                  <div className={dataTableStyles.detailRow}>
+                    <span className={dataTableStyles.detailLabel}>Banco:</span>
+                    <span className={dataTableStyles.detailValue}>
+                      {banks.find(b => b.id === (typeof formData.bank_id === 'string' ? parseInt(formData.bank_id) : formData.bank_id))?.name}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className={dataTableStyles.modalActions}>
+              <button 
+                onClick={() => setShowConfirmModal(false)} 
+                className={dataTableStyles.secondaryButton}
               >
-                <span className="material-icons">close</span>
-                Cancelar
+                <BsXLg size={16} /> Cancelar
               </button>
-              <button
-                onClick={handleConfirmSubmit}
-                className={sharedStyles.confirmButton}
-                style={{
-                  backgroundColor: '#00FF85',
-                  color: '#1A1B23',
-                  border: 'none'
-                }}
+              <button 
+                onClick={handleConfirmSubmit} 
+                className={dataTableStyles.primaryButton}
               >
-                <span className="material-icons">check</span>
-                Confirmar
+                <BsCheck2 size={16} /> Confirmar
               </button>
             </div>
           </div>

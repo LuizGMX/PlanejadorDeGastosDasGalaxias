@@ -1,0 +1,1252 @@
+/* dataTable.module.css - Estilos compartilhados para telas de listagem */
+:root {
+  --primary-color: #00ff85;
+  --primary-rgb: 0, 255, 133;
+  --secondary-color: #ff00ff;
+  --background: #121212;
+  --card-background: #1e1e1e;
+  --input-bg: #2a2a2a;
+  --hover-bg: #333333;
+  --text-color: #ffffff;
+  --text-secondary: #aaaaaa;
+  --border-color: #444444;
+  --border-hover: #666666;
+  --error-color: #ff6b6b;
+  --error-rgb: 255, 107, 107;
+  --success-color: #00ff85;
+  --success-rgb: 0, 255, 133;
+  --warning-color: #ffb946;
+  --warning-rgb: 255, 185, 70;
+  --background-color: #13141B;
+  --hover-color: #00E676;
+  --gradient-start: #00FF85;
+  --gradient-end: #80FFB9;
+}
+
+/* Container principal */
+.pageContainer {
+  padding: 24px;
+  min-height: 100vh;
+  background-color: var(--background-color);
+  width: 100%;
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Header da página */
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.pageTitle {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.addButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 24px;
+  background-color: var(--secondary-color);
+  border: 2px solid var(--primary-color);
+  color: var(--primary-color);
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.addButton:hover {
+  background-color: var(--primary-color);
+  color: var(--secondary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 255, 133, 0.3);
+}
+
+.addButton:active {
+  transform: translateY(0);
+}
+
+/* Container principal de dados */
+.dataContainer {
+  background-color: var(--card-background);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-color);
+  margin-bottom: 32px;
+  overflow: hidden;
+}
+
+/* Container de filtros */
+.filtersContainer {
+  padding: 24px;
+  border-bottom: 1px solid var(--border-color);
+  background-color: transparent;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.filterRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+  align-items: center;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 180px;
+  flex: 1;
+}
+
+.filterLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-color);
+  margin-bottom: 4px;
+}
+
+.filterLabel svg {
+  color: var(--primary-color);
+  font-size: 14px;
+}
+
+/* Select moderno */
+.modernSelect {
+  position: relative;
+  background-color: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 10px 12px;
+  cursor: pointer;
+  user-select: none;
+  max-width: 100%;
+  height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+.modernSelect:hover {
+  border-color: var(--border-hover);
+}
+
+.modernSelect.active {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 1px var(--primary-color);
+}
+
+.modernSelectHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  font-size: 14px;
+  color: var(--text-color);
+}
+
+.arrow {
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.modernSelectDropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  margin-top: 4px;
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  padding: 8px 0;
+}
+
+.modernCheckboxLabel {
+  display: flex;
+  align-items: center;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.modernCheckboxLabel:hover {
+  background-color: var(--hover-bg);
+}
+
+.modernCheckbox {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  margin-right: 10px;
+}
+
+.hiddenCheckbox {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.customCheckbox {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 18px;
+  width: 18px;
+  background-color: var(--input-bg);
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+}
+
+.hiddenCheckbox:checked ~ .customCheckbox {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.hiddenCheckbox:checked ~ .customCheckbox:after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* Campo de busca */
+.searchField {
+  position: relative;
+  height: 44px;
+  min-width: 250px;
+  flex: 2;
+}
+
+.searchInput {
+  padding: 10px 12px 10px 38px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background-color: var(--input-bg);
+  width: 100%;
+  font-size: 14px;
+  height: 44px;
+  color: var(--text-color);
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 1px var(--primary-color);
+}
+
+.searchIcon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  font-size: 16px;
+  pointer-events: none;
+}
+
+/* Botão de fixos e filtros especiais */
+.recurringButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--input-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0 16px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  height: 44px;
+  min-width: 95px;
+  white-space: nowrap;
+}
+
+.recurringButton svg {
+  color: var(--primary-color);
+}
+
+.recurringButton:hover {
+  background-color: var(--hover-bg);
+}
+
+.recurringButton.active {
+  background-color: rgba(var(--primary-rgb), 0.1);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+/* Tabela de dados */
+.tableContainer {
+  padding: 0;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: var(--text-color);
+}
+
+.table th {
+  background-color: transparent;
+  padding: 16px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-secondary);
+  position: sticky;
+  top: 0;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.table td {
+  padding: 16px;
+  border-bottom: 1px solid rgba(42, 43, 51, 0.5);
+  transition: all 0.2s ease;
+  font-size: 15px;
+}
+
+.tableRow {
+  transition: background-color 0.2s ease;
+}
+
+.tableRow:hover {
+  background-color: rgba(var(--primary-rgb), 0.03);
+}
+
+.tableRow.selected {
+  background-color: rgba(0, 255, 133, 0.05);
+}
+
+/* Coluna de ações */
+.actionButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.actionButton {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.actionButton:hover {
+  color: var(--primary-color);
+  background-color: rgba(0, 255, 133, 0.1);
+}
+
+.actionButton.delete:hover {
+  color: var(--error-color);
+  background-color: rgba(255, 107, 107, 0.1);
+}
+
+/* Checkbox customizado */
+.checkboxContainer {
+  display: block;
+  position: relative;
+  padding-left: 0;
+  cursor: pointer;
+  font-size: 22px;
+  user-select: none;
+  width: 18px;
+  height: 18px;
+}
+
+.checkbox {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.checkmark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 18px;
+  width: 18px;
+  background-color: var(--input-bg);
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+}
+
+.checkboxContainer:hover .checkmark {
+  background-color: var(--hover-bg);
+}
+
+.checkboxContainer input:checked ~ .checkmark {
+  background-color: var(--primary-color);
+}
+
+.checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+.checkboxContainer input:checked ~ .checkmark:after {
+  display: block;
+}
+
+.checkboxContainer .checkmark:after {
+  left: 6px;
+  top: 2px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* Status de tipo */
+.typeStatus {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  gap: 6px;
+}
+
+.fixedType {
+  background-color: rgba(0, 255, 133, 0.1);
+  color: var(--primary-color);
+}
+
+.oneTimeType {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-color);
+}
+
+.installmentsType {
+  background-color: rgba(89, 143, 255, 0.1);
+  color: #598FFF;
+}
+
+/* Mensagem de sem dados */
+.noDataContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.noDataIcon {
+  font-size: 48px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.noDataMessage {
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--text-color);
+  margin: 0 0 8px 0;
+}
+
+.noDataSuggestion {
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+
+.noDataActions {
+  display: flex;
+  gap: 16px;
+}
+
+/* Modal de confirmação */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+.modalContent {
+  background-color: var(--card-background);
+  border-radius: 16px;
+  padding: 24px;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.3s ease;
+  border: 1px solid var(--border-color);
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modalHeader svg {
+  color: var(--primary-color);
+  font-size: 24px;
+}
+
+/* Manter a cor vermelha apenas para ícones de erro/alerta */
+.modalHeader svg.warning-icon {
+  color: var(--error-color);
+}
+
+.modalHeader h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.modalBody {
+  margin-bottom: 24px;
+}
+
+.modalMessage {
+  font-size: 16px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.cancelButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 20px;
+  background-color: var(--input-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  border-radius: 6px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  height: 40px;
+}
+
+.cancelButton:hover {
+  background-color: var(--card-background);
+  border-color: var(--text-color);
+}
+
+.confirmButton {
+  padding: 12px 20px;
+  background-color: var(--secondary-color);
+  border: 2px solid var(--error-color);
+  color: var(--error-color);
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.confirmButton:hover {
+  background-color: var(--error-color);
+  color: var(--secondary-color);
+}
+
+/* Adicionando estilos para badges de valor para despesas e ganhos */
+.amountBadge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+}
+
+.incomeAmount {
+  background-color: rgba(0, 255, 133, 0.1);
+  color: var(--primary-color);
+}
+
+.expenseAmount {
+  background-color: rgba(255, 107, 107, 0.1);
+  color: var(--error-color);
+}
+
+/* Estilos para componentes específicos de receita/despesa */
+.valuePositive {
+  color: var(--primary-color);
+  font-weight: 500;
+}
+
+.valueNegative {
+  color: var(--error-color);
+  font-weight: 500;
+}
+
+/* Responsividade para dispositivos móveis */
+@media (max-width: 768px) {
+  .pageContainer {
+    padding: 16px;
+  }
+  
+  .pageHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  
+  .pageTitle {
+    font-size: 28px;
+  }
+  
+  .addButton {
+    width: 100%;
+    justify-content: center;
+    padding: 12px;
+  }
+  
+  .filtersContainer {
+    padding: 16px;
+  }
+  
+  .filterRow {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .searchField {
+    min-width: auto;
+  }
+  
+  .modernSelectHeader {
+    padding: 10px 12px;
+  }
+  
+  .table th, 
+  .table td {
+    padding: 12px 8px;
+    font-size: 14px;
+  }
+  
+  .actionButtons {
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .actionButton {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .modalContent {
+    width: 90%;
+    padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .pageTitle {
+    font-size: 24px;
+  }
+  
+  .table th, 
+  .table td {
+    padding: 10px 4px;
+    font-size: 13px;
+  }
+  
+  .typeStatus {
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+  
+  .amountBadge {
+    padding: 4px 8px;
+    font-size: 13px;
+  }
+  
+  .modalHeader h3 {
+    font-size: 18px;
+  }
+  
+  .modalMessage {
+    font-size: 14px;
+  }
+  
+  .cancelButton,
+  .confirmButton {
+    padding: a10px 14px;
+    font-size: 14px;
+  }
+}
+
+/* Form Styles for EditIncomeForm and similar forms */
+.formModal {
+  max-width: 700px;
+  width: 100%;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  width: 100%;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.formGroupRow {
+  display: flex;
+  gap: 16px;
+}
+
+.formGroupHalf {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.formLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.formInput {
+  padding: 10px 14px;
+  border-radius: 6px;
+  background-color: var(--input-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  width: 100%;
+  height: 48px;
+  font-size: 15px;
+  transition: all 0.2s ease;
+}
+
+.formInput:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(0, 255, 133, 0.1);
+}
+
+.inputWithIcon {
+  position: relative;
+}
+
+.inputIcon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--primary-color);
+  font-size: 16px;
+}
+
+.inputWithIcon .formInput {
+  padding-left: 40px;
+}
+
+.errorMessage {
+  color: var(--error-color);
+  background-color: rgba(255, 107, 107, 0.1);
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  border-left: 4px solid var(--error-color);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.errorMessage::before {
+  content: "!";
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  background-color: var(--error-color);
+  color: var(--secondary-color);
+  border-radius: 50%;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.warningMessage {
+  background-color: rgba(255, 193, 7, 0.1);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.warningMessage p {
+  margin: 0;
+  color: var(--text-color);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+/* Responsive adjustments for forms */
+@media (max-width: 768px) {
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .formGroupRow {
+    flex-direction: column;
+  }
+  
+  .modalContent.formModal {
+    width: 90%;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 20px;
+  }
+}
+
+/* Loading and Error containers */
+.loadingContainer,
+.errorContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--card-background);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  padding: 48px;
+  margin-top: 48px;
+}
+
+.loadingText {
+  font-size: 18px;
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.loadingText::before {
+  content: "";
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid var(--primary-color);
+  border-radius: 50%;
+  border-top-color: transparent;
+  animation: spin 1s linear infinite;
+}
+
+.errorText {
+  font-size: 18px;
+  color: var(--error-color);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.errorText::before {
+  content: "!";
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background-color: var(--error-color);
+  color: white;
+  border-radius: 50%;
+  font-weight: bold;
+}
+
+/* Estilos de botões */
+
+.primaryButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background-color: var(--secondary-color);
+  border: 2px solid var(--primary-color);
+  color: var(--primary-color);
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 150px;
+}
+
+.primaryButton:hover {
+  background-color: var(--primary-color);
+  color: var(--secondary-color);
+}
+
+.secondaryButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 150px;
+}
+
+.secondaryButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: var(--text-color);
+}
+
+/* Botões para formulários e modais */
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+/* Botões de formulário modernos */
+.formButton {
+  padding: 14px 16px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 120px;
+}
+
+.formSubmit {
+  background-color: var(--secondary-color);
+  border: 2px solid var(--primary-color);
+  color: var(--primary-color);
+}
+
+.formSubmit:hover {
+  background-color: var(--primary-color);
+  color: var(--secondary-color);
+}
+
+.formCancel {
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+}
+
+.formCancel:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: var(--text-color);
+}
+
+/* Botões de alternância para seleção de tipo */
+.toggleGroup {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.toggleButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background-color: var(--input-bg);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-color);
+  border-radius: 6px;
+}
+
+.toggleButton svg {
+  color: var(--primary-color);
+  font-size: 16px;
+}
+
+.toggleButton:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: var(--primary-color);
+  color: var(--text-color);
+}
+
+.toggleButton.active {
+  background-color: var(--secondary-color);
+  border: 2px solid var(--primary-color);
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.deleteModal {
+  max-width: 550px;
+  border-left: 4px solid var(--error-color);
+}
+
+.confirmModal {
+  border-left: 4px solid var(--success-color);
+}
+
+.confirmModal .modalHeader {
+  background-color: rgba(var(--success-rgb), 0.1);
+}
+
+.confirmModal .modalHeader svg {
+  color: var(--success-color);
+}
+
+.warningIcon {
+  color: var(--error-color);
+  margin-right: 12px;
+}
+
+.confirmMessage {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.confirmMessage p {
+  margin-bottom: 8px;
+  color: var(--text-color);
+  font-size: 16px;
+}
+
+.warningText {
+  color: var(--error-color);
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+/* Opções de exclusão */
+.optionsContainer {
+  background-color: var(--secondary-color);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  border: 1px solid var(--border-color);
+}
+
+.optionHeader {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.optionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.optionItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 14px;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  background-color: var(--input-bg);
+  border: 1px solid transparent;
+}
+
+.optionItem:hover {
+  background-color: var(--hover-bg);
+  border-color: var(--border-color);
+}
+
+.optionSelected {
+  background-color: rgba(0, 255, 133, 0.1);
+  border-color: var(--primary-color);
+}
+
+.optionRadio {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+}
+
+.optionRadio input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.customRadio {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 18px;
+  width: 18px;
+  background-color: var(--input-bg);
+  border-radius: 50%;
+  border: 1px solid var(--border-color);
+}
+
+.optionRadio input[type="radio"]:checked ~ .customRadio {
+  border-color: var(--primary-color);
+}
+
+.optionRadio input[type="radio"]:checked ~ .customRadio:after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--primary-color);
+}
+
+.optionContent {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.optionTitle {
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 6px;
+  font-size: 15px;
+}
+
+.optionDescription {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* Botões do modal */
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.deleteButton {
+  border-color: var(--error-color) !important;
+  color: var(--error-color) !important;
+}
+
+.deleteButton:hover {
+  background-color: var(--error-color) !important;
+  color: var(--secondary-color) !important;
+}
+
+.deleteButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: var(--secondary-color) !important;
+  color: var(--error-color) !important;
+}
+
+/* Estilos para detalhes do modal */
+.modalDetails {
+  background-color: var(--input-bg);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.detailRow {
+  display: flex;
+  margin-bottom: 8px;
+  align-items: baseline;
+}
+
+.detailRow:last-child {
+  margin-bottom: 0;
+}
+
+.detailLabel {
+  font-weight: 600;
+  color: var(--text-secondary);
+  min-width: 100px;
+  margin-right: 8px;
+}
+
+.detailValue {
+  color: var(--text-color);
+} 

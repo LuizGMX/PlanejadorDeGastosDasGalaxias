@@ -10,7 +10,6 @@ import Income from './components/Income';
 import AddIncome from './components/AddIncome';
 import SpreadsheetUpload from './components/SpreadsheetUpload';
 import Layout from './components/Layout';
-import EditRecurringExpenses from './components/EditRecurringExpenses';
 import EditRecurringIncomes from './components/EditRecurringIncomes';
 import styles from './styles/app.module.css';
 import './styles/navbar.mobile.css';
@@ -111,11 +110,6 @@ function App() {
           <Route path="/add-income" element={
             <PrivateRoute>
               <AddIncome />
-            </PrivateRoute>
-          } />
-          <Route path="/edit-recurring-expenses" element={
-            <PrivateRoute>
-              <EditRecurringExpenses />
             </PrivateRoute>
           } />
           <Route path="/edit-recurring-incomes" element={

@@ -588,7 +588,7 @@ router.delete('/:id', authenticate, async (req, res) => {
 
     // Se a despesa for recorrente, verifica as opções de deleção
     if (expense.is_recurring && expense.recurring_group_id) {
-      const { delete_future, delete_past, delete_all } = req.query;
+      const { delete_future, delete_past, delete_all, delete_single } = req.query;
       
       if (delete_all === 'true') {
         // Exclui todas as despesas do grupo
@@ -631,12 +631,18 @@ router.delete('/:id', authenticate, async (req, res) => {
       }
     } else if (expense.has_installments && expense.installment_group_id && req.query.delete_all_installments === 'true') {
       // Se for parcelada e quiser excluir todas as parcelas
-      await Expense.destroy({
+      const deletedCount = await Expense.destroy({
         where: {
           installment_group_id: expense.installment_group_id,
           user_id: req.user.id
         },
         transaction
+      });
+      
+      await transaction.commit();
+      return res.json({ 
+        message: `${deletedCount} parcelas excluídas com sucesso`,
+        count: deletedCount
       });
     } else {
       // Se não for recorrente nem parcelada, ou se quiser excluir apenas a selecionada
@@ -667,37 +673,53 @@ router.delete('/:id/recurring', authenticate, async (req, res) => {
       return res.status(403).json({ message: 'Não autorizado' });
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Caso de exclusão de apenas uma ocorrência específica
+    if (deleteType === 'single') {
+      await Expense.destroy({
+        where: {
+          id: expense.id,
+          user_id: req.user.id
+        }
+      });
+      return res.json({ message: 'Despesa excluída com sucesso' });
+    }
 
     let whereClause = {
       user_id: req.user.id,
       recurring_group_id: expense.recurring_group_id
     };
 
+    // Usamos a data da despesa atual como referência em vez da data de hoje
+    const referenceDate = new Date(expense.expense_date);
+    
     switch (deleteType) {
       case 'all':
         // Não adiciona condição de data - exclui tudo
         break;
       case 'past':
         whereClause.expense_date = {
-          [Op.lt]: today
+          [Op.lt]: referenceDate
         };
         break;
       case 'future':
         whereClause.expense_date = {
-          [Op.gte]: today
+          [Op.gte]: referenceDate
         };
         break;
       default:
         return res.status(400).json({ message: 'Tipo de exclusão inválido' });
     }
 
-    await Expense.destroy({
+    console.log('Excluindo despesas com whereClause:', JSON.stringify(whereClause));
+    
+    const count = await Expense.destroy({
       where: whereClause
     });
 
-    res.json({ message: 'Despesa(s) excluída(s) com sucesso' });
+    res.json({ 
+      message: `${count} despesa(s) excluída(s) com sucesso`,
+      count: count
+    });
   } catch (error) {
     console.error('Erro ao excluir despesa fixa:', error);
     res.status(500).json({ message: 'Erro ao excluir despesa fixa' });

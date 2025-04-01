@@ -1,8 +1,23 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../App';
-import styles from '../styles/editExpense.module.css';
+import dataTableStyles from '../styles/dataTable.module.css';
 import sharedStyles from '../styles/shared.module.css';
 import CurrencyInput from 'react-currency-input-field';
+import { 
+  BsPencil, 
+  BsCurrencyDollar, 
+  BsCalendar3, 
+  BsCheck2, 
+  BsXLg,
+  BsFolderSymlink,
+  BsBank2,
+  BsRepeat,
+  BsListCheck,
+  BsCreditCard2Front,
+  BsCashCoin,
+  BsWallet2,
+  BsExclamationTriangle
+} from 'react-icons/bs';
 
 const EditExpenseForm = ({ expense, onSave, onCancel }) => {
   const { auth } = useContext(AuthContext);
@@ -140,16 +155,30 @@ const EditExpenseForm = ({ expense, onSave, onCancel }) => {
     }
   };
 
+  const handleUpdateWithConfirmation = () => {
+    handleSubmit({ preventDefault: () => {} });
+  };
+
+  const handlePaymentMethodChange = (method) => {
+    setFormData(prev => ({
+      ...prev,
+      payment_method: method
+    }));
+  };
+
   return (
-    <div className={styles.container}>
-      <div className={`${styles.card} ${styles.fadeIn}`}>
-        <h1 className={styles.title}>Editar Despesa</h1>
-        {error && <p className={styles.error}>{error}</p>}
+    <div className={dataTableStyles.modalOverlay}>
+      <div className={`${dataTableStyles.modalContent} ${dataTableStyles.formModal}`}>
+        <div className={dataTableStyles.modalHeader}>
+          <BsPencil size={20} />
+          <h3>Editar Despesa</h3>
+        </div>
         
-        <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.inputGroup}>
-            <label className={styles.label}>
-              <span className="material-icons">description</span>
+        {error && <p className={dataTableStyles.errorMessage}>{error}</p>}
+        
+        <form onSubmit={handleSubmit} className={dataTableStyles.formGrid}>
+          <div className={dataTableStyles.formGroup}>
+            <label className={dataTableStyles.formLabel}>
               Descrição
             </label>
             <input
@@ -157,54 +186,57 @@ const EditExpenseForm = ({ expense, onSave, onCancel }) => {
               name="description"
               value={formData.description}
               onChange={handleChange}
-              className={styles.input}
+              className={dataTableStyles.formInput}
               required
             />
           </div>
 
-          <div className={styles.inputGroup}>
-            <label className={styles.label}>
-              <span className="material-icons">attach_money</span>
+          <div className={dataTableStyles.formGroup}>
+            <label className={dataTableStyles.formLabel}>
               Valor
             </label>
-            <CurrencyInput
-              name="amount"
-              value={formData.amount}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, amount: value || 0 }))}
-              prefix="R$ "
-              decimalsLimit={2}
-              decimalSeparator=","
-              groupSeparator="."
-              className={styles.input}
-              required
-            />
+            <div className={dataTableStyles.inputWithIcon}>
+              <BsCurrencyDollar className={dataTableStyles.inputIcon} />
+              <CurrencyInput
+                name="amount"
+                value={formData.amount}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, amount: value || 0 }))}
+                prefix="R$ "
+                decimalsLimit={2}
+                decimalSeparator=","
+                groupSeparator="."
+                className={dataTableStyles.formInput}
+                required
+              />
+            </div>
           </div>
 
-          <div className={styles.inputGroup}>
-            <label className={styles.label}>
-              <span className="material-icons">event</span>
+          <div className={dataTableStyles.formGroup}>
+            <label className={dataTableStyles.formLabel}>
               Data
             </label>
-            <input
-              type="date"
-              name="expense_date"
-              value={formData.expense_date ? formData.expense_date.split('T')[0] : ''}
-              onChange={handleChange}
-              className={styles.input}
-              required
-            />
+            <div className={dataTableStyles.inputWithIcon}>
+              <BsCalendar3 className={dataTableStyles.inputIcon} />
+              <input
+                type="date"
+                name="expense_date"
+                value={formData.expense_date ? formData.expense_date.split('T')[0] : ''}
+                onChange={handleChange}
+                className={dataTableStyles.formInput}
+                required
+              />
+            </div>
           </div>
 
-          <div className={styles.inputGroup}>
-            <label className={styles.label}>
-              <span className="material-icons">category</span>
-              Categoria
+          <div className={dataTableStyles.formGroup}>
+            <label className={dataTableStyles.formLabel}>
+              <BsFolderSymlink /> Categoria
             </label>
             <select
               name="category_id"
               value={formData.category_id}
               onChange={handleChange}
-              className={styles.input}
+              className={dataTableStyles.formInput}
               required
             >
               <option value="">Selecione uma categoria</option>
@@ -216,17 +248,16 @@ const EditExpenseForm = ({ expense, onSave, onCancel }) => {
             </select>
           </div>
 
-          {formData.category_id && (
-            <div className={styles.inputGroup}>
-              <label className={styles.label}>
-                <span className="material-icons">sell</span>
-                Subcategoria
+          {subcategories.length > 0 && (
+            <div className={dataTableStyles.formGroup}>
+              <label className={dataTableStyles.formLabel}>
+                <BsListCheck /> Subcategoria
               </label>
               <select
                 name="subcategory_id"
                 value={formData.subcategory_id || ''}
                 onChange={handleChange}
-                className={styles.input}
+                className={dataTableStyles.formInput}
               >
                 <option value="">Selecione uma subcategoria</option>
                 {subcategories.map(subcategory => (
@@ -238,16 +269,15 @@ const EditExpenseForm = ({ expense, onSave, onCancel }) => {
             </div>
           )}
 
-          <div className={styles.inputGroup}>
-            <label className={styles.label}>
-              <span className="material-icons">account_balance</span>
-              Banco/Carteira
+          <div className={dataTableStyles.formGroup}>
+            <label className={dataTableStyles.formLabel}>
+              <BsBank2 /> Banco/Carteira
             </label>
             <select
               name="bank_id"
               value={formData.bank_id}
               onChange={handleChange}
-              className={styles.input}
+              className={dataTableStyles.formInput}
               required
             >
               <option value="">Selecione um banco</option>
@@ -259,139 +289,99 @@ const EditExpenseForm = ({ expense, onSave, onCancel }) => {
             </select>
           </div>
 
-          <div className={styles.inputGroup}>
-            <label className={styles.label}>
-              <span className="material-icons">payment</span>
-              Método de Pagamento
+          <div className={dataTableStyles.formGroup}>
+            <label className={dataTableStyles.formLabel}>
+              Forma de Pagamento
             </label>
-            <select
-              name="payment_method"
-              value={formData.payment_method}
-              onChange={handleChange}
-              className={styles.input}
-              required
-            >
-              <option value="">Selecione um método</option>
-              <option value="credit_card">Cartão de Crédito</option>
-              <option value="debit_card">Cartão de Débito</option>
-              <option value="money">Dinheiro</option>
-              <option value="pix">PIX</option>
-            </select>
+            <div className={dataTableStyles.toggleGroup}>
+              <button
+                type="button"
+                className={`${dataTableStyles.toggleButton} ${formData.payment_method === 'credit_card' ? dataTableStyles.active : ''}`}
+                onClick={() => handlePaymentMethodChange('credit_card')}
+              >
+                <BsCreditCard2Front /> Crédito
+              </button>
+              <button
+                type="button"
+                className={`${dataTableStyles.toggleButton} ${formData.payment_method === 'debit_card' ? dataTableStyles.active : ''}`}
+                onClick={() => handlePaymentMethodChange('debit_card')}
+              >
+                <BsCreditCard2Front /> Débito
+              </button>
+              <button
+                type="button"
+                className={`${dataTableStyles.toggleButton} ${formData.payment_method === 'cash' ? dataTableStyles.active : ''}`}
+                onClick={() => handlePaymentMethodChange('cash')}
+              >
+                <BsCashCoin /> Dinheiro
+              </button>
+              <button
+                type="button"
+                className={`${dataTableStyles.toggleButton} ${formData.payment_method === 'pix' ? dataTableStyles.active : ''}`}
+                onClick={() => handlePaymentMethodChange('pix')}
+              >
+                <BsWallet2 /> Pix
+              </button>
+            </div>
           </div>
 
-          <div className={styles.modalFooter}>
-            <button type="button" onClick={onCancel} className={styles.cancelButton}>
-              <span className="material-icons">close</span>
-              Cancelar
+          <div className={dataTableStyles.modalActions}>
+            <button 
+              type="button" 
+              onClick={onCancel} 
+              className={dataTableStyles.cancelButton}
+            >
+              <BsXLg /> Cancelar
             </button>
-            <button type="submit" className={styles.confirmButton}>
-              <span className="material-icons">check</span>
-              Confirmar
+            <button 
+              type="button" 
+              onClick={handleUpdateWithConfirmation} 
+              className={dataTableStyles.confirmButton}
+            >
+              <BsCheck2 /> Salvar Alterações
             </button>
           </div>
         </form>
       </div>
 
       {showConfirmModal && (
-        <div className={sharedStyles.modalOverlay}>
-          <div className={`${sharedStyles.modalContent} ${styles.fadeIn}`}>
-            <div className={styles.modalHeader}>
-              <span className="material-icons">warning</span>
-              <h3>Confirmar Edição</h3>
+        <div className={dataTableStyles.modalOverlay}>
+          <div className={dataTableStyles.modalContent}>
+            <div className={dataTableStyles.modalHeader}>
+              <BsCheck2 size={20} />
+              <h3>Confirmar Alteração</h3>
             </div>
-            
-            <div className={styles.modalBody}>
-              <p>Você está editando os seguintes dados:</p>
-              
-              <ul className={styles.changesList}>
-                <li>
-                  <span className="material-icons">description</span>
-                  <span>Descrição: <strong>{formData.description}</strong></span>
-                </li>
-                <li>
-                  <span className="material-icons">attach_money</span>
-                  <span>Valor: <strong>R$ {Number(formData.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></span>
-                </li>
-                {!formData.is_recurring && !formData.has_installments && (
-                  <li>
-                    <span className="material-icons">event</span>
-                    <span>Data: <strong>{new Date(formData.expense_date).toLocaleDateString('pt-BR')}</strong></span>
-                  </li>
-                )}
-                {formData.is_recurring && (
-                  <>
-                    <li>
-                      <span className="material-icons">event_repeat</span>
-                      <span>Data de Início: <strong>{new Date(formData.start_date).toLocaleDateString('pt-BR')}</strong></span>
-                    </li>
-                    <li>
-                      <span className="material-icons">event_busy</span>
-                      <span>Data de Fim: <strong>{new Date(formData.end_date).toLocaleDateString('pt-BR')}</strong></span>
-                    </li>
-                  </>
-                )}
-                {formData.has_installments && (
-                  <li>
-                    <span className="material-icons">format_list_numbered</span>
-                    <span>Número de Parcelas: <strong>{formData.total_installments}</strong></span>
-                  </li>
-                )}
-                <li>
-                  <span className="material-icons">category</span>
-                  <span>Categoria: <strong>{categories.find(c => c.id === Number(formData.category_id))?.category_name}</strong></span>
-                </li>
-                {formData.subcategory_id && (
-                  <li>
-                    <span className="material-icons">sell</span>
-                    <span>Subcategoria: <strong>{subcategories.find(s => s.id === Number(formData.subcategory_id))?.subcategory_name}</strong></span>
-                  </li>
-                )}
-                <li>
-                  <span className="material-icons">account_balance</span>
-                  <span>Banco/Carteira: <strong>{banks.find(b => b.id === Number(formData.bank_id))?.name}</strong></span>
-                </li>
-                <li>
-                  <span className="material-icons">payment</span>
-                  <span>Método de Pagamento: <strong>{
-                    {
-                      'credit_card': 'Cartão de Crédito',
-                      'debit_card': 'Cartão de Débito',
-                      'pix': 'PIX',
-                      'money': 'Dinheiro'
-                    }[formData.payment_method]
-                  }</strong></span>
-                </li>
-              </ul>
+            <div className={dataTableStyles.modalBody}>
+              <p className={dataTableStyles.modalMessage}>
+                Tem certeza que deseja salvar as alterações nesta despesa?
+              </p>
 
-              {formData.is_recurring && (
-                <div className={styles.warningBox}>
-                  <span className="material-icons">info</span>
-                  <p>Esta é uma despesa fixa. As alterações serão aplicadas a todas as despesas futuras deste grupo.</p>
+              {expense.is_recurring && (
+                <div className={`${dataTableStyles.warningMessage}`}>
+                  <p>Esta é uma despesa fixa. As alterações serão aplicadas a todas as ocorrências futuras.</p>
                 </div>
               )}
-              
-              {formData.has_installments && (
-                <div className={styles.warningBox}>
-                  <span className="material-icons">info</span>
-                  <p>Esta é uma despesa parcelada. As alterações serão aplicadas a todas as parcelas futuras.</p>
-                </div>
-              )}
-            </div>
 
-            <div className={styles.modalFooter}>
-              <button
-                onClick={() => setShowConfirmModal(false)}
-                className={styles.cancelButton}
+              <div className={dataTableStyles.modalDetails}>
+                <p><strong>Descrição:</strong> {formData.description}</p>
+                <p><strong>Valor:</strong> R$ {typeof formData.amount === 'number' 
+                  ? formData.amount.toFixed(2) 
+                  : parseFloat(formData.amount).toFixed(2)}</p>
+                <p><strong>Data:</strong> {new Date(formData.expense_date).toLocaleDateString('pt-BR')}</p>
+              </div>
+            </div>
+            <div className={dataTableStyles.modalActions}>
+              <button 
+                onClick={() => setShowConfirmModal(false)} 
+                className={dataTableStyles.cancelButton}
               >
-                <span className="material-icons">close</span>
-                Cancelar
+                <BsXLg /> Cancelar
               </button>
-              <button
-                onClick={handleConfirmSubmit}
-                className={styles.confirmButton}
+              <button 
+                onClick={handleConfirmSubmit} 
+                className={dataTableStyles.confirmButton}
               >
-                <span className="material-icons">check</span>
-                Confirmar
+                <BsCheck2 /> Confirmar
               </button>
             </div>
           </div>

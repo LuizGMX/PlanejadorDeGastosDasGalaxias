@@ -1,8 +1,23 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../App';
 import { useNavigate } from 'react-router-dom';
-import styles from '../styles/income.module.css';
+import dataTableStyles from '../styles/dataTable.module.css';
 import EditIncomeForm from './EditIncomeForm';
+import { 
+  BsArrowLeft, 
+  BsPencil, 
+  BsTrash, 
+  BsRepeat, 
+  BsCurrencyDollar,
+  BsCalendar3,
+  BsX,
+  BsExclamationTriangle,
+  BsCheck2,
+  BsPlus,
+  BsFolderSymlink,
+  BsBank2,
+  BsListCheck
+} from 'react-icons/bs';
 
 const EditRecurringIncomes = () => {
   const { auth } = useContext(AuthContext);
@@ -185,130 +200,113 @@ const EditRecurringIncomes = () => {
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <h1 style={{color: '#00FF85'}}>Editar Ganhos Fixos</h1>
+    <div className={dataTableStyles.container}>
+      <div className={dataTableStyles.header}>
+        <div className={dataTableStyles.headerTitleContainer}>
+          <BsRepeat size={24} className={dataTableStyles.headerIcon} />
+          <h2>Ganhos Fixos</h2>
+        </div>
         <button 
           onClick={() => navigate('/income')}
-          className={styles.backButton}
+          className={dataTableStyles.backButton}
         >
-          Voltar para Minhas Receitas
+          <BsArrowLeft /> Voltar
         </button>
       </div>
 
-      {error && <p className={styles.error}>{error}</p>}
-      {success && <p className={styles.success}>{success}</p>}
-
-      <div className={styles.tableContainer}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Descrição</th>
-              <th>Valor</th>
-              <th>Data</th>
-              <th>Categoria</th>
-              <th>Subcategoria</th>
-              <th>Banco/Carteira</th>
-              <th>Tipo</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {incomes.map(income => (
-              <tr key={income.id}>
-                <td data-label="Descrição">{income.description}</td>
-                <td data-label="Valor">R$ {Number(income.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                <td data-label="Data">
-                  {income.is_recurring 
-                    ? `${new Date(income.start_date).toLocaleDateString('pt-BR')} até ${new Date(income.end_date).toLocaleDateString('pt-BR')}`
-                    : new Date(income.date).toLocaleDateString('pt-BR')}
-                </td>
-                <td data-label="Categoria">{income.category_name}</td>
-                <td data-label="Subcategoria">{income.subcategory_name || '-'}</td>
-                <td data-label="Banco/Carteira">{income.bank_name}</td>
-                <td data-label="Tipo">{income.is_recurring ? 'Fixo' : 'Parcelado'}</td>
-                <td data-label="Ações">
-                  <div className={styles.actionButtons}>
-                    <button
-                      onClick={() => handleEditClick(income)}
-                      className={styles.editButton}
-                      title="Editar"
-                    >
-                      <span className="material-icons">edit</span>
-                    </button>
-                    <button
-                      onClick={() => handleDeleteClick(income)}
-                      className={styles.deleteButton}
-                      title="Excluir"
-                    >
-                      <span className="material-icons">delete</span>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {showConfirmModal && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContent}>
-            <h3>Atenção!</h3>
-            <p>
-              Você está prestes a editar uma receita {selectedIncome.is_recurring ? 'recorrente' : 'parcelada'}.
-              Esta ação irá atualizar todas as receitas futuras deste grupo.
-              Deseja continuar?
-            </p>
-            <div className={styles.modalButtons}>
-              <button
-                onClick={() => {
-                  setShowConfirmModal(false);
-                  setSelectedIncome(null);
-                }}
-                className={styles.cancelButton}
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleConfirmEdit}
-                className={styles.confirmButton}
-              >
-                Confirmar
-              </button>
-            </div>
-          </div>
+      {loading ? (
+        <div className={dataTableStyles.loadingContainer}>
+          <div className={dataTableStyles.loadingSpinner}></div>
+          <p>Carregando ganhos fixos...</p>
         </div>
-      )}
-
-      {showDeleteModal && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContent}>
-            <h3>Atenção!</h3>
-            <p>
-              Você está prestes a excluir uma receita {selectedIncome.is_recurring ? 'recorrente' : 'parcelada'}.
-              Esta ação irá excluir todas as receitas deste grupo.
-              Esta ação não pode ser desfeita. Deseja continuar?
-            </p>
-            <div className={styles.modalButtons}>
-              <button
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setSelectedIncome(null);
-                }}
-                className={styles.cancelButton}
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleDelete}
-                className={styles.deleteButton}
-              >
-                Excluir
-              </button>
-            </div>
-          </div>
+      ) : error ? (
+        <div className={dataTableStyles.errorContainer}>
+          <BsExclamationTriangle size={24} />
+          <p>{error}</p>
         </div>
+      ) : incomes.length === 0 ? (
+        <div className={dataTableStyles.emptyContainer}>
+          <p>Nenhum ganho fixo encontrado.</p>
+          <button
+            onClick={() => navigate('/add-income')}
+            className={dataTableStyles.primaryButton}
+          >
+            <BsPlus /> Adicionar Ganho Fixo
+          </button>
+        </div>
+      ) : (
+        <>
+          <div className={dataTableStyles.tableContainer}>
+            <table className={dataTableStyles.table}>
+              <thead>
+                <tr>
+                  <th>Descrição</th>
+                  <th>Valor</th>
+                  <th>Data inicial</th>
+                  <th>Data final</th>
+                  <th>Categoria</th>
+                  <th>Tipo</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {incomes.map(income => (
+                  <tr key={income.id}>
+                    <td data-label="Descrição">{income.description}</td>
+                    <td data-label="Valor">
+                      <span className={dataTableStyles.valuePositive}>
+                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(income.amount)}
+                      </span>
+                    </td>
+                    <td data-label="Data inicial">
+                      <div className={dataTableStyles.cellWithIcon}>
+                        <BsCalendar3 /> 
+                        {new Date(income.start_date || income.date).toLocaleDateString('pt-BR')}
+                      </div>
+                    </td>
+                    <td data-label="Data final">
+                      {income.end_date ? (
+                        <div className={dataTableStyles.cellWithIcon}>
+                          <BsCalendar3 />
+                          {new Date(income.end_date).toLocaleDateString('pt-BR')}
+                        </div>
+                      ) : '-'}
+                    </td>
+                    <td data-label="Categoria">
+                      <div className={dataTableStyles.cellWithIcon}>
+                        <BsFolderSymlink />
+                        {income.category_name || '-'}
+                      </div>
+                    </td>
+                    <td data-label="Tipo">
+                      <div className={dataTableStyles.fixedBadge}>
+                        <BsRepeat /> Fixo
+                      </div>
+                    </td>
+                    <td data-label="Ações">
+                      <div className={dataTableStyles.actionButtons}>
+                        <button
+                          onClick={() => handleEditClick(income)}
+                          className={dataTableStyles.editButton}
+                          title="Editar"
+                        >
+                          <BsPencil size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteClick(income)}
+                          className={dataTableStyles.deleteButton}
+                          title="Excluir"
+                        >
+                          <BsTrash size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       {editingIncome && (
@@ -317,6 +315,90 @@ const EditRecurringIncomes = () => {
           onSave={handleUpdate}
           onCancel={() => setEditingIncome(null)}
         />
+      )}
+
+      {showDeleteModal && (
+        <div className={dataTableStyles.modalOverlay}>
+          <div className={`${dataTableStyles.modalContent} ${dataTableStyles.deleteModal}`}>
+            <div className={dataTableStyles.modalHeader}>
+              <BsExclamationTriangle size={22} className={dataTableStyles.warningIcon} />
+              <h3>Confirmar exclusão</h3>
+            </div>
+            
+            <div className={dataTableStyles.modalBody}>
+              <div className={dataTableStyles.confirmMessage}>
+                <p>Você está prestes a excluir o ganho fixo:</p>
+                <p><strong>{selectedIncome?.description}</strong> - {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(selectedIncome?.amount)}</p>
+                <p className={dataTableStyles.warningText}>Esta ação excluirá todas as ocorrências e não pode ser desfeita.</p>
+              </div>
+            </div>
+            
+            <div className={dataTableStyles.modalActions}>
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setSelectedIncome(null);
+                }}
+                className={dataTableStyles.secondaryButton}
+              >
+                <BsX size={18} /> Cancelar
+              </button>
+              <button
+                onClick={handleDelete}
+                className={`${dataTableStyles.primaryButton} ${dataTableStyles.deleteButton}`}
+              >
+                <BsTrash size={16} /> Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showConfirmModal && (
+        <div className={dataTableStyles.modalOverlay}>
+          <div className={dataTableStyles.modalContent}>
+            <div className={dataTableStyles.modalHeader}>
+              <BsExclamationTriangle size={22} className={dataTableStyles.warningIcon} />
+              <h3>Confirmar edição</h3>
+            </div>
+            
+            <div className={dataTableStyles.modalBody}>
+              <div className={dataTableStyles.confirmMessage}>
+                <p>Você está prestes a aplicar alterações a um ganho fixo.</p>
+                <p className={dataTableStyles.warningText}>Todas as ocorrências futuras deste ganho serão atualizadas.</p>
+              </div>
+              
+              <div className={dataTableStyles.optionsContainer}>
+                <div className={dataTableStyles.optionHeader}>
+                  <div className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
+                    <BsRepeat size={14} /> Receita fixa mensal
+                  </div>
+                </div>
+                <div className={dataTableStyles.warningText} style={{padding: '10px'}}>
+                  Deseja continuar?
+                </div>
+              </div>
+            </div>
+            
+            <div className={dataTableStyles.modalActions}>
+              <button
+                onClick={() => {
+                  setShowConfirmModal(false);
+                  setSelectedIncome(null);
+                }}
+                className={dataTableStyles.secondaryButton}
+              >
+                <BsX size={18} /> Cancelar
+              </button>
+              <button
+                onClick={handleConfirmEdit}
+                className={dataTableStyles.primaryButton}
+              >
+                <BsCheck2 size={16} /> Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

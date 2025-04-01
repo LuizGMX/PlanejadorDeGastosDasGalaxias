@@ -1,10 +1,20 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../App';
-import styles from '../styles/addIncome.module.css';
+import dataTableStyles from '../styles/dataTable.module.css';
 import sharedStyles from '../styles/shared.module.css';
 import CurrencyInput from 'react-currency-input-field';
-import { BsPlusCircle } from 'react-icons/bs';
+import { 
+  BsPlusCircle, 
+  BsCurrencyDollar, 
+  BsCalendar3, 
+  BsCheck2, 
+  BsXLg,
+  BsFolderSymlink,
+  BsBank2,
+  BsRepeat,
+  BsListCheck
+} from 'react-icons/bs';
 
 const AddIncome = () => {
   const navigate = useNavigate();
@@ -181,22 +191,31 @@ const AddIncome = () => {
     }
   };
 
-  return (
-    <div className={styles.container}>
-      <div className={`${styles.card} ${styles.fadeIn}`}>
-        <h1 className={styles.title}><BsPlusCircle size={24} className={styles.icon} /> Adicionar Ganho</h1>
+  const handleToggleChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
 
-        {error && <p className={styles.error}>{error}</p>}
+  return (
+    <div className={dataTableStyles.modalOverlay}>
+      <div className={`${dataTableStyles.modalContent} ${dataTableStyles.formModal}`}>
+        <div className={dataTableStyles.modalHeader}>
+          <BsPlusCircle size={20} style={{ color: 'var(--primary-color)' }} />
+          <h3>Adicionar Ganho</h3>
+        </div>
+
+        {error && <p className={dataTableStyles.errorMessage}>{error}</p>}
         {success && (
           <div className={sharedStyles.successMessage}>
             {success}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.inputGroup}>
-            <label className={styles.label}>
-              <span className="material-icons">description</span>
+        <form onSubmit={handleSubmit} className={dataTableStyles.formGrid}>
+          <div className={dataTableStyles.formGroup}>
+            <label className={dataTableStyles.formLabel}>
               Descrição
             </label>
             <input
@@ -204,130 +223,126 @@ const AddIncome = () => {
               name="description"
               value={formData.description}
               onChange={handleChange}
-              className={styles.input}
+              className={dataTableStyles.formInput}
               required
             />
           </div>
 
-          <div className={styles.inputGroup}>
-            <label className={styles.label}>
-              <span className="material-icons">attach_money</span>
+          <div className={dataTableStyles.formGroup}>
+            <label className={dataTableStyles.formLabel}>
               Valor
             </label>
-            <CurrencyInput
-              name="amount"
-              placeholder="R$ 0,00"
-              decimalsLimit={2}
-              prefix="R$ "
-              decimalSeparator=","
-              groupSeparator="."
-              value={formData.amount}
-              onValueChange={(value) => {
-                const numericValue = value ? parseFloat(value.replace(/\./g, '').replace(',', '.')) : '';
-                setFormData(prev => ({ ...prev, amount: numericValue }));
-              }}
-              className={styles.input}
-              required
-            />
-          </div>
-
-          <div className={styles.paymentOptions}>
-            <div className={`${styles.paymentOption} ${formData.is_recurring ? styles.active : ''}`}>
-              <div className={styles.optionHeader} onClick={() => {
-                setFormData(prev => ({
-                  ...prev,
-                  is_recurring: !prev.is_recurring,
-                  has_installments: false,
-                  date: prev.date || new Date().toISOString().split('T')[0],
-                  recurrence_type: !prev.is_recurring ? 'monthly' : null
-                }));
-              }}>
-                <div className={styles.checkboxWrapper}>
-                  <input
-                    type="checkbox"
-                    id="is_recurring"
-                    name="is_recurring"
-                    checked={formData.is_recurring}
-                    onChange={() => {}}
-                    className={styles.checkbox}
-                  />
-                  <span className={styles.checkboxCheckmark}></span>
-                </div>
-                <label htmlFor="is_recurring" className={styles.optionLabel}>
-                  <span className="material-icons">sync</span>
-                  Fixo
-                </label>
-              </div>
+            <div className={dataTableStyles.inputWithIcon}>
+              <BsCurrencyDollar className={dataTableStyles.inputIcon} />
+              <CurrencyInput
+                name="amount"
+                placeholder="R$ 0,00"
+                decimalsLimit={2}
+                prefix="R$ "
+                decimalSeparator=","
+                groupSeparator="."
+                value={formData.amount}
+                onValueChange={(value) => {
+                  const numericValue = value ? parseFloat(value.replace(/\./g, '').replace(',', '.')) : '';
+                  setFormData(prev => ({ ...prev, amount: numericValue }));
+                }}
+                className={dataTableStyles.formInput}
+                required
+              />
             </div>
           </div>
 
-          {formData.is_recurring && (
-            <div className={styles.optionContent}>
-              <div className={styles.inputGroup}>
-                <label className={styles.label}>
-                  <span className="material-icons">calendar_today</span>
-                  Data da Primeira Cobrança
-                </label>
+          <div className={dataTableStyles.formGroup}>
+            <label className={dataTableStyles.formLabel}>
+              Tipo de Ganho
+            </label>
+            <div className={dataTableStyles.toggleGroup}>
+              <button
+                type="button"
+                className={`${dataTableStyles.toggleButton} ${!formData.is_recurring ? dataTableStyles.active : ''}`}
+                onClick={() => handleToggleChange('is_recurring', false)}
+              >
+                <BsCurrencyDollar /> Único
+              </button>
+              <button
+                type="button"
+                className={`${dataTableStyles.toggleButton} ${formData.is_recurring ? dataTableStyles.active : ''}`}
+                onClick={() => handleToggleChange('is_recurring', true)}
+              >
+                <BsRepeat /> Fixo
+              </button>
+            </div>
+          </div>
+
+          {!formData.is_recurring && (
+            <div className={dataTableStyles.formGroup}>
+              <label className={dataTableStyles.formLabel}>
+                Data
+              </label>
+              <div className={dataTableStyles.inputWithIcon}>
+                <BsCalendar3 className={dataTableStyles.inputIcon} />
                 <input
                   type="date"
                   name="date"
                   value={formData.date}
                   onChange={handleChange}
-                  className={styles.input}
+                  className={dataTableStyles.formInput}
                   required
                 />
               </div>
+            </div>
+          )}
 
-              <div className={styles.inputGroup}>
-                <label className={styles.label}>
-                  <span className="material-icons">update</span>
-                  Periodicidade
-                </label>
-                <select
-                  name="recurrence_type"
-                  value={formData.recurrence_type || 'monthly'}
-                  onChange={handleChange}
-                  className={styles.input}
-                  required
-                >
-                  <option value="daily">Diária</option>
-                  <option value="weekly">Semanal</option>
-                  <option value="monthly">Mensal</option>
-                  <option value="quarterly">Trimestral</option>
-                  <option value="semiannual">Semestral</option>
-                  <option value="annual">Anual</option>
-                </select>
+          {formData.is_recurring && (
+            <div className={dataTableStyles.formGroup}>
+              <label className={dataTableStyles.formLabel}>
+                <div className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
+                  <BsRepeat /> Ganho Fixo
+                </div>
+              </label>
+              <div className={dataTableStyles.formGroupRow}>
+                <div className={dataTableStyles.formGroupHalf}>
+                  <label className={dataTableStyles.formLabel}>Data de Início</label>
+                  <input
+                    type="date"
+                    name="date"
+                    value={formData.date}
+                    onChange={handleChange}
+                    className={dataTableStyles.formInput}
+                    required
+                  />
+                </div>
+                
+                <div className={dataTableStyles.formGroupHalf}>
+                  <label className={dataTableStyles.formLabel}>Tipo de Recorrência</label>
+                  <select
+                    name="recurrence_type"
+                    value={formData.recurrence_type || 'monthly'}
+                    onChange={handleChange}
+                    className={dataTableStyles.formInput}
+                    required
+                  >
+                    <option value="daily">Diária</option>
+                    <option value="weekly">Semanal</option>
+                    <option value="monthly">Mensal</option>
+                    <option value="quarterly">Trimestral</option>
+                    <option value="semiannual">Semestral</option>
+                    <option value="annual">Anual</option>
+                  </select>
+                </div>
               </div>
             </div>
           )}
 
-          {!formData.is_recurring && (
-            <div className={styles.inputGroup}>
-              <label className={styles.label}>
-                <span className="material-icons">calendar_today</span>
-                Data
-              </label>
-              <input
-                type="date"
-                name="date"
-                value={formData.date}
-                onChange={handleChange}
-                className={styles.input}
-                required
-              />
-            </div>
-          )}
-
-          <div className={styles.inputGroup}>
-            <label className={styles.label}>
-              <span className="material-icons">category</span>
-              Categoria
+          <div className={dataTableStyles.formGroup}>
+            <label className={dataTableStyles.formLabel}>
+              <BsFolderSymlink /> Categoria
             </label>
             <select
               name="category_id"
               value={formData.category_id}
               onChange={handleChange}
-              className={styles.input}
+              className={dataTableStyles.formInput}
               required
             >
               <option value="">Selecione uma categoria</option>
@@ -340,17 +355,15 @@ const AddIncome = () => {
           </div>
 
           {subcategories.length > 0 && (
-            <div className={styles.inputGroup}>
-              <label className={styles.label}>
-                <span className="material-icons">sell</span>
-                Subcategoria
+            <div className={dataTableStyles.formGroup}>
+              <label className={dataTableStyles.formLabel}>
+                <BsListCheck /> Subcategoria
               </label>
               <select
                 name="subcategory_id"
-                value={formData.subcategory_id}
+                value={formData.subcategory_id || ''}
                 onChange={handleChange}
-                className={styles.input}
-                required
+                className={dataTableStyles.formInput}
               >
                 <option value="">Selecione uma subcategoria</option>
                 {subcategories.map(subcategory => (
@@ -362,54 +375,40 @@ const AddIncome = () => {
             </div>
           )}
 
-          {banks.length > 0 && (
-            <div className={styles.inputGroup}>
-              <label className={styles.label}>
-                <span className="material-icons">account_balance</span>
-                Banco
-              </label>
-              <select
-                name="bank_id"
-                value={formData.bank_id}
-                onChange={handleChange}
-                className={styles.input}
-                required
-              >
-                <option value="">Selecione um banco</option>
-                {banks.map(bank => (
-                  <option key={bank.id} value={bank.id}>
-                    {bank.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          <div className={styles.buttonContainer}>
-            <button
-              type="button"
-              className={`${styles.button} ${styles.cancelButton}`}
-              onClick={() => navigate('/incomes')}
+          <div className={dataTableStyles.formGroup}>
+            <label className={dataTableStyles.formLabel}>
+              <BsBank2 /> Banco/Carteira
+            </label>
+            <select
+              name="bank_id"
+              value={formData.bank_id}
+              onChange={handleChange}
+              className={dataTableStyles.formInput}
+              required
             >
-              <span className="material-icons">close</span>
-              Cancelar
+              <option value="">Selecione um banco</option>
+              {banks.map(bank => (
+                <option key={bank.id} value={bank.id}>
+                  {bank.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className={dataTableStyles.modalActions}>
+            <button 
+              type="button" 
+              onClick={() => navigate('/income')} 
+              className={`${dataTableStyles.formButton} ${dataTableStyles.formCancel}`}
+            >
+              <BsXLg /> Cancelar
             </button>
-            <button
-              type="submit"
-              className={`${styles.button} ${styles.submitButton}`}
+            <button 
+              type="submit" 
+              className={`${dataTableStyles.formButton} ${dataTableStyles.formSubmit}`}
               disabled={loading}
             >
-              {loading ? (
-                <>
-                  <span className="material-icons spinning">sync</span>
-                  Salvando...
-                </>
-              ) : (
-                <>
-                  <span className="material-icons">save</span>
-                  Salvar
-                </>
-              )}
+              <BsCheck2 /> {loading ? 'Salvando...' : 'Salvar Ganho'}
             </button>
           </div>
         </form>

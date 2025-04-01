@@ -1,10 +1,28 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../App';
-import styles from '../styles/expenses.module.css';
+import dataTableStyles from '../styles/dataTable.module.css';
 import sharedStyles from '../styles/shared.module.css';
 import EditExpenseForm from './EditExpenseForm';
 import { toast } from 'react-hot-toast';
+import { 
+  BsPlusLg, 
+  BsCash, 
+  BsCalendar3, 
+  BsFilter, 
+  BsSearch, 
+  BsPencil, 
+  BsTrash, 
+  BsBank2, 
+  BsExclamationTriangle, 
+  BsRepeat, 
+  BsCurrencyDollar,
+  BsX,
+  BsCreditCard2Front,
+  BsCashCoin,
+  BsWallet2,
+  BsFolderSymlink
+} from 'react-icons/bs';
 
 const Expenses = () => {
   const navigate = useNavigate();
@@ -119,7 +137,7 @@ const Expenses = () => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      const dropdowns = document.querySelectorAll(`.${styles.modernSelect}`);
+      const dropdowns = document.querySelectorAll(`.${dataTableStyles.modernSelect}`);
       let clickedOutside = true;
       
       dropdowns.forEach(dropdown => {
@@ -150,6 +168,11 @@ const Expenses = () => {
   const handleFilterChange = (type, value) => {
     if (type === 'description') {
       setFilters(prev => ({ ...prev, description: value }));
+      return;
+    }
+
+    if (type === 'is_recurring') {
+      setFilters(prev => ({ ...prev, is_recurring: value }));
       return;
     }
 
@@ -300,16 +323,11 @@ const Expenses = () => {
   const handleDeleteClick = (expense = null) => {
     if (expense) {
       setExpenseToDelete(expense);
+      setDeleteOption('single');
+      
       if (expense.is_recurring) {
         setDeleteOptions({
-          type: 'recurring',
-          showModal: true,
-          options: [
-            { id: 'all', label: 'Excluir todos os gastos fixos (passados e futuros)' },
-            { id: 'past', label: 'Excluir somente gastos fixos passados' },
-            { id: 'future', label: 'Excluir somente gastos fixos futuros' }
-          ],
-          message: 'Para excluir um gasto fixo específico, encontre-o na lista de gastos do mês desejado.'
+          type: 'recurring'
         });
       } else if (expense.has_installments) {
         setDeleteOptions({
@@ -324,6 +342,7 @@ const Expenses = () => {
     } else {
       // Deleção em massa
       setExpenseToDelete(null);
+      setDeleteOption(null);
       setDeleteOptions({
         type: 'bulk',
         ids: selectedExpenses
@@ -333,21 +352,8 @@ const Expenses = () => {
   };
 
   const handleDelete = async (expense) => {
-    if (expense.is_recurring) {
-      setExpenseToDelete(expense);
-      setDeleteOptions({
-        type: 'recurring',
-        showModal: true,
-        options: [
-          { id: 'all', label: 'Excluir todos os gastos fixos (passados e futuros)' },
-          { id: 'past', label: 'Excluir somente gastos fixos passados' },
-          { id: 'future', label: 'Excluir somente gastos fixos futuros' }
-        ],
-        message: 'Para excluir um gasto fixo específico, encontre-o na lista de gastos do mês desejado.'
-      });
-      return;
-    }
     try {
+      // Se for deleção em massa
       if (deleteOptions.type === 'bulk') {
         const response = await fetch(`${process.env.REACT_APP_API_URL}/api/expenses/bulk`, {
           method: 'DELETE',
@@ -369,58 +375,66 @@ const Expenses = () => {
         setExpenseToDelete(null);
         setDeleteOptions({ type: 'single' });
         setSelectedExpenses([]);
+        setDeleteOption(null);
 
         // Mostra mensagem de sucesso
-        setDeleteSuccess({
-          message: data.message,
-          count: data.count
-        });
-
-        // Remove a mensagem após 3 segundos
-        setTimeout(() => {
-          setDeleteSuccess(null);
-        }, 3000);
+        toast.success(data.message);
 
         // Recarrega a lista de despesas
         await fetchExpenses();
         return;
       }
 
-      let url = `${process.env.REACT_APP_API_URL}/api/expenses/${expenseToDelete.id}`;
-      const queryParams = new URLSearchParams();
+      // Se não houver uma despesa para excluir ou se for recorrente sem opção selecionada
+      if (!expense || (expense.is_recurring && !deleteOption)) {
+        return;
+      }
 
-      if (deleteOptions.type === 'recurring') {
-        switch (deleteOption) {
-          case 'future':
-            queryParams.append('delete_future', 'true');
-            break;
-          case 'past':
-            queryParams.append('delete_past', 'true');
-            break;
-          case 'all':
-            queryParams.append('delete_all', 'true');
-            break;
+      let url;
+      let method = 'DELETE';
+      let headers = {
+        'Authorization': `Bearer ${auth.token}`
+      };
+      let body = null;
+
+      if (expense.is_recurring) {
+        // Para despesas recorrentes, usar a rota específica
+        url = `${process.env.REACT_APP_API_URL}/api/expenses/${expense.id}/recurring`;
+        headers['Content-Type'] = 'application/json';
+        body = JSON.stringify({ deleteType: deleteOption });
+        
+        console.log(`Excluindo despesa recorrente com tipo: ${deleteOption}`);
+      } 
+      else if (expense.has_installments) {
+        // Para despesas parceladas
+        if (deleteOption === 'all') {
+          url = `${process.env.REACT_APP_API_URL}/api/expenses/${expense.id}?delete_all_installments=true`;
+        } else {
+          url = `${process.env.REACT_APP_API_URL}/api/expenses/${expense.id}`;
         }
-      } else if (deleteOptions.type === 'installment' && deleteOption === 'all') {
-        queryParams.append('delete_all_installments', 'true');
+      }
+      else {
+        // Para despesas normais
+        url = `${process.env.REACT_APP_API_URL}/api/expenses/${expense.id}`;
       }
 
-      if (queryParams.toString()) {
-        url += `?${queryParams.toString()}`;
-      }
+      console.log('URL de exclusão:', url);
+      console.log('Corpo da requisição:', body);
 
       const response = await fetch(url, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${auth.token}`
-        }
+        method,
+        headers,
+        body
       });
 
       if (!response.ok) {
-        throw new Error('Falha ao excluir despesa');
+        const errorData = await response.json();
+        console.error('Erro na resposta:', errorData);
+        throw new Error(`Falha ao excluir despesa: ${errorData.message || 'Erro desconhecido'}`);
       }
 
       const data = await response.json();
+      console.log('Resposta da exclusão:', data);
 
       // Limpa os estados do modal
       setShowDeleteModal(false);
@@ -429,20 +443,14 @@ const Expenses = () => {
       setDeleteOption(null);
 
       // Mostra mensagem de sucesso
-      setDeleteSuccess({
-        message: data.message,
-        count: data.count || 1
-      });
-
-      // Remove a mensagem após 3 segundos
-      setTimeout(() => {
-        setDeleteSuccess(null);
-      }, 3000);
+      toast.success(data.message || 'Despesa excluída com sucesso!');
 
       // Recarrega a lista de despesas
       await fetchExpenses();
     } catch (err) {
+      console.error('Erro ao excluir despesa:', err);
       setError('Erro ao excluir despesa. Por favor, tente novamente.');
+      toast.error(err.message || 'Erro ao excluir despesa');
     }
   };
 
@@ -498,8 +506,10 @@ const Expenses = () => {
         throw new Error('Erro ao excluir despesa');
       }
 
-      setDeleteOptions({ showModal: false });
+      setShowDeleteModal(false);
       setExpenseToDelete(null);
+      setDeleteOptions({ type: 'single' });
+      setDeleteOption(null);
       fetchExpenses();
       toast.success('Despesa(s) excluída(s) com sucesso!');
     } catch (error) {
@@ -509,11 +519,7 @@ const Expenses = () => {
   };
 
   const handleEditClick = (expense) => {
-    if (expense.is_recurring || expense.has_installments) {
-      navigate('/edit-recurring-expenses');
-    } else {
-      setEditingExpense(expense);
-    }
+    setEditingExpense(expense);
   };
 
   const formatSelectedPeriod = (filterType) => {
@@ -570,11 +576,257 @@ const Expenses = () => {
     return types[type] || '';
   };
 
+  // Procurando a estrutura dos filtros e da busca na tela de despesas
+  const filterRowContent = (
+    <div className={dataTableStyles.filterRow}>
+      <div className={dataTableStyles.filterGroup}>
+        <label className={dataTableStyles.filterLabel}>
+          <BsCalendar3 /> Meses
+        </label>
+        <div 
+          className={`${dataTableStyles.modernSelect} ${openFilter === 'months' ? dataTableStyles.active : ''}`}
+          onClick={() => handleFilterClick('months')}
+        >
+          <div className={dataTableStyles.modernSelectHeader}>
+            <span>
+              {filters.months.length === 0 
+                ? 'Nenhum mês selecionado' 
+                : filters.months.length === 1 
+                  ? months.find(m => m.value === filters.months[0])?.label 
+                  : filters.months.length === months.length 
+                    ? 'Todos os meses' 
+                    : `${filters.months.length} meses selecionados`}
+            </span>
+            <span className={dataTableStyles.arrow}>▼</span>
+          </div>
+          {openFilter === 'months' && (
+            <div className={dataTableStyles.modernSelectDropdown}>
+              <label className={dataTableStyles.modernCheckboxLabel} onClick={handleCheckboxClick}>
+                <div className={dataTableStyles.modernCheckbox}>
+                  <input
+                    type="checkbox"
+                    checked={filters.months.length === months.length}
+                    onChange={() => handleFilterChange('months', 'all')}
+                    onClick={handleCheckboxClick}
+                    className={dataTableStyles.hiddenCheckbox}
+                  />
+                  <div className={dataTableStyles.customCheckbox}></div>
+                </div>
+                <span>Todos os meses</span>
+              </label>
+              {months.map(month => (
+                <label key={month.value} className={dataTableStyles.modernCheckboxLabel} onClick={handleCheckboxClick}>
+                  <div className={dataTableStyles.modernCheckbox}>
+                    <input
+                      type="checkbox"
+                      checked={filters.months.includes(month.value)}
+                      onChange={() => handleFilterChange('months', month.value)}
+                      onClick={handleCheckboxClick}
+                      className={dataTableStyles.hiddenCheckbox}
+                    />
+                    <div className={dataTableStyles.customCheckbox}></div>
+                  </div>
+                  <span>{month.label}</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className={dataTableStyles.filterGroup}>
+        <label className={dataTableStyles.filterLabel}>
+          <BsCalendar3 /> Anos
+        </label>
+        <div 
+          className={`${dataTableStyles.modernSelect} ${openFilter === 'years' ? dataTableStyles.active : ''}`}
+          onClick={() => handleFilterClick('years')}
+        >
+          <div className={dataTableStyles.modernSelectHeader}>
+            <span>
+              {filters.years.length === 0 
+                ? 'Nenhum ano selecionado' 
+                : filters.years.length === 1 
+                  ? filters.years[0] 
+                  : filters.years.length === years.length 
+                    ? 'Todos os anos' 
+                    : `${filters.years.length} anos selecionados`}
+            </span>
+            <span className={dataTableStyles.arrow}>▼</span>
+          </div>
+          {openFilter === 'years' && (
+            <div className={dataTableStyles.modernSelectDropdown}>
+              <label className={dataTableStyles.modernCheckboxLabel} onClick={handleCheckboxClick}>
+                <div className={dataTableStyles.modernCheckbox}>
+                  <input
+                    type="checkbox"
+                    checked={filters.years.length === years.length}
+                    onChange={() => handleFilterChange('years', 'all')}
+                    onClick={handleCheckboxClick}
+                    className={dataTableStyles.hiddenCheckbox}
+                  />
+                  <div className={dataTableStyles.customCheckbox}></div>
+                </div>
+                <span>Todos os anos</span>
+              </label>
+              {years.map(year => (
+                <label key={year.value} className={dataTableStyles.modernCheckboxLabel} onClick={handleCheckboxClick}>
+                  <div className={dataTableStyles.modernCheckbox}>
+                    <input
+                      type="checkbox"
+                      checked={filters.years.includes(year.value)}
+                      onChange={() => handleFilterChange('years', year.value)}
+                      onClick={handleCheckboxClick}
+                      className={dataTableStyles.hiddenCheckbox}
+                    />
+                    <div className={dataTableStyles.customCheckbox}></div>
+                  </div>
+                  <span>{year.label}</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className={dataTableStyles.filterGroup}>
+        <label className={dataTableStyles.filterLabel}>
+          <BsFolderSymlink /> Categoria
+        </label>
+        <div 
+          className={`${dataTableStyles.modernSelect} ${openFilter === 'category' ? dataTableStyles.active : ''}`}
+          onClick={() => handleFilterClick('category')}
+        >
+          <div className={dataTableStyles.modernSelectHeader}>
+            <span>
+              {filters.category === 'all' 
+                ? 'Todas as categorias' 
+                : categories.find(c => c.id === Number(filters.category))?.category_name || 'Selecione uma categoria'}
+            </span>
+            <span className={dataTableStyles.arrow}>▼</span>
+          </div>
+          {openFilter === 'category' && (
+            <div className={dataTableStyles.modernSelectDropdown}>
+              <label 
+                className={dataTableStyles.modernCheckboxLabel}
+                onClick={(e) => {
+                  handleCheckboxClick(e);
+                  handleFilterChange('category', 'all');
+                }}
+              >
+                <div className={dataTableStyles.modernCheckbox}>
+                  <input
+                    type="radio"
+                    checked={filters.category === 'all'}
+                    className={dataTableStyles.hiddenCheckbox}
+                    readOnly
+                  />
+                  <div className={dataTableStyles.customCheckbox}></div>
+                </div>
+                <span>Todas as categorias</span>
+              </label>
+              {categories.map(category => (
+                <label 
+                  key={category.id} 
+                  className={dataTableStyles.modernCheckboxLabel}
+                  onClick={(e) => {
+                    handleCheckboxClick(e);
+                    handleFilterChange('category', category.id.toString());
+                  }}
+                >
+                  <div className={dataTableStyles.modernCheckbox}>
+                    <input
+                      type="radio"
+                      checked={filters.category === category.id.toString()}
+                      className={dataTableStyles.hiddenCheckbox}
+                      readOnly
+                    />
+                    <div className={dataTableStyles.customCheckbox}></div>
+                  </div>
+                  <span>{category.category_name}</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className={dataTableStyles.filterGroup}>
+        <label className={dataTableStyles.filterLabel}>
+          <BsWallet2 /> Método de Pagamento
+        </label>
+        <div 
+          className={`${dataTableStyles.modernSelect} ${openFilter === 'paymentMethod' ? dataTableStyles.active : ''}`}
+          onClick={() => handleFilterClick('paymentMethod')}
+        >
+          <div className={dataTableStyles.modernSelectHeader}>
+            <span>
+              {paymentMethods.find(m => m.value === filters.paymentMethod)?.label || 'Método de Pagamento'}
+            </span>
+            <span className={dataTableStyles.arrow}>▼</span>
+          </div>
+          {openFilter === 'paymentMethod' && (
+            <div className={dataTableStyles.modernSelectDropdown}>
+              {paymentMethods.map(method => (
+                <label 
+                  key={method.value} 
+                  className={dataTableStyles.modernCheckboxLabel}
+                  onClick={(e) => {
+                    handleCheckboxClick(e);
+                    handleFilterChange('paymentMethod', method.value);
+                  }}
+                >
+                  <div className={dataTableStyles.modernCheckbox}>
+                    <input
+                      type="radio"
+                      checked={filters.paymentMethod === method.value}
+                      className={dataTableStyles.hiddenCheckbox}
+                      readOnly
+                    />
+                    <div className={dataTableStyles.customCheckbox}></div>
+                  </div>
+                  <span>{method.label}</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+      
+      <div style={{ display: 'flex', gap: '12px', flex: '1' }}>
+        <div className={dataTableStyles.filterGroup} style={{ flex: '1' }}>
+          <label className={dataTableStyles.filterLabel}>
+            <BsSearch /> Descrição
+          </label>
+          <div className={dataTableStyles.searchField}>
+            <BsSearch className={dataTableStyles.searchIcon} />
+            <input 
+              type="text" 
+              placeholder="Buscar por descrição..." 
+              value={filters.description} 
+              onChange={(e) => handleFilterChange('description', e.target.value)} 
+              className={dataTableStyles.searchInput}
+            />
+          </div>
+        </div>
+        
+        <button
+          className={`${dataTableStyles.recurringButton} ${filters.is_recurring === 'true' ? dataTableStyles.active : ''}`}
+          onClick={() => handleFilterChange('is_recurring', filters.is_recurring === 'true' ? '' : 'true')}
+          title="Mostrar apenas despesas fixas"
+          style={{ alignSelf: 'flex-end' }}
+        >
+          <BsRepeat /> Fixos
+        </button>
+      </div>
+    </div>
+  );
+
   if (loading) {
     return (
-      <div className={styles.container}>
-        <div className={styles.card}>
-          <p className={styles.loading}>Carregando...</p>
+      <div className={dataTableStyles.container}>
+        <div className={dataTableStyles.card}>
+          <p className={dataTableStyles.loading}>Carregando...</p>
         </div>
       </div>
     );
@@ -582,410 +834,143 @@ const Expenses = () => {
 
   if (error) {
     return (
-      <div className={styles.container}>
-        <div className={styles.card}>
-          <p className={styles.error}>{error}</p>
+      <div className={dataTableStyles.container}>
+        <div className={dataTableStyles.card}>
+          <p className={dataTableStyles.error}>{error}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={`${styles.container} ${styles.expensesContainer}`}>
-      <div className={styles.header}>
-        <h1 className={styles.title}>Minhas Despesas</h1>
-        <button
-          className={styles.addButton}
-          onClick={() => navigate('/add-expense')}
+    <div className={dataTableStyles.pageContainer}>
+      <div className={dataTableStyles.pageHeader}>
+        <h1 className={dataTableStyles.pageTitle}>Meus Gastos</h1>
+        <button 
+          onClick={() => navigate('/add-expense')} 
+          className={dataTableStyles.addButton}
         >
-          {/* <span className="material-icons">add</span> */}
-          Adicionar Despesa
+          <BsPlusLg size={16} /> Nova Despesa
         </button>
       </div>
 
-      {deleteSuccess && (
-        <div className={sharedStyles.successMessage}>
-          {deleteSuccess.message} {deleteSuccess.count > 1 ? `(${deleteSuccess.count} itens)` : ''}
-        </div>
-      )}
-
-      <div className={styles.filtersContainer}>
-        <div className={styles.filterRow}>
-          <div className={styles.filterGroup}>
-            <div 
-              className={`${styles.modernSelect} ${openFilter === 'months' ? styles.active : ''}`}
-              onClick={() => handleFilterClick('months')}
-            >
-              <div className={styles.modernSelectHeader}>
-                <span>Mês: {formatSelectedPeriod('months')}</span>
-                <span className={`material-icons ${styles.arrow}`}>
-                  {openFilter === 'months' ? 'expand_less' : 'expand_more'}
-                </span>
-              </div>
-              {openFilter === 'months' && (
-                <div className={styles.modernSelectDropdown} onClick={e => e.stopPropagation()}>
-                  <label 
-                    key="all-months"
-                    className={styles.modernCheckboxLabel}
-                    onClick={handleCheckboxClick}
-                  >
-                    <div className={styles.modernCheckbox}>
-                      <input
-                        type="checkbox"
-                        checked={filters.months.length === months.length}
-                        onChange={() => handleFilterChange('months', 'all')}
-                        className={styles.hiddenCheckbox}
-                      />
-                      <div className={styles.customCheckbox}>
-                        <span className="material-icons">check</span>
-                      </div>
-                    </div>
-                    <span><strong>Todos os Meses</strong></span>
-                  </label>
-                  <div className={styles.divider}></div>
-                  {months.map(month => (
-                    <label 
-                      key={month.value} 
-                      className={styles.modernCheckboxLabel}
-                      onClick={handleCheckboxClick}
-                    >
-                      <div className={styles.modernCheckbox}>
-                        <input
-                          type="checkbox"
-                          checked={filters.months.includes(month.value)}
-                          onChange={() => handleFilterChange('months', month.value)}
-                          className={styles.hiddenCheckbox}
-                        />
-                        <div className={styles.customCheckbox}>
-                          <span className="material-icons">check</span>
-                        </div>
-                      </div>
-                      <span>{month.label}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className={styles.filterGroup}>
-            <div 
-              className={`${styles.modernSelect} ${openFilter === 'years' ? styles.active : ''}`}
-              onClick={() => handleFilterClick('years')}
-            >
-              <div className={styles.modernSelectHeader}>
-                <span>{formatSelectedPeriod('years').length>4  ? 'Anos: ' : 'Ano: '} {formatSelectedPeriod('years')}</span>
-                <span className={`material-icons ${styles.arrow}`}>
-                  {openFilter === 'years' ? 'expand_less' : 'expand_more'}
-                </span>
-              </div>
-              {openFilter === 'years' && (
-                <div className={styles.modernSelectDropdown} onClick={e => e.stopPropagation()}>
-                  <label 
-                    key="all-years"
-                    className={styles.modernCheckboxLabel}
-                    onClick={handleCheckboxClick}
-                  >
-                    <div className={styles.modernCheckbox}>
-                      <input
-                        type="checkbox"
-                        checked={filters.years.length === years.length}
-                        onChange={() => handleFilterChange('years', 'all')}
-                        className={styles.hiddenCheckbox}
-                      />
-                      <div className={styles.customCheckbox}>
-                        <span className="material-icons">check</span>
-                      </div>
-                    </div>
-                    <span><strong>Todos os Anos</strong></span>
-                  </label>
-                  <div className={styles.divider}></div>
-                  {years.map(year => (
-                    <label 
-                      key={year.value} 
-                      className={styles.modernCheckboxLabel}
-                      onClick={handleCheckboxClick}
-                    >
-                      <div className={styles.modernCheckbox}>
-                        <input
-                          type="checkbox"
-                          checked={filters.years.includes(year.value)}
-                          onChange={() => handleFilterChange('years', year.value)}
-                          className={styles.hiddenCheckbox}
-                        />
-                        <div className={styles.customCheckbox}>
-                          <span className="material-icons">check</span>
-                        </div>
-                      </div>
-                      <span>{year.label}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+      <div className={dataTableStyles.dataContainer}>
+        <div className={dataTableStyles.filtersContainer}>
+          {filterRowContent}
         </div>
 
-        <div className={styles.filterRow}>
-          <div className={styles.filterGroup}>
-            <div 
-              className={`${styles.modernSelect} ${openFilter === 'category' ? styles.active : ''}`}
-              onClick={() => handleFilterClick('category')}
-            >
-              <div className={styles.modernSelectHeader}>
-                <span>{formatSelectedPeriod('category')}</span>
-                <span className={`material-icons ${styles.arrow}`}>
-                  {openFilter === 'category' ? 'expand_less' : 'expand_more'}
-                </span>
-              </div>
-              {openFilter === 'category' && (
-                <div className={styles.modernSelectDropdown} onClick={e => e.stopPropagation()}>
-                  <label 
-                    key="all-categories" 
-                    className={styles.modernCheckboxLabel}
-                    onClick={handleCheckboxClick}
-                  >
-                    <div className={styles.modernCheckbox}>
-                      <input
-                        type="radio"
-                        checked={!filters.category || filters.category === ''}
-                        onChange={() => handleFilterChange('category', '')}
-                        className={styles.hiddenCheckbox}
-                      />
-                      <div className={styles.customCheckbox}>
-                        <span className="material-icons">check</span>
-                      </div>
-                    </div>
-                    <span><strong>Todas as categorias</strong></span>
-                  </label>
-                  <div className={styles.divider}></div>
-                  {categories.map(category => (
-                    <label 
-                      key={category.value} 
-                      className={styles.modernCheckboxLabel}
-                      onClick={handleCheckboxClick}
-                    >
-                      <div className={styles.modernCheckbox}>
-                        <input
-                          type="radio"
-                          checked={filters.category === category.value}
-                          onChange={() => handleFilterChange('category', category.value)}
-                          className={styles.hiddenCheckbox}
-                        />
-                        <div className={styles.customCheckbox}>
-                          <span className="material-icons">check</span>
-                        </div>
-                      </div>
-                      <span>{category.label}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
+        {noExpensesMessage ? (
+          <div className={dataTableStyles.noDataContainer}>
+            <BsCash className={dataTableStyles.noDataIcon} />
+            <h3 className={dataTableStyles.noDataMessage}>{noExpensesMessage.message}</h3>
+            <p className={dataTableStyles.noDataSuggestion}>{noExpensesMessage.suggestion}</p>
           </div>
-
-          <div className={styles.filterGroup}>
-            <div 
-              className={`${styles.modernSelect} ${openFilter === 'paymentMethod' ? styles.active : ''}`}
-              onClick={() => handleFilterClick('paymentMethod')}
-            >
-              <div className={styles.modernSelectHeader}>
-                <span>{formatSelectedPeriod('paymentMethod')}</span>
-                <span className={`material-icons ${styles.arrow}`}>
-                  {openFilter === 'paymentMethod' ? 'expand_less' : 'expand_more'}
-                </span>
-              </div>
-              {openFilter === 'paymentMethod' && (
-                <div className={styles.modernSelectDropdown} onClick={e => e.stopPropagation()}>
-                  {paymentMethods.map(method => (
-                    <label 
-                      key={method.value} 
-                      className={styles.modernCheckboxLabel}
-                      onClick={handleCheckboxClick}
-                    >
-                      <div className={styles.modernCheckbox}>
-                        <input
-                          type="radio"
-                          checked={filters.paymentMethod === method.value}
-                          onChange={() => handleFilterChange('paymentMethod', method.value)}
-                          className={styles.hiddenCheckbox}
-                        />
-                        <div className={styles.customCheckbox}>
-                          <span className="material-icons">check</span>
-                        </div>
-                      </div>
-                      <span>{method.label}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-
-        <div className={styles.searchRow}>
-          <div className={styles.searchField}>
-            <span className="material-icons">search</span>
-            <input
-              type="text"
-              placeholder="Buscar por descrição..."
-              value={filters.description}
-              onChange={(e) => handleFilterChange('description', e.target.value)}
-              className={styles.searchInput}
-            />
-          </div>
-          <button
-            className={`${styles.recurringButton} ${filters.is_recurring === 'true' ? styles.active : ''}`}
-            onClick={() => handleFilterChange('is_recurring', filters.is_recurring === 'true' ? '' : 'true')}
-            title="Mostrar apenas despesas fixas"
-          >
-            <span className="material-icons">sync</span>
-            Fixas
-          </button>
-        </div>
-     
-     
-      </div>
-
-      {selectedExpenses.length > 0 && (
-        <div className={styles.bulkActions}>
-          <button
-            className={styles.deleteButton}
-            onClick={() => handleDeleteClick()}
-          >
-            Excluir {selectedExpenses.length} {selectedExpenses.length === 1 ? 'item selecionado' : 'itens selecionados'}
-          </button>
-        </div>
-      )}
-
-      {expenses.length === 0 ? (
-        <div className={styles.noData}>
-          <div className={styles.emoji}>🔍</div>
-          <h3>Nenhuma despesa encontrada para os filtros selecionados.</h3>
-          <p>Tente mudar os filtros ou adicionar uma nova despesa.</p>
-          <div className={styles.noDataActions}>
-            <button 
-              className={styles.addButton}
-              onClick={() => navigate('/add-expense')}
-            >
-              Adicionar Nova Despesa
-            </button>
-            <button 
-              className={styles.backToCurrentMonth}
-              onClick={() => {
-                setFilters({
-                  months: [new Date().getMonth() + 1],
-                  years: [new Date().getFullYear()],
-                  category: 'all',
-                  paymentMethod: 'all',
-                  hasInstallments: 'all',
-                  description: '',
-                  is_recurring: ''
-                });
-              }}
-            >
-              Voltar para Mês Atual
-            </button>
-          </div>
-        </div>
-      ) : (
-        <>
-          <div className={styles.totalExpenses}>
-            <h3>Total de despesas para os filtros selecionados: {formatCurrency(expenses.reduce((sum, expense) => sum + Number(expense.amount), 0))}</h3>
-          </div>
-          <div className={styles.tableContainer}>
-            <table className={styles.table}>
+        ) : (
+          <div className={dataTableStyles.tableContainer}>
+            <table className={dataTableStyles.table}>
               <thead>
                 <tr>
-                  <th>
-                    <input
-                      type="checkbox"
-                      checked={selectedExpenses.length === expenses.filter(e => !e.has_installments).length}
-                      onChange={handleSelectAll}
-                    />
+                  <th width="40">
+                    <label className={dataTableStyles.checkboxContainer}>
+                      <input
+                        type="checkbox"
+                        checked={selectedExpenses.length === expenses.filter(e => !e.has_installments).length && expenses.length > 0}
+                        onChange={handleSelectAll}
+                        className={dataTableStyles.checkbox}
+                      />
+                      <span className={dataTableStyles.checkmark}></span>
+                    </label>
                   </th>
                   <th>Descrição</th>
-                  <th>Data</th>                  
+                  <th>Valor</th>
+                  <th>Data</th>
                   <th>Categoria</th>
                   <th>Subcategoria</th>
-                  <th>Valor</th>
                   <th>Método</th>
-                  <th>Parcelas</th>
                   <th>Tipo</th>
-                  <th>Recorrência</th>
-                  <th>Ações</th>
+                  <th>Parcelas</th>
+                  <th width="100">Ações</th>
                 </tr>
               </thead>
               <tbody>
-                {expenses.map(expense => (
-                  <tr key={expense.id} className={selectedExpenses.includes(expense.id) ? styles.selected : ''}>
-                    <td data-label="">
-                      <input
-                        type="checkbox"
-                        checked={selectedExpenses.includes(expense.id)}
-                        onChange={(e) => handleSelectExpense(expense.id, e)}
-                        className={expense.has_installments ? styles.installmentCheckbox : ''}
-                      />
+                {expenses.map((expense) => (
+                  <tr key={expense.id} className={dataTableStyles.tableRow}>
+                    <td>
+                      <label className={dataTableStyles.checkboxContainer}>
+                        <input
+                          type="checkbox"
+                          checked={selectedExpenses.includes(expense.id)}
+                          onChange={(e) => handleSelectExpense(expense.id, e)}
+                          className={dataTableStyles.checkbox}
+                          disabled={expense.has_installments}
+                        />
+                        <span className={dataTableStyles.checkmark}></span>
+                      </label>
                     </td>
-                    <td data-label="Descrição">{expense.description}</td>
-                    <td data-label="Data">{formatDate(expense.expense_date)}</td>
-                   
-                    <td data-label="Categoria">{expense.Category?.category_name}</td>
-                    <td data-label="Subcategoria">{expense.SubCategory?.subcategory_name}</td>
-                    <td data-label="Valor">{formatCurrency(expense.amount)}</td>
-                    <td data-label="Método">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        {expense.payment_method === 'credit_card' ? (
-                          <span className="material-icons" style={{ color: 'var(--primary-color)' }}>credit_card</span>
-                        ) : expense.payment_method === 'debit_card' ? (
-                          <span className="material-icons" style={{ color: 'var(--primary-color)' }}>credit_card</span>
-                        ) : expense.payment_method === 'pix' ? (
-                          <span className="material-icons" style={{ color: 'var(--success-color)' }}>pix</span>
-                        ) : (
-                          <span className="material-icons" style={{ color: 'var(--primary-color)' }}>payments</span>
-                        )}
-                        {expense.payment_method === 'credit_card' ? 'Crédito' :
-                         expense.payment_method === 'debit_card' ? 'Débito' :
-                         expense.payment_method === 'pix' ? 'Pix' : 'Dinheiro'}
-                        {expense.is_recurring && (
-                          <span 
-                            className="material-icons" 
-                            title="Despesa Fixa"
-                            style={{ marginLeft: '4px' }}
-                          >
-                            sync
-                          </span>
-                        )}
-                      </div>
+                    <td>{expense.description}</td>
+                    <td>
+                      <span className={`${dataTableStyles.amountBadge} ${dataTableStyles.expenseAmount}`}>
+                        R$ {Number(expense.amount).toFixed(2)}
+                      </span>
                     </td>
-                    <td data-label="Parcelas">
+                    <td>{formatDate(expense.expense_date)}</td>
+                    <td>{expense.Category?.category_name}</td>
+                    <td>{expense.SubCategory?.subcategory_name || '-'}</td>
+                    <td>
+                      {expense.payment_method === 'credit_card' ? (
+                        <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
+                          <BsCreditCard2Front /> Crédito
+                        </span>
+                      ) : expense.payment_method === 'debit_card' ? (
+                        <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
+                          <BsCreditCard2Front /> Débito
+                        </span>
+                      ) : expense.payment_method === 'pix' ? (
+                        <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
+                          <BsCurrencyDollar /> Pix
+                        </span>
+                      ) : (
+                        <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
+                          <BsCashCoin /> Dinheiro
+                        </span>
+                      )}
+                    </td>
+                    <td>
+                      {expense.is_recurring ? (
+                        <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
+                          <BsRepeat /> Fixo
+                        </span>
+                      ) : expense.has_installments ? (
+                        <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.installmentsType}`}>
+                          <BsCreditCard2Front /> Parcelado
+                        </span>
+                      ) : (
+                        <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
+                          <BsCurrencyDollar /> Único
+                        </span>
+                      )}
+                    </td>
+                    <td>
                       {expense.has_installments 
                         ? `${expense.current_installment}/${expense.total_installments}`
                         : '-'
                       }
                     </td>
-                    <td data-label="Tipo">
-                      {expense.is_recurring ? 'Fixo' : expense.has_installments ? 'Parcelado' : 'À Vista'}
-                    </td>
-                    <td data-label="Recorrência">
-                      {expense.is_recurring ? formatRecurrenceType(expense.recurrence_type) : '-'}
-                    </td>
-                    <td data-label="Ações">
-                      <div className={styles.actionButtons}>
-                        <button
-                          onClick={() => handleEditClick(expense)}
-                          className={styles.editButton}
+                    <td>
+                      <div className={dataTableStyles.actionButtons}>
+                        <button 
+                          onClick={() => handleEditClick(expense)} 
+                          className={dataTableStyles.actionButton}
                           title="Editar"
                         >
-                          <span className="material-icons">edit</span>
+                          <BsPencil />
                         </button>
-                        <button
-                          onClick={() => handleDeleteClick(expense)}
-                          className={styles.deleteButton}
+                        <button 
+                          onClick={() => handleDeleteClick(expense)} 
+                          className={`${dataTableStyles.actionButton} ${dataTableStyles.delete}`}
                           title="Excluir"
                         >
-                          <span className="material-icons">delete</span>
+                          <BsTrash />
                         </button>
                       </div>
                     </td>
@@ -994,35 +979,176 @@ const Expenses = () => {
               </tbody>
             </table>
           </div>
-          <div className={styles.bottomSpace}></div>
-        </>
-      )}
+        )}
+      </div>
 
-      {deleteOptions.showModal && (
-        <div className={styles.modal}>
-          <div className={styles.modalContent}>
-            <h2>Excluir Despesa Fixa</h2>
-            <p>{deleteOptions.message}</p>
-            <div className={styles.optionsContainer}>
-              {deleteOptions.options.map(option => (
-                <button
-                  key={option.id}
-                  className={styles.optionButton}
-                  onClick={() => handleDeleteConfirm(option.id)}
-                >
-                  {option.label}
-                </button>
-              ))}
+      {showDeleteModal && (
+        <div className={dataTableStyles.modalOverlay}>
+          <div className={`${dataTableStyles.modalContent} ${dataTableStyles.deleteModal}`}>
+            <div className={dataTableStyles.modalHeader}>
+              <BsExclamationTriangle size={22} className={dataTableStyles.warningIcon} />
+              <h3>Confirmar exclusão</h3>
             </div>
-            <button 
-              className={styles.cancelButton}
-              onClick={() => {
-                setDeleteOptions({ showModal: false });
-                setExpenseToDelete(null);
-              }}
-            >
-              Cancelar
-            </button>
+            <div className={dataTableStyles.modalBody}>
+              {deleteOptions.type === 'bulk' ? (
+                <div className={dataTableStyles.confirmMessage}>
+                  <p>Você está prestes a excluir <strong>{deleteOptions.ids.length}</strong> despesas selecionadas.</p>
+                  <p className={dataTableStyles.warningText}>Esta ação não pode ser desfeita.</p>
+                </div>
+              ) : (
+                <div className={dataTableStyles.confirmMessage}>
+                  <p>
+                    Deseja excluir a despesa <strong>{expenseToDelete?.description}</strong>?
+                  </p>
+                  <p className={dataTableStyles.warningText}>Esta ação não pode ser desfeita.</p>
+                </div>
+              )}
+              
+              {expenseToDelete?.is_recurring && (
+                <div className={dataTableStyles.optionsContainer}>
+                  <div className={dataTableStyles.optionHeader}>
+                    <div className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
+                      <BsRepeat size={14} /> Despesa fixa mensal
+                    </div>
+                  </div>
+                  
+                  <div className={dataTableStyles.optionsList}>
+                    <label className={`${dataTableStyles.optionItem} ${deleteOption === 'single' ? dataTableStyles.optionSelected : ''}`}>
+                      <div className={dataTableStyles.optionRadio}>
+                        <input 
+                          type="radio" 
+                          name="deleteType" 
+                          value="single" 
+                          checked={deleteOption === 'single'} 
+                          onChange={(e) => setDeleteOption(e.target.value)}
+                        />
+                        <div className={dataTableStyles.customRadio}></div>
+                      </div>
+                      <div className={dataTableStyles.optionContent}>
+                        <span className={dataTableStyles.optionTitle}>Apenas esta ocorrência</span>
+                        <span className={dataTableStyles.optionDescription}>
+                          Somente esta despesa específica será excluída
+                        </span>
+                      </div>
+                    </label>
+                    
+                    <label className={`${dataTableStyles.optionItem} ${deleteOption === 'future' ? dataTableStyles.optionSelected : ''}`}>
+                      <div className={dataTableStyles.optionRadio}>
+                        <input 
+                          type="radio" 
+                          name="deleteType" 
+                          value="future" 
+                          checked={deleteOption === 'future'} 
+                          onChange={(e) => setDeleteOption(e.target.value)}
+                        />
+                        <div className={dataTableStyles.customRadio}></div>
+                      </div>
+                      <div className={dataTableStyles.optionContent}>
+                        <span className={dataTableStyles.optionTitle}>Esta e todas as futuras</span>
+                        <span className={dataTableStyles.optionDescription}>
+                          Esta ocorrência e todas as próximas serão excluídas
+                        </span>
+                      </div>
+                    </label>
+                    
+                    <label className={`${dataTableStyles.optionItem} ${deleteOption === 'all' ? dataTableStyles.optionSelected : ''}`}>
+                      <div className={dataTableStyles.optionRadio}>
+                        <input 
+                          type="radio" 
+                          name="deleteType" 
+                          value="all" 
+                          checked={deleteOption === 'all'} 
+                          onChange={(e) => setDeleteOption(e.target.value)}
+                        />
+                        <div className={dataTableStyles.customRadio}></div>
+                      </div>
+                      <div className={dataTableStyles.optionContent}>
+                        <span className={dataTableStyles.optionTitle}>Todas as ocorrências</span>
+                        <span className={dataTableStyles.optionDescription}>
+                          Todas (passadas e futuras) serão excluídas
+                        </span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              )}
+              
+              {expenseToDelete?.has_installments && (
+                <div className={dataTableStyles.optionsContainer}>
+                  <div className={dataTableStyles.optionHeader}>
+                    <div className={`${dataTableStyles.typeStatus} ${dataTableStyles.installmentsType}`}>
+                      <BsCreditCard2Front size={14} /> Despesa parcelada
+                    </div>
+                  </div>
+                  
+                  <div className={dataTableStyles.optionsList}>
+                    <label className={`${dataTableStyles.optionItem} ${deleteOption === 'single' ? dataTableStyles.optionSelected : ''}`}>
+                      <div className={dataTableStyles.optionRadio}>
+                        <input 
+                          type="radio" 
+                          name="deleteType" 
+                          value="single" 
+                          checked={deleteOption === 'single'} 
+                          onChange={(e) => setDeleteOption(e.target.value)}
+                        />
+                        <div className={dataTableStyles.customRadio}></div>
+                      </div>
+                      <div className={dataTableStyles.optionContent}>
+                        <span className={dataTableStyles.optionTitle}>Apenas esta parcela</span>
+                        <span className={dataTableStyles.optionDescription}>
+                          Somente a parcela {expenseToDelete?.current_installment}/{expenseToDelete?.total_installments} será excluída
+                        </span>
+                      </div>
+                    </label>
+                    
+                    <label className={`${dataTableStyles.optionItem} ${deleteOption === 'all' ? dataTableStyles.optionSelected : ''}`}>
+                      <div className={dataTableStyles.optionRadio}>
+                        <input 
+                          type="radio" 
+                          name="deleteType" 
+                          value="all" 
+                          checked={deleteOption === 'all'} 
+                          onChange={(e) => setDeleteOption(e.target.value)}
+                        />
+                        <div className={dataTableStyles.customRadio}></div>
+                      </div>
+                      <div className={dataTableStyles.optionContent}>
+                        <span className={dataTableStyles.optionTitle}>Todas as parcelas</span>
+                        <span className={dataTableStyles.optionDescription}>
+                          Todas as {expenseToDelete?.total_installments} parcelas serão excluídas
+                        </span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className={dataTableStyles.modalActions}>
+              <button 
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setExpenseToDelete(null);
+                  setDeleteOptions({ type: 'single' });
+                  setDeleteOption(null);
+                }} 
+                className={dataTableStyles.secondaryButton}
+              >
+                <BsX size={18} /> Cancelar
+              </button>
+              <button 
+                onClick={() => {
+                  if (deleteOptions.type === 'bulk') {
+                    handleDelete({ id: 'bulk' });
+                  } else if (expenseToDelete) {
+                    handleDelete(expenseToDelete);
+                  }
+                }}
+                className={`${dataTableStyles.primaryButton} ${dataTableStyles.deleteButton}`}
+                disabled={expenseToDelete?.is_recurring && !deleteOption}
+              >
+                <BsTrash size={16} /> Excluir
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1033,20 +1159,6 @@ const Expenses = () => {
           onSave={handleSave}
           onCancel={() => setEditingExpense(null)}
         />
-      )}
-
-      {showInstallmentMessage && (
-        <div 
-          className={styles.installmentMessage}
-          style={{
-            position: 'absolute',
-            left: messagePosition.x,
-            top: messagePosition.y
-          }}
-        >
-          Para excluir despesas parceladas, use o botão
-          <span className="material-icons" style={{ verticalAlign: 'middle', marginLeft: '4px' }}>delete_outline</span>
-        </div>
       )}
     </div>
   );

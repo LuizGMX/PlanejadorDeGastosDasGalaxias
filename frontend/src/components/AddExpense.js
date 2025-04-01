@@ -1,11 +1,25 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../App';
-import styles from '../styles/shared.module.css';
-import { BsCreditCard2Front, BsPlusCircle } from 'react-icons/bs';
-import { SiPix } from 'react-icons/si';
+import dataTableStyles from '../styles/dataTable.module.css';
+import sharedStyles from '../styles/shared.module.css';
 import CurrencyInput from 'react-currency-input-field';
-import addExpenseStyles from '../styles/addExpense.module.css';
+import { 
+  BsPlusCircle, 
+  BsCurrencyDollar, 
+  BsCalendar3, 
+  BsCheck2, 
+  BsXLg,
+  BsFolderSymlink,
+  BsBank2,
+  BsRepeat,
+  BsListCheck,
+  BsCreditCard2Front,
+  BsCashCoin,
+  BsWallet2
+} from 'react-icons/bs';
+import { SiPix } from 'react-icons/si';
+
 
 const AddExpense = () => {
   const navigate = useNavigate();
@@ -22,7 +36,7 @@ const AddExpense = () => {
     is_recurring: false,
     has_installments: false,
     start_date: null,
-    end_date: null,
+    recurrence_type: 'monthly',
     total_installments: 2
   });
   const [categories, setCategories] = useState([]);
@@ -139,6 +153,46 @@ const AddExpense = () => {
     }));
   };
 
+  const handlePaymentMethodChange = (method) => {
+    setFormData(prev => ({
+      ...prev,
+      payment_method: method
+    }));
+  };
+
+  const handleToggleChange = (type) => {
+    switch(type) {
+      case 'normal':
+        setFormData(prev => ({
+          ...prev,
+          is_recurring: false,
+          has_installments: false,
+          expense_date: prev.expense_date || new Date().toISOString().split('T')[0]
+        }));
+        break;
+      case 'installments':
+        setFormData(prev => ({
+          ...prev,
+          is_recurring: false,
+          has_installments: true,
+          total_installments: prev.total_installments || 2,
+          expense_date: prev.expense_date || new Date().toISOString().split('T')[0]
+        }));
+        break;
+      case 'recurring':
+        setFormData(prev => ({
+          ...prev,
+          is_recurring: true,
+          has_installments: false,
+          start_date: prev.start_date || new Date().toISOString().split('T')[0],
+          end_date: prev.end_date || ''
+        }));
+        break;
+      default:
+        break;
+    }
+  };
+
   const formatCurrency = (value) => {
     if (!value) return '';
 
@@ -164,16 +218,11 @@ const AddExpense = () => {
     setSuccess('');
 
     try {
-      // Validação do tipo de pagamento
-      if (!formData.is_recurring && !formData.has_installments) {
-        throw new Error('Selecione uma forma de pagamento: Recorrente ou Parcelado');
-      }
-
       // Validação da data para pagamento à vista
-      if (formData.is_in_cash) {
-        const expenseDate = new Date(formData.date);
+      if (!formData.is_recurring && !formData.has_installments) {
+        const expenseDate = new Date(formData.expense_date);
         if (isNaN(expenseDate.getTime())) {
-          throw new Error('A data da despesa é obrigatória para pagamento à vista');
+          throw new Error('A data da despesa é obrigatória para pagamento único');
         }
       }
 
@@ -202,31 +251,26 @@ const AddExpense = () => {
         }
 
         // Validação da data para pagamento parcelado
-        const expenseDate = new Date(formData.date);
+        const expenseDate = new Date(formData.expense_date);
         if (isNaN(expenseDate.getTime())) {
           throw new Error('A data da despesa é obrigatória para pagamento parcelado');
         }
       }
 
-      if (formData.is_recurring && formData.end_date) {
-        const endDate = new Date(formData.end_date);
-        if (isNaN(endDate.getTime())) {
-          throw new Error('A data final da recorrência é inválida');
-        }
-
-        const maxDate = new Date(formData.date);
-        maxDate.setFullYear(maxDate.getFullYear() + 10);
-
-        if (endDate > maxDate) {
-          throw new Error('O período de recorrência não pode ser maior que 10 anos');
+      // Validação para despesas recorrentes
+      if (formData.is_recurring) {
+        const startDate = new Date(formData.start_date || formData.expense_date);
+        
+        if (isNaN(startDate.getTime())) {
+          throw new Error('A data inicial da recorrência é inválida');
         }
 
         // Inclui a data inicial na criação da despesa recorrente
-        formData.start_date = formData.date;
+        formData.start_date = formData.start_date || formData.expense_date;
       }
 
       // Prepara os dados para envio
-      const baseDate = new Date(formData.date);
+      const baseDate = new Date(formData.expense_date);
 
       // Calcula o valor da parcela se for pagamento parcelado
       const totalAmount = parseFloat(formData.amount);
@@ -235,7 +279,7 @@ const AddExpense = () => {
         : totalAmount;
 
       // Calcula a data da primeira parcela
-      let first_installment_date = formData.date;
+      let first_installment_date = formData.expense_date;
       if (formData.has_installments && formData.current_installment > 1) {
         const firstDate = new Date(baseDate);
         firstDate.setMonth(firstDate.getMonth() - (formData.current_installment - 1));
@@ -246,21 +290,17 @@ const AddExpense = () => {
       let start_date = null;
       let end_date = null;
       if (formData.is_recurring) {        
-        start_date = formData.date;
-        const endDateObj = new Date(formData.date);        
-        endDateObj.setMonth(11); // Define o mês como dezembro
-        endDateObj.setDate(31); // Define o dia como 31
-        endDateObj.setYear(2099);
-        end_date = endDateObj.toISOString().split('T')[0];
+        start_date = formData.start_date || formData.expense_date;
       }
 
       const dataToSend = {
         ...formData,
         amount: installmentAmount,
         first_installment_date,
-        expense_date: formData.date,
+        expense_date: formData.expense_date,
         start_date,
-        end_date
+        end_date: null,
+        recurrence_type: formData.is_recurring ? formData.recurrence_type : null
       };
 
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/expenses`, {
@@ -306,21 +346,23 @@ const AddExpense = () => {
   };
 
   return (
-    <div className={addExpenseStyles.container}>
-      <div className={addExpenseStyles.card}>
-        <h1 className={styles.title}><BsPlusCircle size={24} className={styles.icon} /> Adicionar Despesa</h1>
+    <div className={dataTableStyles.modalOverlay}>
+      <div className={`${dataTableStyles.modalContent} ${dataTableStyles.formModal}`}>
+        <div className={dataTableStyles.modalHeader}>
+          <BsPlusCircle size={20} style={{ color: 'var(--primary-color)' }} />
+          <h3>Adicionar Despesa</h3>
+        </div>
 
-        {error && <p className={styles.error}>{error}</p>}
+        {error && <p className={dataTableStyles.errorMessage}>{error}</p>}
         {success && (
-          <div className={addExpenseStyles.successMessage}>
+          <div className={sharedStyles.successMessage}>
             {success}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.inputGroup}>
-            <label className={styles.label}>
-              <span className="material-icons">description</span>
+        <form onSubmit={handleSubmit} className={dataTableStyles.formGrid}>
+          <div className={dataTableStyles.formGroup}>
+            <label className={dataTableStyles.formLabel}>
               Descrição
             </label>
             <input
@@ -328,233 +370,169 @@ const AddExpense = () => {
               name="description"
               value={formData.description}
               onChange={handleChange}
-              className={styles.input}
+              className={dataTableStyles.formInput}
               required
             />
           </div>
 
-          <div className={styles.inputGroup}>
-            <label className={styles.label}>
-              <span className="material-icons">attach_money</span>
+          <div className={dataTableStyles.formGroup}>
+            <label className={dataTableStyles.formLabel}>
               Valor
             </label>
-            <CurrencyInput
-              name="amount"
-              placeholder="R$ 0,00"
-              value={formData.amount}
-              onValueChange={(value) => {
-                setFormData(prev => ({
-                  ...prev,
-                  amount: value || ''
-                }));
-              }}
-              intlConfig={{ locale: 'pt-BR', currency: 'BRL' }}
-              className={styles.input}
-              required
-            />
+            <div className={dataTableStyles.inputWithIcon}>
+              <BsCurrencyDollar className={dataTableStyles.inputIcon} />
+              <CurrencyInput
+                name="amount"
+                placeholder="R$ 0,00"
+                value={formData.amount}
+                onValueChange={(value) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    amount: value || ''
+                  }));
+                }}
+                intlConfig={{ locale: 'pt-BR', currency: 'BRL' }}
+                className={dataTableStyles.formInput}
+                required
+              />
+            </div>
           </div>
 
-          <div className={styles.paymentOptions}>
-            <div className={`${styles.paymentOption} ${formData.is_recurring ? styles.active : ''}`}>
-              <div className={styles.optionHeader} onClick={() => {
-                setFormData(prev => ({
-                  ...prev,
-                  is_recurring: !prev.is_recurring,
-                  has_installments: false,
-                  is_in_cash: false,
-                  date: !prev.is_recurring ? '' : new Date().toLocaleDateString('pt-BR'),
-                  recurrence_type: !prev.is_recurring ? 'monthly' : null
-                }));
-              }}>
-                <div className={styles.checkboxWrapper}>
-                  <input
-                    type="checkbox"
-                    id="is_recurring"
-                    name="is_recurring"
-                    checked={formData.is_recurring}
-                    onChange={() => {}}
-                    className={styles.checkbox}
-                  />
-                  <span className={styles.checkboxCheckmark}></span>
-                </div>
-                <label htmlFor="is_recurring" className={styles.optionLabel} style={{fontSize: '15px'}}>
-                  <span className="material-icons">sync</span>
-                  Fixo
-                </label>
-              </div>
-
-              {formData.is_recurring && (
-                <div className={styles.optionContent}>
-                  <div className={styles.inputGroup}>
-                    <label className={styles.label}>
-                      <span className="material-icons">calendar_today</span>
-                      Data da Primeira Cobrança
-                    </label>
-                    <input
-                      type="date"
-                      name="date"
-                      value={formData.date}
-                      onChange={handleChange}
-                      className={styles.input}
-                      required
-                    />
-                  </div>
-
-                  <div className={styles.inputGroup}>
-                    <label className={styles.label}>
-                      <span className="material-icons">update</span>
-                      Periodicidade
-                    </label>
-                    <select
-                      name="recurrence_type"
-                      value={formData.recurrence_type || 'monthly'}
-                      onChange={handleChange}
-                      className={styles.input}
-                      required
-                    >
-                      <option value="daily">Diária</option>
-                      <option value="weekly">Semanal</option>
-                      <option value="monthly">Mensal</option>
-                      <option value="quarterly">Trimestral</option>
-                      <option value="semiannual">Semestral</option>
-                      <option value="annual">Anual</option>
-                    </select>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className={`${styles.paymentOption} ${formData.has_installments ? styles.active : ''}`}>
-              <div className={styles.optionHeader} onClick={() => {
-                const today = new Date().toISOString().split('T')[0];
-                setFormData(prev => ({
-                  ...prev,
-                  has_installments: !prev.has_installments,
-                  is_recurring: false,
-                  is_in_cash: false,
-                  total_installments: !prev.has_installments ? '' : '',
-                  current_installment: !prev.has_installments ? '' : '',
-                  date: !prev.has_installments ? today : ''
-                }));
-              }}>
-                <div className={styles.checkboxWrapper}>
-                  <input
-                    type="checkbox"
-                    id="has_installments"
-                    name="has_installments"
-                    checked={formData.has_installments}
-                    onChange={() => {}}
-                    className={styles.checkbox}
-                  />
-                  <span className={styles.checkboxCheckmark}></span>
-                </div>
-                <label htmlFor="has_installments" className={styles.optionLabel}>
-                  <span className="material-icons">credit_card</span>
-                  Parcelado
-                </label>
-              </div>
-
-              {formData.has_installments && (
-                <div className={styles.optionContent}>
-                  <div className={styles.inputGroup}>
-                    <label className={styles.label}>
-                      <span className="material-icons">format_list_numbered</span>
-                      Número de Parcelas
-                    </label>
-                    <input
-                      type="text"
-                      name="total_installments"
-                      value={formData.total_installments}
-                      onChange={handleChange}                      
-                      max="100"
-                      className={styles.input}
-                      required={formData.has_installments}
-                      placeholder="Ex: 12"
-                    />
-                  </div>
-
-                  <div className={styles.inputGroup}>
-                    <label className={styles.label}>
-                      <span className="material-icons">filter_1</span>
-                      Qual parcela você está pagando?
-                    </label>
-                    <input
-                      type="text"
-                      name="current_installment"
-                      value={formData.current_installment}
-                      onChange={handleChange}                      
-                      max={formData.total_installments}
-                      className={styles.input}
-                      required={formData.has_installments}
-                      placeholder="Ex: 1"
-                    />
-                    {formData.amount && formData.total_installments > 1 && (
-                      <small className={styles.installmentInfo}>
-                        {formData.total_installments}x de {formatCurrency(formData.amount / formData.total_installments)}
-                        <br />
-                        {getInstallmentMessage(formData.total_installments, formData.current_installment)}
-                      </small>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className={`${styles.paymentOption} ${formData.is_in_cash ? styles.active : ''}`}>
-              <div className={styles.optionHeader} onClick={() => {
-                setFormData(prev => ({
-                  ...prev,
-                  is_in_cash: !prev.is_in_cash,
-                  is_recurring: false,
-                  has_installments: false
-                }));
-              }}>
-                <div className={styles.checkboxWrapper}>
-                  <input
-                    type="checkbox"
-                    id="is_in_cash"
-                    name="is_in_cash"
-                    checked={formData.is_in_cash}
-                    onChange={() => {}}
-                    className={styles.checkbox}
-                  />
-                  <span className={styles.checkboxCheckmark}></span>
-                </div>
-                <label htmlFor="is_in_cash" className={styles.optionLabel}>
-                  <span className="material-icons">payments</span>
-                  À Vista
-                </label>
-              </div>
+          <div className={dataTableStyles.formGroup}>
+            <label className={dataTableStyles.formLabel}>
+              Tipo de Despesa
+            </label>
+            <div className={dataTableStyles.toggleGroup}>
+              <button
+                type="button"
+                className={`${dataTableStyles.toggleButton} ${!formData.is_recurring && !formData.has_installments ? dataTableStyles.active : ''}`}
+                onClick={() => handleToggleChange('normal')}
+              >
+                <BsCurrencyDollar /> Única
+              </button>
+              <button
+                type="button"
+                className={`${dataTableStyles.toggleButton} ${formData.has_installments ? dataTableStyles.active : ''}`}
+                onClick={() => handleToggleChange('installments')}
+              >
+                <BsListCheck /> Parcelada
+              </button>
+              <button
+                type="button"
+                className={`${dataTableStyles.toggleButton} ${formData.is_recurring && !formData.has_installments ? dataTableStyles.active : ''}`}
+                onClick={() => handleToggleChange('recurring')}
+              >
+                <BsRepeat /> Fixa
+              </button>
             </div>
           </div>
 
           {!formData.is_recurring && !formData.has_installments && (
-            <div className={styles.inputGroup}>
-              <label className={styles.label}>
-                <span className="material-icons">calendar_today</span>
-                Data {formData.is_in_cash && '*'}
+            <div className={dataTableStyles.formGroup}>
+              <label className={dataTableStyles.formLabel}>
+                Data
               </label>
-              <input
-                type="date"
-                name="date"
-                value={formData.date}
-                onChange={handleChange}
-                className={styles.input}
-                required={formData.is_in_cash}
-              />
+              <div className={dataTableStyles.inputWithIcon}>
+                <BsCalendar3 className={dataTableStyles.inputIcon} />
+                <input
+                  type="date"
+                  name="expense_date"
+                  value={formData.expense_date}
+                  onChange={handleChange}
+                  className={dataTableStyles.formInput}
+                  required
+                />
+              </div>
             </div>
           )}
 
-          <div className={styles.inputGroup}>
-            <label className={styles.label}>
-              <span className="material-icons">category</span>
-              Categoria
+          {formData.has_installments && (
+            <div className={dataTableStyles.formGroup}>
+              <label className={dataTableStyles.formLabel}>
+                <div className={`${dataTableStyles.typeStatus} ${dataTableStyles.installmentType}`}>
+                  <BsListCheck /> Despesa Parcelada
+                </div>
+              </label>
+              <div className={dataTableStyles.formGroupRow}>
+                <div className={dataTableStyles.formGroupHalf}>
+                  <label className={dataTableStyles.formLabel}>Data da Primeira Parcela</label>
+                  <input
+                    type="date"
+                    name="expense_date"
+                    value={formData.expense_date}
+                    onChange={handleChange}
+                    className={dataTableStyles.formInput}
+                    required
+                  />
+                </div>
+                
+                <div className={dataTableStyles.formGroupHalf}>
+                  <label className={dataTableStyles.formLabel}>Número de Parcelas</label>
+                  <input
+                    type="number"
+                    min="2"
+                    max="60"
+                    name="total_installments"
+                    value={formData.total_installments}
+                    onChange={handleChange}
+                    className={dataTableStyles.formInput}
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {formData.is_recurring && !formData.has_installments && (
+            <div className={dataTableStyles.formGroup}>
+              <label className={dataTableStyles.formLabel}>
+                <div className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
+                  <BsRepeat /> Despesa Fixa
+                </div>
+              </label>
+              <div className={dataTableStyles.formGroupRow}>
+                <div className={dataTableStyles.formGroupHalf}>
+                  <label className={dataTableStyles.formLabel}>Data de Início</label>
+                  <input
+                    type="date"
+                    name="expense_date"
+                    value={formData.expense_date}
+                    onChange={handleChange}
+                    className={dataTableStyles.formInput}
+                    required
+                  />
+                </div>
+                
+                <div className={dataTableStyles.formGroupHalf}>
+                  <label className={dataTableStyles.formLabel}>Periodicidade</label>
+                  <select
+                    name="recurrence_type"
+                    value={formData.recurrence_type || 'monthly'}
+                    onChange={handleChange}
+                    className={dataTableStyles.formInput}
+                    required
+                  >
+                    <option value="daily">Diária</option>
+                    <option value="weekly">Semanal</option>
+                    <option value="monthly">Mensal</option>
+                    <option value="quarterly">Trimestral</option>
+                    <option value="semiannual">Semestral</option>
+                    <option value="annual">Anual</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className={dataTableStyles.formGroup}>
+            <label className={dataTableStyles.formLabel}>
+              <BsFolderSymlink /> Categoria
             </label>
             <select
               name="category_id"
               value={formData.category_id}
               onChange={handleChange}
-              className={styles.input}
+              className={dataTableStyles.formInput}
               required
             >
               <option value="">Selecione uma categoria</option>
@@ -567,17 +545,15 @@ const AddExpense = () => {
           </div>
 
           {subcategories.length > 0 && (
-            <div className={styles.inputGroup}>
-              <label className={styles.label}>
-                <span className="material-icons">sell</span>
-                Subcategoria
+            <div className={dataTableStyles.formGroup}>
+              <label className={dataTableStyles.formLabel}>
+                <BsListCheck /> Subcategoria
               </label>
               <select
                 name="subcategory_id"
-                value={formData.subcategory_id}
+                value={formData.subcategory_id || ''}
                 onChange={handleChange}
-                className={styles.input}
-                required
+                className={dataTableStyles.formInput}
               >
                 <option value="">Selecione uma subcategoria</option>
                 {subcategories.map(subcategory => (
@@ -589,95 +565,75 @@ const AddExpense = () => {
             </div>
           )}
 
-          {banks.length > 0 && (
-            <div className={styles.inputGroup}>
-              <label className={styles.label}>
-                <span className="material-icons">account_balance</span>
-                Banco
-              </label>
-              <select
-                name="bank_id"
-                value={formData.bank_id}
-                onChange={handleChange}
-                className={styles.input}
-                required
-              >
-                <option value="">Selecione um banco</option>
-                {banks.map(bank => (
-                  <option key={bank.id} value={bank.id}>
-                    {bank.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+          <div className={dataTableStyles.formGroup}>
+            <label className={dataTableStyles.formLabel}>
+              <BsBank2 /> Banco/Carteira
+            </label>
+            <select
+              name="bank_id"
+              value={formData.bank_id}
+              onChange={handleChange}
+              className={dataTableStyles.formInput}
+              required
+            >
+              <option value="">Selecione um banco</option>
+              {banks.map(bank => (
+                <option key={bank.id} value={bank.id}>
+                  {bank.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-          <div className={styles.paymentMethodGroup}>
-            <label className={styles.label}>
-              <span className="material-icons">payments</span>
+          <div className={dataTableStyles.formGroup}>
+            <label className={dataTableStyles.formLabel}>
               Forma de Pagamento
             </label>
-            <div className={styles.paymentButtons}>
+            <div className={dataTableStyles.toggleGroup}>
               <button
                 type="button"
-                className={`${styles.paymentButton} ${formData.payment_method === 'credit_card' || formData.payment_method === 'debit_card' ? styles.active : ''}`}
-                onClick={() => handlePaymentMethod('credit_card')}
+                className={`${dataTableStyles.toggleButton} ${formData.payment_method === 'credit_card' ? dataTableStyles.active : ''}`}
+                onClick={() => handlePaymentMethodChange('credit_card')}
               >
-                <BsCreditCard2Front size={24} className={styles.cardIcon} />
-                <span>Cartão</span>
+                <BsCreditCard2Front /> Crédito
               </button>
               <button
                 type="button"
-                className={`${styles.paymentButton} ${formData.payment_method === 'pix' ? styles.active : ''}`}
-                onClick={() => handlePaymentMethod('pix')}
+                className={`${dataTableStyles.toggleButton} ${formData.payment_method === 'debit_card' ? dataTableStyles.active : ''}`}
+                onClick={() => handlePaymentMethodChange('debit_card')}
               >
-                <SiPix size={24} className={styles.pixIcon} />
-                <span>Pix</span>
+                <BsCreditCard2Front /> Débito
               </button>
               <button
                 type="button"
-                className={`${styles.paymentButton} ${formData.payment_method === 'money' ? styles.active : ''}`}
-                onClick={() => handlePaymentMethod('money')}
+                className={`${dataTableStyles.toggleButton} ${formData.payment_method === 'cash' ? dataTableStyles.active : ''}`}
+                onClick={() => handlePaymentMethodChange('cash')}
               >
-                <span className="material-icons" style={{ color: 'var(--primary-color)' }}>payments</span>
-                <span>Dinheiro</span>
+                <BsCashCoin /> Dinheiro
+              </button>
+              <button
+                type="button"
+                className={`${dataTableStyles.toggleButton} ${formData.payment_method === 'pix' ? dataTableStyles.active : ''}`}
+                onClick={() => handlePaymentMethodChange('pix')}
+              >
+                <BsWallet2 /> Pix
               </button>
             </div>
           </div>
 
-          {(formData.payment_method === 'credit_card' || formData.payment_method === 'debit_card') && (
-            <div className={styles.paymentMethodGroup}>
-              <label className={styles.label}>
-                <span className="material-icons">credit_card</span>
-                Tipo de Cartão
-              </label>
-              <div className={styles.paymentButtons}>
-                <button
-                  type="button"
-                  className={`${styles.paymentButton} ${formData.card_type === 'credit_card' ? styles.active : ''}`}
-                  onClick={() => handlePaymentMethod('credit_card')}
-                >
-                  <BsCreditCard2Front size={32} className={styles.cardIcon} />
-                  <span>Crédito</span>
-                </button>
-                <button
-                  type="button"
-                  className={`${styles.paymentButton} ${formData.card_type === 'debit_card' ? styles.active : ''}`}
-                  onClick={() => handlePaymentMethod('debit_card')}
-                >
-                  <BsCreditCard2Front size={32} className={styles.cardIcon} />
-                  <span>Débito</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          <div className={styles.buttonGroup}>
-            <button
-              type="submit"
-              className={styles.submitButton}
+          <div className={dataTableStyles.modalActions}>
+            <button 
+              type="button" 
+              onClick={() => navigate(-1)} 
+              className={`${dataTableStyles.formButton} ${dataTableStyles.formCancel}`}
             >
-              Adicionar Despesa
+              <BsXLg /> Cancelar
+            </button>
+            <button 
+              type="submit" 
+              className={`${dataTableStyles.formButton} ${dataTableStyles.formSubmit}`}
+            >
+              <BsCheck2 /> Salvar Despesa
             </button>
           </div>
         </form>
