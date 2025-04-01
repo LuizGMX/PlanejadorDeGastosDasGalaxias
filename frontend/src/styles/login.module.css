@@ -1469,4 +1469,518 @@
   font-size: 1rem;
   text-align: center;
   margin-bottom: 0.5rem;
+}
+
+/* Progress Bar Styles */
+.progressContainer {
+  margin-bottom: 30px;
+  width: 100%;
+}
+
+.progressBar {
+  width: 100%;
+  height: 6px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary-color), var(--gradient-end));
+  border-radius: 8px;
+  transition: width 0.5s ease;
+}
+
+.progressSteps {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.progressStep {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  flex: 1;
+  transition: all 0.3s ease;
+  opacity: 0.5;
+}
+
+.stepIndicator {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.stepName {
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.activeStep {
+  opacity: 1;
+}
+
+.activeStep .stepIndicator {
+  background-color: var(--primary-color);
+  color: var(--background-color);
+  transform: scale(1.1);
+  box-shadow: 0 0 15px rgba(0, 255, 133, 0.5);
+}
+
+.activeStep .stepName {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.completedStep {
+  opacity: 1;
+}
+
+.completedStep .stepIndicator {
+  background-color: var(--primary-color);
+  color: var(--background-color);
+}
+
+/* Enhanced Button Styles */
+.buttonIcon {
+  margin-right: 8px;
+  font-size: 20px;
+}
+
+.buttonSpinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  margin-right: 8px;
+  animation: spin 1s linear infinite;
+}
+
+.loginButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.loginButton::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: all 0.6s;
+}
+
+.loginButton:hover::before {
+  left: 100%;
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  opacity: 0.8;
+  transition: all 0.3s;
+}
+
+.backButton:hover {
+  opacity: 1;
+  transform: translateY(-2px);
+}
+
+/* Bank Selection Enhancements */
+.popularBanksTitle {
+  font-size: 14px;
+  margin-top: 16px;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+}
+
+.popularBanksGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+/* Goal Calculation */
+.goalContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.periodInputs {
+  display: flex;
+  gap: 10px;
+}
+
+.periodInputs .inputWrapper {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.goalCalculation {
+  background: rgba(0, 255, 133, 0.05);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 16px;
+  border-left: 3px solid var(--primary-color);
+}
+
+.calculationTitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.calculationResult {
+  font-size: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.calculationResult p {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.calculationResult strong {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+/* Verification Code UI */
+.verificationContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.codeInput {
+  letter-spacing: 4px;
+  font-size: 18px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.resendCode {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.resendButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: var(--primary-color);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  transition: all 0.3s ease;
+}
+
+.resendButton:hover {
+  background: rgba(0, 255, 133, 0.1);
+}
+
+.resendDisabled {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.codeHelp {
+  display: flex;
+  justify-content: center;
+  padding: 8px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-top: 8px;
+}
+
+.codeHelp p {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Telegram Connection UI */
+.telegramInfo {
+  background: rgba(0, 136, 204, 0.05);
+  border-radius: 16px;
+  padding: 24px;
+  margin: 24px 0;
+  border: 1px solid rgba(0, 136, 204, 0.2);
+}
+
+.telegramIconContainer {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.telegramIcon {
+  color: #0088cc;
+  animation: float 3s ease-in-out infinite;
+}
+
+.telegramInfo h3 {
+  font-size: 18px;
+  margin-bottom: 16px;
+  color: #0088cc;
+}
+
+.telegramInfo ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.telegramInfo li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.telegramInfo li:hover {
+  background: rgba(0, 136, 204, 0.1);
+}
+
+.telegramInfo li .material-icons {
+  color: #0088cc;
+}
+
+.telegramButton {
+  background: #0088cc;
+  color: white;
+}
+
+.telegramButton:hover {
+  background: #0099dd;
+  box-shadow: 0 8px 24px rgba(0, 136, 204, 0.3);
+}
+
+/* Step by step instructions for telegram */
+.verificationSteps {
+  margin: 24px 0;
+}
+
+.stepsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.step {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.step:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.stepNumber {
+  background: #0088cc;
+  color: white;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.stepContent {
+  flex: 1;
+}
+
+.stepContent h4 {
+  font-size: 16px;
+  margin-bottom: 4px;
+  color: white;
+}
+
+.stepContent p {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.verificationCodeWrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.verificationCodeDisplay {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-family: monospace;
+  font-size: 16px;
+  letter-spacing: 2px;
+  color: var(--primary-color);
+  flex: 1;
+  text-align: center;
+  margin: 0;
+}
+
+.copyCodeButton {
+  background: rgba(0, 255, 133, 0.2);
+  border: none;
+  color: var(--primary-color);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.copyCodeButton:hover {
+  background: rgba(0, 255, 133, 0.3);
+  transform: scale(1.1);
+}
+
+.generateCodeButton {
+  background: rgba(0, 255, 133, 0.2);
+  border: none;
+  color: var(--primary-color);
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.generateCodeButton:hover {
+  background: rgba(0, 255, 133, 0.3);
+}
+
+/* Error and Success Message Styling */
+.error, .success {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  animation: slideIn 0.3s ease;
+}
+
+.error {
+  background: rgba(255, 69, 58, 0.1);
+  border-left: 3px solid #FF454A;
+  color: #FF8086;
+}
+
+.success {
+  background: rgba(0, 255, 133, 0.1);
+  border-left: 3px solid var(--primary-color);
+  color: var(--primary-color);
+}
+
+/* Mobile Responsiveness Improvements */
+@media (max-width: 768px) {
+  .progressSteps {
+    display: none;
+  }
+  
+  .stepName {
+    display: none;
+  }
+  
+  .periodInputs {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .telegramInfo ul {
+    gap: 12px;
+  }
+  
+  .step {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .loginCard {
+    padding: 24px 16px;
+  }
+  
+  .loginTitle {
+    font-size: 24px;
+  }
+  
+  .loginSubtitle {
+    font-size: 14px;
+  }
+  
+  .loginInput {
+    padding: 12px 12px 12px 40px;
+  }
+  
+  .buttonGroup {
+    flex-direction: column;
+  }
+  
+  .backButton {
+    margin-top: 12px;
+  }
 } 
