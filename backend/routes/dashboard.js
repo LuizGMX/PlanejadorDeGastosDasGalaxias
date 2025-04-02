@@ -131,6 +131,10 @@ const groupByBank = (items) => {
 
 // Função auxiliar para calcular informações do orçamento
 const calculateBudgetInfo = (totalBudget, totalExpenses) => {
+  // Garantir que os valores são números
+  totalBudget = parseFloat(totalBudget) || 0;
+  totalExpenses = parseFloat(totalExpenses) || 0;
+  
   const balance = totalBudget - totalExpenses;
   const percentageSpent = ((totalExpenses / (totalBudget || 1)) * 100);
   const remainingDays = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() - new Date().getDate();
@@ -141,7 +145,8 @@ const calculateBudgetInfo = (totalBudget, totalExpenses) => {
     balance,
     percentage_spent: percentageSpent,
     remaining_days: remainingDays,
-    suggested_daily_spend: remainingDays > 0 ? balance / remainingDays : 0
+    suggested_daily_spend: remainingDays > 0 ? balance / remainingDays : 0,
+    remaining_budget: balance // Adicionar explicitamente para compatibilidade
   };
 };
 
@@ -220,7 +225,6 @@ router.get('/', authenticate, async (req, res) => {
     // Busca todas as exceções do usuário para o período
     const recurrenceExceptions = await RecurrenceException.findAll({
       where: {
-        user_id: req.user.id,
         exception_date: {
           [Op.between]: [startDate, endDate]
         }
@@ -228,6 +232,9 @@ router.get('/', authenticate, async (req, res) => {
       include: [
         {
           model: RecurrenceRule,
+          where: {
+            user_id: req.user.id
+          },
           include: [
             { 
               model: Category,
@@ -380,15 +387,19 @@ router.get('/', authenticate, async (req, res) => {
       const sixMonthsAgo = new Date();
       sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
       
+      // Buscar dados do mês atual para obter economia atual
+      const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+      
       console.log('Buscando dados desde:', sixMonthsAgo);
+      console.log('Mês atual começa em:', currentMonthStart);
 
-      const [historicExpenses, historicIncomes] = await Promise.all([
+      const [historicExpenses, historicIncomes, currentMonthExpenses, currentMonthIncomes] = await Promise.all([
         Expense.findAll({
           where: {
             user_id: req.user.id,
             expense_date: {
               [Op.gte]: sixMonthsAgo,
-              [Op.lte]: today
+              [Op.lt]: currentMonthStart // Exclui o mês atual
             }
           }
         }),
@@ -397,53 +408,100 @@ router.get('/', authenticate, async (req, res) => {
             user_id: req.user.id,
             date: {
               [Op.gte]: sixMonthsAgo,
+              [Op.lt]: currentMonthStart // Exclui o mês atual
+            }
+          }
+        }),
+        Expense.findAll({
+          where: {
+            user_id: req.user.id,
+            expense_date: {
+              [Op.gte]: currentMonthStart,
+              [Op.lte]: today
+            }
+          }
+        }),
+        Income.findAll({
+          where: {
+            user_id: req.user.id,
+            date: {
+              [Op.gte]: currentMonthStart,
               [Op.lte]: today
             }
           }
         })
       ]);
 
-      console.log('Quantidade de despesas encontradas:', historicExpenses.length);
-      console.log('Quantidade de receitas encontradas:', historicIncomes.length);
+      console.log('Quantidade de despesas históricas encontradas:', historicExpenses.length);
+      console.log('Quantidade de receitas históricas encontradas:', historicIncomes.length);
+      console.log('Quantidade de despesas do mês atual encontradas:', currentMonthExpenses.length);
+      console.log('Quantidade de receitas do mês atual encontradas:', currentMonthIncomes.length);
 
-      // Calcula totais dos últimos 6 meses
+      // Calcula totais dos últimos 6 meses (excluindo o mês atual)
       const totalHistoricIncomes = historicIncomes.reduce((total, income) => {
         const amount = parseFloat(income.amount || 0);
-        console.log('Receita:', amount);
         return total + amount;
       }, 0);
 
       const totalHistoricExpenses = historicExpenses.reduce((total, expense) => {
         const amount = parseFloat(expense.amount || 0);
-        console.log('Despesa:', amount);
         return total + amount;
       }, 0);
 
-      console.log('Total de Receitas:', totalHistoricIncomes);
-      console.log('Total de Despesas:', totalHistoricExpenses);
+      // Calcula totais do mês atual
+      const totalCurrentMonthIncomes = currentMonthIncomes.reduce((total, income) => {
+        const amount = parseFloat(income.amount || 0);
+        return total + amount;
+      }, 0);
 
-      // Calcula a média mensal baseada nos últimos 6 meses
-      const totalSaved = totalHistoricIncomes - totalHistoricExpenses;
-      const averageMonthlyBalance = totalSaved / 6; // Divide por 6 meses
+      const totalCurrentMonthExpenses = currentMonthExpenses.reduce((total, expense) => {
+        const amount = parseFloat(expense.amount || 0);
+        return total + amount;
+      }, 0);
+
+      // Economia do mês atual
+      const currentMonthBalance = totalCurrentMonthIncomes - totalCurrentMonthExpenses;
+
+      console.log('Total de Receitas Históricas:', totalHistoricIncomes);
+      console.log('Total de Despesas Históricas:', totalHistoricExpenses);
+      console.log('Total de Receitas do Mês Atual:', totalCurrentMonthIncomes);
+      console.log('Total de Despesas do Mês Atual:', totalCurrentMonthExpenses);
+      console.log('Economia do Mês Atual:', currentMonthBalance);
+
+      // Calcula a média mensal baseada nos últimos meses (excluindo o atual)
+      const totalHistoricSaved = totalHistoricIncomes - totalHistoricExpenses;
+      const completedMonths = Math.min(5, monthsBetweenDates(sixMonthsAgo, currentMonthStart));
+      const averageMonthlyBalance = completedMonths > 0 ? totalHistoricSaved / completedMonths : 0;
+      
+      // Combinamos o histórico com dados atuais para uma melhor estimativa
+      // Usamos a economia do mês atual se disponível, ou a média histórica
+      const estimatedMonthlyBalance = currentMonthBalance !== 0 ? currentMonthBalance : averageMonthlyBalance;
+      
       const goalAmount = parseFloat(user.financial_goal_amount);
-      const monthlyNeeded = monthsUntilGoal > 0 ? (goalAmount - totalSaved) / monthsUntilGoal : goalAmount;
+      const monthlyNeeded = monthsUntilGoal > 0 ? (goalAmount - totalHistoricSaved) / monthsUntilGoal : goalAmount;
 
-      console.log('Total Economizado:', totalSaved);
-      console.log('Média Mensal:', averageMonthlyBalance);
+      // Total economizado é a soma do histórico mais o mês atual
+      const totalSaved = totalHistoricSaved + currentMonthBalance;
+
+      console.log('Total Economizado Histórico:', totalHistoricSaved);
+      console.log('Meses Completos Considerados:', completedMonths);
+      console.log('Média Mensal Histórica:', averageMonthlyBalance);
+      console.log('Economia Estimada Mensal:', estimatedMonthlyBalance);
+      console.log('Total Economizado (inclui mês atual):', totalSaved);
       console.log('Valor Necessário por Mês:', monthlyNeeded);
       
-      // Projeta a economia futura baseada na média mensal
-      const projectedAmount = totalSaved + (averageMonthlyBalance * monthsUntilGoal);
+      // Projeta a economia futura baseada na economia mensal estimada
+      const projectedAmount = totalSaved + (estimatedMonthlyBalance * monthsUntilGoal);
       
-      // Verifica se o objetivo é alcançável com a média atual
+      // Verifica se o objetivo é alcançável com a economia atual
       const isAchievable = projectedAmount >= goalAmount;
       
       // Calcula o valor faltante
       const remainingAmount = Math.max(0, goalAmount - totalSaved);
 
       // Calcula quantos meses seriam necessários com a economia atual
-      const monthsNeededWithCurrentSavings = averageMonthlyBalance > 0 
-        ? Math.ceil(remainingAmount / averageMonthlyBalance)
+      const monthsNeededWithCurrentSavings = estimatedMonthlyBalance > 0 
+        ? Math.ceil(remainingAmount / estimatedMonthlyBalance)
         : Infinity;
 
       console.log('Projeção Final:', projectedAmount);
@@ -459,14 +517,16 @@ router.get('/', authenticate, async (req, res) => {
         end_date: user.financial_goal_end_date,
         months_remaining: monthsUntilGoal,
         months_needed_with_current_savings: monthsNeededWithCurrentSavings,
-        monthly_balance: averageMonthlyBalance,
+        monthly_balance: estimatedMonthlyBalance,
+        current_month_balance: currentMonthBalance,
+        historic_monthly_average: averageMonthlyBalance,
         monthly_needed: monthlyNeeded,
         total_saved: totalSaved,
         projected_savings: projectedAmount,
         is_achievable: isAchievable,
         remaining_amount: remainingAmount,
         progress_percentage: (totalSaved / goalAmount) * 100,
-        months_since_start: 6 // Fixo em 6 meses para o cálculo da média
+        months_since_start: completedMonths + 1 // Inclui o mês atual
       };
     }
 
@@ -858,6 +918,53 @@ router.get('/projection', authenticate, async (req, res) => {
   } catch (error) {
     console.error('Erro ao buscar projeção:', error);
     res.status(500).json({ message: 'Erro ao buscar projeção' });
+  }
+});
+
+// Função auxiliar para calcular meses entre datas
+function monthsBetweenDates(startDate, endDate) {
+  return (endDate.getFullYear() - startDate.getFullYear()) * 12 + 
+         (endDate.getMonth() - startDate.getMonth());
+}
+
+// Rota para buscar todas as transações do usuário (sem filtros de data)
+router.get('/all-transactions', authenticate, async (req, res) => {
+  try {
+    console.log('\n=== BUSCA DE TODAS AS TRANSAÇÕES DO USUÁRIO ===');
+    
+    // Buscar todas as despesas do usuário
+    const expenses = await Expense.findAll({
+      where: { user_id: req.user.id },
+      include: [
+        { model: Category, as: 'Category' },
+        { model: SubCategory, as: 'SubCategory' },
+        { model: Bank, as: 'Bank' }
+      ],
+      order: [['expense_date', 'DESC']]
+    });
+    
+    // Buscar todas as receitas do usuário
+    const incomes = await Income.findAll({
+      where: { user_id: req.user.id },
+      include: [
+        { model: Category, as: 'Category' },
+        { model: SubCategory, as: 'SubCategory' },
+        { model: Bank, as: 'Bank' }
+      ],
+      order: [['date', 'DESC']]
+    });
+    
+    console.log(`Total de despesas: ${expenses.length}`);
+    console.log(`Total de receitas: ${incomes.length}`);
+    
+    return res.json({
+      expenses,
+      incomes
+    });
+    
+  } catch (error) {
+    console.error('Erro ao buscar todas as transações:', error);
+    return res.status(500).json({ message: 'Erro ao buscar dados de transações', error: error.message });
   }
 });
 
