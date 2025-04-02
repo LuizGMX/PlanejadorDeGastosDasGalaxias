@@ -1,4 +1,4 @@
-import { User, Income, Category, Bank, SubCategory } from '../models/index.js';
+import { User, Income, Category, Bank } from '../models/index.js';
 import { v4 as uuidv4 } from 'uuid';
 
 const generateRandomAmount = () => {
@@ -29,29 +29,23 @@ export const seedUserAndIncomes = async () => {
       return;
     }
 
-    // Buscar todas as categorias com suas subcategorias e bancos
-    const [categoriesWithSubs, banks] = await Promise.all([
+    // Buscar todas as categorias e bancos
+    const [categories, banks] = await Promise.all([
       Category.findAll({
-        include: [{
-          model: SubCategory,
-          required: true
-        }]
+        where: { type: 'income' }
       }),
       Bank.findAll()
     ]);
 
-    if (categoriesWithSubs.length === 0 || banks.length === 0) {
-      throw new Error('Categorias, subcategorias e bancos precisam ser criados primeiro');
+    if (categories.length === 0 || banks.length === 0) {
+      throw new Error('Categorias e bancos precisam ser criados primeiro');
     }
 
     const createIncomesForMonth = async (year, month, quantity) => {
       const incomes = [];
 
       for (let i = 0; i < quantity; i++) {
-        const randomCategory = categoriesWithSubs[Math.floor(Math.random() * categoriesWithSubs.length)];
-        const randomSubcategory = randomCategory.SubCategories[
-          Math.floor(Math.random() * randomCategory.SubCategories.length)
-        ];
+        const randomCategory = categories[Math.floor(Math.random() * categories.length)];
         const randomBank = banks[Math.floor(Math.random() * banks.length)];
         const isRecurring = Math.random() < 0.3; // 30% de chance de ser fixo
         const recurringGroupId = isRecurring ? uuidv4() : null;
@@ -61,7 +55,6 @@ export const seedUserAndIncomes = async () => {
           description: isRecurring ? `Ganho Fixo ${i + 1}` : `Ganho ${i + 1}`,
           amount: generateRandomAmount(),
           category_id: randomCategory.id,
-          subcategory_id: randomSubcategory.id,
           bank_id: randomBank.id,
           date: generateRandomDate(year, month),
           is_recurring: isRecurring,

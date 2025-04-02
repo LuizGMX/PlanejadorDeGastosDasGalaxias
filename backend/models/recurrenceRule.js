@@ -49,14 +49,6 @@ const RecurrenceRuleModel = (sequelize) => {
         key: 'id'
       }
     },
-    subcategory_id: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: 'subcategories',
-        key: 'id'
-      }
-    },
     bank_id: {
       type: DataTypes.INTEGER,
       allowNull: false,

@@ -723,7 +723,10 @@ const Dashboard = () => {
     } else {
       setShowDateRangePicker(false);
       setCustomDateRange(null);
-      // Lógica para outros períodos (mês atual, mês anterior)
+      
+      // Atualizar os filtros com base no período selecionado
+      // O código já fará a lógica na função fetchData
+      console.log('Período selecionado:', period); // current, last, ou custom
     }
   };
 
@@ -800,9 +803,76 @@ const Dashboard = () => {
       try {
         const queryParams = new URLSearchParams();
         
-        // Adiciona meses e anos como arrays
-        filters.months.forEach(month => queryParams.append('months[]', month));
-        filters.years.forEach(year => queryParams.append('years[]', year));
+        // Use a combination of filters and selectedPeriod
+        let monthsToFilter = [];
+        let yearsToFilter = [];
+        
+        // Apply period filter if selectedPeriod is set
+        if (selectedPeriod === 'month' || selectedPeriod === 'current') {
+          // Current month
+          const now = new Date();
+          monthsToFilter = [now.getMonth() + 1]; // +1 because JS months are 0-based
+          yearsToFilter = [now.getFullYear()];
+        } else if (selectedPeriod === 'year') {
+          // Current year - all months
+          const now = new Date();
+          monthsToFilter = Array.from({length: 12}, (_, i) => i + 1); // 1-12
+          yearsToFilter = [now.getFullYear()];
+        } else if (selectedPeriod === 'last') {
+          // Previous month
+          const now = new Date();
+          let previousMonth = now.getMonth(); // 0-based, so this is already the previous month
+          let year = now.getFullYear();
+          
+          // Handle December of previous year
+          if (previousMonth === 0) {
+            previousMonth = 12;
+            year = year - 1;
+          }
+          
+          monthsToFilter = [previousMonth];
+          yearsToFilter = [year];
+        } else if (selectedPeriod === 'next') {
+          // Next month
+          const now = new Date();
+          let nextMonth = now.getMonth() + 2; // +1 for 1-based, +1 for next month
+          let year = now.getFullYear();
+          
+          // Handle January of next year
+          if (nextMonth > 12) {
+            nextMonth = 1;
+            year = year + 1;
+          }
+          
+          monthsToFilter = [nextMonth];
+          yearsToFilter = [year];
+        } else if (selectedPeriod === 'custom' && customDateRange) {
+          // Custom date range
+          const startDate = new Date(customDateRange.start);
+          const endDate = new Date(customDateRange.end);
+          
+          // Get all months and years between start and end dates
+          const months = new Set();
+          const years = new Set();
+          
+          let currentDate = new Date(startDate);
+          while (currentDate <= endDate) {
+            months.add(currentDate.getMonth() + 1);
+            years.add(currentDate.getFullYear());
+            currentDate.setMonth(currentDate.getMonth() + 1);
+          }
+          
+          monthsToFilter = Array.from(months);
+          yearsToFilter = Array.from(years);
+        } else {
+          // Use filters from filter state
+          monthsToFilter = filters.months;
+          yearsToFilter = filters.years;
+        }
+        
+        // Add months and years to query params
+        monthsToFilter.forEach(month => queryParams.append('months[]', month));
+        yearsToFilter.forEach(year => queryParams.append('years[]', year));
         
         // Adiciona categorias ao filtro
         if (selectedCategories.length > 0) {
@@ -875,7 +945,6 @@ const Dashboard = () => {
           type: 'expense',
           category: item.Category?.category_name || 'Sem categoria',
           categoryId: item.Category?.id,
-          subcategory: item.Subcategory?.subcategory_name || 'Sem subcategoria',
           bank: item.Bank?.name || 'Sem banco',
           is_recurring: item.is_recurring,
           recurrence_id: item.recurrence_id
@@ -889,7 +958,6 @@ const Dashboard = () => {
           type: 'income',
           category: item.Category?.category_name || 'Sem categoria',
           categoryId: item.Category?.id,
-          subcategory: item.Subcategory?.subcategory_name || 'Sem subcategoria',
           bank: item.Bank?.name || 'Sem banco',
           is_recurring: item.is_recurring,
           recurrence_id: item.recurrence_id
@@ -910,7 +978,7 @@ const Dashboard = () => {
     };
 
     fetchData();
-  }, [auth.token, navigate, filters, selectedCategories, selectedBanks]);
+  }, [auth.token, navigate, filters, selectedCategories, selectedBanks, selectedPeriod, customDateRange]);
   
   // Novo useEffect para buscar todas as transações independente dos filtros
   useEffect(() => {
@@ -940,7 +1008,6 @@ const Dashboard = () => {
           type: 'expense',
           category: item.Category?.category_name || 'Sem categoria',
           categoryId: item.Category?.id,
-          subcategory: item.SubCategory?.subcategory_name || 'Sem subcategoria',
           bank: item.Bank?.name || 'Sem banco'
         })) : [];
         
@@ -953,7 +1020,6 @@ const Dashboard = () => {
           type: 'income',
           category: item.Category?.category_name || 'Sem categoria',
           categoryId: item.Category?.id,
-          subcategory: item.SubCategory?.subcategory_name || 'Sem subcategoria',
           bank: item.Bank?.name || 'Sem banco'
         })) : [];
         
@@ -1191,164 +1257,202 @@ const Dashboard = () => {
       if (goal.monthly_balance >= goal.monthly_needed) {
         return {
           status: "good",
-          message: "Você está economizando acima do necessário. Continue assim!"
+          message: "Você está economizando acima do necessário. Continue assim!",
+          icon: "🚀",
+          color: "var(--success-color)"
         };
       } else if (goal.monthly_balance > 0) {
         const percentOfNeeded = (goal.monthly_balance / goal.monthly_needed * 100).toFixed(0);
         return {
           status: "warning",
-          message: `Você está economizando apenas ${percentOfNeeded}% do necessário para atingir seu objetivo no prazo.`
+          message: `Você está economizando apenas ${percentOfNeeded}% do necessário para atingir seu objetivo no prazo.`,
+          icon: "⚠️",
+          color: "#FFC107" // amber
         };
       } else {
         return {
           status: "bad",
-          message: "Você não está conseguindo economizar. Revise seu orçamento."
+          message: "Você não está conseguindo economizar. Revise seu orçamento.",
+          icon: "❌",
+          color: "var(--error-color)"
         };
       }
     };
     
     const savingsPace = calculateSavingsPace();
+    
+    // Calcular a previsão de conclusão
+    const completionDate = new Date();
+    if (goal.months_needed_with_current_savings && goal.months_needed_with_current_savings !== Infinity) {
+      completionDate.setMonth(completionDate.getMonth() + goal.months_needed_with_current_savings);
+    } else {
+      completionDate.setMonth(completionDate.getMonth() + 60); // Placeholder para "mais de 5 anos"
+    }
+    
+    // Formatar a data de conclusão
+    const formattedCompletionDate = goal.monthly_balance <= 0 
+      ? "Incalculável com economia zero ou negativa" 
+      : goal.months_needed_with_current_savings === Infinity
+        ? "Incalculável com economia insuficiente"
+        : new Date(completionDate).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 
     return (
-      <div className={`${styles.chartContainer} ${styles.enhancedGoalCard}`}>
-        <div className={styles.goalHeader}>
-          <div className={styles.goalTitleSection}>
+      <div className={`${styles.chartContainer} ${styles.goalCard}`}>
+        <div className={styles.goalCardHeader}>
+          <div className={styles.goalCardTitle}>
             <h3>Objetivo: {goal.name}</h3>
-            <div className={styles.goalAmount}>
-              <span>Meta:</span>
-              <strong>{formatCurrency(goal.amount)}</strong>
+            <div className={styles.targetDate}>
+              <span>Meta para:</span> {new Date(goal.end_date).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
             </div>
           </div>
-          <div className={styles.goalTargetDate}>
-            <span>Data alvo:</span>
-            <strong>{new Date(goal.end_date).toLocaleDateString('pt-BR')}</strong>
-            <div className={styles.goalTimeRemaining}>{timeRemaining}</div>
+          <div className={styles.goalTargetAmount}>
+            <div className={styles.targetAmountLabel}>Meta Total</div>
+            <div className={styles.targetAmountValue}>{formatCurrency(goal.amount)}</div>
           </div>
         </div>
-
-        <div className={styles.goalProgressVisual}>
-          <div className={styles.goalProgressBar}>
+        
+        <div className={styles.goalProgressSection}>
+          <div className={styles.progressCircleContainer}>
             <div 
-              className={`${styles.goalProgressFill} ${!goal.is_achievable ? styles.goalProgressWarning : ''}`}
-              style={{ width: `${Math.min(percentageSaved, 100)}%` }}
-            ></div>
-            <div className={styles.goalProgressLabel}>
-              {percentageSaved}% <span>economizado</span>
-          </div>
-          </div>
-          </div>
-
-        <div className={styles.goalStatsGrid}>
-          <div className={styles.goalStat}>
-            <div className={styles.goalStatLabel}>Economizado</div>
-            <div className={`${styles.goalStatValue} ${styles.positive}`}>{formatCurrency(goal.total_saved)}</div>
-          </div>
-          <div className={styles.goalStat}>
-            <div className={styles.goalStatLabel}>Faltando</div>
-            <div className={styles.goalStatValue}>{formatCurrency(goal.amount - goal.total_saved)}</div>
-          </div>
-          <div className={styles.goalStat}>
-            <div className={styles.goalStatLabel}>
-              Economia Mensal Atual
-              <span className={styles.infoTooltip} title="Valor economizado no mês atual ou média histórica se não houver dados suficientes">ℹ️</span>
-            </div>
-            <div className={`${styles.goalStatValue} ${goal.monthly_balance >= goal.monthly_needed ? styles.positive : styles.negative}`}>
-              {formatCurrency(goal.monthly_balance)}
-              {goal.current_month_balance !== undefined && (
-                <div className={styles.balanceSource}>
-                  {Math.abs(goal.current_month_balance) > 0 
-                    ? "mês atual" 
-                    : "média histórica"}
-            </div>
-          )}
-            </div>
-          </div>
-          <div className={styles.goalStat}>
-            <div className={styles.goalStatLabel}>Necessário por Mês</div>
-            <div className={styles.goalStatValue}>{formatCurrency(goal.monthly_needed)}</div>
-          </div>
-        </div>
-
-        <div className={`${styles.goalPaceIndicator} ${styles[`pace-${savingsPace.status}`]}`}>
-          <span className={styles.paceIcon}>
-            {savingsPace.status === "good" ? "🚀" : savingsPace.status === "warning" ? "⚠️" : "❌"}
-          </span>
-          <span className={styles.paceMessage}>{savingsPace.message}</span>
-          </div>
-
-        <div style={{ width: '100%', height: '200px' }}>
-          <ResponsiveContainer>
-            <BarChart
-              data={chartData}
-              margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-              layout="vertical"
-              barSize={40}
+              className={styles.progressCircle}
+              style={{
+                background: `conic-gradient(
+                  ${savingsPace.color} ${percentageSaved * 3.6}deg, 
+                  var(--background-color) ${percentageSaved * 3.6}deg
+                )`
+              }}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
-              <XAxis
-                type="number"
-                tickFormatter={formatCurrency}
-                tick={{ fill: 'var(--text-color)' }}
-              />
-              <YAxis
-                type="category"
-                dataKey="name"
-                tick={{ fill: 'var(--text-color)' }}
-              />
-              <Tooltip
-                formatter={formatCurrency}
-                contentStyle={{
-                  backgroundColor: 'var(--card-background)',
-                  border: '1px solid var(--border-color)',
-                  color: 'var(--text-color)',
-                  padding: '10px',
-                  borderRadius: '8px'
-                }}
-                labelStyle={{ color: 'var(--text-color)' }}
-                itemStyle={{ color: 'var(--text-color)' }}
-              />
-              <Legend
-                formatter={(value) => {
-                  switch (value) {
-                    case 'economia':
-                      return <span style={{ color: 'var(--text-color)' }}>Já Economizado</span>;
-                    case 'projecao':
-                      return <span style={{ color: 'var(--text-color)' }}>Projeção Futura</span>;
-                    case 'faltante':
-                      return <span style={{ color: 'var(--text-color)' }}>Faltante</span>;
-                    default:
-                      return <span style={{ color: 'var(--text-color)' }}>{value}</span>;
-                  }
-                }}
-              />
-              <Bar dataKey="economia" stackId="a" fill="var(--success-color)" />
-              <Bar dataKey="projecao" stackId="a" fill="#2196F3" />
-              <Bar dataKey="faltante" stackId="a" fill="var(--error-color)" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {!goal.is_achievable && (
-          <div className={styles.goalAlert}>
-            <div className={styles.goalAlertHeader}>
-              <span className={styles.alertIcon}>⚠️</span>
-              <span className={styles.alertTitle}>Atenção!</span>
+              <div className={styles.progressInner}>
+                <div className={styles.progressPercentage}>{percentageSaved}%</div>
+                <div className={styles.progressLabel}>concluído</div>
+              </div>
             </div>
-            <p className={styles.alertMessage}>
-              No ritmo atual de economia de {formatCurrency(goal.monthly_balance)} por mês 
-              {goal.current_month_balance !== undefined && Math.abs(goal.current_month_balance) > 0 
-                ? " (baseado no mês atual)" 
-                : " (baseado na média histórica)"}, 
-              você precisará de <strong>{goal.months_needed_with_current_savings} meses</strong> para atingir seu objetivo,
-              {goal.months_needed_with_current_savings > goal.months_remaining 
-                ? ` ou seja, ${goal.months_needed_with_current_savings - goal.months_remaining} meses além do prazo definido.`
-                : ' mas ainda está dentro do prazo definido.'}
-            </p>
+            <div className={styles.timeRemainingBadge}>
+              <div className={styles.timeIcon}>⏱️</div>
+              <div className={styles.timeText}>{timeRemaining}</div>
+            </div>
+          </div>
+          
+          <div className={styles.goalStatsContainer}>
+            <div className={styles.statCard}>
+              <div className={styles.statLabel}>Economizado</div>
+              <div className={`${styles.statValue} ${styles.savedValue}`}>{formatCurrency(goal.total_saved)}</div>
+            </div>
+            <div className={styles.statCard}>
+              <div className={styles.statLabel}>Faltando</div>
+              <div className={styles.statValue}>{formatCurrency(goal.amount - goal.total_saved)}</div>
+            </div>
+            <div className={styles.statCard}>
+              <div className={styles.statLabel}>Economia Mensal</div>
+              <div className={`${styles.statValue} ${goal.monthly_balance >= goal.monthly_needed ? styles.positiveValue : styles.negativeValue}`}>
+                {formatCurrency(goal.monthly_balance)}
+              </div>
+              <div className={styles.statSource}>
+                {Math.abs(goal.current_month_balance) > 0 ? "mês atual" : "média histórica"}
+              </div>
+            </div>
+            <div className={styles.statCard}>
+              <div className={styles.statLabel}>Necessário/Mês</div>
+              <div className={styles.statValue}>{formatCurrency(goal.monthly_needed)}</div>
+            </div>
+          </div>
+        </div>
+        
+        <div className={`${styles.savingsPaceIndicator} ${styles[`pace-${savingsPace.status}`]}`}>
+          <div className={styles.paceIcon}>{savingsPace.icon}</div>
+          <div className={styles.paceMessage}>{savingsPace.message}</div>
+        </div>
+        
+        <div className={styles.projectionSection}>
+          <div className={styles.projectionHeader}>
+            <h4>Projeção de Conclusão</h4>
+            <div className={styles.projectionTimeline}>
+              <div className={styles.timelineStart}>
+                <div className={styles.timelinePoint}></div>
+                <div className={styles.timelineDate}>Hoje</div>
+              </div>
+              <div className={styles.timelineBar}>
+                <div 
+                  className={`${styles.timelineProgress} ${!goal.is_achievable ? styles.timelineWarning : ''}`}
+                  style={{ width: `${Math.min((goal.months_remaining / goal.months_needed_with_current_savings) * 100, 100)}%` }}
+                ></div>
+              </div>
+              <div className={styles.timelineEnd}>
+                <div className={styles.timelinePoint}></div>
+                <div className={styles.timelineDate}>
+                  {formattedCompletionDate}
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className={styles.projectionData}>
+            <ResponsiveContainer width="100%" height={120}>
+              <BarChart
+                data={chartData}
+                layout="vertical"
+                barSize={20}
+                margin={{ top: 5, right: 0, left: 0, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                <XAxis 
+                  type="number" 
+                  tickFormatter={formatCurrency} 
+                  tick={{ fill: 'var(--text-color)', fontSize: 10 }}
+                />
+                <YAxis 
+                  type="category" 
+                  dataKey="name" 
+                  hide={true}
+                />
+                <Tooltip 
+                  formatter={(value) => [formatCurrency(value), '']}
+                  contentStyle={{
+                    backgroundColor: 'var(--card-background)',
+                    border: '1px solid var(--border-color)',
+                  }}
+                />
+                <Bar dataKey="economia" stackId="a" fill="var(--success-color)" name="Economizado" />
+                <Bar dataKey="projecao" stackId="a" fill="#2196F3" name="Projeção Futura" />
+                <Bar dataKey="faltante" stackId="a" fill="var(--error-color)" name="Faltante" />
+              </BarChart>
+            </ResponsiveContainer>
+            
+            <div className={styles.projectionLegend}>
+              <div className={styles.legendItem}>
+                <div className={styles.legendColor} style={{ backgroundColor: 'var(--success-color)' }}></div>
+                <div className={styles.legendLabel}>Economizado</div>
+              </div>
+              <div className={styles.legendItem}>
+                <div className={styles.legendColor} style={{ backgroundColor: '#2196F3' }}></div>
+                <div className={styles.legendLabel}>Projeção Futura</div>
+              </div>
+              <div className={styles.legendItem}>
+                <div className={styles.legendColor} style={{ backgroundColor: 'var(--error-color)' }}></div>
+                <div className={styles.legendLabel}>Faltante</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {!goal.is_achievable && (
+          <div className={styles.goalAlertPanel}>
+            <div className={styles.alertHeader}>
+              <div className={styles.alertIcon}>⚠️</div>
+              <div className={styles.alertTitle}>Objetivo em risco!</div>
+            </div>
+            <div className={styles.alertMessage}>
+              No ritmo atual de economia de {formatCurrency(goal.monthly_balance)}/mês, 
+              você precisará de <strong>{goal.months_needed_with_current_savings} meses</strong> para atingir seu objetivo
+              ({goal.months_needed_with_current_savings - goal.months_remaining} meses além do prazo).
+            </div>
             <div className={styles.alertActions}>
               <button className={styles.actionButton} onClick={() => navigate('/expenses')}>
                 Revisar Despesas
               </button>
-              
+              <button className={styles.actionButton} onClick={() => navigate('/settings')}>
+                Ajustar Meta
+              </button>
             </div>
           </div>
         )}
@@ -1849,12 +1953,6 @@ const Dashboard = () => {
                           </div>
                           <div className={styles.timelineItemMeta}>
                             <span className={styles.timelineItemCategory}>{item.category}</span>
-                            {item.subcategory !== 'Sem subcategoria' && (
-                              <>
-                                <span className={styles.metaSeparator}>•</span>
-                                <span className={styles.timelineItemSubcategory}>{item.subcategory}</span>
-                              </>
-                            )}
                             {item.bank !== 'Sem banco' && (
                               <>
                                 <span className={styles.metaSeparator}>•</span>
@@ -1889,10 +1987,6 @@ const Dashboard = () => {
                             <div className={styles.detailItem}>
                               <span className={styles.detailLabel}>Categoria:</span>
                               <span className={styles.detailValue}>{item.category}</span>
-                            </div>
-                            <div className={styles.detailItem}>
-                              <span className={styles.detailLabel}>Subcategoria:</span>
-                              <span className={styles.detailValue}>{item.subcategory}</span>
                             </div>
                             <div className={styles.detailItem}>
                               <span className={styles.detailLabel}>Banco:</span>
@@ -1960,12 +2054,6 @@ const Dashboard = () => {
                     </div>
                     <div className={styles.timelineItemMeta}>
                       <span className={styles.timelineItemCategory}>{item.category}</span>
-                      {item.subcategory !== 'Sem subcategoria' && (
-                        <>
-                          <span className={styles.metaSeparator}>•</span>
-                          <span className={styles.timelineItemSubcategory}>{item.subcategory}</span>
-                        </>
-                      )}
                       {item.bank !== 'Sem banco' && (
                         <>
                           <span className={styles.metaSeparator}>•</span>
@@ -2001,10 +2089,6 @@ const Dashboard = () => {
                       <div className={styles.detailItem}>
                         <span className={styles.detailLabel}>Categoria:</span>
                         <span className={styles.detailValue}>{item.category}</span>
-                      </div>
-                      <div className={styles.detailItem}>
-                        <span className={styles.detailLabel}>Subcategoria:</span>
-                        <span className={styles.detailValue}>{item.subcategory}</span>
                       </div>
                       <div className={styles.detailItem}>
                         <span className={styles.detailLabel}>Banco:</span>
@@ -2062,22 +2146,11 @@ const Dashboard = () => {
           return;
         }
         
-        // Filter transactions based on period
-        const filteredTransactions = transactions.filter(transaction => {
-          if (transaction.type !== 'expense') return false;
-          
-          const transactionDate = new Date(transaction.date);
-          const now = new Date();
-          
-          if (selectedPeriod === 'month') {
-            return transactionDate.getMonth() === now.getMonth() && 
-                  transactionDate.getFullYear() === now.getFullYear();
-          } else if (selectedPeriod === 'year') {
-            return transactionDate.getFullYear() === now.getFullYear();
-          } else {
-            return true; // 'all' option
-          }
-        });
+        // Use only the transactions filtered by the API (no additional filtering needed)
+        // The transactions are already filtered based on the queryParams sent to the API
+        const filteredTransactions = transactions.filter(transaction => 
+          transaction.type === 'expense'
+        );
         
         console.log("Filtered expense transactions:", filteredTransactions.length);
         
@@ -2118,7 +2191,7 @@ const Dashboard = () => {
     };
     
     processCategoryData();
-  }, [transactions, selectedPeriod]);
+  }, [transactions]); // Remove selectedPeriod from dependencies
   
   // Hooks de efeito para processar dados de renda por categoria
   useEffect(() => {
@@ -2136,22 +2209,11 @@ const Dashboard = () => {
           return;
         }
         
-        // Filter transactions based on period
-        const filteredTransactions = transactions.filter(transaction => {
-          if (transaction.type !== 'income') return false;
-          
-          const transactionDate = new Date(transaction.date);
-          const now = new Date();
-          
-          if (selectedPeriod === 'month') {
-            return transactionDate.getMonth() === now.getMonth() && 
-                  transactionDate.getFullYear() === now.getFullYear();
-          } else if (selectedPeriod === 'year') {
-            return transactionDate.getFullYear() === now.getFullYear();
-          } else {
-            return true; // 'all' option
-          }
-        });
+        // Use only the transactions filtered by the API (no additional filtering needed)
+        // The transactions are already filtered based on the queryParams sent to the API
+        const filteredTransactions = transactions.filter(transaction => 
+          transaction.type === 'income'
+        );
         
         console.log("Filtered income transactions:", filteredTransactions.length);
         
@@ -2199,7 +2261,7 @@ const Dashboard = () => {
     };
     
     processIncomeData();
-  }, [transactions, selectedPeriod]);
+  }, [transactions]); // Remove selectedPeriod from dependencies
   
   const renderCategoriesChart = () => {
     const handlePeriodChange = (period) => {
@@ -3033,6 +3095,7 @@ const Dashboard = () => {
                   ? `${new Date(customDateRange.start).toLocaleDateString('pt-BR')} - ${new Date(customDateRange.end).toLocaleDateString('pt-BR')}`
                   : selectedPeriod === 'current' ? 'Mês Atual' 
                   : selectedPeriod === 'last' ? 'Mês Anterior'
+                  : selectedPeriod === 'next' ? 'Mês que vem'
                   : 'Selecione um período'}
               </span>
               <FaChevronDown className={`${styles.arrowIcon} ${showPeriodOptions ? styles.rotated : ''}`} />
@@ -3050,6 +3113,12 @@ const Dashboard = () => {
                   onClick={() => handlePeriodChange('last')}
                 >
                   Mês Anterior
+                </div>
+                <div 
+                  className={styles.filterOption}
+                  onClick={() => handlePeriodChange('next')}
+                >
+                  Mês que vem
                 </div>
                 <div 
                   className={styles.filterOption}

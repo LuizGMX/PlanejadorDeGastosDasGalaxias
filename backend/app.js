@@ -13,7 +13,6 @@ import budgetRoutes from './routes/budgets.js';
 import spreadsheetRoutes from './routes/spreadsheetRoutes.js';
 import userRoutes from './routes/users.js';
 import dotenv from 'dotenv';
-import subcategoriesRouter from './routes/subcategories.js';
 import recurrencesRouter from './routes/recurrences.js';
 import telegramRoutes from './routes/telegramRoutes.js';
 import helmet from 'helmet';
@@ -62,7 +61,6 @@ app.use('/api/banks', configureRateLimit({
 app.use('/api/budgets', budgetRoutes);
 app.use('/api/spreadsheet', spreadsheetRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/subcategories', subcategoriesRouter);
 app.use('/api/recurrences', recurrencesRouter);
 app.use('/api/telegram', telegramRoutes);
 

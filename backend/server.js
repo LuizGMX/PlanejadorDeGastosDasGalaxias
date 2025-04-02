@@ -10,6 +10,13 @@ import app from './app.js';
 import https from 'https';
 import fs from 'fs';
 import http from 'http'; // Para desenvolvimento
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Caminho para o arquivo de migração
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const migrationScriptPath = path.join(__dirname, 'models', 'remove-subcategories-with-models.js');
 
 dotenv.config();
 
@@ -76,8 +83,72 @@ const startServer = async () => {
     await sequelize.authenticate();
     console.log('Conexão com banco estabelecida com sucesso.');
 
+    // Executar script de remoção de subcategorias
+    try {
+      console.log('Executando migração para remover subcategorias...');
+      try {
+        // Tentar importar o script de migração
+        const migrationModule = await import(migrationScriptPath);
+        if (migrationModule && migrationModule.default) {
+          await migrationModule.default(sequelize);
+          console.log('Migração de subcategorias concluída com sucesso.');
+        } else {
+          console.warn('Módulo de migração importado, mas não contém função padrão.');
+        }
+      } catch (importError) {
+        console.warn('Não foi possível importar o script de migração:', importError.message);
+        console.log('Tentando solução alternativa...');
+        // Executa alterações SQL diretamente
+        await executeManualMigration();
+      }
+    } catch (migrationError) {
+      console.warn('Aviso ao executar migração de subcategorias:', migrationError.message);
+      console.log('Continuando inicialização do servidor...');
+    }
+
+    // Função para executar migração manualmente com SQL
+    async function executeManualMigration() {
+      const transaction = await sequelize.transaction();
+      try {
+        console.log('Executando migração manual para remover subcategorias');
+        
+        // Tabelas para verificar
+        const tables = ['expenses', 'incomes', 'recurrence_rules'];
+        
+        // Verificar e remover colunas subcategory_id de cada tabela
+        for (const table of tables) {
+          try {
+            await sequelize.query(
+              `ALTER TABLE ${table} DROP COLUMN IF EXISTS subcategory_id`,
+              { transaction }
+            );
+            console.log(`Tentativa de remover subcategory_id da tabela ${table} concluída`);
+          } catch (error) {
+            console.log(`Erro ao remover coluna de ${table}:`, error.message);
+          }
+        }
+        
+        // Tentar remover a tabela subcategories
+        try {
+          await sequelize.query(
+            `DROP TABLE IF EXISTS subcategories`,
+            { transaction }
+          );
+          console.log('Tentativa de remover tabela subcategories concluída');
+        } catch (error) {
+          console.log('Erro ao remover tabela subcategories:', error.message);
+        }
+        
+        await transaction.commit();
+        console.log('Migração manual concluída');
+      } catch (error) {
+        await transaction.rollback();
+        console.error('Erro na migração manual:', error);
+      }
+    }
+
     // Sincronizar modelos com banco
-    await sequelize.sync({ force: false, alter: true });
+    await sequelize.sync({ force: false, alter: false });
     console.log('Modelos sincronizados com banco de dados.');
 
     // Executar seeders apenas se a variável de ambiente estiver configurada

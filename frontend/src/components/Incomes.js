@@ -387,7 +387,6 @@ const Incomes = () => {
 
       // Garantir que todos os IDs sejam numéricos
       if (payload.category_id) payload.category_id = Number(payload.category_id);
-      if (payload.subcategory_id) payload.subcategory_id = Number(payload.subcategory_id);
       if (payload.bank_id) payload.bank_id = Number(payload.bank_id);
       
       // Garantir que o valor seja um número

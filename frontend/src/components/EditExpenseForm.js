@@ -12,7 +12,6 @@ import {
   BsFolderSymlink,
   BsBank2,
   BsRepeat,
-  BsListCheck,
   BsCreditCard2Front,
   BsCashCoin,
   BsWallet2,
@@ -26,7 +25,6 @@ const EditExpenseForm = ({ expense, onSave, onCancel }) => {
     amount: expense.amount,
     expense_date: expense.expense_date,
     category_id: expense.category_id,
-    subcategory_id: expense.subcategory_id,
     bank_id: expense.bank_id,
     payment_method: expense.payment_method,
     card_type: expense.payment_method === 'credit_card' || expense.payment_method === 'debit_card' ? expense.payment_method : 'credit_card',
@@ -37,7 +35,6 @@ const EditExpenseForm = ({ expense, onSave, onCancel }) => {
     total_installments: expense.total_installments || 2
   });
   const [categories, setCategories] = useState([]);
-  const [subcategories, setSubcategories] = useState([]);
   const [banks, setBanks] = useState([]);
   const [error, setError] = useState('');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -77,31 +74,6 @@ const EditExpenseForm = ({ expense, onSave, onCancel }) => {
 
     fetchData();
   }, [auth.token]);
-
-  useEffect(() => {
-    if (formData.category_id) {
-      fetchSubcategories();
-    }
-  }, [formData.category_id]);
-
-  const fetchSubcategories = async () => {
-    try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/expenses/subcategories/${formData.category_id}`, {
-        headers: {
-          'Authorization': `Bearer ${auth.token}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Erro ao carregar subcategorias');
-      }
-
-      const data = await response.json();
-      setSubcategories(data);
-    } catch (err) {
-      setError('Erro ao carregar subcategorias. Por favor, tente novamente.');
-    }
-  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -247,27 +219,6 @@ const EditExpenseForm = ({ expense, onSave, onCancel }) => {
               ))}
             </select>
           </div>
-
-          {subcategories.length > 0 && (
-            <div className={dataTableStyles.formGroup}>
-              <label className={dataTableStyles.formLabel}>
-                <BsListCheck /> Subcategoria
-              </label>
-              <select
-                name="subcategory_id"
-                value={formData.subcategory_id || ''}
-                onChange={handleChange}
-                className={dataTableStyles.formInput}
-              >
-                <option value="">Selecione uma subcategoria</option>
-                {subcategories.map(subcategory => (
-                  <option key={subcategory.id} value={subcategory.id}>
-                    {subcategory.subcategory_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
 
           <div className={dataTableStyles.formGroup}>
             <label className={dataTableStyles.formLabel}>

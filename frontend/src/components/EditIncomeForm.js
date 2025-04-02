@@ -21,7 +21,6 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
     amount: income.amount,
     date: income.date,
     category_id: income.category_id,
-    subcategory_id: income.subcategory_id,
     bank_id: income.bank_id,
     is_recurring: income.is_recurring,
     start_date: income.start_date || income.date,
@@ -29,7 +28,6 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
     recurrence_type: income.recurrence_type || 'monthly'
   });
   const [categories, setCategories] = useState([]);
-  const [subcategories, setSubcategories] = useState([]);
   const [banks, setBanks] = useState([]);
   const [error, setError] = useState('');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -54,29 +52,6 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
       }
     };
 
-    const fetchSubcategories = async () => {
-      if (formData.category_id) {
-        try {
-          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/incomes/categories/${formData.category_id}/subcategories`, {
-            headers: {
-              'Authorization': `Bearer ${auth.token}`
-            }
-          });
-
-          if (!response.ok) {
-            throw new Error('Falha ao carregar subcategorias');
-          }
-
-          const data = await response.json();
-          setSubcategories(data);
-        } catch (err) {
-          setError('Erro ao carregar subcategorias. Por favor, tente novamente.');
-        }
-      } else {
-        setSubcategories([]);
-      }
-    };
-
     const fetchBanks = async () => {
       try {
         const response = await fetch(`${process.env.REACT_APP_API_URL}/api/banks/favorites`, {
@@ -97,9 +72,8 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
     };
 
     fetchCategories();
-    fetchSubcategories();
     fetchBanks();
-  }, [auth.token, formData.category_id]);
+  }, [auth.token]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -139,15 +113,10 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
       
       // Garante que todos os IDs sejam numéricos
       let category_id = formData.category_id;
-      let subcategory_id = formData.subcategory_id;
       let bank_id = formData.bank_id;
       
       if (category_id && typeof category_id === 'string') {
         category_id = Number(category_id);
-      }
-      
-      if (subcategory_id && typeof subcategory_id === 'string') {
-        subcategory_id = Number(subcategory_id);
       }
       
       if (bank_id && typeof bank_id === 'string') {
@@ -178,7 +147,6 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
         ...formData,
         id: income.id, // Garante que o ID é enviado
         category_id,
-        subcategory_id,
         bank_id,
         amount,
         start_date,
@@ -280,27 +248,6 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
               ))}
             </select>
           </div>
-
-          {subcategories.length > 0 && (
-            <div className={dataTableStyles.formGroup}>
-              <label className={dataTableStyles.formLabel}>
-                Subcategoria
-              </label>
-              <select
-                name="subcategory_id"
-                value={formData.subcategory_id || ''}
-                onChange={handleChange}
-                className={dataTableStyles.formInput}
-              >
-                <option value="">Selecione uma subcategoria</option>
-                {subcategories.map(subcategory => (
-                  <option key={subcategory.id} value={subcategory.id}>
-                    {subcategory.subcategory_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
 
           <div className={dataTableStyles.formGroup}>
             <label className={dataTableStyles.formLabel}>

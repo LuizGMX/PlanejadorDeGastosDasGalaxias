@@ -98,16 +98,6 @@ export default (sequelize) => {
       onUpdate: 'CASCADE',
       onDelete: 'NO ACTION'
     },
-    subcategory_id: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: 'subcategories',
-        key: 'id'
-      },
-      onUpdate: 'CASCADE',
-      onDelete: 'NO ACTION'
-    },
     bank_id: {
       type: DataTypes.INTEGER,
       allowNull: false,

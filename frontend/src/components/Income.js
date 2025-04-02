@@ -61,7 +61,6 @@ const Income = () => {
   });
   const [noIncomesMessage, setNoIncomesMessage] = useState(null);
   const [categories, setCategories] = useState([]);
-  const [subcategories, setSubcategories] = useState([]);
   const [banks, setBanks] = useState([]);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -815,7 +814,6 @@ const Income = () => {
                   <th>Valor</th>
                   <th>Data</th>
                   <th>Categoria</th>
-                  <th>Subcategoria</th>
                   <th>Banco</th>
                   <th>Tipo</th>
                   <th width="100">Ações</th>
@@ -848,14 +846,6 @@ const Income = () => {
                         <BsFolderSymlink />
                         {income.Category?.category_name || '-'}
                       </div>
-                    </td>
-                    <td>
-                      {income.SubCategory?.subcategory_name ? (
-                        <div className={dataTableStyles.cellWithIcon}>
-                          <BsListCheck />
-                          {income.SubCategory.subcategory_name}
-                        </div>
-                      ) : '-'}
                     </td>
                     <td>
                       <div className={dataTableStyles.cellWithIcon}>

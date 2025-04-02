@@ -1,5 +1,5 @@
 import express from 'express';
-import { Expense, Category, SubCategory, Bank } from '../models/index.js';
+import { Expense, Category, Bank } from '../models/index.js';
 import { authenticate } from '../middleware/auth.js';
 import { v4 as uuidv4 } from 'uuid';
 import { Op } from 'sequelize';
@@ -73,9 +73,8 @@ router.get('/', authenticate, async (req, res) => {
     const expenses = await Expense.findAll({
       where,
       include: [
-        { model: Category },
-        { model: SubCategory },
-        { model: Bank }
+        { model: Category, as: 'Category' },
+        { model: Bank, as: 'Bank' }
       ],
       order: [['expense_date', 'DESC']]
     });
@@ -94,7 +93,6 @@ router.post('/', authenticate, async (req, res) => {
       description,
       amount: rawAmount,
       category_id,
-      subcategory_id,
       bank_id,
       expense_date,
       payment_method,
@@ -108,7 +106,7 @@ router.post('/', authenticate, async (req, res) => {
     } = req.body;
 
     // Validações básicas
-    if (!description || !rawAmount || !category_id || !subcategory_id || !bank_id || !payment_method) {
+    if (!description || !rawAmount || !category_id || !bank_id || !payment_method) {
       await t.rollback();
       return res.status(400).json({ message: 'Todos os campos obrigatórios devem ser preenchidos' });
     }
@@ -173,7 +171,6 @@ router.post('/', authenticate, async (req, res) => {
           description: `${description} (${i + 1}/${total_installments})`,
           amount: i === total_installments - 1 ? installmentAmount + roundingAdjustment : installmentAmount,
           category_id,
-          subcategory_id,
           bank_id,
           expense_date: installmentDate,
           payment_method,
@@ -201,7 +198,6 @@ router.post('/', authenticate, async (req, res) => {
           description,
           amount: parsedAmount,
           category_id,
-          subcategory_id,
           bank_id,
           expense_date: new Date(currentDate),
           payment_method,
@@ -246,7 +242,6 @@ router.post('/', authenticate, async (req, res) => {
         description,
         amount: parsedAmount,
         category_id,
-        subcategory_id,
         bank_id,
         expense_date: adjustDate(expense_date),
         payment_method,
@@ -272,15 +267,9 @@ router.get('/categories', authenticate, async (req, res) => {
     console.log('Buscando categorias...');
     const categories = await Category.findAll({
       where: { type: 'expense' },
-      include: [{
-        model: SubCategory,
-        attributes: ['id', 'subcategory_name']
-      }],
       order: [
         [literal("category_name = 'Outros' ASC")],
-        ['category_name', 'ASC'],
-        [SubCategory, literal("subcategory_name = 'Outros' ASC")],
-        [SubCategory, 'subcategory_name', 'ASC']
+        ['category_name', 'ASC']
       ]
     });
     console.log('Categorias encontradas:', categories);
@@ -288,34 +277,6 @@ router.get('/categories', authenticate, async (req, res) => {
   } catch (error) {
     console.error('Erro ao listar categorias:', error);
     res.status(500).json({ message: 'Erro ao buscar categorias' });
-  }
-});
-
-router.get('/subcategories/:categoryId', authenticate, async (req, res) => {
-  try {
-    const category = await Category.findOne({
-      where: { 
-        id: req.params.categoryId,
-        type: 'expense'
-      }
-    });
-
-    if (!category) {
-      return res.status(404).json({ message: 'Categoria não encontrada' });
-    }
-
-    const subcategories = await SubCategory.findAll({
-      where: { category_id: req.params.categoryId },
-      attributes: ['id', 'subcategory_name'],
-      order: [
-        [literal("subcategory_name = 'Outros' ASC")],
-        ['subcategory_name', 'ASC']
-      ]
-    });
-    res.json(subcategories);
-  } catch (error) {
-    console.error('Erro ao listar subcategorias:', error);
-    res.status(500).json({ message: 'Erro ao buscar subcategorias' });
   }
 });
 
@@ -328,7 +289,6 @@ router.put('/:id', authenticate, async (req, res) => {
       amount: rawAmount,
       expense_date,
       category_id,
-      subcategory_id,
       bank_id,
       payment_method,
       is_recurring,
@@ -372,7 +332,6 @@ router.put('/:id', authenticate, async (req, res) => {
           description,
           amount: parsedAmount,
           category_id,
-          subcategory_id,
           bank_id,
           payment_method,
           is_recurring,
@@ -400,7 +359,6 @@ router.put('/:id', authenticate, async (req, res) => {
           description,
           amount: parsedAmount,
           category_id,
-          subcategory_id,
           bank_id,
           payment_method
         },
@@ -424,7 +382,6 @@ router.put('/:id', authenticate, async (req, res) => {
           amount: parsedAmount,
           expense_date: new Date(expense_date),
           category_id,
-          subcategory_id,
           bank_id,
           payment_method
         },
@@ -566,6 +523,31 @@ router.delete('/bulk', authenticate, async (req, res) => {
       message: 'Erro ao deletar despesas',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
+  }
+});
+
+// Rota para buscar uma única despesa
+router.get('/:id', authenticate, async (req, res) => {
+  try {
+    const expense = await Expense.findOne({
+      where: {
+        id: req.params.id,
+        user_id: req.user.id
+      },
+      include: [
+        { model: Category, as: 'Category' },
+        { model: Bank, as: 'Bank' }
+      ]
+    });
+
+    if (!expense) {
+      return res.status(404).json({ message: 'Despesa não encontrada' });
+    }
+
+    res.json(expense);
+  } catch (error) {
+    console.error('Erro ao buscar despesa:', error);
+    res.status(500).json({ message: 'Erro ao buscar despesa' });
   }
 });
 
@@ -812,8 +794,8 @@ router.get('/stats', authenticate, async (req, res) => {
     const expenses = await Expense.findAll({
       where,
       include: [
-        { model: Category },
-        { model: Bank }
+        { model: Category, as: 'Category' },
+        { model: Bank, as: 'Bank' }
       ],
       order: [['expense_date', 'ASC']]
     });

@@ -25,13 +25,11 @@ export default (sequelize) => {
     },
     telegram_chat_id: {
       type: DataTypes.STRING,
-      allowNull: true,
-      unique: true
+      allowNull: true
     },
     telegram_username: {
       type: DataTypes.STRING,
-      allowNull: true,
-      unique: true
+      allowNull: true
     },
     telegram_verified: {
       type: DataTypes.BOOLEAN,

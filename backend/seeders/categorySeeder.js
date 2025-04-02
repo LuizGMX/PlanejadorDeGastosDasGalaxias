@@ -1,216 +1,61 @@
 import { Category } from '../models/index.js';
 
-const categories = [
+const expenseCategories = [
   {
     category_name: 'Alimentação',
-    subcategories: [
-      'Mercado',
-      'Restaurantes',
-      'Delivery',
-      'Lanches',
-      'Padaria',
-      'Café',
-      'Bebidas',
-      'Feira/Hortifruti',
-      'Outros'
-    ]
-  },
-  {
-    category_name: 'Transporte',
-    subcategories: [
-      'Combustível',
-      'Transporte Público',
-      'Uber/99/Táxi',
-      'Manutenção',
-      'Estacionamento',
-      'Pedágio',
-      'Seguro Veicular',
-      'Documentação',
-      'Outros'
-    ]
+    type: 'expense'
   },
   {
     category_name: 'Moradia',
-    subcategories: [
-      'Aluguel',
-      'Condomínio',
-      'IPTU',
-      'Manutenção',
-      'Mobília',
-      'Decoração',
-      'Eletrodomésticos',
-      'Reforma',
-      'Seguro Residencial',
-      'Material de Limpeza',
-      'Outros'
-    ]
+    type: 'expense'
+  },
+  {
+    category_name: 'Transporte',
+    type: 'expense'
   },
   {
     category_name: 'Saúde',
-    subcategories: [
-      'Plano de Saúde',
-      'Medicamentos',
-      'Consultas',
-      'Exames',
-      'Academia',
-      'Dentista',
-      'Terapia',
-      'Suplementos',
-      'Farmácia',
-      'Vacinas',
-      'Outros'
-    ]
+    type: 'expense'
   },
   {
     category_name: 'Educação',
-    subcategories: [
-      'Mensalidade',
-      'Material Escolar',
-      'Cursos',
-      'Livros',
-      'Idiomas',
-      'Pós-graduação',
-      'Certificações',
-      'Workshops',
-      'Material Didático',
-      'Equipamentos',
-      'Outros'
-    ]
+    type: 'expense'
   },
   {
     category_name: 'Lazer',
-    subcategories: [
-      'Cinema/Teatro',
-      'Shows',
-      'Viagens',
-      'Hobbies',
-      'Streaming',
-      'Jogos',
-      'Esportes',
-      'Bares',
-      'Festas',
-      'Parques',
-      'Música',
-      'Assinaturas',
-      'Outros'
-    ]
+    type: 'expense'
   },
   {
     category_name: 'Vestuário',
-    subcategories: [
-      'Roupas',
-      'Calçados',
-      'Acessórios',
-      'Lavanderia',
-      'Roupas Íntimas',
-      'Roupas Esportivas',
-      'Roupas Sociais',
-      'Bolsas/Carteiras',
-      'Joias/Bijuterias',
-      'Outros'
-    ]
+    type: 'expense'
   },
   {
-    category_name: 'Contas',
-    subcategories: [
-      'Água',
-      'Luz',
-      'Internet',
-      'Telefone',
-      'TV por Assinatura',
-      'Gás',
-      'Celular',
-      'Streaming',
-      'Assinaturas Digitais',
-      'Seguros',
-      'Outros'
-    ]
+    category_name: 'Higiene Pessoal',
+    type: 'expense'
   },
   {
-    category_name: 'Impostos',
-    subcategories: [
-      'IR',
-      'IPVA',
-      'IPTU',
-      'ISS',
-      'Taxas Municipais',
-      'Taxas Estaduais',
-      'Taxas Federais',
-      'Impostos Profissionais',
-      'Outros'
-    ]
+    category_name: 'Utilidades',
+    type: 'expense'
   },
   {
-    category_name: 'Compras',
-    subcategories: [
-      'Eletrônicos',
-      'Informática',
-      'Celulares',
-      'Eletrodomésticos',
-      'Móveis',
-      'Decoração',
-      'Presentes',
-      'Papelaria',
-      'Cosméticos',
-      'Ferramentas',
-      'Outros'
-    ]
+    category_name: 'Viagens',
+    type: 'expense'
   },
   {
-    category_name: 'Pets',
-    subcategories: [
-      'Ração',
-      'Veterinário',
-      'Medicamentos',
-      'Banho/Tosa',
-      'Acessórios',
-      'Brinquedos',
-      'Petshop',
-      'Vacinas',
-      'Outros'
-    ]
+    category_name: 'Impostos e Taxas',
+    type: 'expense'
   },
   {
-    category_name: 'Cuidados Pessoais',
-    subcategories: [
-      'Cabelereiro',
-      'Manicure/Pedicure',
-      'Produtos de Beleza',
-      'Cosméticos',
-      'Perfumes',
-      'Spa',
-      'Tratamentos Estéticos',
-      'Higiene Pessoal',
-      'Outros'
-    ]
+    category_name: 'Presentes',
+    type: 'expense'
   },
   {
-    category_name: 'Tecnologia',
-    subcategories: [
-      'Hardware',
-      'Software',
-      'Aplicativos',
-      'Jogos',
-      'Acessórios',
-      'Serviços Cloud',
-      'Manutenção',
-      'Equipamentos',
-      'Outros'
-    ]
+    category_name: 'Dívidas',
+    type: 'expense'
   },
   {
     category_name: 'Outros',
-    subcategories: [
-      'Presentes',
-      'Doações',
-      'Imprevistos',
-      'Empréstimos',
-      'Multas',
-      'Taxas Bancárias',
-      'Investimentos',
-      'Diversos',
-      'Outros'
-    ]
+    type: 'expense'
   }
 ];
 
@@ -224,10 +69,10 @@ export const seedCategories = async () => {
     }
 
     const createdCategories = await Promise.all(
-      categories.map(category =>
+      expenseCategories.map(category =>
         Category.create({
           category_name: category.category_name,
-          type: 'expense'
+          type: category.type
         })
       )
     );

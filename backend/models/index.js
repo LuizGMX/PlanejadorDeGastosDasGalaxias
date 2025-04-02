@@ -1,194 +1,188 @@
 // models/index.js
-import { DataTypes } from 'sequelize';
-import sequelize from '../config/db.js';
+import { Sequelize } from 'sequelize';
+import dotenv from 'dotenv';
+import defineUserModel from './user.js';
+import defineCategoryModel from './category.js';
+import defineExpenseModel from './expense.js';
+import defineIncomeModel from './income.js';
+import defineBankModel from './bank.js';
+import defineBudgetModel from './budget.js';
+import defineVerificationCodeModel from './verificationCode.js';
+import defineUserBankModel from './userBank.js';
+import defineRecurrenceRuleModel from './recurrenceRule.js';
+import defineRecurrenceExceptionModel from './recurrenceException.js';
+import defineUserTelegramModel from './userTelegram.js';
 
-// Importações diretas dos modelos
-import UserModel from './user.js';
-import CategoryModel from './category.js';
-import ExpenseModel from './expense.js';
-import IncomeModel from './income.js';
-import VerificationCodeModel from './verificationCode.js';
-import BankModel from './bank.js';
-import SubCategoryModel from './subcategory.js';
-import BudgetModel from './budget.js';
-import UserBankModel from './userBank.js';
-import RecurrenceRuleModel from './recurrenceRule.js';
-import RecurrenceExceptionModel from './recurrenceException.js';
-import TelegramVerificationCodeModel from './telegramVerificationCode.js';
+// Configurações do banco de dados
+dotenv.config();
+const sequelize = new Sequelize(
+  process.env.DB_NAME || 'planejador',
+  process.env.DB_USER || 'root',
+  process.env.DB_PASSWORD || '',
+  {
+    host: process.env.DB_HOST || 'localhost',
+    dialect: 'mysql',
+    logging: false,
+    define: {
+      charset: 'utf8mb4',
+      collate: 'utf8mb4_unicode_ci',
+      timestamps: true
+    }
+  }
+);
 
-// Inicializa os modelos
-const User = UserModel(sequelize);
-const Category = CategoryModel(sequelize);
-const Expense = ExpenseModel(sequelize);
-const Income = IncomeModel(sequelize);
-const VerificationCode = VerificationCodeModel(sequelize);
-const Bank = BankModel(sequelize);
-const SubCategory = SubCategoryModel(sequelize);
-const Budget = BudgetModel(sequelize);
-const UserBank = UserBankModel(sequelize);
-const RecurrenceRule = RecurrenceRuleModel(sequelize);
-const RecurrenceException = RecurrenceExceptionModel(sequelize);
-const TelegramVerificationCode = TelegramVerificationCodeModel(sequelize);
+// Definição dos modelos
+const User = defineUserModel(sequelize);
+const Category = defineCategoryModel(sequelize);
+const Expense = defineExpenseModel(sequelize);
+const Income = defineIncomeModel(sequelize);
+const Bank = defineBankModel(sequelize);
+const Budget = defineBudgetModel(sequelize);
+const VerificationCode = defineVerificationCodeModel(sequelize);
+const UserBank = defineUserBankModel(sequelize);
+const RecurrenceRule = defineRecurrenceRuleModel(sequelize);
+const RecurrenceException = defineRecurrenceExceptionModel(sequelize);
+const UserTelegram = defineUserTelegramModel(sequelize);
 
-// Relacionamentos
+// Associações entre modelos
+// User-Expense
+User.hasMany(Expense, {
+  foreignKey: 'user_id',
+  as: 'expenses'
+});
 Expense.belongsTo(User, {
-  foreignKey: 'user_id',
-  onDelete: 'CASCADE',
-  onUpdate: 'CASCADE'
+  foreignKey: 'user_id'
 });
 
+// User-Income
+User.hasMany(Income, {
+  foreignKey: 'user_id',
+  as: 'incomes'
+});
 Income.belongsTo(User, {
-  foreignKey: 'user_id',
-  onDelete: 'CASCADE',
-  onUpdate: 'CASCADE'
+  foreignKey: 'user_id'
 });
 
+// Expense-Category
 Expense.belongsTo(Category, {
   foreignKey: 'category_id',
-  onDelete: 'NO ACTION',
-  onUpdate: 'CASCADE'
-});
-
-Income.belongsTo(Category, {
-  foreignKey: 'category_id',
-  onDelete: 'NO ACTION',
-  onUpdate: 'CASCADE'
-});
-
-Expense.belongsTo(SubCategory, {
-  foreignKey: 'subcategory_id',
-  onDelete: 'NO ACTION',
-  onUpdate: 'CASCADE'
-});
-
-Income.belongsTo(SubCategory, {
-  foreignKey: 'subcategory_id',
-  onDelete: 'NO ACTION',
-  onUpdate: 'CASCADE'
-});
-
-Expense.belongsTo(Bank, {
-  foreignKey: 'bank_id',
-  onDelete: 'NO ACTION',
-  onUpdate: 'CASCADE'
-});
-
-Income.belongsTo(Bank, {
-  foreignKey: 'bank_id',
-  onDelete: 'NO ACTION',
-  onUpdate: 'CASCADE'
-});
-
-// Relacionamento entre Category e SubCategory
-Category.hasMany(SubCategory, {
-  foreignKey: 'category_id',
-  onDelete: 'CASCADE',
-  onUpdate: 'CASCADE'
-});
-
-SubCategory.belongsTo(Category, {
-  foreignKey: 'category_id',
-  onDelete: 'CASCADE',
-  onUpdate: 'CASCADE'
-});
-
-// Relacionamento entre User e SubCategory
-SubCategory.belongsTo(User, {
-  foreignKey: 'user_id',
-  onDelete: 'CASCADE',
-  onUpdate: 'CASCADE'
-});
-
-User.hasMany(SubCategory, {
-  foreignKey: 'user_id',
-  onDelete: 'CASCADE',
-  onUpdate: 'CASCADE'
-});
-
-// Relacionamento do Budget com User
-Budget.belongsTo(User, {
-  foreignKey: 'user_id',
-  onDelete: 'CASCADE',
-  onUpdate: 'CASCADE'
-});
-
-// Relacionamento do Budget com Category
-Budget.belongsTo(Category, {
-  foreignKey: 'category_id',
-  onDelete: 'NO ACTION',
-  onUpdate: 'CASCADE',
   as: 'Category'
 });
 
-// Relacionamento entre User e Bank através de UserBank
-User.belongsToMany(Bank, {
-  through: UserBank,
-  foreignKey: 'user_id',
-  otherKey: 'bank_id'
+// Income-Category
+Income.belongsTo(Category, {
+  foreignKey: 'category_id',
+  as: 'Category'
 });
 
-Bank.belongsToMany(User, {
-  through: UserBank,
+// Expense-Bank
+Expense.belongsTo(Bank, {
   foreignKey: 'bank_id',
-  otherKey: 'user_id'
+  as: 'Bank'
 });
 
+// Income-Bank
+Income.belongsTo(Bank, {
+  foreignKey: 'bank_id',
+  as: 'Bank'
+});
+
+// User-Category
+User.hasMany(Category, {
+  foreignKey: 'user_id',
+  as: 'categories'
+});
+Category.belongsTo(User, {
+  foreignKey: 'user_id'
+});
+
+// User-Bank
+User.hasMany(Bank, {
+  foreignKey: 'user_id',
+  as: 'banks'
+});
+Bank.belongsTo(User, {
+  foreignKey: 'user_id'
+});
+
+// User-Budget
+User.hasMany(Budget, {
+  foreignKey: 'user_id',
+  as: 'budgets'
+});
+Budget.belongsTo(User, {
+  foreignKey: 'user_id'
+});
+
+// User-VerificationCode
+User.hasMany(VerificationCode, {
+  foreignKey: 'user_id',
+  as: 'verification_codes'
+});
+VerificationCode.belongsTo(User, {
+  foreignKey: 'user_id'
+});
+
+// UserBank
+User.hasMany(UserBank, {
+  foreignKey: 'user_id',
+  as: 'user_banks'
+});
 UserBank.belongsTo(User, {
-  foreignKey: 'user_id',
-  onDelete: 'CASCADE',
-  onUpdate: 'CASCADE'
+  foreignKey: 'user_id'
 });
 
-UserBank.belongsTo(Bank, {
+Bank.hasMany(UserBank, {
   foreignKey: 'bank_id',
-  onDelete: 'NO ACTION',
-  onUpdate: 'CASCADE'
+  as: 'user_banks'
+});
+UserBank.belongsTo(Bank, {
+  foreignKey: 'bank_id'
 });
 
-// Relacionamentos do RecurrenceRule
-RecurrenceRule.belongsTo(User, {
+// RecurrenceRule
+User.hasMany(RecurrenceRule, {
   foreignKey: 'user_id',
-  onDelete: 'CASCADE',
-  onUpdate: 'CASCADE'
+  as: 'recurrence_rules'
+});
+RecurrenceRule.belongsTo(User, {
+  foreignKey: 'user_id'
 });
 
 RecurrenceRule.belongsTo(Category, {
   foreignKey: 'category_id',
-  onDelete: 'NO ACTION',
-  onUpdate: 'CASCADE'
-});
-
-RecurrenceRule.belongsTo(SubCategory, {
-  foreignKey: 'subcategory_id',
-  onDelete: 'NO ACTION',
-  onUpdate: 'CASCADE'
+  as: 'Category'
 });
 
 RecurrenceRule.belongsTo(Bank, {
   foreignKey: 'bank_id',
-  onDelete: 'NO ACTION',
-  onUpdate: 'CASCADE'
+  as: 'Bank'
 });
 
-// Relacionamentos do RecurrenceException
-RecurrenceException.belongsTo(RecurrenceRule, {
-  foreignKey: 'recurrence_id',
-  onDelete: 'CASCADE',
-  onUpdate: 'CASCADE'
-});
-
+// RecurrenceException
 RecurrenceRule.hasMany(RecurrenceException, {
   foreignKey: 'recurrence_id',
-  onDelete: 'CASCADE',
-  onUpdate: 'CASCADE'
+  as: 'exceptions'
+});
+RecurrenceException.belongsTo(RecurrenceRule, {
+  foreignKey: 'recurrence_id',
+  as: 'rule'
 });
 
-// Exportação dos modelos
+// UserTelegram
+User.hasOne(UserTelegram, {
+  foreignKey: 'user_id',
+  as: 'telegram'
+});
+UserTelegram.belongsTo(User, {
+  foreignKey: 'user_id'
+});
+
+// Exports
 export {
   sequelize,
   User,
   Category,
-  SubCategory,
   Expense,
   Income,
   Bank,
@@ -197,5 +191,5 @@ export {
   UserBank,
   RecurrenceRule,
   RecurrenceException,
-  TelegramVerificationCode
+  UserTelegram
 };

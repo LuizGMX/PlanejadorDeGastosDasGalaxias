@@ -417,10 +417,9 @@ const ExpenseList = () => {
                 <th>Data</th>
                 <th>Descrição</th>
                 <th>Categoria</th>
-                <th>Subcategoria</th>
                 <th>Valor</th>
-                <th>Método</th>
-                <th>Parcela</th>
+                <th>Pagamento</th>
+                <th>Parcelas</th>
                 <th>Ações</th>
               </tr>
             </thead>
@@ -437,7 +436,6 @@ const ExpenseList = () => {
                   <td>{new Date(expense.expense_date).toLocaleDateString('pt-BR')}</td>
                   <td>{expense.description}</td>
                   <td>{expense.Category.category_name}</td>
-                  <td>{expense.SubCategory.subcategory_name}</td>
                   <td>R$ {parseFloat(expense.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                   <td>
                     {expense.payment_method === 'credit_card' ? '💳 Crédito' :

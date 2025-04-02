@@ -12,8 +12,7 @@ import {
   BsXLg,
   BsFolderSymlink,
   BsBank2,
-  BsRepeat,
-  BsListCheck
+  BsRepeat
 } from 'react-icons/bs';
 
 const AddIncome = () => {
@@ -24,7 +23,6 @@ const AddIncome = () => {
     amount: '',
     date: '',
     category_id: '',
-    subcategory_id: '',
     bank_id: '',
     is_recurring: false,
     has_installments: false,
@@ -35,7 +33,6 @@ const AddIncome = () => {
     recurrence_type: 'monthly'
   });
   const [categories, setCategories] = useState([]);
-  const [subcategories, setSubcategories] = useState([]);
   const [banks, setBanks] = useState([]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -86,33 +83,6 @@ const AddIncome = () => {
 
     fetchBanks();
   }, [auth.token]);
-
-  useEffect(() => {
-    if (formData.category_id) {
-      const fetchSubcategories = async () => {
-        try {
-          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/incomes/categories/${formData.category_id}/subcategories`, {
-            headers: {
-              'Authorization': `Bearer ${auth.token}`
-            }
-          });
-
-          if (!response.ok) {
-            throw new Error('Falha ao carregar subcategorias');
-          }
-
-          const data = await response.json();
-          setSubcategories(data);
-        } catch (err) {
-          setError('Erro ao carregar subcategorias. Por favor, tente novamente.');
-        }
-      };
-
-      fetchSubcategories();
-    } else {
-      setSubcategories([]);
-    }
-  }, [formData.category_id, auth.token]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -353,27 +323,6 @@ const AddIncome = () => {
               ))}
             </select>
           </div>
-
-          {subcategories.length > 0 && (
-            <div className={dataTableStyles.formGroup}>
-              <label className={dataTableStyles.formLabel}>
-                <BsListCheck /> Subcategoria
-              </label>
-              <select
-                name="subcategory_id"
-                value={formData.subcategory_id || ''}
-                onChange={handleChange}
-                className={dataTableStyles.formInput}
-              >
-                <option value="">Selecione uma subcategoria</option>
-                {subcategories.map(subcategory => (
-                  <option key={subcategory.id} value={subcategory.id}>
-                    {subcategory.subcategory_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
 
           <div className={dataTableStyles.formGroup}>
             <label className={dataTableStyles.formLabel}>

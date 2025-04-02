@@ -1,6 +1,6 @@
 import express from 'express';
 const router = express.Router();
-import { Income, Category, SubCategory, Bank } from '../models/index.js';
+import { Income, Category, Bank } from '../models/index.js';
 import { v4 as uuidv4 } from 'uuid';
 import { Op } from 'sequelize';
 import { authenticate } from '../middleware/auth.js';
@@ -73,10 +73,6 @@ router.get('/', authenticate, async (req, res) => {
         { 
           model: Category,
           attributes: ['id', 'category_name', 'type']
-        },
-        { 
-          model: SubCategory,
-          attributes: ['id', 'subcategory_name']
         },
         { 
           model: Bank,
@@ -159,7 +155,6 @@ router.post('/', authenticate, async (req, res) => {
       date,
       is_recurring,
       category_id,
-      subcategory_id,
       bank_id,
       start_date,
       end_date,
@@ -218,7 +213,6 @@ router.post('/', authenticate, async (req, res) => {
           is_recurring: true,
           recurring_group_id: recurringGroupId,
           category_id,
-          subcategory_id,
           bank_id,
           start_date: startDateObj,
           end_date: endDateObj,
@@ -260,7 +254,6 @@ router.post('/', authenticate, async (req, res) => {
         date: adjustDate(date),
         is_recurring: false,
         category_id,
-        subcategory_id,
         bank_id
       });
     }
@@ -285,7 +278,6 @@ router.put('/:id', authenticate, async (req, res) => {
       amount,
       date,
       category_id,
-      subcategory_id,
       bank_id,
       start_date,
       end_date
@@ -354,7 +346,6 @@ router.put('/:id', authenticate, async (req, res) => {
           description,
           amount,
           category_id,
-          subcategory_id,
           bank_id,
           start_date: newStartDate,
           end_date: newEndDate
@@ -409,7 +400,6 @@ router.put('/:id', authenticate, async (req, res) => {
             amount,
             date: new Date(currentDate),
             category_id,
-            subcategory_id,
             bank_id,
             user_id: req.user.id,
             is_recurring: true,
@@ -447,7 +437,6 @@ router.put('/:id', authenticate, async (req, res) => {
           description: description.replace(/\(\d+\/\d+\)/, ''),
           amount,
           category_id,
-          subcategory_id,
           bank_id
         },
         {
@@ -469,7 +458,6 @@ router.put('/:id', authenticate, async (req, res) => {
           amount,
           date,
           category_id,
-          subcategory_id,
           bank_id
         },
         { transaction: t }
@@ -501,7 +489,6 @@ router.put('/:id', authenticate, async (req, res) => {
           amount,
           date,
           category_id,
-          subcategory_id,
           bank_id
         },
         { transaction: t }
@@ -515,7 +502,6 @@ router.put('/:id', authenticate, async (req, res) => {
       where: { id: income.id },
       include: [
         { model: Category },
-        { model: SubCategory },
         { model: Bank }
       ]
     });
@@ -648,13 +634,8 @@ router.get('/categories', authenticate, async (req, res) => {
   try {
     const categories = await Category.findAll({
       where: { type: 'income' },
-      include: [{
-        model: SubCategory,
-        attributes: ['id', 'subcategory_name']
-      }],
       order: [
-        ['category_name', 'ASC'],
-        [SubCategory, 'subcategory_name', 'ASC']
+        ['category_name', 'ASC']
       ]
     });
     console.log(categories);
@@ -662,31 +643,6 @@ router.get('/categories', authenticate, async (req, res) => {
   } catch (error) {
     console.error('Erro ao listar categorias:', error);
     res.status(500).json({ message: 'Erro ao buscar categorias' });
-  }
-});
-
-// Listar subcategorias de uma categoria de ganho
-router.get('/categories/:categoryId/subcategories', authenticate, async (req, res) => {
-  try {
-    const category = await Category.findOne({
-      where: { 
-        id: req.params.categoryId,
-        type: 'income'
-      }
-    });
-
-    if (!category) {
-      return res.status(404).json({ message: 'Categoria não encontrada' });
-    }
-
-    const subcategories = await SubCategory.findAll({
-      where: { category_id: req.params.categoryId },
-      order: [['subcategory_name', 'ASC']]
-    });
-    res.json(subcategories);
-  } catch (error) {
-    console.error('Erro ao listar subcategorias:', error);
-    res.status(500).json({ message: 'Erro ao buscar subcategorias' });
   }
 });
 

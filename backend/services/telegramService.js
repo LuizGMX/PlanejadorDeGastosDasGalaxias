@@ -1,5 +1,5 @@
 import { Telegraf } from 'telegraf';
-import { User, Expense, Income, Category, SubCategory, Bank, Budget, VerificationCode, UserBank } from '../models/index.js';
+import { User, Expense, Income, Category, Bank, Budget, VerificationCode, UserBank } from '../models/index.js';
 import { Op } from 'sequelize';
 import { sendVerificationEmail } from './emailService.js';
 import crypto from 'crypto';
@@ -179,9 +179,6 @@ export class TelegramService {
           case 'AWAITING_EXPENSE_CATEGORY':
             await this.handleExpenseCategory(ctx, user, userState);
             break;
-          case 'AWAITING_EXPENSE_SUBCATEGORY':
-            await this.handleExpenseSubcategory(ctx, user, userState);
-            break;
           case 'AWAITING_EXPENSE_BANK':
             await this.handleExpenseBank(ctx, user, userState);
             break;
@@ -199,9 +196,6 @@ export class TelegramService {
             break;
           case 'AWAITING_INCOME_CATEGORY':
             await this.handleIncomeCategory(ctx, user, userState);
-            break;
-          case 'AWAITING_INCOME_SUBCATEGORY':
-            await this.handleIncomeSubcategory(ctx, user, userState);
             break;
           case 'AWAITING_INCOME_BANK':
             await this.handleIncomeBank(ctx, user, userState);
@@ -575,70 +569,16 @@ ${balance >= 0
 
     const category = userState.data.categories[choice];
 
-    // Busca as subcategorias
-    const subcategories = await SubCategory.findAll({
-      where: { category_id: category.id },
-      order: [['subcategory_name', 'ASC']]
-    });
-
-    if (!subcategories || subcategories.length === 0) {
-      ctx.reply('❌ Esta categoria não possui subcategorias. Por favor, escolha outra categoria.');
-      return;
-    }
-
-    const subcategoriesMessage = subcategories
-      .map((subcategory, index) => `${index + 1}. ${subcategory.subcategory_name}`)
-      .join('\n');
-
-    await this.setUserState(ctx.chat.id, 'AWAITING_EXPENSE_SUBCATEGORY', {
-      ...userState.data,
-      category_id: category.id,
-      category_name: category.name,
-      subcategories: subcategories.map(s => ({
-        id: s.id,
-        name: s.subcategory_name
-      }))
-    });
-
-    ctx.reply(`📑 Escolha a subcategoria:\n\n${subcategoriesMessage}`);
-  }
-
-  async handleExpenseSubcategory(ctx, user, userState) {
-    const choice = parseInt(ctx.message.text) - 1;
-    
-    if (isNaN(choice) || choice < 0 || choice >= userState.data.subcategories.length) {
-      ctx.reply('❌ Subcategoria inválida. Por favor, escolha uma das opções listadas.');
-      return;
-    }
-
-    const subcategory = userState.data.subcategories[choice];
-
-    // Busca os bancos do usuário
-    const banks = await Bank.findAll({
-      order: [['code', 'ASC']]
-    });
-
-    if (!banks || banks.length === 0) {
-      ctx.reply('❌ Erro: Não há bancos cadastrados.');
-      return;
-    }
-
-    const banksMessage = banks
-      .map((bank, index) => `${index + 1}. ${bank.name}`)
-      .join('\n');
-
     await this.setUserState(ctx.chat.id, 'AWAITING_EXPENSE_BANK', {
       ...userState.data,
-      subcategory_id: subcategory.id,
-      subcategory_name: subcategory.name,
-      banks: banks.map(b => ({
-        id: b.id,
-        code: b.code,
-        name: b.name
-      }))
+      category_id: category.id,
+      category_name: category.category_name
     });
-
-    ctx.reply(`🏦 Escolha o banco:\n\n${banksMessage}`);
+    
+    await this.sendMessage(
+      ctx.chat.id,
+      'Selecione o banco/cartão:'
+    );
   }
 
   async handleExpenseBank(ctx, user, userState) {
@@ -711,7 +651,6 @@ ${balance >= 0
 Valor: R$ ${userState.data.amount.toFixed(2)}
 Descrição: ${userState.data.description}
 Categoria: ${userState.data.category_name}
-Subcategoria: ${userState.data.subcategory_name}
 Banco: ${bank.name}
 Forma de Pagamento: ${paymentMethodNames[paymentMethod]}
 
@@ -732,7 +671,6 @@ Digite SIM para confirmar ou NÃO para cancelar.
           amount: userState.data.amount,
           description: userState.data.description,
           category_id: userState.data.category_id,
-          subcategory_id: userState.data.subcategory_id,
           bank_id: userState.data.bank_id,
           payment_method: userState.data.payment_method,
           expense_date: new Date(),
@@ -817,70 +755,16 @@ Digite SIM para confirmar ou NÃO para cancelar.
 
     const category = userState.data.categories[choice];
 
-    // Busca as subcategorias
-    const subcategories = await SubCategory.findAll({
-      where: { category_id: category.id },
-      order: [['subcategory_name', 'ASC']]
-    });
-
-    if (!subcategories || subcategories.length === 0) {
-      ctx.reply('❌ Esta categoria não possui subcategorias. Por favor, escolha outra categoria.');
-      return;
-    }
-
-    const subcategoriesMessage = subcategories
-      .map((subcategory, index) => `${index + 1}. ${subcategory.subcategory_name}`)
-      .join('\n');
-
-    await this.setUserState(ctx.chat.id, 'AWAITING_INCOME_SUBCATEGORY', {
-      ...userState.data,
-      category_id: category.id,
-      category_name: category.name,
-      subcategories: subcategories.map(s => ({
-        id: s.id,
-        name: s.subcategory_name
-      }))
-    });
-
-    ctx.reply(`📑 Escolha a subcategoria:\n\n${subcategoriesMessage}`);
-  }
-
-  async handleIncomeSubcategory(ctx, user, userState) {
-    const choice = parseInt(ctx.message.text) - 1;
-    
-    if (isNaN(choice) || choice < 0 || choice >= userState.data.subcategories.length) {
-      ctx.reply('❌ Subcategoria inválida. Por favor, escolha uma das opções listadas.');
-      return;
-    }
-
-    const subcategory = userState.data.subcategories[choice];
-
-    // Busca os bancos do usuário
-    const banks = await Bank.findAll({
-      order: [['code', 'ASC']]
-    });
-
-    if (!banks || banks.length === 0) {
-      ctx.reply('❌ Erro: Não há bancos cadastrados.');
-      return;
-    }
-
-    const banksMessage = banks
-      .map((bank, index) => `${index + 1}. ${bank.name}`)
-      .join('\n');
-
     await this.setUserState(ctx.chat.id, 'AWAITING_INCOME_BANK', {
       ...userState.data,
-      subcategory_id: subcategory.id,
-      subcategory_name: subcategory.name,
-      banks: banks.map(b => ({
-        id: b.id,
-        code: b.code,
-        name: b.name
-      }))
+      category_id: category.id,
+      category_name: category.name
     });
-
-    ctx.reply(`🏦 Escolha o banco:\n\n${banksMessage}`);
+    
+    await this.sendMessage(
+      ctx.chat.id,
+      'Selecione o banco/cartão:'
+    );
   }
 
   async handleIncomeBank(ctx, user, userState) {
@@ -904,7 +788,6 @@ Digite SIM para confirmar ou NÃO para cancelar.
 Valor: R$ ${userState.data.amount.toFixed(2)}
 Descrição: ${userState.data.description}
 Categoria: ${userState.data.category_name}
-Subcategoria: ${userState.data.subcategory_name}
 Banco: ${bank.code} - ${bank.name}
 
 Digite SIM para confirmar ou NÃO para cancelar.
@@ -924,7 +807,6 @@ Digite SIM para confirmar ou NÃO para cancelar.
           amount: userState.data.amount,
           description: userState.data.description,
           category_id: userState.data.category_id,
-          subcategory_id: userState.data.subcategory_id,
           bank_id: userState.data.bank_id,
           date: new Date()
         });

@@ -1,33 +1,29 @@
 import xlsx from 'xlsx';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { Expense, Category, SubCategory, Bank } from '../models/index.js';
+import { Expense, Category, Bank } from '../models/index.js';
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 
 class SpreadsheetProcessorService {
   constructor() {
     this.categories = [];
-    this.subcategories = [];
     this.banks = [];
     this.defaultCategory = null;
-    this.defaultSubCategory = null;
     this.defaultBank = null;
   }
 
   async initialize() {
     try {
-      // Carrega todas as categorias, subcategorias e bancos
+      // Carrega todas as categorias e bancos
       this.categories = await Category.findAll();
-      this.subcategories = await SubCategory.findAll();
       this.banks = await Bank.findAll();
 
       // Define os valores padrão
       this.defaultCategory = await Category.findOne({ where: { category_name: 'Outros' } });
-      this.defaultSubCategory = await SubCategory.findOne({ where: { subcategory_name: 'Outros' } });
       this.defaultBank = await Bank.findOne({ where: { name: 'Outro' } });
 
-      if (!this.defaultCategory || !this.defaultSubCategory || !this.defaultBank) {
-        throw new Error('Categorias, subcategorias ou bancos padrão não encontrados');
+      if (!this.defaultCategory || !this.defaultBank) {
+        throw new Error('Categorias ou bancos padrão não encontrados');
       }
     } catch (error) {
       console.error('Erro ao carregar categorias:', error);
@@ -48,7 +44,7 @@ class SpreadsheetProcessorService {
       
       for (const row of data) {
         const description = Object.values(row).join(' ');
-        const { categoryId, subcategoryId } = await this.categorizeExpense(description);
+        const { categoryId } = await this.categorizeExpense(description);
         
         // Tenta encontrar valores monetários nas colunas
         const amount = this.findMonetaryValue(row);
@@ -58,7 +54,6 @@ class SpreadsheetProcessorService {
             description: description,
             amount: amount,
             category_id: categoryId,
-            subcategory_id: subcategoryId,
             bank_id: this.defaultBank.id,
             user_id: userId,
             date: this.findDate(row) || new Date(),
@@ -115,36 +110,13 @@ class SpreadsheetProcessorService {
         category = this.defaultCategory;
       }
 
-      // Agora vamos categorizar a subcategoria
-      const subcategoriesForCategory = this.subcategories.filter(sub => sub.category_id === category.id);
-      const subcategoryList = subcategoriesForCategory.map(sub => sub.subcategory_name).join(', ');
-
-      const subcategoryPrompt = `Agora, para a categoria "${category.category_name}", escolha uma subcategoria entre:
-      ${subcategoryList}
-      
-      Despesa/Ganho: "${description}"
-      
-      Responda apenas com o nome da subcategoria, sem pontuação ou texto adicional.`;
-
-      const subcategoryResult = await model.generateContent(subcategoryPrompt);
-      const subcategoryResponse = await subcategoryResult.response;
-      const subcategoryName = subcategoryResponse.text().trim();
-
-      // Encontra a subcategoria no banco de dados
-      let subcategory = subcategoriesForCategory.find(s => s.subcategory_name.toLowerCase() === subcategoryName.toLowerCase());
-      if (!subcategory) {
-        subcategory = this.defaultSubCategory;
-      }
-
       return {
-        categoryId: category.id,
-        subcategoryId: subcategory.id
+        categoryId: category.id
       };
     } catch (error) {
       console.error('Erro ao categorizar despesa:', error);
       return {
-        categoryId: this.defaultCategory.id,
-        subcategoryId: this.defaultSubCategory.id
+        categoryId: this.defaultCategory.id
       };
     }
   }

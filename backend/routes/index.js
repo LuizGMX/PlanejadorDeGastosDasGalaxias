@@ -8,7 +8,6 @@ import bankRoutes from './banks.js';
 import budgetRoutes from './budgets.js';
 import spreadsheetRoutes from './spreadsheetRoutes.js';
 import userRoutes from './users.js';
-import subcategoriesRouter from './subcategories.js';
 import recurrencesRouter from './recurrences.js';
 import telegramRoutes from './telegramRoutes.js';
 
@@ -23,7 +22,6 @@ router.use('/banks', bankRoutes);
 router.use('/budgets', budgetRoutes);
 router.use('/spreadsheet', spreadsheetRoutes);
 router.use('/users', userRoutes);
-router.use('/subcategories', subcategoriesRouter);
 router.use('/recurrences', recurrencesRouter);
 router.use('/telegram', telegramRoutes);
 

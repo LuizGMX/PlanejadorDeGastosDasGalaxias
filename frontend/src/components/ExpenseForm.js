@@ -11,13 +11,11 @@ const ExpenseForm = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [categories, setCategories] = useState([]);
-  const [subcategories, setSubcategories] = useState([]);
   const [banks, setBanks] = useState([]);
   const [formData, setFormData] = useState({
     description: '',
     amount: '',
     category_id: '',
-    subcategory_id: '',
     bank_id: '',
     expense_date: new Date().toISOString().split('T')[0],
     payment_method: 'card',
@@ -54,39 +52,11 @@ const ExpenseForm = () => {
     fetchData();
   }, [auth.token]);
 
-  useEffect(() => {
-    if (formData.category_id) {
-      const fetchSubcategories = async () => {
-        try {
-          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/expenses/subcategories/${formData.category_id}`, {
-            headers: {
-              'Authorization': `Bearer ${auth.token}`,
-              'Content-Type': 'application/json'
-            }
-          });
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Erro ao carregar subcategorias');
-          }
-          const data = await response.json();
-          setSubcategories(data);
-        } catch (err) {
-          console.error('Erro ao carregar subcategorias:', err);
-          setError(err.message);
-        }
-      };
-
-      fetchSubcategories();
-    } else {
-      setSubcategories([]);
-    }
-  }, [formData.category_id, auth.token]);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       if (!formData.description || !formData.amount || !formData.category_id ||
-        !formData.subcategory_id || !formData.bank_id) {
+        !formData.bank_id) {
         throw new Error('Por favor, preencha todos os campos obrigatórios');
       }
 
@@ -146,14 +116,6 @@ const ExpenseForm = () => {
 
         <div className={styles.formGroup}>
           <label htmlFor="amount">Valor</label>
-          {/* <input
-            type="number"
-            id="amount"
-            name="amount"
-            value={formData.amount}
-            onChange={handleChange}
-            required
-          /> */}
           <CurrencyInput
             name="amount"
             id="amount"

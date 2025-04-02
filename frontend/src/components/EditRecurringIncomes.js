@@ -140,7 +140,6 @@ const EditRecurringIncomes = () => {
         amount: updatedIncome.amount,
         date: updatedIncome.date,
         category_id: updatedIncome.category_id,
-        subcategory_id: updatedIncome.subcategory_id,
         bank_id: updatedIncome.bank_id,
         is_recurring: updatedIncome.is_recurring
       };

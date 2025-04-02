@@ -4,7 +4,6 @@ import {
   Expense, 
   Income, 
   Category, 
-  SubCategory, 
   Bank, 
   Budget, 
   User,
@@ -150,6 +149,12 @@ const calculateBudgetInfo = (totalBudget, totalExpenses) => {
   };
 };
 
+// Função auxiliar para calcular meses entre datas
+function monthsBetweenDates(startDate, endDate) {
+  return (endDate.getFullYear() - startDate.getFullYear()) * 12 + 
+         (endDate.getMonth() - startDate.getMonth());
+}
+
 router.get('/', authenticate, async (req, res) => {
   try {
     console.log('\n=== INÍCIO DA REQUISIÇÃO DO DASHBOARD ===');
@@ -208,14 +213,12 @@ router.get('/', authenticate, async (req, res) => {
       include: [
         { 
           model: Category,
+          as: 'Category',
           attributes: ['id', 'category_name']
         },
         { 
-          model: SubCategory,
-          attributes: ['id', 'subcategory_name']
-        },
-        { 
           model: Bank,
+          as: 'Bank',
           attributes: ['id', 'name']
         }
       ]
@@ -236,20 +239,19 @@ router.get('/', authenticate, async (req, res) => {
       include: [
         {
           model: RecurrenceRule,
+          as: 'rule',
           where: {
             user_id: req.user.id
           },
           include: [
             { 
               model: Category,
+              as: 'Category',
               attributes: ['id', 'category_name']
             },
             { 
-              model: SubCategory,
-              attributes: ['id', 'subcategory_name']
-            },
-            { 
               model: Bank,
+              as: 'Bank',
               attributes: ['id', 'name']
             }
           ]
@@ -276,12 +278,10 @@ router.get('/', authenticate, async (req, res) => {
         description: occ.description,
         date: occ.date,
         category_id: occ.rule.category_id,
-        subcategory_id: occ.rule.subcategory_id,
         bank_id: occ.rule.bank_id,
         is_recurring: true,
         recurrence_id: occ.rule.id,
         Category: occ.rule.Category,
-        Subcategory: occ.rule.Subcategory,
         Bank: occ.rule.Bank
       }));
 
@@ -293,12 +293,10 @@ router.get('/', authenticate, async (req, res) => {
         description: occ.description,
         date: occ.date,
         category_id: occ.rule.category_id,
-        subcategory_id: occ.rule.subcategory_id,
         bank_id: occ.rule.bank_id,
         is_recurring: true,
         recurrence_id: occ.rule.id,
         Category: occ.rule.Category,
-        Subcategory: occ.rule.Subcategory,
         Bank: occ.rule.Bank
       }));
 
@@ -325,14 +323,12 @@ router.get('/', authenticate, async (req, res) => {
         include: [
           { 
             model: Category,
+            as: 'Category',
             attributes: ['id', 'category_name']
           },
           { 
-            model: SubCategory,
-            attributes: ['id', 'subcategory_name']
-          },
-          { 
             model: Bank,
+            as: 'Bank',
             attributes: ['id', 'name']
           }
         ]
@@ -358,14 +354,12 @@ router.get('/', authenticate, async (req, res) => {
         include: [
           { 
             model: Category,
+            as: 'Category',
             attributes: ['id', 'category_name']
           },
           { 
-            model: SubCategory,
-            attributes: ['id', 'subcategory_name']
-          },
-          { 
             model: Bank,
+            as: 'Bank',
             attributes: ['id', 'name']
           }
         ]
@@ -600,7 +594,7 @@ router.get('/category-summary', async (req, res) => {
   const { start_date, end_date, type } = req.query;
   try {
     const Model = type === 'income' ? Income : Expense;
-    const dateField = type === 'income' ? 'income_date' : 'expense_date';
+    const dateField = type === 'income' ? 'date' : 'expense_date';
 
     const summary = await Model.findAll({
       where: {
@@ -612,7 +606,7 @@ router.get('/category-summary', async (req, res) => {
         [Sequelize.fn('SUM', Sequelize.col('amount')), 'total'],
       ],
       group: ['category_id'],
-      include: [{ model: Category, attributes: ['category_name'] }],
+      include: [{ model: Category, as: 'Category', attributes: ['category_name'] }],
     });
 
     if (!summary || summary.length === 0) {
@@ -633,7 +627,7 @@ router.get('/period-summary', async (req, res) => {
   const { period, type } = req.query; // 'month' ou 'year'
   try {
     const Model = type === 'income' ? Income : Expense;
-    const dateField = type === 'income' ? 'income_date' : 'expense_date';
+    const dateField = type === 'income' ? 'date' : 'expense_date';
     const groupBy = period === 'month' ? 'MONTH' : 'YEAR';
 
     const summary = await Model.findAll({
@@ -694,7 +688,10 @@ router.get('/bank-balance-trend', authenticate, async (req, res) => {
             [Op.between]: [startDate, endDate] 
           }
         },
-        include: [{ model: Category }, { model: Bank }]
+        include: [
+          { model: Category, as: 'Category' }, 
+          { model: Bank, as: 'Bank' }
+        ]
       }),
       Income.findAll({
         where: {
@@ -703,7 +700,10 @@ router.get('/bank-balance-trend', authenticate, async (req, res) => {
             [Op.between]: [startDate, endDate] 
           }
         },
-        include: [{ model: Category }, { model: Bank }]
+        include: [
+          { model: Category, as: 'Category' }, 
+          { model: Bank, as: 'Bank' }
+        ]
       })
     ]);
 
@@ -773,7 +773,7 @@ router.get('/summary', authenticate, async (req, res) => {
     const expenses = await Expense.findAll({
       where: {
         user_id: user.id,
-        date: {
+        expense_date: {
           [Op.between]: [startDate, endDate]
         }
       }
@@ -835,7 +835,7 @@ router.get('/trend', authenticate, async (req, res) => {
     const expenses = await Expense.findAll({
       where: {
         user_id: user.id,
-        date: {
+        expense_date: {
           [Op.between]: [startDate, endDate]
         }
       }
@@ -868,7 +868,7 @@ router.get('/trend', authenticate, async (req, res) => {
 
     // Soma despesas por mês
     expenses.forEach(expense => {
-      const monthKey = expense.date.toISOString().substring(0, 7);
+      const monthKey = expense.expense_date.toISOString().substring(0, 7);
       if (monthlyData[monthKey]) {
         monthlyData[monthKey].expenses += parseFloat(expense.amount);
       }
@@ -912,7 +912,7 @@ router.get('/projection', authenticate, async (req, res) => {
     const expenses = await Expense.findAll({
       where: {
         user_id: user.id,
-        date: {
+        expense_date: {
           [Op.between]: [startDate, endDate]
         }
       }
@@ -945,12 +945,6 @@ router.get('/projection', authenticate, async (req, res) => {
   }
 });
 
-// Função auxiliar para calcular meses entre datas
-function monthsBetweenDates(startDate, endDate) {
-  return (endDate.getFullYear() - startDate.getFullYear()) * 12 + 
-         (endDate.getMonth() - startDate.getMonth());
-}
-
 // Rota para buscar todas as transações do usuário (sem filtros de data)
 router.get('/all-transactions', authenticate, async (req, res) => {
   try {
@@ -961,7 +955,6 @@ router.get('/all-transactions', authenticate, async (req, res) => {
       where: { user_id: req.user.id },
       include: [
         { model: Category, as: 'Category' },
-        { model: SubCategory, as: 'SubCategory' },
         { model: Bank, as: 'Bank' }
       ],
       order: [['expense_date', 'DESC']]
@@ -972,7 +965,6 @@ router.get('/all-transactions', authenticate, async (req, res) => {
       where: { user_id: req.user.id },
       include: [
         { model: Category, as: 'Category' },
-        { model: SubCategory, as: 'SubCategory' },
         { model: Bank, as: 'Bank' }
       ],
       order: [['date', 'DESC']]

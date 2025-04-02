@@ -92,6 +92,11 @@ function App() {
               <Expenses />
             </PrivateRoute>
           } />
+          <Route path="/expenses/edit/:id" element={
+            <PrivateRoute>
+              <Expenses />
+            </PrivateRoute>
+          } />
           <Route path="/add-expense" element={
             <PrivateRoute>
               <AddExpense />

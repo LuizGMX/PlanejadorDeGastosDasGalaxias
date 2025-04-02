@@ -19,7 +19,6 @@ router.post('/', authenticate, async (req, res) => {
       amount,
       description,
       category_id,
-      subcategory_id,
       bank_id,
       payment_method
     } = req.body;
@@ -34,7 +33,6 @@ router.post('/', authenticate, async (req, res) => {
       amount,
       description,
       category_id,
-      subcategory_id,
       bank_id,
       payment_method,
       user_id: req.user.id

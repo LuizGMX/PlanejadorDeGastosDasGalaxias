@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { AuthContext } from '../App';
 import dataTableStyles from '../styles/dataTable.module.css';
 import sharedStyles from '../styles/shared.module.css';
@@ -26,10 +26,13 @@ import {
 
 const Expenses = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
   const { auth } = useContext(AuthContext);
   const [expenses, setExpenses] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [banks, setBanks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
   const [selectedExpenses, setSelectedExpenses] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState(null);
@@ -52,9 +55,6 @@ const Expenses = () => {
   const [messagePosition, setMessagePosition] = useState({ x: 0, y: 0 });
   const [deleteOption, setDeleteOption] = useState(null);
   const [noExpensesMessage, setNoExpensesMessage] = useState(null);
-  const [categories, setCategories] = useState([]);
-  const [subcategories, setSubcategories] = useState([]);
-  const [banks, setBanks] = useState([]);
 
   const years = Array.from(
     { length: 11 },
@@ -822,6 +822,34 @@ const Expenses = () => {
     </div>
   );
 
+  // Add useEffect to load the expense to edit if ID is provided
+  useEffect(() => {
+    const loadExpenseToEdit = async () => {
+      if (id) {
+        try {
+          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/expenses/${id}`, {
+            headers: {
+              'Authorization': `Bearer ${auth.token}`
+            }
+          });
+
+          if (!response.ok) {
+            throw new Error('Erro ao carregar despesa');
+          }
+
+          const expense = await response.json();
+          setEditingExpense(expense);
+        } catch (error) {
+          console.error('Erro ao carregar despesa:', error);
+          toast.error('Erro ao carregar despesa para edição');
+          navigate('/expenses');
+        }
+      }
+    };
+
+    loadExpenseToEdit();
+  }, [id, auth.token, navigate]);
+
   if (loading) {
     return (
       <div className={dataTableStyles.container}>
@@ -885,8 +913,7 @@ const Expenses = () => {
                   <th>Valor</th>
                   <th>Data</th>
                   <th>Categoria</th>
-                  <th>Subcategoria</th>
-                  <th>Método</th>
+                  <th>Pagamento</th>
                   <th>Tipo</th>
                   <th>Parcelas</th>
                   <th width="100">Ações</th>
@@ -915,7 +942,6 @@ const Expenses = () => {
                     </td>
                     <td>{formatDate(expense.expense_date)}</td>
                     <td>{expense.Category?.category_name}</td>
-                    <td>{expense.SubCategory?.subcategory_name || '-'}</td>
                     <td>
                       {expense.payment_method === 'credit_card' ? (
                         <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
