@@ -21,6 +21,8 @@ import {
   ReferenceLine,
 } from 'recharts';
 import styles from '../styles/dashboard.module.css';
+import { FaCalendarAlt, FaChartLine, FaPlus, FaChevronDown } from 'react-icons/fa';
+import DateRangePicker from './DateRangePicker';
   
 const motivationalPhrases = [
   "Cuide do seu dinheiro hoje para não precisar se preocupar amanhã.",
@@ -543,78 +545,90 @@ const FinancialHealthScore = ({ data }) => {
 };
 
 // Improved filter selectors
-const FilterSelector = ({ title, options, selected, onChange, type }) => {
+const FilterSelector = ({ label, options, selected, onSelect, multiple = false }) => {
   const [isOpen, setIsOpen] = useState(false);
-  
+  const filterRef = useRef(null);
+
   const handleToggle = () => setIsOpen(!isOpen);
-  
-  const handleSelectAll = (e) => {
-    e.stopPropagation();
-    if (selected.length === options.length) {
-      onChange([]);
-    } else {
-      onChange(options.map(option => option.value));
-    }
-  };
-  
+
   const handleSelect = (value) => {
-    if (selected.includes(value)) {
-      onChange(selected.filter(item => item !== value));
+    if (multiple) {
+      const newSelected = selected.includes(value)
+        ? selected.filter(item => item !== value)
+        : [...selected, value];
+      onSelect(newSelected);
     } else {
-      onChange([...selected, value]);
+      onSelect(value);
+      setIsOpen(false);
     }
   };
-  
+
+  const handleSelectAll = () => {
+    if (multiple) {
+      onSelect(selected.length === options.length ? [] : options.map(opt => opt.value));
+    }
+  };
+
   const getDisplayText = () => {
-    if (selected.length === 0) return `Selecione ${title.toLowerCase()}`;
-    if (selected.length === options.length) return `Todos ${title.toLowerCase()}`;
-    if (selected.length <= 2) {
-      return selected.map(value => {
-        const option = options.find(opt => opt.value === value);
-        return option ? option.label : '';
-      }).join(', ');
+    if (multiple) {
+      if (selected.length === 0) return 'Selecione...';
+      if (selected.length === options.length) return 'Todos selecionados';
+      return `${selected.length} selecionados`;
     }
-    return `${selected.length} ${title.toLowerCase()} selecionados`;
+    const selectedOption = options.find(opt => opt.value === selected);
+    return selectedOption ? selectedOption.label : 'Selecione...';
   };
-  
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (filterRef.current && !filterRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   return (
-    <div className={styles.filterSelector}>
-      <div className={styles.filterLabel}>{title}</div>
+    <div className={styles.filterSelector} ref={filterRef}>
+      <div className={styles.filterLabel}>{label}</div>
       <div 
-        className={`${styles.filterDisplay} ${isOpen ? styles.active : ''}`} 
+        className={`${styles.filterDisplay} ${isOpen ? styles.active : ''}`}
         onClick={handleToggle}
       >
         <span>{getDisplayText()}</span>
-        <span className={styles.arrowIcon}>{isOpen ? '▲' : '▼'}</span>
+        <FaChevronDown className={`${styles.arrowIcon} ${isOpen ? styles.rotated : ''}`} />
       </div>
-      
       {isOpen && (
         <div className={styles.filterOptions}>
-          <div className={styles.selectAllOption} onClick={handleSelectAll}>
-            <input 
-              type="checkbox" 
-              checked={selected.length === options.length} 
-              onChange={() => {}}
-              onClick={(e) => e.stopPropagation()}
-            />
-            <span>Selecionar todos</span>
-          </div>
-          
-          <div className={styles.optionsDivider} />
-          
+          {multiple && (
+            <>
+              <div className={styles.selectAllOption} onClick={handleSelectAll}>
+                <input 
+                  type="checkbox" 
+                  checked={selected.length === options.length}
+                  onChange={() => {}}
+                />
+                <span>Selecionar Todos</span>
+              </div>
+              <div className={styles.optionsDivider} />
+            </>
+          )}
           <div className={styles.optionsList}>
             {options.map(option => (
               <div 
-                key={option.value} 
+                key={option.value}
                 className={`${styles.filterOption} ${selected.includes(option.value) ? styles.selected : ''}`}
                 onClick={() => handleSelect(option.value)}
               >
-                <input 
-                  type="checkbox" 
-                  checked={selected.includes(option.value)} 
-                  onChange={() => {}}
-                  onClick={(e) => e.stopPropagation()}
-                />
+                {multiple && (
+                  <input 
+                    type="checkbox" 
+                    checked={selected.includes(option.value)}
+                    onChange={() => {}}
+                  />
+                )}
                 <span>{option.label}</span>
               </div>
             ))}
@@ -626,8 +640,27 @@ const FilterSelector = ({ title, options, selected, onChange, type }) => {
 };
 
 const Dashboard = () => {
-  const navigate = useNavigate();
   const { auth } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const [activeSection, setActiveSection] = useState('overview');
+  const [selectedPeriod, setSelectedPeriod] = useState('current');
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [selectedBanks, setSelectedBanks] = useState([]);
+  const [hasExpenses, setHasExpenses] = useState(false);
+  const [hasIncome, setHasIncome] = useState(false);
+  const [showDateRangePicker, setShowDateRangePicker] = useState(false);
+  const [customDateRange, setCustomDateRange] = useState(null);
+  const [showPeriodOptions, setShowPeriodOptions] = useState(false);
+  const [showExpenseModal, setShowExpenseModal] = useState(false);
+  const [expandedCharts, setExpandedCharts] = useState({});
+  const [chartRefs] = useState({
+    balanceTrend: React.createRef(),
+    expensesByCategory: React.createRef(),
+    budget: React.createRef(),
+    'expenses-trend': React.createRef(),
+    'income-trend': React.createRef()
+  });
+
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
@@ -637,17 +670,6 @@ const Dashboard = () => {
     months: [new Date().getMonth() + 1],
     years: [new Date().getFullYear()]
   });
-  // Estado para controlar a seção ativa
-  const [activeSection, setActiveSection] = useState('overview');
-  const [expandedCharts, setExpandedCharts] = useState({});
-  const [chartRefs] = useState({
-    balanceTrend: React.createRef(),
-    expensesByCategory: React.createRef(),
-    budget: React.createRef(),
-    'expenses-trend': React.createRef(),
-    'income-trend': React.createRef()
-  });
-  
   // Estado para armazenar as transações processadas
   const [transactions, setTransactions] = useState([]);
   
@@ -662,39 +684,73 @@ const Dashboard = () => {
   const [groupByDate, setGroupByDate] = useState(true);
   
   // Estados para Categories
-  const [selectedPeriod, setSelectedPeriod] = useState('month');
   const [categoryData, setCategoryData] = useState([]);
   const [incomeCategoryData, setIncomeCategoryData] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [selectedIncomeCategory, setSelectedIncomeCategory] = useState(null);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [incomeLoading, setIncomeLoading] = useState(false);
   const [categoriesError, setCategoriesError] = useState(null);
   const [incomeError, setIncomeError] = useState(null);
 
+  // Lista de categorias para o filtro
+  const categories = [
+    { value: 'alimentacao', label: 'Alimentação' },
+    { value: 'transporte', label: 'Transporte' },
+    { value: 'moradia', label: 'Moradia' },
+    { value: 'saude', label: 'Saúde' },
+    { value: 'educacao', label: 'Educação' },
+    { value: 'lazer', label: 'Lazer' },
+    { value: 'vestuario', label: 'Vestuário' },
+    { value: 'outros', label: 'Outros' }
+  ];
+
+  // Lista de bancos para o filtro
+  const banks = [
+    { value: 'itau', label: 'Itaú' },
+    { value: 'bradesco', label: 'Bradesco' },
+    { value: 'santander', label: 'Santander' },
+    { value: 'caixa', label: 'Caixa Econômica' },
+    { value: 'bb', label: 'Banco do Brasil' },
+    { value: 'nubank', label: 'Nubank' },
+    { value: 'inter', label: 'Inter' },
+    { value: 'outros', label: 'Outros' }
+  ];
+
+  const handlePeriodChange = (period) => {
+    setSelectedPeriod(period);
+    setShowPeriodOptions(false);
+    if (period === 'custom') {
+      setShowDateRangePicker(true);
+    } else {
+      setShowDateRangePicker(false);
+      setCustomDateRange(null);
+      // Lógica para outros períodos (mês atual, mês anterior)
+    }
+  };
+
+  const handleDateRangeSelect = (dateRange) => {
+    setCustomDateRange(dateRange);
+    setShowDateRangePicker(false);
+    // Aqui você pode adicionar a lógica para filtrar os dados com base no período selecionado
+    console.log('Período personalizado selecionado:', dateRange);
+  };
+
+  const handleCategoryChange = (value) => {
+    setSelectedCategories(value);
+    // Quando mudar a categoria, aciona o fetchData novamente
+    console.log('Categorias selecionadas:', value);
+  };
+
+  const handleBankChange = (value) => {
+    setSelectedBanks(value);
+    // Quando mudar o banco, aciona o fetchData novamente
+    console.log('Bancos selecionados:', value);
+  };
+
   // Lista de anos para o filtro
-  const years = (() => {
-    const currentYear = new Date().getFullYear();
-    const years = [];
-    
-    // 5 anos para trás
-    for (let i = 5; i >= 0; i--) {
-      years.push({
-        value: currentYear - i,
-        label: (currentYear - i).toString()
-      });
-    }
-    
-    // 10 anos para frente
-    for (let i = 1; i <= 10; i++) {
-      years.push({
-        value: currentYear + i,
-        label: (currentYear + i).toString()
-      });
-    }
-    
-    return years;
-  })();
+  const years = Array.from({ length: 5 }, (_, i) => {
+    const year = new Date().getFullYear() - i;
+    return { value: year.toString(), label: year.toString() };
+  });
 
   // Lista de meses para o filtro
   const months = [
@@ -734,9 +790,6 @@ const Dashboard = () => {
     '#CDDC39', // Lime
   ];
   
-  // Remover esta linha duplicada
-  // const [activeSection, setActiveSection] = useState('overview');
-
   useEffect(() => {
     if (!auth.token) {
       navigate('/login');
@@ -750,6 +803,16 @@ const Dashboard = () => {
         // Adiciona meses e anos como arrays
         filters.months.forEach(month => queryParams.append('months[]', month));
         filters.years.forEach(year => queryParams.append('years[]', year));
+        
+        // Adiciona categorias ao filtro
+        if (selectedCategories.length > 0) {
+          selectedCategories.forEach(category => queryParams.append('categories[]', category));
+        }
+        
+        // Adiciona bancos ao filtro
+        if (selectedBanks.length > 0) {
+          selectedBanks.forEach(bank => queryParams.append('banks[]', bank));
+        }
 
         const response = await fetch(`${process.env.REACT_APP_API_URL}/api/dashboard?${queryParams}`, {
           headers: {
@@ -837,14 +900,7 @@ const Dashboard = () => {
         
         setTransactions([...expensesData, ...incomesData]);
 
-        if (!jsonData.expenses_by_category || jsonData.expenses_by_category.length === 0) {
-          setNoExpensesMessage({
-            message: 'Você ainda não tem despesas cadastradas para este período.',
-            suggestion: 'Que tal começar adicionando sua primeira despesa?'
-          });
-        } else {
-          setNoExpensesMessage(null);
-        }
+     
       } catch (err) {
         setError('Erro ao carregar dados do dashboard');
         console.error("Dashboard fetch error:", err);
@@ -854,7 +910,7 @@ const Dashboard = () => {
     };
 
     fetchData();
-  }, [auth.token, navigate, filters]);
+  }, [auth.token, navigate, filters, selectedCategories, selectedBanks]);
   
   // Novo useEffect para buscar todas as transações independente dos filtros
   useEffect(() => {
@@ -906,6 +962,8 @@ const Dashboard = () => {
         
         setAllExpenses(expensesData);
         setAllIncomes(incomesData);
+        setHasExpenses(expensesData.length > 0);
+        setHasIncome(incomesData.length > 0);
       } catch (err) {
         console.error('Erro ao buscar todas as transações:', err);
       }
@@ -1290,9 +1348,7 @@ const Dashboard = () => {
               <button className={styles.actionButton} onClick={() => navigate('/expenses')}>
                 Revisar Despesas
               </button>
-              <button className={styles.actionButton} onClick={() => navigate('/budget')}>
-                Ajustar Orçamento
-              </button>
+              
             </div>
           </div>
         )}
@@ -1399,12 +1455,7 @@ const Dashboard = () => {
         </div>
         
         <div className={styles.budgetActions}>
-          <button 
-            className={styles.budgetActionButton}
-            onClick={() => navigate('/budget')}
-          >
-            Ajustar Orçamento
-          </button>
+         
           <button 
             className={styles.budgetActionButton}
             onClick={() => navigate('/expenses')}
@@ -2941,24 +2992,24 @@ const Dashboard = () => {
       <h3>Nenhum dado disponível</h3>
       <p>Parece que você ainda não tem transações registradas.</p>
       <div className={styles.emptyActions}>
-        <button onClick={() => navigate('/expenses/add')}>Adicionar Despesa</button>
+        <button onClick={() => navigate('/add-expense')}>Adicionar Despesa</button>
         <button onClick={() => navigate('/incomes/add')}>Adicionar Receita</button>
         </div>
       </div>
     );
 
   return (
-    <div className={styles.dashboard}>
+    <div className={styles.dashboardContainer}>
       <div className={styles.dashboardHeader}>
         <div className={styles.navigationTabs}>
-            <button
+          <button
             className={`${styles.navTab} ${activeSection === 'overview' ? styles.activeTab : ''}`}
             onClick={() => setActiveSection('overview')}
-            >
+          >
             <span className={styles.tabIcon}>📊</span>
             Visão Geral
-            </button>
-            <button
+          </button>
+          <button
             className={`${styles.navTab} ${activeSection === 'transactions' ? styles.activeTab : ''}`}
             onClick={() => setActiveSection('transactions')}
           >
@@ -2968,112 +3019,180 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Conteúdo baseado na seção selecionada */}
-      <div className={styles.dashboardContent}>
-        {activeSection === 'overview' && (
-          <div className={styles.overviewSection}>
-            {/* Conteúdo original do dashboard */}
-            <div className={styles.dashboardGreeting}>
-              <h1>Resumo de Orçamento</h1>
-              <p className={styles.motivationalPhrase}>
-                Acompanhe suas finanças e planeje seu futuro com tranquilidade
-              </p>
+      {/* Filtros */}
+      <div className={styles.filterRow}>
+        <div className={styles.filtersContainer}>
+          <div className={styles.filterSelector}>
+            <div className={styles.filterLabel}>Período</div>
+            <div 
+              className={`${styles.filterDisplay} ${showPeriodOptions ? styles.active : ''}`}
+              onClick={() => setShowPeriodOptions(!showPeriodOptions)}
+            >
+              <span>
+                {selectedPeriod === 'custom' && customDateRange 
+                  ? `${new Date(customDateRange.start).toLocaleDateString('pt-BR')} - ${new Date(customDateRange.end).toLocaleDateString('pt-BR')}`
+                  : selectedPeriod === 'current' ? 'Mês Atual' 
+                  : selectedPeriod === 'last' ? 'Mês Anterior'
+                  : 'Selecione um período'}
+              </span>
+              <FaChevronDown className={`${styles.arrowIcon} ${showPeriodOptions ? styles.rotated : ''}`} />
             </div>
-
-            <div className={styles.filterRow}>
-              <div className={styles.filtersContainer}>
-                <div className={styles.modernFilters}>
-                  <FilterSelector
-                    title="Mês"
-                    options={months}
-                    selected={filters.months}
-                    onChange={(value) => handleFilterChange('months', value)}
-                    type="month"
-                  />
-                  
-                  <FilterSelector
-                    title="Ano"
-                    options={years}
-                    selected={filters.years}
-                    onChange={(value) => handleFilterChange('years', value)}
-                    type="year"
-                  />
+            {showPeriodOptions && (
+              <div className={styles.filterOptions}>
+                <div 
+                  className={styles.filterOption}
+                  onClick={() => handlePeriodChange('current')}
+                >
+                  Mês Atual
                 </div>
-                
-                <div className={styles.selectedPeriodSummary}>
-                  <div className={styles.periodIndicator}>
-                    <span className={styles.periodIcon}>📅</span>
-                    <span className={styles.periodText}>{formatPeriod()}</span>
-                  </div>
+                <div 
+                  className={styles.filterOption}
+                  onClick={() => handlePeriodChange('last')}
+                >
+                  Mês Anterior
+                </div>
+                <div 
+                  className={styles.filterOption}
+                  onClick={() => handlePeriodChange('custom')}
+                >
+                  Personalizado
                 </div>
               </div>
+            )}
+          </div>
+          {showDateRangePicker && (
+            <div className={styles.dateRangePickerContainer}>
+              <DateRangePicker onDateRangeSelect={handleDateRangeSelect} />
             </div>
-
-            <div className={styles.dashboardCharts}>
-              {loading ? (
-                <div className={styles.dashboardLoading}>
-                  <p>Carregando dados...</p>
-            </div>
-              ) : error ? (
-                <div className={styles.dashboardError}>
-                  <p>{error}</p>
-                </div>
-              ) : noExpensesMessage ? (
-                <div className={styles.noExpensesMessage}>
-                  <div className={styles.messageIcon}>📊</div>
-                  <h3>{noExpensesMessage.message}</h3>
-                  <p>{noExpensesMessage.suggestion}</p>
-                  <Link to="/despesas/nova" className={styles.addExpenseButton}>
-                    Adicionar Despesa
-                  </Link>
-                </div>
-              ) : (
-                renderOverviewCharts()
-              )}
+          )}
+          <FilterSelector
+            label="Categoria"
+            options={categories}
+            selected={selectedCategories}
+            onSelect={handleCategoryChange}
+            multiple
+          />
+          <FilterSelector
+            label="Banco"
+            options={banks}
+            selected={selectedBanks}
+            onSelect={handleBankChange}
+            multiple
+          />
+        </div>
+        {!hasExpenses && !hasIncome && (
+          <div className={styles.emptyStateContainer}>
+            <FaChartLine className={styles.emptyStateIcon} />
+            <div className={styles.emptyStateContent}>
+              <div className={styles.emptyStateMessage}>
+                Você ainda não tem despesas ou receitas cadastradas para este período.
+              </div>
+              <div className={styles.emptyStateSuggestion}>
+                Que tal começar adicionando sua primeira transação?
+              </div>
+              <div className={styles.emptyStateButtons}>
+                <button 
+                  className={styles.addExpenseButton}
+                  onClick={() => navigate('/add-expense')}
+                >
+                  <FaPlus /> Adicionar Despesa
+                </button>
+                <button 
+                  className={styles.addIncomeButton}
+                  onClick={() => navigate('/add-income')}
+                >
+                  <FaPlus /> Adicionar Receita
+                </button>
+              </div>
             </div>
           </div>
         )}
         
-        {activeSection === 'transactions' && (
-          <div className={styles.transactionsSection}>
-          {renderTimelineChart()}
+        {hasExpenses === false && hasIncome === true && (
+          <div className={styles.emptyStateContainer}>
+            <FaChartLine className={styles.emptyStateIcon} />
+            <div className={styles.emptyStateContent}>
+              <div className={styles.emptyStateMessage}>
+                Você tem receitas cadastradas, mas ainda não tem despesas para este período.
+              </div>
+              <div className={styles.emptyStateSuggestion}>
+                Que tal adicionar sua primeira despesa?
+              </div>
+              <div className={styles.emptyStateButtons}>
+                <button 
+                  className={styles.addExpenseButton}
+                  onClick={() => navigate('/add-expense')}
+                >
+                  <FaPlus /> Adicionar Despesa
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {hasExpenses === true && hasIncome === false && (
+          <div className={styles.emptyStateContainer}>
+            <FaChartLine className={styles.emptyStateIcon} />
+            <div className={styles.emptyStateContent}>
+              <div className={styles.emptyStateMessage}>
+                Você tem despesas cadastradas, mas ainda não tem receitas para este período.
+              </div>
+              <div className={styles.emptyStateSuggestion}>
+                Que tal adicionar sua primeira receita?
+              </div>
+              <div className={styles.emptyStateButtons}>
+                <button 
+                  className={styles.addIncomeButton}
+                  onClick={() => navigate('/add-income')}
+                >
+                  <FaPlus /> Adicionar Receita
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
-      
-      {/* Footer com botões de ação - visível apenas em mobile */}
-      <div className={styles.dashboardFooter}>
-        <div className={styles.footerActions}>
-          <button 
-            className={styles.actionButton}
-            onClick={() => navigate('/expenses/add')}
-          >
-            <span className={styles.actionIcon}>+</span>
-            <span className={styles.actionText}>Nova Despesa</span>
-          </button>
-          <button 
-            className={styles.actionButton}
-            onClick={() => navigate('/incomes/add')}
-          >
-            <span className={styles.actionIcon}>+</span>
-            <span className={styles.actionText}>Nova Receita</span>
-          </button>
-          <button 
-            className={styles.actionButton}
-            onClick={() => navigate('/budget')}
-          >
-            <span className={styles.actionIcon}>📝</span>
-            <span className={styles.actionText}>Orçamento</span>
-          </button>
-          <button 
-            className={styles.actionButton}
-            onClick={() => navigate('/reports')}
-          >
-            <span className={styles.actionIcon}>📊</span>
-            <span className={styles.actionText}>Relatórios</span>
-          </button>
+
+      {/* Conteúdo baseado na seção selecionada - só mostra se tiver despesas E receitas */}
+      {(hasExpenses && hasIncome) && (
+        <div className={styles.dashboardContent}>
+          {activeSection === 'overview' && (
+            <div className={styles.overviewSection}>
+              {/* Conteúdo original do dashboard */}
+              {renderOverviewCharts()}
+            </div>
+          )}
+          
+          {activeSection === 'transactions' && (
+            <div className={styles.transactionsSection}>
+              {renderTimelineChart()}
+            </div>
+          )}
         </div>
-      </div>
+      )}      
+      
+      {/* Mensagem quando há apenas um tipo de transação mas não ambos */}
+      {((hasExpenses && !hasIncome) || (!hasExpenses && hasIncome)) && (
+        <div className={styles.emptyStateContainer}>
+          <FaChartLine className={styles.emptyStateIcon} />
+          <div className={styles.emptyStateContent}>
+            <div className={styles.emptyStateMessage}>
+              Para visualizar os relatórios completos, você precisa ter tanto despesas quanto receitas cadastradas.
+            </div>
+            <div className={styles.emptyStateSuggestion}>
+              {hasExpenses && !hasIncome ? 'Adicione receitas para ver os relatórios completos.' : 'Adicione despesas para ver os relatórios completos.'}
+            </div>
+            <div className={styles.emptyStateButtons}>
+              <button 
+                className={hasExpenses ? styles.addIncomeButton : styles.addExpenseButton}
+                onClick={() => navigate(hasExpenses ? '/add-income' : '/add-expense')}
+              >
+                <FaPlus /> {hasExpenses ? 'Adicionar Receita' : 'Adicionar Despesa'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

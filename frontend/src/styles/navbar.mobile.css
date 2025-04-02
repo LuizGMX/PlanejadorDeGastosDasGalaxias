@@ -9,7 +9,7 @@
   border-top: 1px solid var(--border-color);
   z-index: 9999;
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.15);
-  display: block; /* Sempre visível */
+  display: none; /* Inicialmente escondida */
 }
 
 .mobileNavLinks {
@@ -154,13 +154,15 @@ main.withMobileNav {
 }
 */
 
-/* Ocultar navbar desktop em telas pequenas */
+/* Ocultar navbar desktop em telas pequenas e mostrar navbar mobile */
 @media (max-width: 768px) {
   .desktopNavbar {
     display: none !important;
   }
   
-  /* Navbar mobile já está com display: block por padrão */
+  .mobileNavbar {
+    display: block !important; /* Mostrar apenas em telas pequenas */
+  }
   
   /* Ajustes para o logout button quando em navbar mobile */
   .logoutButton {

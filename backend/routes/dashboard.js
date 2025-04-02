@@ -156,14 +156,18 @@ router.get('/', authenticate, async (req, res) => {
     console.log('Query params:', req.query);
     
     const user = await User.findByPk(req.user.id);
-    const { months, years } = req.query;
+    const { months, years, categories, banks } = req.query;
 
     // Converte os parâmetros para arrays
     const selectedMonths = Array.isArray(months) ? months.map(Number) : [];
     const selectedYears = Array.isArray(years) ? years.map(Number) : [];
+    const selectedCategories = Array.isArray(categories) ? categories : [];
+    const selectedBanks = Array.isArray(banks) ? banks : [];
 
     console.log('Meses selecionados:', selectedMonths);
     console.log('Anos selecionados:', selectedYears);
+    console.log('Categorias selecionadas:', selectedCategories);
+    console.log('Bancos selecionados:', selectedBanks);
 
     // Define o período baseado nos filtros
     let startDate, endDate;
@@ -306,7 +310,17 @@ router.get('/', authenticate, async (req, res) => {
           expense_date: {
             [Op.between]: [startDate, endDate]
           },
-          recurrence_id: null // Apenas as não recorrentes
+          recurrence_id: null, // Apenas as não recorrentes
+          ...(selectedCategories.length > 0 && {
+            category_id: {
+              [Op.in]: selectedCategories
+            }
+          }),
+          ...(selectedBanks.length > 0 && {
+            bank_id: {
+              [Op.in]: selectedBanks
+            }
+          })
         },
         include: [
           { 
@@ -329,7 +343,17 @@ router.get('/', authenticate, async (req, res) => {
           date: {
             [Op.between]: [startDate, endDate]
           },
-          recurrence_id: null // Apenas as não recorrentes
+          recurrence_id: null, // Apenas as não recorrentes
+          ...(selectedCategories.length > 0 && {
+            category_id: {
+              [Op.in]: selectedCategories
+            }
+          }),
+          ...(selectedBanks.length > 0 && {
+            bank_id: {
+              [Op.in]: selectedBanks
+            }
+          })
         },
         include: [
           { 

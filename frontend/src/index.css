@@ -12,6 +12,9 @@
   --input-background: #2A2B33;
   --gradient-start: #00FF85;
   --gradient-end: #80FFB9;
+  --button-text-color: #000000;
+  --button-background-color: #00FF85;
+
 }
 
 body {
@@ -30,7 +33,7 @@ body {
 
 button {
   background-color: var(--primary-color);
-  color: white;
+  color: ;
   border: none;
   padding: 10px 20px;
   border-radius: 5px;

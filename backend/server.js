@@ -77,12 +77,16 @@ const startServer = async () => {
     console.log('Conexão com banco estabelecida com sucesso.');
 
     // Sincronizar modelos com banco
-    await sequelize.sync({ force: true });
+    await sequelize.sync({ force: false, alter: true });
     console.log('Modelos sincronizados com banco de dados.');
 
-    // Executar seeders
-    await seedDatabase();
-    console.log('Dados iniciais carregados com sucesso.');
+    // Executar seeders apenas se a variável de ambiente estiver configurada
+    if (process.env.RUN_SEEDERS === 'true') {
+      await seedDatabase();
+      console.log('Dados iniciais carregados com sucesso.');
+    } else {
+      console.log('Seeders ignorados. Configure RUN_SEEDERS=true para executá-los.');
+    }
 
     // Inicializar serviço do Telegram se token estiver configurado
     if (process.env.TELEGRAM_BOT_TOKEN) {

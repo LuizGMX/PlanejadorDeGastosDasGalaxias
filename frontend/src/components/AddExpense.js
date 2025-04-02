@@ -37,7 +37,8 @@ const AddExpense = () => {
     has_installments: false,
     start_date: null,
     recurrence_type: 'monthly',
-    total_installments: 2
+    total_installments: 2,
+    current_installment: 1
   });
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
@@ -240,14 +241,13 @@ const AddExpense = () => {
         }
 
         // Validação da parcela atual
-        if (formData.current_installment === '') {
-          throw new Error('O número da parcela atual é obrigatório');
-        }
-        if (formData.current_installment < 1) {
-          throw new Error('O número da parcela atual deve ser no mínimo 1');
-        }
-        if (formData.current_installment > formData.total_installments) {
-          throw new Error('O número da parcela atual não pode ser maior que o total de parcelas');
+        if (formData.current_installment !== undefined && formData.current_installment !== '') {
+          if (formData.current_installment < 1) {
+            throw new Error('O número da parcela atual deve ser no mínimo 1');
+          }
+          if (formData.current_installment > formData.total_installments) {
+            throw new Error('O número da parcela atual não pode ser maior que o total de parcelas');
+          }
         }
 
         // Validação da data para pagamento parcelado
@@ -280,7 +280,7 @@ const AddExpense = () => {
 
       // Calcula a data da primeira parcela
       let first_installment_date = formData.expense_date;
-      if (formData.has_installments && formData.current_installment > 1) {
+      if (formData.has_installments && formData.current_installment && formData.current_installment > 1) {
         const firstDate = new Date(baseDate);
         firstDate.setMonth(firstDate.getMonth() - (formData.current_installment - 1));
         first_installment_date = firstDate.toISOString().split('T')[0];
