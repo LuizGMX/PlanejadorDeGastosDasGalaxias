@@ -289,6 +289,7 @@ const Expenses = () => {
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
+      // Seleciona apenas despesas que não são parceladas
       const nonInstallmentExpenses = expenses
         .filter(expense => !expense.has_installments)
         .map(expense => expense.id);

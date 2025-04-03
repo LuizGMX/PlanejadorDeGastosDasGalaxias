@@ -19,9 +19,10 @@ import {
   ComposedChart,
   AreaChart,
   ReferenceLine,
+  LabelList,
 } from 'recharts';
 import styles from '../styles/dashboard.module.css';
-import { FaCalendarAlt, FaChartLine, FaPlus, FaChevronDown } from 'react-icons/fa';
+import { FaCalendarAlt, FaChartLine, FaPlus, FaChevronDown, FaChevronRight, FaSearch, FaFilter } from 'react-icons/fa';
 import DateRangePicker from './DateRangePicker';
 import { 
   BsHouseDoor, 
@@ -576,7 +577,10 @@ const FilterSelector = ({ label, options, selected, onSelect, multiple = false }
 
   const handleSelectAll = () => {
     if (multiple) {
-      onSelect(selected.length === options.length ? [] : options.map(opt => opt.value));
+      // Verifica se todos estão selecionados e alterna entre todos/nenhum
+      const allSelected = selected.length === options.length && 
+                          options.every(opt => selected.includes(opt.value));
+      onSelect(allSelected ? [] : options.map(opt => opt.value));
     }
   };
 
@@ -727,25 +731,33 @@ const Dashboard = () => {
   ];
 
   const handlePeriodChange = (period) => {
-    setSelectedPeriod(period);
-    setShowPeriodOptions(false);
     if (period === 'custom') {
+      // Para data personalizada, apenas abrir o seletor de data
+      // sem alterar o selectedPeriod ainda
+      setShowPeriodOptions(false);
       setShowDateRangePicker(true);
     } else {
+      // Para os outros períodos (mês atual, ano atual, etc.), 
+      // aplica o filtro imediatamente
+      setSelectedPeriod(period);
+      setShowPeriodOptions(false);
       setShowDateRangePicker(false);
       setCustomDateRange(null);
-      
-      // Atualizar os filtros com base no período selecionado
-      // O código já fará a lógica na função fetchData
-      console.log('Período selecionado:', period); // current, last, ou custom
+      console.log('Período selecionado:', period);
     }
   };
 
   const handleDateRangeSelect = (dateRange) => {
+    // Só aplicar o filtro quando o usuário clicar em "Aplicar"
     setCustomDateRange(dateRange);
+    setSelectedPeriod('custom'); // Somente aqui definimos que é customizado
     setShowDateRangePicker(false);
-    // Aqui você pode adicionar a lógica para filtrar os dados com base no período selecionado
     console.log('Período personalizado selecionado:', dateRange);
+  };
+  
+  const handleDateRangeCancel = () => {
+    // Se cancelar, não fazer nada, apenas fechar o seletor
+    setShowDateRangePicker(false);
   };
 
   const handleCategoryChange = (value) => {
@@ -846,17 +858,20 @@ const Dashboard = () => {
         } else if (selectedPeriod === 'next') {
           // Next month
           const now = new Date();
-          let nextMonth = now.getMonth() + 2; // +1 for 1-based, +1 for next month
+          let nextMonth = now.getMonth() + 1; // Próximo mês (0-based)
           let year = now.getFullYear();
           
           // Handle January of next year
-          if (nextMonth > 12) {
-            nextMonth = 1;
+          if (nextMonth > 11) {
+            nextMonth = 0;
             year = year + 1;
           }
           
-          monthsToFilter = [nextMonth];
+          // +1 porque os meses são armazenados como 1-12 no backend
+          monthsToFilter = [nextMonth + 1];
           yearsToFilter = [year];
+          
+          console.log(`Próximo mês (API): ${monthsToFilter[0]}/${yearsToFilter[0]}`);
         } else if (selectedPeriod === 'custom' && customDateRange) {
           // Custom date range
           const startDate = new Date(customDateRange.start);
@@ -1827,8 +1842,106 @@ const Dashboard = () => {
     
     if (!data) return null;
 
-    // Aplicar filtros nas transações já processadas
-    const filteredData = transactions.filter(item => {
+    // Verificar se temos transações
+    if (!allExpenses.length && !allIncomes.length) {
+      return (
+        <div className={styles.timelineContainer}>
+          <div className={styles.timelineHeader}>
+            <h3>Linha do Tempo de Transações</h3>
+          </div>
+          <div className={styles.emptyTimeline}>
+            <div className={styles.emptyIcon}>💰</div>
+            <p>Ainda não existem transações registradas.</p>
+            <div className={styles.emptyStateButtons}>
+              <button 
+                className={styles.addExpenseButton}
+                onClick={() => navigate('/expenses/add')}
+              >
+                Adicionar Despesa
+              </button>
+              <button 
+                className={styles.addIncomeButton}
+                onClick={() => navigate('/incomes/add')}
+              >
+                Adicionar Receita
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Combinar todas as transações (não filtradas por período)
+    const allTransactions = [...allExpenses, ...allIncomes];
+
+    // Aplicar o filtro global de período, se existir
+    let timelineFilteredTransactions = [...allTransactions];
+    
+    if (selectedPeriod) {
+      let startDate, endDate;
+      
+      if (selectedPeriod === 'month' || selectedPeriod === 'current') {
+        // Mês atual
+        const now = new Date();
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        endDate.setHours(23, 59, 59, 999);
+      } else if (selectedPeriod === 'year') {
+        // Ano atual
+        const now = new Date();
+        startDate = new Date(now.getFullYear(), 0, 1);
+        endDate = new Date(now.getFullYear(), 11, 31);
+        endDate.setHours(23, 59, 59, 999);
+      } else if (selectedPeriod === 'last') {
+        // Mês anterior
+        const now = new Date();
+        let month = now.getMonth() - 1;
+        let year = now.getFullYear();
+        
+        if (month < 0) {
+          month = 11;
+          year--;
+        }
+        
+        startDate = new Date(year, month, 1);
+        endDate = new Date(year, month + 1, 0);
+        endDate.setHours(23, 59, 59, 999);
+      } else if (selectedPeriod === 'next') {
+        // Próximo mês
+        const now = new Date();
+        let month = now.getMonth() + 1; // Próximo mês (0-based)
+        let year = now.getFullYear();
+        
+        // Se for Dezembro, o próximo mês será Janeiro do próximo ano
+        if (month > 11) {
+          month = 0;
+          year++;
+        }
+        
+        startDate = new Date(year, month, 1);
+        endDate = new Date(year, month + 1, 0);
+        endDate.setHours(23, 59, 59, 999);
+        
+        console.log(`Período próximo mês (timeline): ${formatDate(startDate)} - ${formatDate(endDate)}`);
+      } else if (selectedPeriod === 'custom' && customDateRange) {
+        // Período personalizado
+        startDate = new Date(customDateRange.start);
+        endDate = new Date(customDateRange.end);
+        endDate.setHours(23, 59, 59, 999);
+      }
+      
+      // Se temos um período definido, filtramos as transações
+      if (startDate && endDate) {
+        console.log(`Aplicando filtro global de período: ${formatDate(startDate)} - ${formatDate(endDate)}`);
+        timelineFilteredTransactions = allTransactions.filter(item => {
+          const itemDate = new Date(item.date);
+          return itemDate >= startDate && itemDate <= endDate;
+        });
+      }
+    }
+
+    // Aplicar filtros específicos da timeline
+    const filteredData = timelineFilteredTransactions.filter(item => {
       // Type filter
       if (timelineFilter !== 'all' && item.type !== timelineFilter) {
         return false;
@@ -1847,6 +1960,9 @@ const Dashboard = () => {
       
       return true;
     });
+
+    console.log(`Timeline: Filtrado ${filteredData.length} de ${allTransactions.length} transações`);
+    console.log(`Usando filtro global: ${selectedPeriod}`);
 
     // Sort by date, most recent first
     filteredData.sort((a, b) => b.date - a.date);
@@ -1918,7 +2034,10 @@ const Dashboard = () => {
         const diffTime = today - dateObj;
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         
-        if (diffDays < 7) {
+        // Se a data for futura ou muito antiga, mostre apenas a data formatada
+        if (diffDays < 0 || diffDays > 60) {
+          return formatDate(date);
+        } else if (diffDays < 7) {
           return `${diffDays} dias atrás`;
         } else if (diffDays < 30) {
           const weeks = Math.floor(diffDays / 7);
@@ -2004,6 +2123,7 @@ const Dashboard = () => {
               <button
                 className={styles.clearFilterButton}
                 onClick={() => {
+                  console.log('Limpando todos os filtros da timeline');
                   setTimelineFilter('all');
                   setSearchTerm('');
                 }}
@@ -3381,7 +3501,7 @@ const Dashboard = () => {
           </div>
           {showDateRangePicker && (
             <div className={styles.dateRangePickerContainer}>
-              <DateRangePicker onDateRangeSelect={handleDateRangeSelect} />
+              <DateRangePicker onDateRangeSelect={handleDateRangeSelect} onCancel={handleDateRangeCancel} />
             </div>
           )}
           <FilterSelector

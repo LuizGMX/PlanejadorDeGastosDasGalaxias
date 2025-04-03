@@ -235,7 +235,9 @@ const Incomes = () => {
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      setSelectedIncomes(incomes.map(income => income.id));
+      // Seleciona todas as receitas
+      const allIncomeIds = incomes.map(income => income.id);
+      setSelectedIncomes(allIncomeIds);
     } else {
       setSelectedIncomes([]);
     }
