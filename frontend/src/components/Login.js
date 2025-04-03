@@ -175,13 +175,21 @@ const Login = () => {
         }
 
         console.log('Resposta do check-email:', data);
+        
+        // Atualiza o estado com base na resposta
         setIsNewUser(data.isNewUser);
-        setFormData(prev => ({ ...prev, name: data.name || '' }));
+        setFormData(prev => ({ 
+          ...prev, 
+          name: data.name || '',
+          email: data.email || formData.email
+        }));
         
         if (data.isNewUser) {
           setStep('name');
         } else {
           setStep('code');
+          // Solicita o código de acesso automaticamente para usuários existentes
+          await requestAccessCode();
         }
       } else if (step === 'name') {
         if (!formData.name || !formData.desired_budget) {

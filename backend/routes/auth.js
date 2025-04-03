@@ -100,12 +100,22 @@ router.post('/check-email', async (req, res) => {
       return res.status(400).json({ message: 'E-mail é obrigatório' });
     }
     
-    const user = await User.findOne({ where: { email } });
+    // Verifica se o email é válido
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      return res.status(400).json({ message: 'E-mail inválido' });
+    }
+    
+    const user = await User.findOne({ 
+      where: { email },
+      attributes: ['id', 'name', 'email']
+    });
+    
     console.log('Usuário encontrado:', user ? 'Sim' : 'Não');
     
     return res.json({
       isNewUser: !user,
       name: user ? user.name : null,
+      email: user ? user.email : null
     });
   } catch (error) {
     console.error('Erro ao verificar email:', error);
