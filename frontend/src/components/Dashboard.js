@@ -3616,6 +3616,7 @@ const Dashboard = () => {
 
   return (
     <div className={styles.dashboardContainer}>
+      {getGreeting(auth.user?.name)}
       <div className={styles.dashboardHeader}>
         <div className={styles.navigationTabs}>
           <button
