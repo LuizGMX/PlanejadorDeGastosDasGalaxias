@@ -34,6 +34,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [lastSubmitTime, setLastSubmitTime] = useState(0);
   const SUBMIT_DELAY = 3000; // 3 segundos entre submissões
+  
 
   // Steps configuration for better progress tracking and visualization
   const stepConfig = {
