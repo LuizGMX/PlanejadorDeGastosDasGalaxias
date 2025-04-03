@@ -23,7 +23,18 @@ import {
 import styles from '../styles/dashboard.module.css';
 import { FaCalendarAlt, FaChartLine, FaPlus, FaChevronDown } from 'react-icons/fa';
 import DateRangePicker from './DateRangePicker';
-  
+import { 
+  BsHouseDoor, 
+  BsGraphUp, 
+  BsCalendar3, 
+  BsPieChart, 
+  BsCashCoin, 
+  BsFunnel,
+  BsPencil,
+  BsEye,
+  // ... other imports
+} from 'react-icons/bs';
+
 const motivationalPhrases = [
   "Cuide do seu dinheiro hoje para não precisar se preocupar amanhã.",
   "Cada real economizado é um passo mais perto da sua liberdade financeira.",
@@ -1153,7 +1164,12 @@ const Dashboard = () => {
         className={`${styles.chartContainer} ${chartId === 'bank-trend' ? styles.trendChart : ''}`}
       >
         <div className={styles.chartHeader}>
-          <h3>{title} - {formatPeriod()}</h3>
+          <h3>{title}</h3>
+          <div className={styles.chartSubtitle}>
+            <span className={styles.dateFilterBadge}>
+              <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
+            </span>
+          </div>
         </div>
         <div ref={chartRefs[chartId]} className={styles.chartWrapper} style={{ height: '400px' }}>
           <ResponsiveContainer width="100%" height="100%">
@@ -1201,6 +1217,63 @@ const Dashboard = () => {
     }
   };
 
+  // Função para formatar o filtro de data atual de maneira elegante
+  const formatCurrentDateFilter = () => {
+    // Para período selecionado específico
+    if (selectedPeriod === 'current' || selectedPeriod === 'month') {
+      const now = new Date();
+      const monthName = months.find(m => m.value === now.getMonth() + 1)?.label;
+      return `${monthName} de ${now.getFullYear()}`;
+    } 
+    else if (selectedPeriod === 'year') {
+      const now = new Date();
+      return `Ano de ${now.getFullYear()}`;
+    } 
+    else if (selectedPeriod === 'last') {
+      const now = new Date();
+      let previousMonth = now.getMonth(); // 0-based
+      let year = now.getFullYear();
+      
+      if (previousMonth === 0) {
+        previousMonth = 12;
+        year = year - 1;
+      }
+      
+      const monthName = months.find(m => m.value === previousMonth)?.label;
+      return `${monthName} de ${year}`;
+    } 
+    else if (selectedPeriod === 'next') {
+      const now = new Date();
+      let nextMonth = now.getMonth() + 2; // +1 for 1-based, +1 for next month
+      let year = now.getFullYear();
+      
+      if (nextMonth > 12) {
+        nextMonth = 1;
+        year = year + 1;
+      }
+      
+      const monthName = months.find(m => m.value === nextMonth)?.label;
+      return `${monthName} de ${year}`;
+    } 
+    else if (selectedPeriod === 'custom' && customDateRange) {
+      // Formatar datas do período personalizado
+      const startDate = new Date(customDateRange.start);
+      const endDate = new Date(customDateRange.end);
+      
+      const formatCustomDate = (date) => {
+        const day = date.getDate();
+        const monthName = months.find(m => m.value === date.getMonth() + 1)?.shortLabel || 
+                          months.find(m => m.value === date.getMonth() + 1)?.label.substring(0, 3);
+        return `${day}/${monthName}/${date.getFullYear()}`;
+      };
+      
+      return `${formatCustomDate(startDate)} até ${formatCustomDate(endDate)}`;
+    } 
+    else {
+      // Usar os filtros manuais
+      return formatPeriod();
+    }
+  };
 
   const renderFinancialGoalChart = () => {
     if (!data?.financial_goal) {
@@ -1335,15 +1408,21 @@ const Dashboard = () => {
           
           <div className={styles.goalStatsContainer}>
             <div className={styles.statCard}>
-              <div className={styles.statLabel}>Economizado</div>
+              <div className={styles.statLabel}>
+                <span className={styles.statIcon}>💰</span> Economizado
+              </div>
               <div className={`${styles.statValue} ${styles.savedValue}`}>{formatCurrency(goal.total_saved)}</div>
             </div>
             <div className={styles.statCard}>
-              <div className={styles.statLabel}>Faltando</div>
+              <div className={styles.statLabel}>
+                <span className={styles.statIcon}>📊</span> Faltando
+              </div>
               <div className={styles.statValue}>{formatCurrency(goal.amount - goal.total_saved)}</div>
             </div>
             <div className={styles.statCard}>
-              <div className={styles.statLabel}>Economia Mensal</div>
+              <div className={styles.statLabel}>
+                <span className={styles.statIcon}>💸</span> Economia Mensal
+              </div>
               <div className={`${styles.statValue} ${goal.monthly_balance >= goal.monthly_needed ? styles.positiveValue : styles.negativeValue}`}>
                 {formatCurrency(goal.monthly_balance)}
               </div>
@@ -1352,7 +1431,9 @@ const Dashboard = () => {
               </div>
             </div>
             <div className={styles.statCard}>
-              <div className={styles.statLabel}>Necessário/Mês</div>
+              <div className={styles.statLabel}>
+                <span className={styles.statIcon}>🎯</span> Necessário/Mês
+              </div>
               <div className={styles.statValue}>{formatCurrency(goal.monthly_needed)}</div>
             </div>
           </div>
@@ -1436,22 +1517,20 @@ const Dashboard = () => {
         </div>
         
         {!goal.is_achievable && (
-          <div className={styles.goalAlertPanel}>
-            <div className={styles.alertHeader}>
-              <div className={styles.alertIcon}>⚠️</div>
-              <div className={styles.alertTitle}>Objetivo em risco!</div>
+          <div className={styles.alertMessage}>
+            <div className={styles.alertTitle}>
+              <span>⚠️</span> Objetivo em risco
             </div>
-            <div className={styles.alertMessage}>
-              No ritmo atual de economia de {formatCurrency(goal.monthly_balance)}/mês, 
-              você precisará de <strong>{goal.months_needed_with_current_savings} meses</strong> para atingir seu objetivo
-              ({goal.months_needed_with_current_savings - goal.months_remaining} meses além do prazo).
+            <div className={styles.alertContent}>
+              Com seu ritmo atual de economia, esta meta não será atingida no prazo estabelecido. 
+              Considere aumentar o valor mensal economizado ou ajustar a data de conclusão da meta.
             </div>
             <div className={styles.alertActions}>
               <button className={styles.actionButton} onClick={() => navigate('/expenses')}>
-                Revisar Despesas
+                <span>📊</span> Revisar Despesas
               </button>
               <button className={styles.actionButton} onClick={() => navigate('/settings')}>
-                Ajustar Meta
+                <span>⚙️</span> Ajustar Meta
               </button>
             </div>
           </div>
@@ -1461,30 +1540,59 @@ const Dashboard = () => {
   };
 
   const renderBudgetChart = () => {
-    if (!data?.budget_info) return null;
+    // Verificar se existem dados de orçamento
+    if (!data?.budget_info) {
+      return (
+        <div className={styles.emptyState}>
+          <div className={styles.emptyIcon}>💰</div>
+          <p>Você ainda não tem um orçamento definido para este período.</p>
+          <button 
+            className={styles.createGoalButton}
+            onClick={() => navigate('/settings')}
+          >
+            Definir Orçamento
+          </button>
+        </div>
+      );
+    }
     
-    const { total_budget, total_spent, daily_budget, days_in_month, days_passed, projected_spend } = data.budget_info;
+    const { total_budget, total_spent } = data.budget_info;
     
+    // Calcular informações adicionais
     const remainingBudget = Math.max(0, total_budget - total_spent);
-    const spentPercentage = total_budget > 0 ? (total_spent / total_budget) * 100 : 0;
-    const daysRemaining = days_in_month - days_passed;
-    
-    const idealSpentPercentage = (days_passed / days_in_month) * 100;
+    const spentPercentage = (total_spent / total_budget) * 100;
     const isOverBudget = total_spent > total_budget;
-    const isAheadOfBudget = spentPercentage > idealSpentPercentage + 5;
-    const isBehindBudget = spentPercentage < idealSpentPercentage - 15;
     
-    let statusColor = '';
-    let advice = '';
-    let statusIcon = '✅';
+    // Calcular dias que faltam no mês atual
+    const now = new Date();
+    const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const daysRemaining = lastDayOfMonth - now.getDate();
+    
+    // Calcular o percentual ideal baseado em quantos dias do mês já passaram
+    const currentDay = now.getDate();
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const dayPercentage = (currentDay / daysInMonth) * 100;
+    const idealSpentPercentage = dayPercentage;
+    
+    // Determinar o status de orçamento
+    const isBehindBudget = spentPercentage < idealSpentPercentage - 5; // Está gastando menos que o ideal
+    const isAheadBudget = spentPercentage > idealSpentPercentage + 5 && spentPercentage < 90; // Está gastando mais que o ideal
+    const isDangerZone = spentPercentage >= 90 && spentPercentage < 100; // Está em zona de perigo
+    
+    // Status e avisos
+    let statusColor, advice, statusIcon;
     
     if (isOverBudget) {
       statusColor = 'dangerProgress';
-      advice = 'Você já ultrapassou seu orçamento mensal. Considere revisar seus gastos.';
+      advice = 'Você ultrapassou seu orçamento! Evite novos gastos até o próximo mês.';
       statusIcon = '⚠️';
-    } else if (isAheadOfBudget) {
+    } else if (isDangerZone) {
       statusColor = 'warningProgress';
-      advice = 'Seus gastos estão acima do esperado para este período do mês. Tente reduzir gastos não essenciais.';
+      advice = 'Você está próximo do limite do orçamento. Reduza os gastos para não ultrapassar.';
+      statusIcon = '⚠️';
+    } else if (isAheadBudget) {
+      statusColor = 'warningProgress';
+      advice = `Seus gastos estão acima do ideal para o dia ${currentDay}. Diminua o ritmo para não ter problemas no fim do mês.`;
       statusIcon = '⚠️';
     } else if (isBehindBudget) {
       statusColor = 'successProgress';
@@ -1496,13 +1604,15 @@ const Dashboard = () => {
       statusIcon = '✅';
     }
     
-    // Para o caso de orçamento destacado, não mostramos o título duplicado
-    const isHighlighted = document.querySelector(`.${styles.highlightedChart}`) !== null;
+    const formattedDate = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
     
     return (
-      <div className={`${styles.budgetInfoContainer} ${styles.chartContainer}`}>
-        <div className={styles.chartHeader}>
-          <h3>Orçamento Mensal</h3>
+      <div className={styles.budgetInfoContainer}>
+        <div className={styles.budgetHeader}>
+          <h3>Resumo do Orçamento</h3>
+          <div className={styles.budgetDate}>
+            {formatCurrentDateFilter()}
+          </div>
         </div>
         
         <div className={styles.budgetStatsContainer}>
@@ -1559,7 +1669,6 @@ const Dashboard = () => {
         </div>
         
         <div className={styles.budgetActions}>
-         
           <button 
             className={styles.budgetActionButton}
             onClick={() => navigate('/expenses')}
@@ -1625,7 +1734,12 @@ const Dashboard = () => {
       return (
         <div className={styles.chartContainer}>
           <div className={styles.chartHeader}>
-            <h3>Gastos por Categoria</h3>
+            <h3>Despesas por Categoria</h3>
+            <div className={styles.chartSubtitle}>
+              <span className={styles.dateFilterBadge}>
+                <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
+              </span>
+            </div>
           </div>
           <div className={styles.emptyChartContent}>
             <span className={styles.emptyChartIcon}>📊</span>
@@ -1648,7 +1762,12 @@ const Dashboard = () => {
     return (
       <div className={styles.chartContainer}>
         <div className={styles.chartHeader}>
-          <h3>Gastos por Categoria</h3>
+          <h3>Despesas por Categoria</h3>
+          <div className={styles.chartSubtitle}>
+            <span className={styles.dateFilterBadge}>
+              <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
+            </span>
+          </div>
         </div>
         <div className={styles.categoriesPieContainer}>
           <ResponsiveContainer width="100%" height={250}>
@@ -2006,7 +2125,7 @@ const Dashboard = () => {
                                 navigate(`/${item.type === 'income' ? 'incomes' : 'expenses'}/edit/${item.id}`);
                               }}
                             >
-                              Editar
+                              <BsPencil size={16} style={{marginRight: '6px'}} /> Editar
                             </button>
                             <button 
                               className={styles.detailActionButton}
@@ -2015,7 +2134,7 @@ const Dashboard = () => {
                                 // Implementar visualização de detalhes
                               }}
                             >
-                              Ver detalhes
+                              <BsEye size={16} style={{marginRight: '6px'}} /> Ver detalhes
                             </button>
                           </div>
                         </div>
@@ -2108,7 +2227,7 @@ const Dashboard = () => {
                           navigate(`/${item.type === 'income' ? 'incomes' : 'expenses'}/edit/${item.id}`);
                         }}
                       >
-                        Editar
+                        <BsPencil size={16} style={{marginRight: '6px'}} /> Editar
                       </button>
                       <button 
                         className={styles.detailActionButton}
@@ -2117,7 +2236,7 @@ const Dashboard = () => {
                           // Implementar visualização de detalhes
                         }}
                       >
-                        Ver detalhes
+                        <BsEye size={16} style={{marginRight: '6px'}} /> Ver detalhes
                       </button>
                     </div>
                 </div>
@@ -2268,30 +2387,31 @@ const Dashboard = () => {
       setSelectedPeriod(period);
     };
     
-    console.log("Rendering category chart, data:", categoryData);
-    
     if (categoriesLoading) {
       return (
         <div className={styles.chartContainer}>
           <div className={styles.chartHeader}>
             <h3>Gastos por Categoria</h3>
-            <div className={styles.controlGroup}>
+            <div className={styles.periodButtons}>
               <button 
-                className={`${styles.buttonSelector} ${selectedPeriod === 'month' ? styles.active : ''}`}
+                className={`${styles.periodButton} ${selectedPeriod === 'month' ? styles.activePeriod : ''}`}
                 onClick={() => handlePeriodChange('month')}
               >
+                <span className={styles.periodIcon}>📅</span>
                 Mês
               </button>
               <button 
-                className={`${styles.buttonSelector} ${selectedPeriod === 'year' ? styles.active : ''}`}
+                className={`${styles.periodButton} ${selectedPeriod === 'year' ? styles.activePeriod : ''}`}
                 onClick={() => handlePeriodChange('year')}
               >
+                <span className={styles.periodIcon}>📆</span>
                 Ano
               </button>
               <button 
-                className={`${styles.buttonSelector} ${selectedPeriod === 'all' ? styles.active : ''}`}
+                className={`${styles.periodButton} ${selectedPeriod === 'all' ? styles.activePeriod : ''}`}
                 onClick={() => handlePeriodChange('all')}
               >
+                <span className={styles.periodIcon}>🔍</span>
                 Todos
               </button>
             </div>
@@ -2318,23 +2438,26 @@ const Dashboard = () => {
         <div className={styles.chartContainer}>
           <div className={styles.chartHeader}>
             <h3>Gastos por Categoria</h3>
-            <div className={styles.controlGroup}>
+            <div className={styles.periodButtons}>
               <button 
-                className={`${styles.buttonSelector} ${selectedPeriod === 'month' ? styles.active : ''}`}
+                className={`${styles.periodButton} ${selectedPeriod === 'month' ? styles.activePeriod : ''}`}
                 onClick={() => handlePeriodChange('month')}
               >
+                <span className={styles.periodIcon}>📅</span>
                 Mês
               </button>
               <button 
-                className={`${styles.buttonSelector} ${selectedPeriod === 'year' ? styles.active : ''}`}
+                className={`${styles.periodButton} ${selectedPeriod === 'year' ? styles.activePeriod : ''}`}
                 onClick={() => handlePeriodChange('year')}
               >
+                <span className={styles.periodIcon}>📆</span>
                 Ano
               </button>
               <button 
-                className={`${styles.buttonSelector} ${selectedPeriod === 'all' ? styles.active : ''}`}
+                className={`${styles.periodButton} ${selectedPeriod === 'all' ? styles.activePeriod : ''}`}
                 onClick={() => handlePeriodChange('all')}
               >
+                <span className={styles.periodIcon}>🔍</span>
                 Todos
               </button>
             </div>
@@ -2351,23 +2474,26 @@ const Dashboard = () => {
       <div className={styles.chartContainer}>
         <div className={styles.chartHeader}>
           <h3>Gastos por Categoria</h3>
-          <div className={styles.controlGroup}>
+          <div className={styles.periodButtons}>
             <button 
-              className={`${styles.buttonSelector} ${selectedPeriod === 'month' ? styles.active : ''}`}
+              className={`${styles.periodButton} ${selectedPeriod === 'month' ? styles.activePeriod : ''}`}
               onClick={() => handlePeriodChange('month')}
             >
+              <span className={styles.periodIcon}>📅</span>
               Mês
             </button>
             <button 
-              className={`${styles.buttonSelector} ${selectedPeriod === 'year' ? styles.active : ''}`}
+              className={`${styles.periodButton} ${selectedPeriod === 'year' ? styles.activePeriod : ''}`}
               onClick={() => handlePeriodChange('year')}
             >
+              <span className={styles.periodIcon}>📆</span>
               Ano
             </button>
             <button 
-              className={`${styles.buttonSelector} ${selectedPeriod === 'all' ? styles.active : ''}`}
+              className={`${styles.periodButton} ${selectedPeriod === 'all' ? styles.activePeriod : ''}`}
               onClick={() => handlePeriodChange('all')}
             >
+              <span className={styles.periodIcon}>🔍</span>
               Todos
             </button>
           </div>
@@ -2421,26 +2547,11 @@ const Dashboard = () => {
       return (
         <div className={styles.chartContainer}>
           <div className={styles.chartHeader}>
-            <h3>Fontes de Renda</h3>
-            <div className={styles.controlGroup}>
-              <button 
-                className={`${styles.buttonSelector} ${selectedPeriod === 'month' ? styles.active : ''}`}
-                onClick={() => handlePeriodChange('month')}
-              >
-                Mês
-              </button>
-              <button 
-                className={`${styles.buttonSelector} ${selectedPeriod === 'year' ? styles.active : ''}`}
-                onClick={() => handlePeriodChange('year')}
-              >
-                Ano
-              </button>
-              <button 
-                className={`${styles.buttonSelector} ${selectedPeriod === 'all' ? styles.active : ''}`}
-                onClick={() => handlePeriodChange('all')}
-              >
-                Todos
-              </button>
+            <h3>Receitas por Categoria</h3>
+            <div className={styles.chartSubtitle}>
+              <span className={styles.dateFilterBadge}>
+                <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
+              </span>
             </div>
           </div>
           <div className={styles.loadingState}>Carregando dados de fontes de renda...</div>
@@ -2452,7 +2563,7 @@ const Dashboard = () => {
       return (
         <div className={styles.chartContainer}>
           <div className={styles.chartHeader}>
-            <h3>Fontes de Renda</h3>
+            <h3>Receitas por Categoria</h3>
           </div>
           <div className={styles.errorState}>{incomeError}</div>
         </div>
@@ -2464,30 +2575,33 @@ const Dashboard = () => {
       return (
         <div className={styles.chartContainer}>
           <div className={styles.chartHeader}>
-            <h3>Fontes de Renda</h3>
-            <div className={styles.controlGroup}>
+            <h3>Receitas por Categoria</h3>
+            <div className={styles.periodButtons}>
               <button 
-                className={`${styles.buttonSelector} ${selectedPeriod === 'month' ? styles.active : ''}`}
+                className={`${styles.periodButton} ${selectedPeriod === 'month' ? styles.activePeriod : ''}`}
                 onClick={() => handlePeriodChange('month')}
               >
+                <span className={styles.periodIcon}>📅</span>
                 Mês
               </button>
               <button 
-                className={`${styles.buttonSelector} ${selectedPeriod === 'year' ? styles.active : ''}`}
+                className={`${styles.periodButton} ${selectedPeriod === 'year' ? styles.activePeriod : ''}`}
                 onClick={() => handlePeriodChange('year')}
               >
+                <span className={styles.periodIcon}>📆</span>
                 Ano
               </button>
               <button 
-                className={`${styles.buttonSelector} ${selectedPeriod === 'all' ? styles.active : ''}`}
+                className={`${styles.periodButton} ${selectedPeriod === 'all' ? styles.activePeriod : ''}`}
                 onClick={() => handlePeriodChange('all')}
               >
+                <span className={styles.periodIcon}>🔍</span>
                 Todos
               </button>
             </div>
           </div>
           <div className={styles.emptyState}>
-            Nenhuma renda encontrada{selectedPeriod === 'month' ? ' neste mês' : 
+            Nenhuma receita encontrada{selectedPeriod === 'month' ? ' neste mês' : 
             selectedPeriod === 'year' ? ' neste ano' : ''}.
           </div>
         </div>
@@ -2526,24 +2640,27 @@ const Dashboard = () => {
     return (
       <div className={styles.chartContainer}>
         <div className={styles.chartHeader}>
-          <h3>Fontes de Renda</h3>
-          <div className={styles.controlGroup}>
+          <h3>Receitas por Categoria</h3>
+          <div className={styles.periodButtons}>
             <button 
-              className={`${styles.buttonSelector} ${selectedPeriod === 'month' ? styles.active : ''}`}
+              className={`${styles.periodButton} ${selectedPeriod === 'month' ? styles.activePeriod : ''}`}
               onClick={() => handlePeriodChange('month')}
             >
+              <span className={styles.periodIcon}>📅</span>
               Mês
             </button>
             <button 
-              className={`${styles.buttonSelector} ${selectedPeriod === 'year' ? styles.active : ''}`}
+              className={`${styles.periodButton} ${selectedPeriod === 'year' ? styles.activePeriod : ''}`}
               onClick={() => handlePeriodChange('year')}
             >
+              <span className={styles.periodIcon}>📆</span>
               Ano
             </button>
             <button 
-              className={`${styles.buttonSelector} ${selectedPeriod === 'all' ? styles.active : ''}`}
+              className={`${styles.periodButton} ${selectedPeriod === 'all' ? styles.activePeriod : ''}`}
               onClick={() => handlePeriodChange('all')}
             >
+              <span className={styles.periodIcon}>🔍</span>
               Todos
             </button>
           </div>
@@ -2620,7 +2737,7 @@ const Dashboard = () => {
     if (!data?.expenses_by_bank?.length) {
       return (
         <div className={`${styles.chartContainer} ${styles.emptyChartCard}`}>
-          <h3>Gastos por Banco</h3>
+          <h3>Distribuição por Banco</h3>
           <div className={styles.emptyChartContent}>
             <span className={styles.emptyChartIcon}>🏦</span>
             <p>Não há despesas por banco no período selecionado.</p>
@@ -2639,7 +2756,12 @@ const Dashboard = () => {
     return (
       <div className={styles.chartContainer}>
         <div className={styles.chartHeader}>
-          <h3>Gastos por Banco</h3>
+          <h3>Distribuição por Banco</h3>
+          <div className={styles.chartSubtitle}>
+            <span className={styles.dateFilterBadge}>
+              <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
+            </span>
+          </div>
         </div>
         <div className={styles.bankPieContainer}>
           <ResponsiveContainer width="100%" height={250}>
@@ -2845,8 +2967,17 @@ const Dashboard = () => {
     // Agrupando despesas por mês
     const groupedData = {};
     
+    // Obtendo a data atual e a data limite de 5 anos no futuro
+    const currentDate = new Date();
+    const futureDate = new Date();
+    futureDate.setFullYear(currentDate.getFullYear() + 5);
+    
     allExpenses.forEach(expense => {
       const date = new Date(expense.date);
+      
+      // Ignorar datas que estão além dos próximos 5 anos
+      if (date > futureDate) return;
+      
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       
       if (!groupedData[monthKey]) {
@@ -2863,13 +2994,41 @@ const Dashboard = () => {
     const chartData = Object.values(groupedData).sort((a, b) => 
       new Date(a.date) - new Date(b.date)
     );
+    
+    // Gerando meses futuros (projeção) até completar 5 anos a partir de hoje
+    const lastDataPoint = chartData.length > 0 ? new Date(chartData[chartData.length - 1].date) : new Date();
+    let projectionDate = new Date(lastDataPoint);
+    
+    // Calcular média dos últimos 6 meses ou o que estiver disponível
+    const recentMonths = chartData.slice(-6);
+    const avgExpense = recentMonths.length > 0 
+      ? recentMonths.reduce((sum, item) => sum + item.total, 0) / recentMonths.length 
+      : 0;
+    
+    // Adicionar projeção para completar 5 anos a partir de hoje
+    while (projectionDate < futureDate) {
+      projectionDate.setMonth(projectionDate.getMonth() + 1);
+      
+      // Pular se já existe um dado para este mês (evitar duplicações)
+      const projMonthKey = `${projectionDate.getFullYear()}-${String(projectionDate.getMonth() + 1).padStart(2, '0')}`;
+      if (groupedData[projMonthKey]) continue;
+      
+      chartData.push({
+        date: projMonthKey,
+        total: avgExpense,
+        isProjection: true
+      });
+    }
+
+    // Ordenando novamente após adicionar projeções
+    chartData.sort((a, b) => new Date(a.date) - new Date(b.date));
 
     return (
       <div className={styles.chartContainer}>
         <div className={styles.chartHeader}>
           <h3>Tendência de Despesas</h3>
           <div className={styles.chartSubtitle}>
-            Mostrando todos os dados cadastrados, independente dos filtros
+            Dados históricos e projeção para os próximos 5 anos
           </div>
         </div>
         <div className={styles.chartBody}>
@@ -2880,6 +3039,10 @@ const Dashboard = () => {
                   <stop offset="5%" stopColor="#f44336" stopOpacity={0.8} />
                   <stop offset="95%" stopColor="#f44336" stopOpacity={0.1} />
                 </linearGradient>
+                <linearGradient id="colorProjectedExpenses" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#f44336" stopOpacity={0.5} />
+                  <stop offset="95%" stopColor="#f44336" stopOpacity={0.05} />
+                </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis 
@@ -2888,21 +3051,47 @@ const Dashboard = () => {
                   const [year, month] = tick.split('-');
                   return `${months.find(m => m.value === parseInt(month))?.shortLabel || month}/${year.slice(2)}`;
                 }}
+                allowDataOverflow={true}
               />
               <YAxis tickFormatter={formatCurrency} />
-              <Tooltip formatter={value => formatCurrency(value)} />
+              <Tooltip 
+                formatter={value => formatCurrency(value)} 
+                labelFormatter={(label) => {
+                  const [year, month] = label.split('-');
+                  const dataPoint = chartData.find(d => d.date === label);
+                  const monthName = months.find(m => m.value === parseInt(month))?.label || month;
+                  return `${monthName}/${year}${dataPoint?.isProjection ? ' (Projeção)' : ''}`;
+                }}
+              />
               <Area 
                 type="monotone" 
                 dataKey="total" 
                 stroke="#f44336" 
-                fillOpacity={1} 
-                fill="url(#colorExpenses)" 
+                fillOpacity={1}
+                fill="url(#colorExpenses)"
                 name="Despesas"
+                strokeDasharray={(d) => d.isProjection ? "5 5" : "0"}
+              />
+              <ReferenceLine 
+                x={new Date().toISOString().substring(0, 7)} 
+                stroke="#666" 
+                strokeDasharray="3 3" 
+                label={{ value: 'Hoje', position: 'insideTopRight', fill: '#666' }} 
               />
             </AreaChart>
           </ResponsiveContainer>
+          <div className={styles.chartLegend}>
+            <div className={styles.legendItem}>
+              <div className={styles.legendColor} style={{ backgroundColor: '#f44336' }}></div>
+              <span>Dados históricos</span>
             </div>
+            <div className={styles.legendItem}>
+              <div className={styles.legendColor} style={{ background: '#f44336', opacity: 0.5 }}></div>
+              <span>Projeção futura</span>
+            </div>
+          </div>
         </div>
+      </div>
     );
   };
 
@@ -2912,15 +3101,24 @@ const Dashboard = () => {
       return (
         <div className={styles.emptyChart}>
           <p>Não há dados de receitas para exibir</p>
-      </div>
+        </div>
       );
     }
 
     // Agrupando receitas por mês
     const groupedData = {};
     
+    // Obtendo a data atual e a data limite de 5 anos no futuro
+    const currentDate = new Date();
+    const futureDate = new Date();
+    futureDate.setFullYear(currentDate.getFullYear() + 5);
+    
     allIncomes.forEach(income => {
       const date = new Date(income.date);
+      
+      // Ignorar datas que estão além dos próximos 5 anos
+      if (date > futureDate) return;
+      
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       
       if (!groupedData[monthKey]) {
@@ -2937,13 +3135,41 @@ const Dashboard = () => {
     const chartData = Object.values(groupedData).sort((a, b) => 
       new Date(a.date) - new Date(b.date)
     );
+    
+    // Gerando meses futuros (projeção) até completar 5 anos a partir de hoje
+    const lastDataPoint = chartData.length > 0 ? new Date(chartData[chartData.length - 1].date) : new Date();
+    let projectionDate = new Date(lastDataPoint);
+    
+    // Calcular média dos últimos 6 meses ou o que estiver disponível
+    const recentMonths = chartData.slice(-6);
+    const avgIncome = recentMonths.length > 0 
+      ? recentMonths.reduce((sum, item) => sum + item.total, 0) / recentMonths.length 
+      : 0;
+    
+    // Adicionar projeção para completar 5 anos a partir de hoje
+    while (projectionDate < futureDate) {
+      projectionDate.setMonth(projectionDate.getMonth() + 1);
+      
+      // Pular se já existe um dado para este mês (evitar duplicações)
+      const projMonthKey = `${projectionDate.getFullYear()}-${String(projectionDate.getMonth() + 1).padStart(2, '0')}`;
+      if (groupedData[projMonthKey]) continue;
+      
+      chartData.push({
+        date: projMonthKey,
+        total: avgIncome,
+        isProjection: true
+      });
+    }
+    
+    // Ordenando novamente após adicionar projeções
+    chartData.sort((a, b) => new Date(a.date) - new Date(b.date));
 
     return (
       <div className={styles.chartContainer}>
         <div className={styles.chartHeader}>
           <h3>Tendência de Receitas</h3>
           <div className={styles.chartSubtitle}>
-            Mostrando todos os dados cadastrados, independente dos filtros
+            Dados históricos e projeção para os próximos 5 anos
           </div>
         </div>
         <div className={styles.chartBody}>
@@ -2954,6 +3180,10 @@ const Dashboard = () => {
                   <stop offset="5%" stopColor="#4caf50" stopOpacity={0.8} />
                   <stop offset="95%" stopColor="#4caf50" stopOpacity={0.1} />
                 </linearGradient>
+                <linearGradient id="colorProjectedIncomes" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#4caf50" stopOpacity={0.5} />
+                  <stop offset="95%" stopColor="#4caf50" stopOpacity={0.05} />
+                </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis 
@@ -2962,9 +3192,18 @@ const Dashboard = () => {
                   const [year, month] = tick.split('-');
                   return `${months.find(m => m.value === parseInt(month))?.shortLabel || month}/${year.slice(2)}`;
                 }}
+                allowDataOverflow={true}
               />
               <YAxis tickFormatter={formatCurrency} />
-              <Tooltip formatter={value => formatCurrency(value)} />
+              <Tooltip 
+                formatter={value => formatCurrency(value)} 
+                labelFormatter={(label) => {
+                  const [year, month] = label.split('-');
+                  const dataPoint = chartData.find(d => d.date === label);
+                  const monthName = months.find(m => m.value === parseInt(month))?.label || month;
+                  return `${monthName}/${year}${dataPoint?.isProjection ? ' (Projeção)' : ''}`;
+                }}
+              />
               <Area 
                 type="monotone" 
                 dataKey="total" 
@@ -2972,9 +3211,26 @@ const Dashboard = () => {
                 fillOpacity={1} 
                 fill="url(#colorIncomes)" 
                 name="Receitas"
+                strokeDasharray={(d) => d.isProjection ? "5 5" : "0"}
+              />
+              <ReferenceLine 
+                x={new Date().toISOString().substring(0, 7)} 
+                stroke="#666" 
+                strokeDasharray="3 3" 
+                label={{ value: 'Hoje', position: 'insideTopRight', fill: '#666' }} 
               />
             </AreaChart>
           </ResponsiveContainer>
+          <div className={styles.chartLegend}>
+            <div className={styles.legendItem}>
+              <div className={styles.legendColor} style={{ backgroundColor: '#4caf50' }}></div>
+              <span>Dados históricos</span>
+            </div>
+            <div className={styles.legendItem}>
+              <div className={styles.legendColor} style={{ background: '#4caf50', opacity: 0.5 }}></div>
+              <span>Projeção futura</span>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -2984,12 +3240,6 @@ const Dashboard = () => {
     <>
       {/* Exibir o gráfico de orçamento em destaque */}
       <div className={`${styles.chartContainer} ${styles.highlightedChart}`}>
-        <div className={styles.budgetHeader}>
-          <h3>Resumo de Orçamento</h3>
-          <div className={styles.budgetDate}>
-            {new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
-          </div>
-        </div>
         {renderBudgetChart()}
       </div>
       

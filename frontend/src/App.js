@@ -5,9 +5,11 @@ import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import Expenses from './components/Expenses';
 import AddExpense from './components/AddExpense';
+import EditExpense from './components/EditExpense';
 import Profile from './components/Profile';
 import Income from './components/Income';
 import AddIncome from './components/AddIncome';
+import EditIncome from './components/EditIncome';
 import SpreadsheetUpload from './components/SpreadsheetUpload';
 import Layout from './components/Layout';
 import EditRecurringIncomes from './components/EditRecurringIncomes';
@@ -94,7 +96,7 @@ function App() {
           } />
           <Route path="/expenses/edit/:id" element={
             <PrivateRoute>
-              <Expenses />
+              <EditExpense />
             </PrivateRoute>
           } />
           <Route path="/add-expense" element={
@@ -115,6 +117,11 @@ function App() {
           <Route path="/add-income" element={
             <PrivateRoute>
               <AddIncome />
+            </PrivateRoute>
+          } />
+          <Route path="/incomes/edit/:id" element={
+            <PrivateRoute>
+              <EditIncome />
             </PrivateRoute>
           } />
           <Route path="/edit-recurring-incomes" element={

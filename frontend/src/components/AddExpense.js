@@ -15,7 +15,8 @@ import {
   BsRepeat,
   BsCreditCard2Front,
   BsCashCoin,
-  BsWallet2
+  BsWallet2,
+  BsListCheck
 } from 'react-icons/bs';
 import { SiPix } from 'react-icons/si';
 
@@ -189,6 +190,15 @@ const AddExpense = () => {
     setSuccess('');
 
     try {
+      // Verificar se os campos obrigatórios estão preenchidos
+      if (!formData.description || !formData.amount || !formData.category_id || !formData.bank_id) {
+        throw new Error('Preencha todos os campos obrigatórios: descrição, valor, categoria e banco');
+      }
+
+      if (!formData.payment_method) {
+        throw new Error('Selecione uma forma de pagamento (Crédito, Débito, Dinheiro ou Pix)');
+      }
+
       // Validação da data para pagamento à vista
       if (!formData.is_recurring && !formData.has_installments) {
         const expenseDate = new Date(formData.expense_date);
@@ -200,7 +210,7 @@ const AddExpense = () => {
       // Validações específicas para pagamento parcelado
       if (formData.has_installments) {
         // Validação do número de parcelas
-        if (formData.total_installments === '') {
+        if (!formData.total_installments) {
           throw new Error('O número de parcelas é obrigatório');
         }
         if (formData.total_installments < 2) {
@@ -234,44 +244,61 @@ const AddExpense = () => {
         if (isNaN(startDate.getTime())) {
           throw new Error('A data inicial da recorrência é inválida');
         }
-
-        // Inclui a data inicial na criação da despesa recorrente
-        formData.start_date = formData.start_date || formData.expense_date;
       }
 
-      // Prepara os dados para envio
-      const baseDate = new Date(formData.expense_date);
-
+      // Garante que o amount seja um número e não uma string
+      let cleanAmount = formData.amount;
+      if (typeof cleanAmount === 'string') {
+        // Remove caracteres não numéricos exceto pontos e vírgulas
+        cleanAmount = cleanAmount.replace(/[^\d,.]/g, '');
+        // Substitui vírgula por ponto
+        cleanAmount = cleanAmount.replace(',', '.');
+      }
+      
+      const totalAmount = parseFloat(cleanAmount) || 0;
+      
+      if (totalAmount <= 0) {
+        throw new Error('O valor da despesa deve ser maior que zero');
+      }
+      
       // Calcula o valor da parcela se for pagamento parcelado
-      const totalAmount = parseFloat(formData.amount);
       const installmentAmount = formData.has_installments
         ? (totalAmount / formData.total_installments).toFixed(2)
-        : totalAmount;
+        : totalAmount.toFixed(2);
 
       // Calcula a data da primeira parcela
       let first_installment_date = formData.expense_date;
       if (formData.has_installments && formData.current_installment && formData.current_installment > 1) {
-        const firstDate = new Date(baseDate);
+        const firstDate = new Date(new Date(formData.expense_date));
         firstDate.setMonth(firstDate.getMonth() - (formData.current_installment - 1));
         first_installment_date = firstDate.toISOString().split('T')[0];
       }
 
       // Define as datas para despesas fixas
       let start_date = null;
-      let end_date = null;
       if (formData.is_recurring) {        
         start_date = formData.start_date || formData.expense_date;
       }
 
       const dataToSend = {
-        ...formData,
-        amount: installmentAmount,
-        first_installment_date,
+        description: formData.description,
+        amount: parseFloat(installmentAmount),
+        category_id: parseInt(formData.category_id),
+        bank_id: parseInt(formData.bank_id),
         expense_date: formData.expense_date,
+        payment_method: formData.payment_method,
+        has_installments: Boolean(formData.has_installments),
+        is_recurring: Boolean(formData.is_recurring),
+        is_in_cash: !formData.is_recurring && !formData.has_installments,
+        first_installment_date,
         start_date,
         end_date: null,
-        recurrence_type: formData.is_recurring ? formData.recurrence_type : null
+        total_installments: formData.has_installments ? parseInt(formData.total_installments) : null,
+        recurrence_type: formData.is_recurring ? formData.recurrence_type : null,
+        user_id: auth.user?.id // Garante que o ID do usuário está incluído
       };
+
+      console.log('Enviando dados:', JSON.stringify(dataToSend, null, 2));
 
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/expenses`, {
         method: 'POST',
@@ -284,14 +311,19 @@ const AddExpense = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('Erro da API:', errorData);
         throw new Error(errorData.message || 'Falha ao adicionar despesa');
       }
+
+      const result = await response.json();
+      console.log('Resposta do servidor:', result);
 
       setSuccess('Despesa adicionada com sucesso!');
       setTimeout(() => {
         navigate('/expenses');
       }, 2000);
     } catch (err) {
+      console.error('Erro completo:', err);
       setError(err.message || 'Erro ao adicionar despesa. Por favor, tente novamente.');
     }
   };

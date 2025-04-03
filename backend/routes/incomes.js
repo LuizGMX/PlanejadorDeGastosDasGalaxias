@@ -752,4 +752,29 @@ router.put('/:id', authenticate, async (req, res) => {
   }
 });
 
+// Rota para buscar um único ganho
+router.get('/:id', authenticate, async (req, res) => {
+  try {
+    const income = await Income.findOne({
+      where: {
+        id: req.params.id,
+        user_id: req.user.id
+      },
+      include: [
+        { model: Category },
+        { model: Bank }
+      ]
+    });
+
+    if (!income) {
+      return res.status(404).json({ message: 'Ganho não encontrado' });
+    }
+
+    res.json(income);
+  } catch (error) {
+    console.error('Erro ao buscar ganho:', error);
+    res.status(500).json({ message: 'Erro ao buscar ganho' });
+  }
+});
+
 export default router; 
