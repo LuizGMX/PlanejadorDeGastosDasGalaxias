@@ -747,12 +747,39 @@ const Dashboard = () => {
     }
   };
 
+  // Função para criar uma data com horário fixo do início do dia (00:00)
+  const createDateWithStartOfDay = (dateString) => {
+    const [year, month, day] = dateString.split('-').map(num => parseInt(num, 10));
+    return new Date(year, month - 1, day, 0, 0, 0, 0);
+  };
+
+  // Função para criar uma data com horário fixo do fim do dia (23:59)
+  const createDateWithEndOfDay = (dateString) => {
+    const [year, month, day] = dateString.split('-').map(num => parseInt(num, 10));
+    return new Date(year, month - 1, day, 23, 59, 59, 999);
+  };
+
   const handleDateRangeSelect = (dateRange) => {
     // Só aplicar o filtro quando o usuário clicar em "Aplicar"
-    setCustomDateRange(dateRange);
+    const startDate = createDateWithStartOfDay(dateRange.start);
+    const endDate = createDateWithEndOfDay(dateRange.end);
+    
+    setCustomDateRange({
+      start: dateRange.start,
+      end: dateRange.end,
+      // Armazenar as datas com horários fixos para início e fim do dia
+      startNormalized: startDate.toISOString(),
+      endNormalized: endDate.toISOString()
+    });
+    
     setSelectedPeriod('custom'); // Somente aqui definimos que é customizado
     setShowDateRangePicker(false);
-    console.log('Período personalizado selecionado:', dateRange);
+    console.log('Período personalizado selecionado:', {
+      start: dateRange.start,
+      end: dateRange.end,
+      startNormalized: startDate.toISOString(),
+      endNormalized: endDate.toISOString()
+    });
   };
   
   const handleDateRangeCancel = () => {
@@ -873,23 +900,69 @@ const Dashboard = () => {
           
           console.log(`Próximo mês (API): ${monthsToFilter[0]}/${yearsToFilter[0]}`);
         } else if (selectedPeriod === 'custom' && customDateRange) {
-          // Custom date range
-          const startDate = new Date(customDateRange.start);
-          const endDate = new Date(customDateRange.end);
+          // Período personalizado - com melhor tratamento de timezone
+          let startDate, endDate;
           
-          // Get all months and years between start and end dates
+          if (customDateRange.startNormalized) {
+            startDate = new Date(customDateRange.startNormalized);
+            endDate = new Date(customDateRange.endNormalized);
+          } else {
+            // Compatibilidade com dados antigos - fixar horários para início e fim do dia
+            const [startYear, startMonth, startDay] = customDateRange.start.split('-').map(num => parseInt(num, 10));
+            const [endYear, endMonth, endDay] = customDateRange.end.split('-').map(num => parseInt(num, 10));
+            
+            startDate = new Date(startYear, startMonth - 1, startDay, 0, 0, 0, 0);
+            endDate = new Date(endYear, endMonth - 1, endDay, 23, 59, 59, 999);
+          }
+          
+          console.log('Datas de filtro calculadas:', {
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString()
+          });
+          
+          // Colete todos meses e anos entre as datas inicial e final
           const months = new Set();
           const years = new Set();
           
-          let currentDate = new Date(startDate);
-          while (currentDate <= endDate) {
-            months.add(currentDate.getMonth() + 1);
-            years.add(currentDate.getFullYear());
+          // Adicionar mês e ano da data inicial
+          months.add(startDate.getMonth() + 1); // +1 porque meses no JS são 0-11
+          years.add(startDate.getFullYear());
+          
+          // Adicionar mês e ano da data final
+          months.add(endDate.getMonth() + 1);
+          years.add(endDate.getFullYear());
+          
+          // Se as datas estão em meses ou anos diferentes, adicionar todos os meses intermediários
+          if (
+            startDate.getFullYear() !== endDate.getFullYear() || 
+            startDate.getMonth() !== endDate.getMonth()
+          ) {
+            let currentDate = new Date(startDate);
+            // Avançar para o próximo mês
+            currentDate.setDate(1); // Ir para o primeiro dia do mês
             currentDate.setMonth(currentDate.getMonth() + 1);
+            
+            // Continuar avançando mês a mês até chegar no mês final
+            while (
+              currentDate.getFullYear() < endDate.getFullYear() || 
+              (currentDate.getFullYear() === endDate.getFullYear() && 
+               currentDate.getMonth() <= endDate.getMonth())
+            ) {
+              months.add(currentDate.getMonth() + 1);
+              years.add(currentDate.getFullYear());
+              
+              // Avançar para o próximo mês
+              currentDate.setMonth(currentDate.getMonth() + 1);
+            }
           }
           
           monthsToFilter = Array.from(months);
           yearsToFilter = Array.from(years);
+          
+          console.log('Meses e anos para filtrar:', {
+            meses: monthsToFilter,
+            anos: yearsToFilter
+          });
         } else {
           // Use filters from filter state
           monthsToFilter = filters.months;
@@ -1924,19 +1997,49 @@ const Dashboard = () => {
         
         console.log(`Período próximo mês (timeline): ${formatDate(startDate)} - ${formatDate(endDate)}`);
       } else if (selectedPeriod === 'custom' && customDateRange) {
-        // Período personalizado
-        startDate = new Date(customDateRange.start);
-        endDate = new Date(customDateRange.end);
-        endDate.setHours(23, 59, 59, 999);
+        // Período personalizado - com melhor tratamento de timezone
+        if (customDateRange.startNormalized) {
+          startDate = new Date(customDateRange.startNormalized);
+          endDate = new Date(customDateRange.endNormalized);
+        } else {
+          // Compatibilidade com dados antigos - fixar o horário para 12:00
+          const [startYear, startMonth, startDay] = customDateRange.start.split('-').map(num => parseInt(num, 10));
+          const [endYear, endMonth, endDay] = customDateRange.end.split('-').map(num => parseInt(num, 10));
+          
+          startDate = new Date(startYear, startMonth - 1, startDay, 0, 0, 0, 0);
+          endDate = new Date(endYear, endMonth - 1, endDay, 23, 59, 59, 999);
+        }
+        
+        console.log(`Período personalizado (timeline): ${formatDate(startDate)} - ${formatDate(endDate)}`);
       }
       
       // Se temos um período definido, filtramos as transações
       if (startDate && endDate) {
         console.log(`Aplicando filtro global de período: ${formatDate(startDate)} - ${formatDate(endDate)}`);
+        
+        // Garantir que o horário de endDate seja 23:59:59 para incluir todo o dia final
+        const endOfDayDate = new Date(endDate);
+        endOfDayDate.setHours(23, 59, 59, 999);
+        
         timelineFilteredTransactions = allTransactions.filter(item => {
+          // Normalizar a data do item para evitar problemas de timezone
           const itemDate = new Date(item.date);
-          return itemDate >= startDate && itemDate <= endDate;
+          
+          // Resetar horas/minutos/segundos da data do item para comparação por dia
+          const itemDateStart = new Date(itemDate);
+          itemDateStart.setHours(0, 0, 0, 0);
+          
+          const itemDateEnd = new Date(itemDate);
+          itemDateEnd.setHours(23, 59, 59, 999);
+          
+          // Verificar se a data está dentro do intervalo
+          // Uma transação está no intervalo se:
+          // 1. O dia do item é >= ao dia inicial E
+          // 2. O dia do item é <= ao dia final
+          return itemDateStart >= startDate && itemDateStart <= endOfDayDate;
         });
+        
+        console.log(`Transações filtradas por período: ${timelineFilteredTransactions.length}`);
       }
     }
 
@@ -2093,17 +2196,6 @@ const Dashboard = () => {
               </button>
             </div>
             
-            <div className={styles.groupingToggle}>
-              <span>Agrupar por data</span>
-              <label className={styles.toggleSwitch}>
-                <input
-                  type="checkbox"
-                  checked={groupByDate}
-                  onChange={() => setGroupByDate(!groupByDate)}
-                />
-                <span className={styles.toggleSlider}></span>
-              </label>
-            </div>
           </div>
         </div>
         
@@ -3430,6 +3522,23 @@ const Dashboard = () => {
       </div>
     );
 
+  // Formatação segura de datas para evitar problemas de timezone
+  const formatDateStringWithTimezone = (dateString) => {
+    // Evitar problemas de timezone na exibição de datas
+    const [year, month, day] = dateString.split('-').map(num => parseInt(num, 10));
+    const date = new Date(year, month - 1, day, 12, 0, 0);
+    return date.toLocaleDateString('pt-BR');
+  };
+
+  // Retorna o texto do filtro de período ativo
+  const getActiveFilterLabel = () => {
+    if (selectedPeriod === 'current') return 'Mês Atual';
+    if (selectedPeriod === 'last') return 'Mês Anterior';
+    if (selectedPeriod === 'next') return 'Mês que vem';
+    if (selectedPeriod === 'year') return 'Ano Atual';
+    return 'Selecione um período';
+  };
+
   return (
     <div className={styles.dashboardContainer}>
       <div className={styles.dashboardHeader}>
@@ -3460,14 +3569,10 @@ const Dashboard = () => {
               className={`${styles.filterDisplay} ${showPeriodOptions ? styles.active : ''}`}
               onClick={() => setShowPeriodOptions(!showPeriodOptions)}
             >
-              <span>
-                {selectedPeriod === 'custom' && customDateRange 
-                  ? `${new Date(customDateRange.start).toLocaleDateString('pt-BR')} - ${new Date(customDateRange.end).toLocaleDateString('pt-BR')}`
-                  : selectedPeriod === 'current' ? 'Mês Atual' 
-                  : selectedPeriod === 'last' ? 'Mês Anterior'
-                  : selectedPeriod === 'next' ? 'Mês que vem'
-                  : 'Selecione um período'}
-              </span>
+              {selectedPeriod === 'custom' && customDateRange
+                ? `${formatDateStringWithTimezone(customDateRange.start)} - ${formatDateStringWithTimezone(customDateRange.end)}`
+                : getActiveFilterLabel()
+              }
               <FaChevronDown className={`${styles.arrowIcon} ${showPeriodOptions ? styles.rotated : ''}`} />
             </div>
             {showPeriodOptions && (

@@ -26,8 +26,9 @@ const DateRangePicker = ({ onDateRangeSelect, onCancel }) => {
       return false;
     }
     
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    // Criando datas com horário fixo de 12:00 para evitar problemas de timezone
+    const start = createDateWithFixedTime(startDate);
+    const end = createDateWithFixedTime(endDate);
     
     if (start > end) {
       setError('A data inicial deve ser anterior à data final');
@@ -38,12 +39,25 @@ const DateRangePicker = ({ onDateRangeSelect, onCancel }) => {
     return true;
   };
 
+  // Função para criar uma data com horário fixo às 12:00
+  const createDateWithFixedTime = (dateString) => {
+    const [year, month, day] = dateString.split('-').map(num => parseInt(num, 10));
+    return new Date(year, month - 1, day, 12, 0, 0);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validateDates()) {
+      // Enviar datas com horário fixo para evitar problemas de timezone
+      const startParts = startDate.split('-').map(num => parseInt(num, 10));
+      const endParts = endDate.split('-').map(num => parseInt(num, 10));
+      
       onDateRangeSelect({
         start: startDate,
-        end: endDate
+        end: endDate,
+        // Adicionando informações processadas para evitar problemas no componente pai
+        startNormalized: new Date(startParts[0], startParts[1] - 1, startParts[2], 12, 0, 0).toISOString(),
+        endNormalized: new Date(endParts[0], endParts[1] - 1, endParts[2], 12, 0, 0).toISOString()
       });
     }
   };

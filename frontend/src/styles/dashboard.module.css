@@ -1903,91 +1903,130 @@
 }
 
 .dateRangePickerContainer {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  margin-top: 10px;
-  z-index: 1002;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 9999;
+  width: 350px;
 }
 
 .dateRangePicker {
-  background: var(--card-background);
-  border: 1px solid var(--border-color);
+  background: linear-gradient(145deg, #1f2028, #262833);
+  border: 1px solid #333541;
   border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  padding: 1.2rem;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
   min-width: 300px;
-  animation: slideDown 0.3s ease;
+  animation: slideDown 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Adicionando overlay para bloquear cliques em outros elementos */
+.dateRangePickerContainer::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: -1;
 }
 
 .dateRangeHeader {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.75rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #333541;
 }
 
 .dateRangeHeader h3 {
-  color: var(--text-color);
+  color: #fff;
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: center;
 }
 
-.calendarIcon {
-  color: var(--primary-color);
-  font-size: 1.2rem;
+.dateInput {
+  padding: 0.7rem 1rem;
+  background: #ffffff;
+  border: none;
+  border-radius: 8px;
+  color: #1a1b22;
+  font-size: 0.95rem;
+  width: 100%;
+  transition: all 0.2s ease;
+  margin-bottom: 0.5rem;
 }
 
-.dateRangeForm {
+.dateInput:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 255, 133, 0.4);
+}
+
+.dateRangeButtons {
   display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+  justify-content: space-between;
+  margin-top: 1rem;
+  gap: 0.8rem;
+}
+
+.cancelDateRange {
+  padding: 0.7rem 1.2rem;
+  background: #212229;
+  color: #fff;
+  border: 1px solid #333541;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: 1;
+}
+
+.cancelDateRange:hover {
+  background: #2a2c36;
+}
+
+.applyDateRange {
+  padding: 0.7rem 1.2rem;
+  background: #00ff85;
+  color: #121317;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+}
+
+.applyDateRange:hover {
+  background: #00e678;
 }
 
 .dateInputGroup {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .dateInputGroup label {
-  color: var(--text-secondary);
-  font-size: 0.9rem;
+  color: #9fa1ae;
+  font-size: 0.8rem;
   font-weight: 500;
-}
-
-.dateInput {
-  padding: 0.75rem;
-  background: var(--input-background);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  color: var(--text-color);
-  font-size: 0.95rem;
-  transition: all 0.3s ease;
-}
-
-.dateInput:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(0, 255, 133, 0.1);
-}
-
-.applyDateRange {
-  padding: 0.75rem 1.5rem;
-  background: var(--primary-color);
-  color: var(--button-text-color);
-  border: none;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  margin-top: 0.5rem;
-}
-
-.applyDateRange:hover {
-  background: var(--hover-color);
-  transform: translateY(-2px);
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 
 .filterButtons {
