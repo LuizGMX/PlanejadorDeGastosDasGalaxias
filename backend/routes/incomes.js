@@ -72,10 +72,12 @@ router.get('/', authenticate, async (req, res) => {
       include: [
         { 
           model: Category,
+          as: 'Category',
           attributes: ['id', 'category_name', 'type']
         },
         { 
           model: Bank,
+          as: 'Bank',
           attributes: ['id', 'name']
         }
       ],
@@ -761,8 +763,14 @@ router.get('/:id', authenticate, async (req, res) => {
         user_id: req.user.id
       },
       include: [
-        { model: Category },
-        { model: Bank }
+        { 
+          model: Category,
+          as: 'Category'
+        },
+        { 
+          model: Bank,
+          as: 'Bank'
+        }
       ]
     });
 
