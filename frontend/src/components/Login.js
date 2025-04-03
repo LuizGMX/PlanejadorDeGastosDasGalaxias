@@ -46,6 +46,7 @@ const Login = () => {
     'telegram-steps': { index: 6, title: 'Telegram', icon: <BsTelegram /> }
   };
   
+  
   // Animation variants for page transitions
   const pageVariants = {
     initial: { opacity: 0, x: 100 },
