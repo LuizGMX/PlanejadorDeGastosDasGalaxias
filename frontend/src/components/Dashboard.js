@@ -24,13 +24,7 @@ import {
 import styles from '../styles/dashboard.module.css';
 import { FaCalendarAlt, FaChartLine, FaPlus, FaChevronDown, FaChevronRight, FaSearch, FaFilter } from 'react-icons/fa';
 import DateRangePicker from './DateRangePicker';
-import { 
-  BsHouseDoor, 
-  BsGraphUp, 
-  BsCalendar3, 
-  BsPieChart, 
-  BsCashCoin, 
-  BsFunnel,
+import {  
   BsPencil,
   BsEye,
   // ... other imports
@@ -807,18 +801,18 @@ const Dashboard = () => {
 
   // Lista de meses para o filtro
   const months = [
-    { value: 1, label: 'Janeiro' },
-    { value: 2, label: 'Fevereiro' },
-    { value: 3, label: 'Março' },
-    { value: 4, label: 'Abril' },
-    { value: 5, label: 'Maio' },
-    { value: 6, label: 'Junho' },
-    { value: 7, label: 'Julho' },
-    { value: 8, label: 'Agosto' },
-    { value: 9, label: 'Setembro' },
-    { value: 10, label: 'Outubro' },
-    { value: 11, label: 'Novembro' },
-    { value: 12, label: 'Dezembro' }
+    { value: 1, label: 'Janeiro', shortLabel: 'Jan' },
+    { value: 2, label: 'Fevereiro', shortLabel: 'Fev' },
+    { value: 3, label: 'Março', shortLabel: 'Mar' },
+    { value: 4, label: 'Abril', shortLabel: 'Abr' },
+    { value: 5, label: 'Maio', shortLabel: 'Mai' },
+    { value: 6, label: 'Junho', shortLabel: 'Jun' },
+    { value: 7, label: 'Julho', shortLabel: 'Jul' },
+    { value: 8, label: 'Agosto', shortLabel: 'Ago' },
+    { value: 9, label: 'Setembro', shortLabel: 'Set' },
+    { value: 10, label: 'Outubro', shortLabel: 'Out' },
+    { value: 11, label: 'Novembro', shortLabel: 'Nov' },
+    { value: 12, label: 'Dezembro', shortLabel: 'Dez' }
   ];
 
   // Cores para os gráficos
@@ -1373,7 +1367,7 @@ const Dashboard = () => {
             <p>Você ainda não definiu um objetivo financeiro.</p>
             <button 
               className={styles.createGoalButton}
-              onClick={() => navigate('/settings')}
+              onClick={() => navigate('/profile')}
             >
               Definir Objetivo
             </button>
@@ -1617,7 +1611,7 @@ const Dashboard = () => {
               <button className={styles.actionButton} onClick={() => navigate('/expenses')}>
                 <span>📊</span> Revisar Despesas
               </button>
-              <button className={styles.actionButton} onClick={() => navigate('/settings')}>
+              <button className={styles.actionButton} onClick={() => navigate('/profile')}>
                 <span>⚙️</span> Ajustar Meta
               </button>
             </div>
@@ -1768,11 +1762,12 @@ const Dashboard = () => {
     );
   };
 
+  // Ajustar renderIncomeVsExpensesChart para melhorar margens e posicionamento da legenda
   const renderIncomeVsExpensesChart = () => {
     if (!data?.budget_info) return null;
 
     return renderChart('income-vs-expenses', 'Ganhos vs Despesas',
-                  <PieChart margin={{ top: 10, right: 30, left: 30, bottom: 20 }}>
+                  <PieChart margin={{ top: 20, right: 40, left: 30, bottom: 30 }}>
                     <Pie
                       data={[
                         {
@@ -1812,6 +1807,9 @@ const Dashboard = () => {
                     />
                     <Legend
                       formatter={(value) => <span style={{ color: 'var(--text-color)' }}>{value}</span>}
+                      verticalAlign="bottom"
+                      align="center"
+                      height={36}
                     />
                   </PieChart>
     );
@@ -1859,38 +1857,30 @@ const Dashboard = () => {
         </div>
         <div className={styles.categoriesPieContainer}>
           <ResponsiveContainer width="100%" height={250}>
-            <PieChart>
+            <PieChart margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
               <Pie
                 data={categoriesData}
-                dataKey="value"
-                nameKey="name"
                 cx="50%"
                 cy="50%"
-                labelLine={true}
-                innerRadius={40}
+                labelLine={false}
                 outerRadius={80}
-                paddingAngle={2}
+                innerRadius={40}
+                fill="#8884d8"
+                dataKey="value"
+                nameKey="name"
                 label={({name, percent}) => name && percent ? `${name}: ${(percent * 100).toFixed(1)}%` : ''}
               >
                 {categoriesData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} stroke="#ffffff" strokeWidth={1} />
                 ))}
               </Pie>
-              <Tooltip
-                formatter={(value) => formatCurrency(value)}
-                contentStyle={{
-                  backgroundColor: 'var(--card-background)',
-                  border: '1px solid var(--border-color)',
-                  color: 'var(--text-color)',
-                  padding: '10px',
-                  borderRadius: '8px'
-                }}
-              />
+              <Tooltip formatter={(value) => formatCurrency(value)} />
               <Legend 
                 layout="vertical"
                 align="right"
                 verticalAlign="middle"
                 iconType="circle"
+                wrapperStyle={{ paddingLeft: '10px', fontSize: '12px' }}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -2880,12 +2870,12 @@ const Dashboard = () => {
 
         <div className={styles.categoriesPieContainer}>
           <ResponsiveContainer width="100%" height={250}>
-            <PieChart>
+            <PieChart margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
               <Pie
                 data={incomeCategoriesWithColors}
                 cx="50%"
                 cy="50%"
-                labelLine={true}
+                labelLine={false}
                 outerRadius={80}
                 innerRadius={40}
                 fill="#8884d8"
@@ -2913,6 +2903,7 @@ const Dashboard = () => {
                 align="right"
                 verticalAlign="middle"
                 iconType="circle"
+                wrapperStyle={{ paddingLeft: '10px', fontSize: '12px' }}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -2977,12 +2968,12 @@ const Dashboard = () => {
         </div>
         <div className={styles.bankPieContainer}>
           <ResponsiveContainer width="100%" height={250}>
-            <PieChart>
+            <PieChart margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
               <Pie
                 data={bankData}
                 cx="50%"
                 cy="50%"
-                labelLine={true}
+                labelLine={false}
                 outerRadius={80}
                 innerRadius={40}
                 fill="#8884d8"
@@ -3010,6 +3001,7 @@ const Dashboard = () => {
                 align="right"
                 verticalAlign="middle"
                 iconType="circle"
+                wrapperStyle={{ paddingLeft: '10px', fontSize: '12px' }}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -3166,9 +3158,90 @@ const Dashboard = () => {
   
   const insights = generateFinancialInsights();
 
+  // Adicionar a função filterData antes dos componentes de gráficos que a utilizam
+  const filterData = (data) => {
+    if (!data || !Array.isArray(data)) return [];
+    
+    // Aplicar o filtro global de período
+    let filteredData = [...data];
+    
+    if (selectedPeriod) {
+      let startDate, endDate;
+      
+      if (selectedPeriod === 'month' || selectedPeriod === 'current') {
+        // Mês atual
+        const now = new Date();
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        endDate.setHours(23, 59, 59, 999);
+      } else if (selectedPeriod === 'year') {
+        // Ano atual
+        const now = new Date();
+        startDate = new Date(now.getFullYear(), 0, 1);
+        endDate = new Date(now.getFullYear(), 11, 31);
+        endDate.setHours(23, 59, 59, 999);
+      } else if (selectedPeriod === 'last') {
+        // Mês anterior
+        const now = new Date();
+        startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+        endDate.setHours(23, 59, 59, 999);
+      } else if (selectedPeriod === 'custom' && customDateRange) {
+        // Período personalizado
+        if (customDateRange.startNormalized) {
+          startDate = new Date(customDateRange.startNormalized);
+          endDate = new Date(customDateRange.endNormalized);
+        } else {
+          // Compatibilidade com dados antigos
+          const [startYear, startMonth, startDay] = customDateRange.start.split('-').map(num => parseInt(num, 10));
+          const [endYear, endMonth, endDay] = customDateRange.end.split('-').map(num => parseInt(num, 10));
+          
+          startDate = new Date(startYear, startMonth - 1, startDay, 0, 0, 0, 0);
+          endDate = new Date(endYear, endMonth - 1, endDay, 23, 59, 59, 999);
+        }
+      }
+      
+      // Se temos um período definido, filtramos os dados
+      if (startDate && endDate) {
+        console.log(`Aplicando filtro de período: ${startDate.toISOString()} - ${endDate.toISOString()}`);
+        
+        filteredData = data.filter(item => {
+          const itemDate = new Date(item.date);
+          return itemDate >= startDate && itemDate <= endDate;
+        });
+        
+        console.log(`Dados filtrados: ${filteredData.length} de ${data.length} registros`);
+      }
+    }
+    
+    return filteredData;
+  };
+  
+  // Definir as variáveis de dados para os gráficos
+  const expenseData = allExpenses || [];
+  const incomeData = allIncomes || [];
+
+  // Função para formatar labels de datas
+  const formatDateLabel = (label) => {
+    if (!label) return '';
+    if (typeof label === 'string') {
+      // Se for uma string de data no formato "YYYY-MM-DD"
+      const parts = label.split('-');
+      if (parts.length === 3) {
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      }
+      return label;
+    }
+    if (label instanceof Date) {
+      // Se for um objeto Date
+      return label.toLocaleDateString('pt-BR');
+    }
+    return label.toString();
+  };
+
   const renderExpensesTrend = () => {
     // Usando todos os dados de despesas, independente dos filtros
-    if (!allExpenses?.length) {
+    if (!expenseData?.length) {
       return (
         <div className={styles.emptyChart}>
           <p>Não há dados de despesas para exibir</p>
@@ -3184,7 +3257,7 @@ const Dashboard = () => {
     const futureDate = new Date();
     futureDate.setFullYear(currentDate.getFullYear() + 5);
     
-    allExpenses.forEach(expense => {
+    expenseData.forEach(expense => {
       const date = new Date(expense.date);
       
       // Ignorar datas que estão além dos próximos 5 anos
@@ -3238,14 +3311,16 @@ const Dashboard = () => {
     return (
       <div className={styles.chartContainer}>
         <div className={styles.chartHeader}>
-          <h3>Tendência de Despesas</h3>
+          <h3>Despesas ao longo do tempo</h3>
           <div className={styles.chartSubtitle}>
-            Dados históricos e projeção para os próximos 5 anos
+            <span className={styles.dateFilterBadge}>
+              <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
+            </span>
           </div>
         </div>
         <div className={styles.chartBody}>
           <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+            <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 10, bottom: 20 }}>
               <defs>
                 <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#f44336" stopOpacity={0.8} />
@@ -3260,189 +3335,189 @@ const Dashboard = () => {
               <XAxis 
                 dataKey="date" 
                 tickFormatter={(tick) => {
-                  const [year, month] = tick.split('-');
-                  return `${months.find(m => m.value === parseInt(month))?.shortLabel || month}/${year.slice(2)}`;
+                  if (typeof tick !== 'string') {
+                    // Se o tick for um objeto Date ou outro tipo, converta para string
+                    if (tick instanceof Date) {
+                      const month = tick.getMonth() + 1;
+                      const year = tick.getFullYear();
+                      return `${months.find(m => m.value === month)?.shortLabel || month}/${year.toString().slice(2)}`;
+                    }
+                    return String(tick);
+                  }
+                  
+                  // Verifica se o formato é YYYY-MM ou YYYY-MM-DD
+                  const parts = tick.split('-');
+                  if (parts.length >= 2) {
+                    const year = parts[0];
+                    const month = parseInt(parts[1], 10);
+                    return `${months.find(m => m.value === month)?.shortLabel || month}/${year.slice(2)}`;
+                  }
+                  
+                  return tick;
                 }}
-                allowDataOverflow={true}
+                angle={-30}
+                textAnchor="end"
+                height={60}
+                interval="preserveStartEnd"
+                tickMargin={10}
               />
-              <YAxis tickFormatter={formatCurrency} />
+              <YAxis 
+                tickFormatter={formatCurrency} 
+                width={65}
+                tickMargin={5}
+              />
               <Tooltip 
                 formatter={value => formatCurrency(value)} 
                 labelFormatter={(label) => {
-                  const [year, month] = label.split('-');
-                  const dataPoint = chartData.find(d => d.date === label);
-                  const monthName = months.find(m => m.value === parseInt(month))?.label || month;
-                  return `${monthName}/${year}${dataPoint?.isProjection ? ' (Projeção)' : ''}`;
+                  if (typeof label !== 'string') {
+                    if (label instanceof Date) {
+                      const month = label.getMonth() + 1;
+                      const year = label.getFullYear();
+                      const dataPoint = chartData.find(d => {
+                        if (d.date instanceof Date) {
+                          return d.date.getMonth() === label.getMonth() && 
+                                 d.date.getFullYear() === label.getFullYear();
+                        }
+                        return false;
+                      });
+                      const monthName = months.find(m => m.value === month)?.label || month;
+                      return `${monthName}/${year}${dataPoint?.isProjection ? ' (Projeção)' : ''}`;
+                    }
+                    return String(label);
+                  }
+                  
+                  const parts = label.split('-');
+                  if (parts.length >= 2) {
+                    const year = parts[0];
+                    const month = parseInt(parts[1], 10);
+                    const dataPoint = chartData.find(d => d.date === label);
+                    const monthName = months.find(m => m.value === month)?.label || month;
+                    return `${monthName}/${year}${dataPoint?.isProjection ? ' (Projeção)' : ''}`;
+                  }
+                  
+                  return label;
                 }}
               />
               <Area 
                 type="monotone" 
                 dataKey="total" 
                 stroke="#f44336" 
-                fillOpacity={1}
-                fill="url(#colorExpenses)"
+                fillOpacity={1} 
+                fill="url(#colorExpenses)" 
                 name="Despesas"
                 strokeDasharray={(d) => d.isProjection ? "5 5" : "0"}
               />
               <ReferenceLine 
-                x={new Date().toISOString().substring(0, 7)} 
+                x={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`}
                 stroke="#666" 
                 strokeDasharray="3 3" 
                 label={{ value: 'Hoje', position: 'insideTopRight', fill: '#666' }} 
               />
             </AreaChart>
           </ResponsiveContainer>
-          <div className={styles.chartLegend}>
-            <div className={styles.legendItem}>
-              <div className={styles.legendColor} style={{ backgroundColor: '#f44336' }}></div>
-              <span>Dados históricos</span>
-            </div>
-            <div className={styles.legendItem}>
-              <div className={styles.legendColor} style={{ background: '#f44336', opacity: 0.5 }}></div>
-              <span>Projeção futura</span>
-            </div>
-          </div>
         </div>
       </div>
     );
   };
 
   const renderIncomeTrend = () => {
-    // Usando todos os dados de receitas, independente dos filtros
-    if (!allIncomes?.length) {
-      return (
-        <div className={styles.emptyChart}>
-          <p>Não há dados de receitas para exibir</p>
-        </div>
-      );
-    }
-
-    // Agrupando receitas por mês
-    const groupedData = {};
-    
-    // Obtendo a data atual e a data limite de 5 anos no futuro
-    const currentDate = new Date();
-    const futureDate = new Date();
-    futureDate.setFullYear(currentDate.getFullYear() + 5);
-    
-    allIncomes.forEach(income => {
-      const date = new Date(income.date);
-      
-      // Ignorar datas que estão além dos próximos 5 anos
-      if (date > futureDate) return;
-      
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      
-      if (!groupedData[monthKey]) {
-        groupedData[monthKey] = {
-          date: monthKey,
-          total: 0
-        };
+    const chartData = filterData(incomeData).map(item => {
+      // Garantir que a data esteja no formato correto
+      let formattedDate;
+      if (item.date instanceof Date) {
+        // Se já for um objeto Date, formatar como YYYY-MM
+        const year = item.date.getFullYear();
+        const month = String(item.date.getMonth() + 1).padStart(2, '0');
+        formattedDate = `${year}-${month}`;
+      } else if (typeof item.date === 'string') {
+        // Se for string, verificar o formato
+        if (item.date.includes('T')) {
+          // Se for ISO string (com timestamp), extrair apenas a data
+          formattedDate = item.date.split('T')[0].substring(0, 7); // YYYY-MM
+        } else if (item.date.includes('-')) {
+          // Se já for no formato YYYY-MM-DD, extrair apenas ano e mês
+          formattedDate = item.date.substring(0, 7); // YYYY-MM
+        } else {
+          formattedDate = item.date;
+        }
+      } else {
+        formattedDate = String(item.date);
       }
       
-      groupedData[monthKey].total += parseFloat(income.amount || 0);
+      return {
+        date: formattedDate,
+        value: item.amount
+      };
     });
     
-    // Convertendo para array e ordenando por data
-    const chartData = Object.values(groupedData).sort((a, b) => 
-      new Date(a.date) - new Date(b.date)
-    );
-    
-    // Gerando meses futuros (projeção) até completar 5 anos a partir de hoje
-    const lastDataPoint = chartData.length > 0 ? new Date(chartData[chartData.length - 1].date) : new Date();
-    let projectionDate = new Date(lastDataPoint);
-    
-    // Calcular média dos últimos 6 meses ou o que estiver disponível
-    const recentMonths = chartData.slice(-6);
-    const avgIncome = recentMonths.length > 0 
-      ? recentMonths.reduce((sum, item) => sum + item.total, 0) / recentMonths.length 
-      : 0;
-    
-    // Adicionar projeção para completar 5 anos a partir de hoje
-    while (projectionDate < futureDate) {
-      projectionDate.setMonth(projectionDate.getMonth() + 1);
-      
-      // Pular se já existe um dado para este mês (evitar duplicações)
-      const projMonthKey = `${projectionDate.getFullYear()}-${String(projectionDate.getMonth() + 1).padStart(2, '0')}`;
-      if (groupedData[projMonthKey]) continue;
-      
-      chartData.push({
-        date: projMonthKey,
-        total: avgIncome,
-        isProjection: true
-      });
-    }
-    
-    // Ordenando novamente após adicionar projeções
-    chartData.sort((a, b) => new Date(a.date) - new Date(b.date));
-
     return (
       <div className={styles.chartContainer}>
         <div className={styles.chartHeader}>
-          <h3>Tendência de Receitas</h3>
+          <h3>Receitas ao longo do tempo</h3>
           <div className={styles.chartSubtitle}>
-            Dados históricos e projeção para os próximos 5 anos
+            <span className={styles.dateFilterBadge}>
+              <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
+            </span>
           </div>
         </div>
         <div className={styles.chartBody}>
           <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+            <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 10, bottom: 20 }}>
               <defs>
-                <linearGradient id="colorIncomes" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#4caf50" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#4caf50" stopOpacity={0.1} />
-                </linearGradient>
-                <linearGradient id="colorProjectedIncomes" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#4caf50" stopOpacity={0.5} />
-                  <stop offset="95%" stopColor="#4caf50" stopOpacity={0.05} />
+                <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#2196F3" stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor="#2196F3" stopOpacity={0.1}/>
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis 
                 dataKey="date" 
                 tickFormatter={(tick) => {
-                  const [year, month] = tick.split('-');
-                  return `${months.find(m => m.value === parseInt(month))?.shortLabel || month}/${year.slice(2)}`;
+                  if (typeof tick !== 'string') {
+                    // Se o tick for um objeto Date ou outro tipo, converta para string
+                    if (tick instanceof Date) {
+                      const month = tick.getMonth() + 1;
+                      const year = tick.getFullYear();
+                      return `${months.find(m => m.value === month)?.shortLabel || month}/${year.toString().slice(2)}`;
+                    }
+                    return String(tick);
+                  }
+                  
+                  // Verifica se o formato é YYYY-MM ou YYYY-MM-DD
+                  const parts = tick.split('-');
+                  if (parts.length >= 2) {
+                    const year = parts[0];
+                    const month = parseInt(parts[1], 10);
+                    return `${months.find(m => m.value === month)?.shortLabel || month}/${year.slice(2)}`;
+                  }
+                  
+                  return tick;
                 }}
-                allowDataOverflow={true}
+                angle={-30}
+                textAnchor="end"
+                height={60}
+                interval="preserveStartEnd"
+                tickMargin={10}
               />
-              <YAxis tickFormatter={formatCurrency} />
+              <YAxis 
+                tickFormatter={formatCurrency} 
+                width={65}
+                tickMargin={5}
+              />
               <Tooltip 
-                formatter={value => formatCurrency(value)} 
-                labelFormatter={(label) => {
-                  const [year, month] = label.split('-');
-                  const dataPoint = chartData.find(d => d.date === label);
-                  const monthName = months.find(m => m.value === parseInt(month))?.label || month;
-                  return `${monthName}/${year}${dataPoint?.isProjection ? ' (Projeção)' : ''}`;
-                }}
+                formatter={(value) => [formatCurrency(value), 'Receita']} 
+                labelFormatter={(label) => formatDateLabel(label)}
+                contentStyle={{ background: '#fff', border: '1px solid #ddd', borderRadius: '8px' }}
               />
               <Area 
                 type="monotone" 
-                dataKey="total" 
-                stroke="#4caf50" 
+                dataKey="value" 
+                stroke="#2196F3" 
                 fillOpacity={1} 
-                fill="url(#colorIncomes)" 
-                name="Receitas"
-                strokeDasharray={(d) => d.isProjection ? "5 5" : "0"}
-              />
-              <ReferenceLine 
-                x={new Date().toISOString().substring(0, 7)} 
-                stroke="#666" 
-                strokeDasharray="3 3" 
-                label={{ value: 'Hoje', position: 'insideTopRight', fill: '#666' }} 
+                fill="url(#colorIncome)" 
               />
             </AreaChart>
           </ResponsiveContainer>
-          <div className={styles.chartLegend}>
-            <div className={styles.legendItem}>
-              <div className={styles.legendColor} style={{ backgroundColor: '#4caf50' }}></div>
-              <span>Dados históricos</span>
-            </div>
-            <div className={styles.legendItem}>
-              <div className={styles.legendColor} style={{ background: '#4caf50', opacity: 0.5 }}></div>
-              <span>Projeção futura</span>
-            </div>
-          </div>
         </div>
       </div>
     );

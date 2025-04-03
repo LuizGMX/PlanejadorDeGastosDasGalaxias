@@ -1,3 +1,21 @@
+:root {
+  --primary-color: #00FF85;
+  --secondary-color: #1A1B23;
+  --background-color: #13141B;
+  --card-background: #1A1B23;
+  --text-color: #FFFFFF;
+  --text-secondary: #8B8D97;
+  --error-color: #FF6B6B;
+  --success-color: #51CF66;
+  --border-color: #2A2B33;
+  --hover-color: #00E676;
+  --input-background: #2A2B33;
+  --gradient-start: #00FF85;
+  --gradient-end: #80FFB9;
+  --button-text-color: #000000;
+  --button-background-color: #00FF85;
+}
+
 .title {
   color: var(--primary-color) !important;
 }
@@ -423,7 +441,7 @@
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  min-height: 400px;
+  min-height: 380px;
   display: flex;
   flex-direction: column;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -1662,50 +1680,46 @@
 /* Navigation Tabs */
 .navigationTabs {
   display: flex;
-  background-color: var(--card-background);
-  border-radius: 8px;
-  overflow: hidden;
-  margin: 10px 0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1.5rem;
+  border-radius: 12px;
+  background-color: rgba(255, 255, 255, 0.07);
+  padding: 0.5rem;
+  width: max-content;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .navTab {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 15px;
-  background: none;
-  border: none;
-  color: var(--text-color);
+  padding: 0.75rem 1.25rem;
+  font-size: 0.95rem;
   font-weight: 500;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
-  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-color-secondary);
 }
 
 .navTab:hover {
-  background-color: rgba(0, 0, 0, 0.05);
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
 }
 
 .activeTab {
-  color: var(--primary-color);
-  background-color: rgba(var(--primary-color-rgb), 0.1);
+  background-color: var(--primary-color);
+  color: var(--button-text-color);
+  box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.4);
 }
 
-.activeTab::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background-color: var(--primary-color);
+.activeTab:hover {
+  background-color: var(--primary-color-dark);
 }
 
 .tabIcon {
-  font-size: 20px;
+  font-size: 1.1rem;
 }
 
 /* Greeting Section */
@@ -2918,4 +2932,170 @@ input:checked + .toggleSlider:before {
 
 .applyDateRange:hover {
   background-color: #3a56d4;
+}
+
+/* Estilos para melhorar os labels nos gráficos */
+.chartContainer .recharts-wrapper .recharts-cartesian-axis-tick-value {
+  font-size: 11px !important;
+  font-weight: 500 !important;
+}
+
+.chartContainer .recharts-wrapper .recharts-label {
+  font-size: 12px !important;
+}
+
+.chartContainer .recharts-responsive-container {
+  margin-bottom: 10px !important;
+}
+
+.chartBody {
+  margin-bottom: 30px;
+  padding-bottom: 10px;
+}
+
+/* Botões dentro dos cartões de visão geral */
+.chartContainer .budgetActions button,
+.chartContainer .emptyStateButtons button,
+.createGoalButton,
+.retryButton,
+.chartContainer .addItemButton {
+  padding: 0.7rem 1.25rem;
+  border-radius: 8px;
+  font-weight: 500;
+  border: none;
+  background-color: var(--primary-color);
+  color: var(--button-text-color);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  font-size: 0.95rem;
+}
+
+.chartContainer .budgetActions button:hover,
+.chartContainer .emptyStateButtons button:hover,
+.createGoalButton:hover,
+.retryButton:hover,
+.chartContainer .addItemButton:hover {
+  background-color: var(--primary-color-dark, #1565C0);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.chartContainer .budgetActions button:active,
+.chartContainer .emptyStateButtons button:active,
+.createGoalButton:active,
+.retryButton:active,
+.chartContainer .addItemButton:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+/* Botões de filtro de período */
+.periodButtons {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.periodButton {
+  padding: 0.5rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border: 1px solid var(--border-color);
+  background-color: transparent;
+  color: var(--text-color-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.periodButton:hover {
+  background-color: rgba(var(--primary-rgb), 0.05);
+  border-color: rgba(var(--primary-rgb), 0.3);
+}
+
+.periodButton.activePeriod {
+  background-color: rgba(var(--primary-rgb), 0.1);
+  border-color: rgba(var(--primary-rgb), 0.5);
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+/* Estilo dos botões de alerta */
+.alertActions {
+  display: flex;
+  gap: 0.8rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.actionButton {
+  padding: 0.7rem 1.2rem;
+  border-radius: 8px;
+  font-weight: 500;
+  border: none;
+  background-color: var(--primary-color);
+  color: var(--button-text-color);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  font-size: 0.9rem;
+}
+
+.actionButton:hover {
+  background-color: var(--hover-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.actionButton:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.actionButton span {
+  font-size: 1.1rem;
+}
+
+/* Alerta de objetivo em risco */
+.alertMessage {
+  background: linear-gradient(to right, rgba(255, 176, 32, 0.1), rgba(255, 107, 107, 0.1));
+  border-left: 4px solid #ff9800;
+  border-radius: 8px;
+  padding: 1rem 1.2rem;
+  margin: 1rem 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  animation: fadeIn 0.3s ease;
+}
+
+.alertTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 600;
+  font-size: 1rem;
+  color: #ff9800;
+  margin-bottom: 0.6rem;
+}
+
+.alertTitle span {
+  font-size: 1.2rem;
+}
+
+.alertContent {
+  color: var(--text-color);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 0.8rem;
 }
