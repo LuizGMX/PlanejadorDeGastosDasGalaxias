@@ -21,7 +21,7 @@ const migrationScriptPath = path.join(__dirname, 'models', 'remove-subcategories
 dotenv.config();
 
 // Servir arquivos estáticos do frontend (SPA)
-const staticPath = path.join(__dirname, 'public'); // Altere 'public' para sua pasta de build (ex: 'dist' ou 'build')
+const staticPath = path.join(__dirname, '../frontend/build'); // Alterado para apontar para o build do frontend
 app.use(express.static(staticPath));
 
 // Rota fallback para SPA
