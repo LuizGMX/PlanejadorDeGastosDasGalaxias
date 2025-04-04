@@ -89,10 +89,10 @@ if (process.env.NODE_ENV === 'production') {
 
   // Iniciar servidor HTTPS na porta 5000
   server = https.createServer(credentials, app);
-  server.listen(5000, () => {
+  server.listen(5000, '0.0.0.0',() => {
     console.log('🚀 Servidor HTTPS rodando na porta 5000 em modo produção');
   });
-  
+
 } else {
   // Iniciar servidor HTTP na porta 5000 para desenvolvimento
   server = http.createServer(app);
