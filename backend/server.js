@@ -32,7 +32,6 @@ app.get('*', (req, res) => {
 // Definir o servidor
 let server;
 
-
 if (process.env.NODE_ENV === 'production') {
   // Carregar certificados apenas se for ambiente de produção
   const privateKey = fs.readFileSync('/etc/letsencrypt/live/planejadordasgalaxias.com.br/privkey.pem', 'utf8');
