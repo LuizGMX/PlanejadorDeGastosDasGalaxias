@@ -63,30 +63,6 @@ Income.belongsTo(User, {
   foreignKey: 'user_id'
 });
 
-// Expense-Category
-Expense.belongsTo(Category, {
-  foreignKey: 'category_id',
-  as: 'Category'
-});
-
-// Income-Category
-Income.belongsTo(Category, {
-  foreignKey: 'category_id',
-  as: 'Category'
-});
-
-// Expense-Bank
-Expense.belongsTo(Bank, {
-  foreignKey: 'bank_id',
-  as: 'Bank'
-});
-
-// Income-Bank
-Income.belongsTo(Bank, {
-  foreignKey: 'bank_id',
-  as: 'Bank'
-});
-
 // User-Category
 User.hasMany(Category, {
   foreignKey: 'user_id',
@@ -96,13 +72,42 @@ Category.belongsTo(User, {
   foreignKey: 'user_id'
 });
 
-// User-Bank
-User.hasMany(Bank, {
-  foreignKey: 'user_id',
-  as: 'banks'
+// Category-Expense
+Category.hasMany(Expense, {
+  foreignKey: 'category_id',
+  as: 'expenses'
 });
-Bank.belongsTo(User, {
-  foreignKey: 'user_id'
+Expense.belongsTo(Category, {
+  foreignKey: 'category_id'
+});
+
+// Category-Income
+Category.hasMany(Income, {
+  foreignKey: 'category_id',
+  as: 'incomes'
+});
+Income.belongsTo(Category, {
+  foreignKey: 'category_id'
+});
+
+// Bank-Expense
+Bank.hasMany(Expense, {
+  foreignKey: 'bank_id',
+  as: 'expenses'
+});
+Expense.belongsTo(Bank, {
+  foreignKey: 'bank_id',
+  as: 'bank'
+});
+
+// Bank-Income
+Bank.hasMany(Income, {
+  foreignKey: 'bank_id',
+  as: 'incomes'
+});
+Income.belongsTo(Bank, {
+  foreignKey: 'bank_id',
+  as: 'bank'
 });
 
 // User-Budget
@@ -114,59 +119,75 @@ Budget.belongsTo(User, {
   foreignKey: 'user_id'
 });
 
-// User-VerificationCode
-User.hasMany(VerificationCode, {
-  foreignKey: 'user_id',
-  as: 'verification_codes'
+// Category-Budget
+Category.hasMany(Budget, {
+  foreignKey: 'category_id',
+  as: 'budgets'
 });
-VerificationCode.belongsTo(User, {
-  foreignKey: 'user_id'
+Budget.belongsTo(Category, {
+  foreignKey: 'category_id'
 });
 
-// UserBank
+// User-Bank (através de UserBank)
+User.belongsToMany(Bank, {
+  through: UserBank,
+  foreignKey: 'user_id',
+  otherKey: 'bank_id',
+  as: 'banks'
+});
+Bank.belongsToMany(User, {
+  through: UserBank,
+  foreignKey: 'bank_id',
+  otherKey: 'user_id',
+  as: 'users'
+});
+
+// UserBank-User
+UserBank.belongsTo(User, {
+  foreignKey: 'user_id'
+});
 User.hasMany(UserBank, {
   foreignKey: 'user_id',
   as: 'user_banks'
 });
-UserBank.belongsTo(User, {
-  foreignKey: 'user_id'
-});
 
+// UserBank-Bank
+UserBank.belongsTo(Bank, {
+  foreignKey: 'bank_id'
+});
 Bank.hasMany(UserBank, {
   foreignKey: 'bank_id',
   as: 'user_banks'
 });
-UserBank.belongsTo(Bank, {
-  foreignKey: 'bank_id'
+
+// RecurrenceRule-Expense
+RecurrenceRule.hasMany(Expense, {
+  foreignKey: 'recurrence_id',
+  as: 'expenses'
+});
+Expense.belongsTo(RecurrenceRule, {
+  foreignKey: 'recurrence_id',
+  as: 'recurrence'
 });
 
-// RecurrenceRule
-User.hasMany(RecurrenceRule, {
-  foreignKey: 'user_id',
-  as: 'recurrence_rules'
-});
-RecurrenceRule.belongsTo(User, {
-  foreignKey: 'user_id'
-});
-
-RecurrenceRule.belongsTo(Category, {
-  foreignKey: 'category_id',
-  as: 'Category'
-});
-
-RecurrenceRule.belongsTo(Bank, {
-  foreignKey: 'bank_id',
-  as: 'Bank'
-});
-
-// RecurrenceException
+// RecurrenceRule-RecurrenceException
 RecurrenceRule.hasMany(RecurrenceException, {
   foreignKey: 'recurrence_id',
   as: 'exceptions'
 });
 RecurrenceException.belongsTo(RecurrenceRule, {
   foreignKey: 'recurrence_id',
-  as: 'rule'
+  as: 'RecurrenceRule'
+});
+
+// RecurrenceRule associations
+RecurrenceRule.belongsTo(Category, {
+  foreignKey: 'category_id',
+  as: 'Category'
+});
+RecurrenceRule.belongsTo(Bank, {
+  foreignKey: 'bank_id',
+  as: 'bank'
 });
 
 // UserTelegram

@@ -19,12 +19,12 @@ const UserTelegramModel = (sequelize) => {
     },
     telegram_id: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
       unique: true
     },
     chat_id: {
       type: DataTypes.STRING,
-      allowNull: false
+      allowNull: true
     },
     username: {
       type: DataTypes.STRING,
@@ -44,8 +44,11 @@ const UserTelegramModel = (sequelize) => {
       defaultValue: false
     },
     verification_code: {
-      type: DataTypes.STRING,
-      allowNull: true
+      type: DataTypes.STRING(6),
+      allowNull: true,
+      validate: {
+        is: /^\d{6}$/
+      }
     },
     verification_expires: {
       type: DataTypes.DATE,
@@ -53,7 +56,16 @@ const UserTelegramModel = (sequelize) => {
     }
   }, {
     timestamps: true,
-    tableName: 'user_telegram'
+    tableName: 'user_telegram',
+    indexes: [
+      {
+        unique: true,
+        fields: ['user_id', 'verification_code'],
+        where: {
+          is_verified: false
+        }
+      }
+    ]
   });
 
   return UserTelegram;

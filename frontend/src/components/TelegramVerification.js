@@ -20,7 +20,7 @@ const TelegramVerification = ({
       </div>
       <div className={styles.cardBody}>
         <div className={styles.communicationSection}>
-          <h3>Usar Telegram para adicionar gastos rapidamente</h3>
+          <h3>Usar Telegram para adicionar despesas rapidamente</h3>
           <div className={styles.telegramSection}>
             <div className={styles.telegramHeader}>
               <div className={styles.telegramStatus}>

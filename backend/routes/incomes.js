@@ -6,7 +6,7 @@ import { Op } from 'sequelize';
 import { authenticate } from '../middleware/auth.js';
 import { Sequelize } from 'sequelize';
 
-// Listar todas as ganhos do usuário
+// Listar todas as receitas do usuário
 router.get('/', authenticate, async (req, res) => {
   try {
     const { months, years, description, category_id, is_recurring } = req.query;
@@ -57,7 +57,7 @@ router.get('/', authenticate, async (req, res) => {
 
     console.log('Filtros aplicados:', where);
 
-    // Buscar todas as ganhos
+    // Buscar todas as receitas
     const incomes = await Income.findAll({
       where,
       attributes: [
@@ -70,16 +70,8 @@ router.get('/', authenticate, async (req, res) => {
         'recurrence_type'
       ],
       include: [
-        { 
-          model: Category,
-          as: 'Category',
-          attributes: ['id', 'category_name', 'type']
-        },
-        { 
-          model: Bank,
-          as: 'Bank',
-          attributes: ['id', 'name']
-        }
+        { model: Category, as: 'Category' },
+        { model: Bank, as: 'bank' }
       ],
       order: [['date', 'DESC']]
     });
@@ -118,9 +110,9 @@ router.get('/', authenticate, async (req, res) => {
       };
     });
 
-    console.log('Total de ganhos encontradas:', incomesWithRecurring.length);
-    console.log('Ganhos recorrentes:', incomesWithRecurring.filter(i => i.is_recurring).length);
-    console.log('Ganhos não recorrentes:', incomesWithRecurring.filter(i => !i.is_recurring).length);
+    console.log('Total de receitas encontradas:', incomesWithRecurring.length);
+    console.log('Receitas recorrentes:', incomesWithRecurring.filter(i => i.is_recurring).length);
+    console.log('Receitas não recorrentes:', incomesWithRecurring.filter(i => !i.is_recurring).length);
 
     res.json({
       incomes: incomesWithRecurring,
@@ -142,8 +134,8 @@ router.get('/', authenticate, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Erro ao buscar ganhos:', error);
-    res.status(500).json({ message: 'Erro ao buscar ganhos' });
+    console.error('Erro ao buscar receitas:', error);
+    res.status(500).json({ message: 'Erro ao buscar receitas' });
   }
 });
 
@@ -170,7 +162,7 @@ router.post('/', authenticate, async (req, res) => {
 
     if (is_recurring && !recurrence_type) {
       await t.rollback();
-      return res.status(400).json({ message: 'Para ganhos recorrentes, a periodicidade é obrigatória' });
+      return res.status(400).json({ message: 'Para receitas recorrentes, a periodicidade é obrigatória' });
     }
 
     const parsedAmount = Number(rawAmount);
@@ -332,7 +324,7 @@ router.put('/:id', authenticate, async (req, res) => {
         new_end_date: newEndDate
       });
 
-      // Primeiro, busca todos os ganhos do grupo
+      // Primeiro, busca todos os receitas do grupo
       const allGroupIncomes = await Income.findAll({
         where: {
           recurring_group_id: income.recurring_group_id,
@@ -342,7 +334,7 @@ router.put('/:id', authenticate, async (req, res) => {
         transaction: t
       });
 
-      // Atualiza os dados básicos em todos os ganhos existentes
+      // Atualiza os dados básicos em todos os receitas existentes
       await Income.update(
         {
           description,
@@ -364,7 +356,7 @@ router.put('/:id', authenticate, async (req, res) => {
         }
       );
 
-      // Remove ganhos que estão fora do novo período
+      // Remove receitas que estão fora do novo período
       await Income.destroy({
         where: {
           recurring_group_id: income.recurring_group_id,
@@ -385,7 +377,7 @@ router.put('/:id', authenticate, async (req, res) => {
         transaction: t
       });
 
-      // Cria novos ganhos para as novas datas
+      // Cria novos receitas para as novas datas
       let currentDate = new Date(newStartDate);
       currentDate.setDate(newStartDate.getDate()); // Mantém o mesmo dia do mês
 
@@ -415,7 +407,7 @@ router.put('/:id', authenticate, async (req, res) => {
         currentDate.setMonth(currentDate.getMonth() + 1);
       }
 
-      // Busca todos os ganhos atualizados para verificar
+      // Busca todos os receitas atualizados para verificar
       const updatedIncomes = await Income.findAll({
         where: {
           recurring_group_id: income.recurring_group_id,
@@ -425,7 +417,7 @@ router.put('/:id', authenticate, async (req, res) => {
         transaction: t
       });
 
-      console.log('Ganhos atualizados:', updatedIncomes.map(inc => ({
+      console.log('Receitas atualizados:', updatedIncomes.map(inc => ({
         id: inc.id,
         date: inc.date,
         start_date: inc.start_date,
@@ -518,7 +510,7 @@ router.put('/:id', authenticate, async (req, res) => {
   }
 });
 
-// Excluir ganhos em lote
+// Excluir receitas em lote
 router.delete('/bulk', authenticate, async (req, res) => {
   const transaction = await Income.sequelize.transaction();
   console.log('Iniciando deleção em lote');
@@ -532,7 +524,7 @@ router.delete('/bulk', authenticate, async (req, res) => {
 
     console.log('IDs para deleção:', ids);
 
-    // Faz uma única chamada para deletar todas as ganhos
+    // Faz uma única chamada para deletar todas as receitas
     const deletedCount = await Income.destroy({
       where: {
         id: { [Op.in]: ids },
@@ -543,7 +535,7 @@ router.delete('/bulk', authenticate, async (req, res) => {
     });
 
     await transaction.commit();
-    console.log(`${deletedCount} ganhos deletadas com sucesso`);
+    console.log(`${deletedCount} receitas deletadas com sucesso`);
     res.json({ 
       message: `${deletedCount} ganho(s) deletada(s) com sucesso`,
       count: deletedCount
@@ -553,7 +545,7 @@ router.delete('/bulk', authenticate, async (req, res) => {
     await transaction.rollback();
     console.error('Erro na deleção em lote:', error);
     res.status(500).json({ 
-      message: 'Erro ao deletar ganhos',
+      message: 'Erro ao deletar receitas',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
@@ -579,7 +571,7 @@ router.delete('/:id', authenticate, async (req, res) => {
 
     if (income.is_recurring) {
       if (delete_all === 'true') {
-        // Excluir todas as ganhos do grupo
+        // Excluir todas as receitas do grupo
         await Income.destroy({
           where: {
             recurring_group_id: income.recurring_group_id,
@@ -588,7 +580,7 @@ router.delete('/:id', authenticate, async (req, res) => {
           transaction: t
         });
       } else if (delete_future === 'true') {
-        // Excluir todas as ganhos futuras do mesmo grupo (incluindo a atual)
+        // Excluir todas as receitas futuras do mesmo grupo (incluindo a atual)
         await Income.destroy({
           where: {
             recurring_group_id: income.recurring_group_id,
@@ -600,7 +592,7 @@ router.delete('/:id', authenticate, async (req, res) => {
           transaction: t
         });
       } else if (delete_past === 'true') {
-        // Excluir todas as ganhos passadas do mesmo grupo (incluindo a atual)
+        // Excluir todas as receitas passadas do mesmo grupo (incluindo a atual)
         await Income.destroy({
           where: {
             recurring_group_id: income.recurring_group_id,

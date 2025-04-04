@@ -12,7 +12,7 @@ export const sendVerificationEmail = async (email, code) => {
   const msg = {
     to: email,
     from: process.env.SENDGRID_FROM_EMAIL,
-    subject: 'Código de Verificação - Planejador de Gastos das Galáxias',
+    subject: 'Código de Verificação - Planejador de Despesas das Galáxias',
     text: `Seu código de verificação é: ${code}\n\nUse o comando /verificar ${code} no bot do Telegram para vincular sua conta.\n\nEste código expira em 10 minutos.`,
     html: `
       <h2>Código de Verificação</h2>

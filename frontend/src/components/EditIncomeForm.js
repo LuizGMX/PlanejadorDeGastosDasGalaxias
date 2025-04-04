@@ -123,7 +123,7 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
         bank_id = Number(bank_id);
       }
 
-      // Define as datas para ganhos fixos
+      // Define as datas para receitas fixos
       let start_date = formData.start_date;
       let end_date = formData.end_date;
       

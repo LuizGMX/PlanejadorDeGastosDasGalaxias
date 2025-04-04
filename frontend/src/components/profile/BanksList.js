@@ -118,8 +118,16 @@ const BanksList = ({ auth, setMessage, setError }) => {
           banksResponse.json(),
           favoritesResponse.json()
         ]);
+        
         setBanks(allBanks);
-        setSelectedBanks(favorites.map(bank => bank.id));
+        
+        // Filtrar apenas os bancos ativos da resposta da API
+        const activeBankIds = favorites
+          .filter(bank => bank.is_active)
+          .map(bank => bank.id);
+        
+        console.log('Bancos ativos recebidos:', activeBankIds);
+        setSelectedBanks(activeBankIds);
       } catch (error) {
         console.error('Erro ao carregar bancos:', error);
       }
@@ -129,6 +137,17 @@ const BanksList = ({ auth, setMessage, setError }) => {
 
   const selectBank = useCallback(async (bankId) => {
     try {
+      // Verificar status atual do banco antes de fazer a chamada à API
+      const currentlySelected = selectedBanks.includes(bankId);
+      const newStatus = !currentlySelected;
+      
+      console.log(`Alterando banco ${bankId}: de ${currentlySelected ? 'ativo' : 'inativo'} para ${newStatus ? 'ativo' : 'inativo'}`);
+      
+      // Atualizar a UI imediatamente para feedback instantâneo
+      setSelectedBanks(prev =>
+        prev.includes(bankId) ? prev.filter(id => id !== bankId) : [...prev, bankId]
+      );
+      
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/banks/favorites`, {
         method: 'POST',
         headers: {
@@ -137,15 +156,25 @@ const BanksList = ({ auth, setMessage, setError }) => {
         },
         body: JSON.stringify({
           bank_id: bankId,
-          is_active: !selectedBanks.includes(bankId)
+          is_active: newStatus
         })
       });
-      if (!response.ok) throw new Error('Erro ao atualizar bancos favoritos');
-      setSelectedBanks(prev =>
-        prev.includes(bankId) ? prev.filter(id => id !== bankId) : [...prev, bankId]
-      );
+      
+      if (!response.ok) {
+        // Se houver erro, reverter a alteração na UI
+        setSelectedBanks(prev =>
+          currentlySelected ? [...prev, bankId] : prev.filter(id => id !== bankId)
+        );
+        throw new Error('Erro ao atualizar bancos favoritos');
+      }
+      
+      // Ler a resposta para confirmar a atualização
+      const result = await response.json();
+      console.log('Resposta da API:', result);
+      
       setMessage({ type: 'success', text: 'Favoritos atualizados!' });
     } catch (error) {
+      console.error('Erro ao atualizar favoritos:', error);
       setError('Erro ao atualizar bancos favoritos');
     }
   }, [auth.token, selectedBanks, setMessage, setError]);
@@ -192,7 +221,7 @@ const BanksList = ({ auth, setMessage, setError }) => {
       </div>
       <div className={styles.cardBody}>
         <p className={styles.banksDescription}>
-          Selecione os bancos que você utiliza para gerenciar seus gastos.
+          Selecione os bancos que você utiliza para gerenciar seus despesas.
         </p>
         <div className={styles.searchContainer}>
           <input

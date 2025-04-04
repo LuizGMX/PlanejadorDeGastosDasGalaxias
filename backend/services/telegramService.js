@@ -231,7 +231,7 @@ export class TelegramService {
 
       // Solicita o código de verificação
       ctx.reply(
-        'Bem-vindo ao Planejador de Gastos das Galáxias! 🚀\n\n' +
+        'Bem-vindo ao Planejador de Despesas das Galáxias! 🚀\n\n' +
         'Para conectar sua conta, você vai precisar seguir dois passos simples:\n\n' +
         '1. Digite /verificar\n' +
         '2. Quando solicitado, envie o código de verificação que você recebeu no site\n\n' +
@@ -246,127 +246,83 @@ export class TelegramService {
   async handleVerify(ctx) {
     try {
       const chatId = ctx.chat.id;
-      const messageText = ctx.message.text.trim();
-      const parts = messageText.split(' ');
-      
-      // Verifica se o usuário está tentando enviar o código junto com o comando
-      if (parts.length > 1) {
-        ctx.reply(
-          'Agora você só precisa digitar /verificar sem adicionar o código.\n' +
-          'Eu vou solicitar o código em seguida.'
-        );
+      const user = await User.findOne({
+        where: { telegram_chat_id: chatId }
+      });
+
+      if (user) {
+        ctx.reply('Sua conta já está verificada! 🎉');
         return;
       }
-      
-      // Configura o estado do usuário para esperar o código
-      this.userStates.set(chatId, {
-        state: 'AWAITING_VERIFICATION_CODE',
-        timestamp: Date.now()
-      });
-      
-      // Solicita o código
-      ctx.reply(
-        'Por favor, digite seu código de verificação:'
-      );
+
+      await this.setUserState(chatId, 'AWAITING_VERIFICATION_CODE');
+      ctx.reply('Por favor, digite o código de verificação que você gerou no site.');
     } catch (error) {
-      console.error('Erro ao processar comando de verificação:', error);
-      ctx.reply('Ops! Ocorreu um erro ao processar o comando. Tente novamente mais tarde.');
+      console.error('Erro ao iniciar verificação:', error);
+      ctx.reply('Desculpe, ocorreu um erro ao iniciar a verificação. Por favor, tente novamente.');
     }
   }
 
   async handleMessage(ctx) {
     try {
       const chatId = ctx.chat.id;
-      const messageText = ctx.message.text;
-      
-      // Ignorar comandos
-      if (messageText.startsWith('/')) {
-        return;
-      }
-      
-      // Obter o estado atual do usuário
       const userState = await this.getUserState(chatId);
-      
+
       if (!userState) {
-        // Usuário não tem um estado ativo
-        ctx.reply(
-          'Não entendi o que você quis dizer.\n' +
-          'Use /help para ver os comandos disponíveis.'
-        );
         return;
       }
-      
-      // Verificar se o usuário está aguardando fornecer um código
+
       if (userState.state === 'AWAITING_VERIFICATION_CODE') {
-        const code = messageText.trim();
-        
-        // Valida o formato do código (apenas números e tamanho correto)
-        if (!/^\d{6}$/.test(code)) {
-          ctx.reply(
-            'O código deve conter exatamente 6 dígitos numéricos.\n' +
-            'Por favor, tente novamente.'
-          );
-          return;
-        }
-        
+        const code = ctx.message.text.trim();
+
         // Busca o código de verificação
         const verificationCode = await VerificationCode.findOne({
           where: {
             code: code,
             expires_at: {
               [Op.gt]: new Date()
-            }
+            },
+            used: false
           }
         });
 
         if (!verificationCode) {
-          ctx.reply(
-            'Código inválido ou expirado.\n\n' +
-            'Acesse o site para gerar um novo código.'
-          );
+          ctx.reply('Código inválido ou expirado. Por favor, gere um novo código no site.');
           return;
         }
 
-        // Busca o usuário associado ao código
+        // Busca o usuário pelo email
         const user = await User.findOne({
-          where: { email: verificationCode.email }
+          where: {
+            email: verificationCode.email
+          }
         });
 
         if (!user) {
-          ctx.reply('Usuário não encontrado. Por favor, faça o cadastro no site primeiro.');
+          ctx.reply('Usuário não encontrado. Por favor, tente novamente.');
           return;
         }
 
         // Atualiza o usuário com os dados do Telegram
         await user.update({
           telegram_chat_id: chatId,
-          telegram_username: ctx.from.username,
+          telegram_username: ctx.from.username || null,
           telegram_verified: true
         });
 
-        // Remove o código de verificação após o uso
-        await verificationCode.destroy();
-        
-        // Limpa o estado do usuário
-        this.userStates.delete(chatId);
+        // Marca o código como usado
+        await verificationCode.update({
+          used: true
+        });
 
-        ctx.reply(
-          '🎉 Conta conectada com sucesso!\n\n' +
-          'Agora você pode:\n' +
-          '- Registrar despesas com /despesa\n' +
-          '- Registrar receitas com /receita\n' +
-          '- Ver seu resumo financeiro com /resumo\n\n' +
-          'Use /help para ver todos os comandos disponíveis.'
-        );
-        
-        return;
+        // Limpa o estado do usuário
+        await this.clearUserState(chatId);
+
+        ctx.reply('Conta verificada com sucesso! 🎉\nAgora você pode usar os comandos do bot.');
       }
-      
-      // Processa outros estados aqui...
-      
     } catch (error) {
       console.error('Erro ao processar mensagem:', error);
-      ctx.reply('Ops! Ocorreu um erro ao processar sua mensagem. Tente novamente mais tarde.');
+      ctx.reply('Desculpe, ocorreu um erro ao processar sua mensagem. Por favor, tente novamente.');
     }
   }
 
@@ -374,11 +330,39 @@ export class TelegramService {
     try {
       const chatId = ctx.chat.id;
       const user = await User.findOne({
-        where: { telegram_chat_id: chatId }
+        where: { telegram_chat_id: chatId, telegram_verified: true }
       });
 
       if (!user) {
         ctx.reply('Você precisa vincular sua conta primeiro. Use /start para começar.');
+        return;
+      }
+      
+      // Verificar se o usuário tem pelo menos um banco ativo
+      const hasActiveBanks = await UserBank.count({
+        where: { 
+          user_id: user.id,
+          is_active: true
+        }
+      }) > 0;
+      
+      if (!hasActiveBanks) {
+        // Verificar se tem bancos inativos
+        const inactiveBanks = await UserBank.count({
+          where: { 
+            user_id: user.id,
+            is_active: false
+          }
+        });
+        
+        let message = '❌ Você não tem bancos ativos cadastrados.\n';
+        
+        if (inactiveBanks > 0) {
+          message += 'Você possui bancos inativos que podem ser reativados.\n';
+        }
+        
+        message += 'Acesse o site em "Perfil > Bancos" para adicionar ou ativar bancos à sua conta.';
+        ctx.reply(message);
         return;
       }
 
@@ -398,11 +382,39 @@ export class TelegramService {
     try {
       const chatId = ctx.chat.id;
       const user = await User.findOne({
-        where: { telegram_chat_id: chatId }
+        where: { telegram_chat_id: chatId, telegram_verified: true }
       });
 
       if (!user) {
         ctx.reply('Você precisa vincular sua conta primeiro. Use /start para começar.');
+        return;
+      }
+      
+      // Verificar se o usuário tem pelo menos um banco ativo
+      const hasActiveBanks = await UserBank.count({
+        where: { 
+          user_id: user.id,
+          is_active: true
+        }
+      }) > 0;
+      
+      if (!hasActiveBanks) {
+        // Verificar se tem bancos inativos
+        const inactiveBanks = await UserBank.count({
+          where: { 
+            user_id: user.id,
+            is_active: false
+          }
+        });
+        
+        let message = '❌ Você não tem bancos ativos cadastrados.\n';
+        
+        if (inactiveBanks > 0) {
+          message += 'Você possui bancos inativos que podem ser reativados.\n';
+        }
+        
+        message += 'Acesse o site em "Perfil > Bancos" para adicionar ou ativar bancos à sua conta.';
+        ctx.reply(message);
         return;
       }
 
@@ -495,13 +507,54 @@ ${balance >= 0
 
   async handleHelp(ctx) {
     try {
-      ctx.reply(
-        'Comandos disponíveis:\n\n' +
-        '/start - Iniciar o bot\n' +
-        '/verificar - Verificar sua conta\n' +
-        '/bancos - Listar seus bancos cadastrados\n' +
-        '/help - Mostrar esta ajuda'
-      );
+      const chatId = ctx.chat.id;
+      
+      // Verifica se o usuário está autenticado
+      const user = await User.findOne({
+        where: { 
+          telegram_chat_id: chatId,
+          telegram_verified: true
+        }
+      });
+      
+      if (!user) {
+        // Usuário não autenticado - mostrar comandos básicos
+        ctx.reply(
+          '🚀 Comandos disponíveis:\n\n' +
+          '/start - Iniciar o bot\n' +
+          '/verificar - Verificar sua conta\n' +
+          '/help - Mostrar esta ajuda'
+        );
+        return;
+      }
+      
+      // Usuário autenticado - verificar se tem bancos ativos
+      const hasActiveBanks = await UserBank.count({
+        where: { 
+          user_id: user.id,
+          is_active: true
+        }
+      }) > 0;
+      
+      // Montar a lista de comandos disponíveis
+      let message = '🚀 Comandos disponíveis:\n\n';
+      
+      // Comandos básicos para todos os usuários autenticados
+      message += '/bancos - Listar seus bancos cadastrados\n';
+      message += '/help - Mostrar esta ajuda\n';
+      
+      // Comandos que requerem bancos ativos
+      if (hasActiveBanks) {
+        message += '\n📊 Comandos financeiros:\n';
+        message += '/despesa - Registrar uma nova despesa\n';
+        message += '/receita - Registrar uma nova receita\n';
+        message += '/resumo - Ver resumo financeiro do mês\n';
+      } else {
+        message += '\n⚠️ Para acessar mais comandos, você precisa ter pelo menos um banco ativo.\n';
+        message += 'Acesse o site em "Perfil > Bancos" para ativar seus bancos.';
+      }
+      
+      ctx.reply(message);
     } catch (error) {
       console.error('Erro ao processar comando de ajuda:', error);
       ctx.reply('Ops! Ocorreu um erro ao processar o comando. Tente novamente mais tarde.');
@@ -569,16 +622,63 @@ ${balance >= 0
 
     const category = userState.data.categories[choice];
 
-    await this.setUserState(ctx.chat.id, 'AWAITING_EXPENSE_BANK', {
-      ...userState.data,
-      category_id: category.id,
-      category_name: category.category_name
-    });
+    // Busca os bancos ativos do usuário
+    console.log(`Buscando bancos ativos para despesa - usuário ${user.id}...`);
     
-    await this.sendMessage(
-      ctx.chat.id,
-      'Selecione o banco/cartão:'
-    );
+    try {
+      const userBanks = await UserBank.findAll({
+        where: { 
+          user_id: user.id,
+          is_active: true
+        },
+        include: [{
+          model: Bank,
+          as: 'bank'
+        }]
+      });
+
+      console.log(`Total de bancos ativos encontrados para despesa: ${userBanks ? userBanks.length : 0}`);
+
+      if (!userBanks || userBanks.length === 0) {
+        // Verificar se há bancos inativos
+        const inactiveBanks = await UserBank.findAll({
+          where: { 
+            user_id: user.id,
+            is_active: false
+          }
+        });
+        
+        let message = '❌ Você não tem bancos ativos cadastrados.\n';
+        
+        if (inactiveBanks && inactiveBanks.length > 0) {
+          message += 'Você possui bancos inativos que podem ser reativados.\n';
+        }
+        
+        message += 'Acesse o site em "Perfil > Bancos" para adicionar ou ativar bancos à sua conta.';
+        ctx.reply(message);
+        return;
+      }
+
+      const banksMessage = userBanks
+        .map((userBank, index) => `${index + 1}. ${userBank.bank.name}`)
+        .join('\n');
+
+      await this.setUserState(ctx.chat.id, 'AWAITING_EXPENSE_BANK', {
+        ...userState.data,
+        category_id: category.id,
+        category_name: category.name,
+        banks: userBanks.map(userBank => ({
+          id: userBank.bank.id,
+          name: userBank.bank.name,
+          code: userBank.bank.code
+        }))
+      });
+      
+      ctx.reply(`🏦 Selecione o banco para a despesa:\n\n${banksMessage}`);
+    } catch (error) {
+      console.error('Erro ao buscar bancos ativos para despesa:', error);
+      ctx.reply('❌ Erro ao buscar seus bancos. Por favor, tente novamente mais tarde.');
+    }
   }
 
   async handleExpenseBank(ctx, user, userState) {
@@ -755,16 +855,63 @@ Digite SIM para confirmar ou NÃO para cancelar.
 
     const category = userState.data.categories[choice];
 
-    await this.setUserState(ctx.chat.id, 'AWAITING_INCOME_BANK', {
-      ...userState.data,
-      category_id: category.id,
-      category_name: category.name
-    });
+    // Busca os bancos ativos do usuário
+    console.log(`Buscando bancos ativos para receita - usuário ${user.id}...`);
     
-    await this.sendMessage(
-      ctx.chat.id,
-      'Selecione o banco/cartão:'
-    );
+    try {
+      const userBanks = await UserBank.findAll({
+        where: { 
+          user_id: user.id,
+          is_active: true
+        },
+        include: [{
+          model: Bank,
+          as: 'bank'
+        }]
+      });
+
+      console.log(`Total de bancos ativos encontrados para receita: ${userBanks ? userBanks.length : 0}`);
+
+      if (!userBanks || userBanks.length === 0) {
+        // Verificar se há bancos inativos
+        const inactiveBanks = await UserBank.findAll({
+          where: { 
+            user_id: user.id,
+            is_active: false
+          }
+        });
+        
+        let message = '❌ Você não tem bancos ativos cadastrados.\n';
+        
+        if (inactiveBanks && inactiveBanks.length > 0) {
+          message += 'Você possui bancos inativos que podem ser reativados.\n';
+        }
+        
+        message += 'Acesse o site em "Perfil > Bancos" para adicionar ou ativar bancos à sua conta.';
+        ctx.reply(message);
+        return;
+      }
+
+      const banksMessage = userBanks
+        .map((userBank, index) => `${index + 1}. ${userBank.bank.name}`)
+        .join('\n');
+
+      await this.setUserState(ctx.chat.id, 'AWAITING_INCOME_BANK', {
+        ...userState.data,
+        category_id: category.id,
+        category_name: category.name,
+        banks: userBanks.map(userBank => ({
+          id: userBank.bank.id,
+          name: userBank.bank.name,
+          code: userBank.bank.code
+        }))
+      });
+      
+      ctx.reply(`🏦 Selecione o banco para a receita:\n\n${banksMessage}`);
+    } catch (error) {
+      console.error('Erro ao buscar bancos ativos para receita:', error);
+      ctx.reply('❌ Erro ao buscar seus bancos. Por favor, tente novamente mais tarde.');
+    }
   }
 
   async handleIncomeBank(ctx, user, userState) {
@@ -830,7 +977,7 @@ Digite SIM para confirmar ou NÃO para cancelar.
     try {
       const chatId = ctx.chat.id;
       
-      // Busca o usuário pelo chat ID
+      // Busca o usuário pelo chat ID com seus bancos relacionados
       const user = await User.findOne({
         where: { 
           telegram_chat_id: chatId,
@@ -845,39 +992,57 @@ Digite SIM para confirmar ou NÃO para cancelar.
         );
         return;
       }
+
+      console.log(`Buscando bancos para listagem - usuário ${user.id}...`);
       
-      // Busca os bancos associados ao usuário através da relação UserBank
+      // Busca os bancos através da tabela de relacionamento - APENAS ATIVOS
       const userBanks = await UserBank.findAll({
-        where: { user_id: user.id },
+        where: { 
+          user_id: user.id,
+          is_active: true
+        },
         include: [{
           model: Bank,
-          required: true
+          as: 'bank'
         }]
       });
+
+      console.log(`Total de bancos encontrados para listagem: ${userBanks ? userBanks.length : 0}`);
       
       if (!userBanks || userBanks.length === 0) {
-        ctx.reply(
-          'Você não tem bancos cadastrados.\n' +
-          'Acesse o site para adicionar bancos à sua conta.'
-        );
+        // Verifica se há bancos inativos para exibir uma mensagem mais precisa
+        const inactiveBanks = await UserBank.findAll({
+          where: { 
+            user_id: user.id,
+            is_active: false
+          },
+          include: [{
+            model: Bank
+          }]
+        });
+        
+        console.log(`Bancos inativos encontrados para listagem: ${inactiveBanks ? inactiveBanks.length : 0}`);
+        
+        let message = '❌ Você não tem bancos ativos cadastrados.\n';
+        
+        if (inactiveBanks && inactiveBanks.length > 0) {
+          message += 'Você possui bancos inativos que podem ser reativados.\n';
+          console.log('Bancos inativos existentes:', JSON.stringify(inactiveBanks.map(b => b.bank?.name), null, 2));
+        }
+        
+        message += 'Acesse o site em "Perfil > Bancos" para adicionar ou ativar bancos à sua conta.';
+        ctx.reply(message);
         return;
       }
       
       // Formata a mensagem com os bancos
-      let message = '🏦 *Seus Bancos Cadastrados*\n\n';
+      let message = '🏦 *Seus Bancos Ativos*\n\n';
       
       userBanks.forEach((userBank, index) => {
-        message += `${index + 1}. *${userBank.Bank.name}* (${userBank.Bank.code})`;
-        if (userBank.account_number) {
-          message += ` - Conta: ${userBank.account_number}`;
-        }
-        if (userBank.agency) {
-          message += ` - Agência: ${userBank.agency}`;
-        }
-        message += '\n';
+        message += `${index + 1}. *${userBank.bank.name}* (${userBank.bank.code})\n`;
       });
       
-      message += '\nPara adicionar ou remover bancos, acesse o site.';
+      message += '\nPara adicionar ou remover bancos, acesse o site em "Perfil > Bancos".';
       
       // Envia a mensagem formatada
       ctx.replyWithMarkdown(message);

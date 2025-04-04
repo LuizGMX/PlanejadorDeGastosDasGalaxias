@@ -3,6 +3,8 @@ import { authenticate } from '../middleware/auth.js';
 import RecurrenceRule from '../models/recurrenceRule.js';
 import RecurrenceException from '../models/recurrenceException.js ';
 import { calculateOccurrences } from '../utils/recurrenceCalculator.js';
+import Category from '../models/category.js';
+import Bank from '../models/bank.js';
 
 const router = express.Router();
 
@@ -50,7 +52,11 @@ router.get('/', authenticate, async (req, res) => {
   try {
     const rules = await RecurrenceRule.findAll({
       where: { user_id: req.user.id },
-      include: [RecurrenceException]
+      include: [
+        { model: Category, as: 'Category' },
+        { model: Bank, as: 'bank' },
+        { model: RecurrenceException, as: 'exceptions' }
+      ]
     });
 
     res.json(rules);

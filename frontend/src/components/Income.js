@@ -63,6 +63,12 @@ const Income = () => {
   const [categories, setCategories] = useState([]);
   const [banks, setBanks] = useState([]);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [showFilters, setShowFilters] = useState(!isMobile);
+  const [expandedCardDetails, setExpandedCardDetails] = useState({});
+  const [activeSwipeCard, setActiveSwipeCard] = useState(null);
+  const [touchStartX, setTouchStartX] = useState(0);
+  const [touchCurrentX, setTouchCurrentX] = useState(0);
 
   // Lista de anos para o filtro
   const years = Array.from(
@@ -129,6 +135,7 @@ const Income = () => {
 
   const fetchIncomes = async () => {
     try {
+      console.log('Fetching incomes with filters:', filters);
       const queryParams = new URLSearchParams();
       
       // Adiciona meses e anos como arrays
@@ -140,38 +147,70 @@ const Income = () => {
       if (filters.description) queryParams.append('description', filters.description);
       if (filters.is_recurring !== '') queryParams.append('is_recurring', filters.is_recurring);
 
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/incomes?${queryParams}`, {
+      const url = `${process.env.REACT_APP_API_URL}/api/incomes?${queryParams}`;
+      console.log('Fetching from URL:', url);
+      
+      const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${auth.token}`
         }
       });
       
       if (response.status === 401) {
+        console.log('Unauthorized, redirecting to login');
         navigate('/login');
         return;
       }
       
       if (!response.ok) {
-        throw new Error('Erro ao carregar ganhos');
+        console.error('Response not OK:', response.status, response.statusText);
+        throw new Error('Erro ao carregar receitas');
       }
       
       const data = await response.json();
-      const incomesData = data.incomes || [];
+      console.log('Received data structure:', {
+        hasIncomes: !!data.incomes,
+        incomesIsArray: Array.isArray(data.incomes),
+        incomesLength: data.incomes ? data.incomes.length : 0,
+        metadata: data.metadata,
+        incomesSample: data.incomes && data.incomes.length > 0 ? data.incomes[0] : null
+      });
+      
+      // Adiciona verificação para garantir que os objetos relacionados existam
+      const incomesData = (data.incomes || []).map(income => ({
+        ...income,
+        Category: income.Category || {},
+        Bank: income.Bank || {}
+      }));
+      
       setIncomes(incomesData);
+      console.log('Set incomes:', incomesData.length, 'items');
       setSelectedIncomes([]);
       setMetadata(data.metadata || { filters: { categories: [], recurring: [] }, total: 0 });
 
-      // Define a mensagem quando não há ganhos
+      // Define a mensagem quando não há receitas
       if (!incomesData || incomesData.length === 0) {
-        setNoIncomesMessage({
+        console.log('No incomes found, setting message');
+        // Verifica se há filtros ativos
+        const hasActiveFilters = filters.months.length !== 1 || 
+                                filters.years.length !== 1 || 
+                                filters.category_id !== '' || 
+                                filters.description !== '' || 
+                                filters.is_recurring !== '';
+
+        setNoIncomesMessage(hasActiveFilters ? {
           message: 'Nenhum ganho encontrado para os filtros selecionados.',
           suggestion: 'Tente ajustar os filtros para ver mais resultados.'
+        } : {
+          message: 'Você ainda não tem receitas cadastradas para este período.',
+          suggestion: 'Que tal começar adicionando seu primeiro ganho?'
         });
       } else {
         setNoIncomesMessage(null);
       }
     } catch (err) {
-      setError('Erro ao carregar ganhos');
+      console.error('Error fetching incomes:', err);
+      setError('Erro ao carregar receitas');
     } finally {
       setLoading(false);
     }
@@ -286,11 +325,11 @@ const Income = () => {
         type: 'recurring',
         showModal: true,
         options: [
-          { id: 'all', label: 'Excluir todos os ganhos fixos (passados e futuros)' },
-          { id: 'past', label: 'Excluir somente ganhos fixos passados' },
-          { id: 'future', label: 'Excluir somente ganhos fixos futuros' }
+          { id: 'all', label: 'Excluir todos os receitas fixos (passados e futuros)' },
+          { id: 'past', label: 'Excluir somente receitas fixos passados' },
+          { id: 'future', label: 'Excluir somente receitas fixos futuros' }
         ],
-        message: 'Para excluir um ganho fixo específico, encontre-o na lista de ganhos do mês desejado.'
+        message: 'Para excluir um ganho fixo específico, encontre-o na lista de receitas do mês desejado.'
       });
       return;
     }
@@ -306,7 +345,7 @@ const Income = () => {
         });
 
         if (!response.ok) {
-          throw new Error('Falha ao excluir ganhos');
+          throw new Error('Falha ao excluir receitas');
         }
 
         const data = await response.json();
@@ -328,7 +367,7 @@ const Income = () => {
           setDeleteSuccess(null);
         }, 3000);
 
-        // Recarrega a lista de ganhos
+        // Recarrega a lista de receitas
         await fetchIncomes();
         return;
       }
@@ -367,7 +406,7 @@ const Income = () => {
         setDeleteSuccess(null);
       }, 3000);
 
-      // Recarrega a lista de ganhos
+      // Recarrega a lista de receitas
       await fetchIncomes();
     } catch (error) {
       console.error('Erro ao excluir:', error);
@@ -507,6 +546,206 @@ const Income = () => {
     }
   };
 
+  // Add useEffect for detecting mobile screen size
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      console.log("Resize detected: Window width =", window.innerWidth, "isMobile =", mobile);
+      setIsMobile(mobile);
+      if (!mobile) {
+        setShowFilters(true);
+      }
+    };
+    
+    // Execute imediatamente para definir o estado inicial
+    handleResize();
+    
+    window.addEventListener('resize', handleResize);
+    
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Função para alternar detalhes do cartão em visualização mobile
+  const toggleCardDetails = (id) => {
+    setExpandedCardDetails(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+
+  // Funções para controlar o movimento de swipe em dispositivos móveis
+  const handleTouchStart = (id, e) => {
+    setTouchStartX(e.touches[0].clientX);
+    setTouchCurrentX(e.touches[0].clientX);
+    setActiveSwipeCard(id);
+  };
+
+  const handleTouchMove = (id, e) => {
+    if (activeSwipeCard === id) {
+      setTouchCurrentX(e.touches[0].clientX);
+    }
+  };
+
+  const handleTouchEnd = (id) => {
+    if (activeSwipeCard === id) {
+      setActiveSwipeCard(null);
+    }
+  };
+
+  // Função para renderizar cartões em visualização mobile
+  const renderMobileCards = () => {
+    if (incomes.length === 0) {
+      return (
+        <div className={dataTableStyles.noDataContainer}>
+          <BsCash className={dataTableStyles.noDataIcon} />
+          <h3 className={dataTableStyles.noDataMessage}>
+            {noIncomesMessage?.message || "Nenhum ganho encontrado para os filtros selecionados."}
+          </h3>
+          <p className={dataTableStyles.noDataSuggestion}>
+            {noIncomesMessage?.suggestion || "Tente ajustar os filtros ou adicionar um novo ganho."}
+          </p>
+        </div>
+      );
+    }
+    
+    return (
+      <div className={dataTableStyles.mobileCardView}>
+        {incomes.map((income) => {
+          const isExpanded = expandedCardDetails[income.id];
+          const isSwipeActive = activeSwipeCard === income.id;
+
+          return (
+            <div 
+              key={income.id} 
+              className={`${dataTableStyles.mobileCard} ${isSwipeActive ? dataTableStyles.mobileCardSwipeActive : ''}`}
+              onTouchStart={(e) => handleTouchStart(income.id, e)}
+              onTouchMove={(e) => handleTouchMove(income.id, e)}
+              onTouchEnd={() => handleTouchEnd(income.id)}
+            >
+              <div className={dataTableStyles.mobileCardSwipeState}>
+                <div className={dataTableStyles.mobileCardSelect}>
+                  <label className={dataTableStyles.checkboxContainer}>
+                    <input
+                      type="checkbox"
+                      checked={selectedIncomes.includes(income.id)}
+                      onChange={(e) => handleSelectIncome(income.id, e)}
+                      className={dataTableStyles.checkbox}
+                      disabled={income.is_recurring}
+                    />
+                    <span className={dataTableStyles.checkmark}></span>
+                  </label>
+                </div>
+                
+                <div className={dataTableStyles.mobileCardHeader}>
+                  <h3 className={dataTableStyles.mobileCardTitle}>{income.description}</h3>
+                  <span className={`${dataTableStyles.amountBadge} ${dataTableStyles.incomeAmount} ${dataTableStyles.mobileCardAmount}`}>
+                    R$ {Number(income.amount).toFixed(2)}
+                  </span>
+                </div>
+                
+                <div className={dataTableStyles.mobileCardDetails}>
+                  <div className={dataTableStyles.mobileCardDetail}>
+                    <span className={dataTableStyles.mobileCardLabel}>Data</span>
+                    <span className={dataTableStyles.mobileCardValue}>{formatDate(income.date)}</span>
+                  </div>
+                  
+                  <div className={dataTableStyles.mobileCardDetail}>
+                    <span className={dataTableStyles.mobileCardLabel}>Categoria</span>
+                    <span className={dataTableStyles.mobileCardValue}>{income.Category?.category_name || '-'}</span>
+                  </div>
+                  
+                  {(!isExpanded) ? (
+                    <>
+                      <div className={dataTableStyles.mobileCardDetail}>
+                        <span className={dataTableStyles.mobileCardLabel}>Banco</span>
+                        <span className={dataTableStyles.mobileCardValue}>
+                          {income.Bank?.name || '-'}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className={dataTableStyles.mobileCardDetail}>
+                        <span className={dataTableStyles.mobileCardLabel}>Banco</span>
+                        <span className={dataTableStyles.mobileCardValue}>
+                          {income.Bank?.name || '-'}
+                        </span>
+                      </div>
+                      
+                      <div className={dataTableStyles.mobileCardDetail}>
+                        <span className={dataTableStyles.mobileCardLabel}>Tipo</span>
+                        <span className={dataTableStyles.mobileCardValue}>
+                          {income.is_recurring ? 'Receita fixa' : 'Receita única'}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                </div>
+                
+                <div className={dataTableStyles.mobileCardActions}>
+                  <div className={dataTableStyles.mobileCardType}>
+                    {income.is_recurring ? (
+                      <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
+                        <BsRepeat /> Fixo
+                      </span>
+                    ) : (
+                      <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
+                        <BsCurrencyDollar /> Único
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className={dataTableStyles.mobileCardActionButtons}>
+                    <button 
+                      onClick={() => handleEditClick(income)} 
+                      className={dataTableStyles.actionButton}
+                      title="Editar"
+                    >
+                      <BsPencil />
+                    </button>
+                    <button 
+                      onClick={() => handleDeleteClick(income)} 
+                      className={`${dataTableStyles.actionButton} ${dataTableStyles.delete}`}
+                      title="Excluir"
+                    >
+                      <BsTrash />
+                    </button>
+                  </div>
+                </div>
+                
+                <button 
+                  className={dataTableStyles.mobileCardDetailToggle}
+                  onClick={() => toggleCardDetails(income.id)}
+                >
+                  {isExpanded ? (
+                    <>Mostrar Menos <BsChevronUp /></>
+                  ) : (
+                    <>Mostrar Mais <BsChevronDown /></>
+                  )}
+                </button>
+              </div>
+              
+              <div className={dataTableStyles.mobileCardSwipeActions}>
+                <div 
+                  className={dataTableStyles.mobileCardSwipeEdit}
+                  onClick={() => handleEditClick(income)}
+                >
+                  <BsPencil size={20} />
+                </div>
+                <div 
+                  className={dataTableStyles.mobileCardSwipeDelete}
+                  onClick={() => handleDeleteClick(income)}
+                >
+                  <BsTrash size={20} />
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   if (error) {
     return (
       <div className={dataTableStyles.container}>
@@ -519,8 +758,16 @@ const Income = () => {
 
   return (
     <div className={dataTableStyles.pageContainer}>
+      {console.log("Rendering Income component:", {
+        isMobile,
+        showFilters,
+        incomesCount: incomes.length,
+        loading,
+        hasError: !!error,
+        showNoIncomesMessage: !!noIncomesMessage
+      })}
       <div className={dataTableStyles.pageHeader}>
-        <h1 className={dataTableStyles.pageTitle}>Meus Ganhos</h1>
+        <h1 className={dataTableStyles.pageTitle}>Meus Receitas</h1>
         <button 
           onClick={() => navigate('/add-income')} 
           className={dataTableStyles.addButton}
@@ -530,7 +777,21 @@ const Income = () => {
       </div>
 
       <div className={dataTableStyles.dataContainer}>
-        <div className={dataTableStyles.filtersContainer}>
+        {isMobile && (
+          <button 
+            className={dataTableStyles.filterToggleButton} 
+            onClick={() => {
+              console.log("Toggling filters from", showFilters, "to", !showFilters);
+              setShowFilters(!showFilters);
+            }}
+          >
+            <BsFilter size={16} /> 
+            {showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}
+            {showFilters ? <BsChevronUp /> : <BsChevronDown />}
+          </button>
+        )}
+
+        <div className={`${dataTableStyles.filtersContainer} ${isMobile && !showFilters ? dataTableStyles.filtersCollapsed : ''} ${isMobile && showFilters ? dataTableStyles.filtersExpanded : ''}`} style={isMobile ? { display: showFilters ? 'flex' : 'none', flexDirection: 'column' } : {}}>
           {deleteSuccess && (
             <div className={dataTableStyles.successMessage}>
               {deleteSuccess.message} {deleteSuccess.count > 1 ? `(${deleteSuccess.count} itens)` : ''}
@@ -730,7 +991,7 @@ const Income = () => {
               <button
                 className={`${dataTableStyles.recurringButton} ${filters.is_recurring === 'true' ? dataTableStyles.active : ''}`}
                 onClick={() => handleFilterChange('is_recurring', filters.is_recurring === 'true' ? '' : 'true')}
-                title="Mostrar apenas ganhos fixos"
+                title="Mostrar apenas receitas fixos"
                 style={{ alignSelf: 'flex-end' }}
               >
                 <BsRepeat /> Fixos
@@ -740,7 +1001,7 @@ const Income = () => {
 
           {incomes.length > 0 && (
             <div className={dataTableStyles.totalInfo}>
-              <span>Total de ganhos para os filtros selecionados: </span>
+              <span>Total de receitas para os filtros selecionados: </span>
               <strong>{formatCurrency(incomes.reduce((acc, income) => acc + parseFloat(income.amount), 0))}</strong>
             </div>
           )}
@@ -760,9 +1021,9 @@ const Income = () => {
         {loading ? (
           <div className={dataTableStyles.loadingContainer}>
             <div className={dataTableStyles.loadingSpinner}></div>
-            <p>Carregando ganhos...</p>
+            <p>Carregando receitas...</p>
           </div>
-        ) : incomes.length === 0 ? (
+        ) : noIncomesMessage || incomes.length === 0 ? (
           <div className={dataTableStyles.noDataContainer}>
             <BsCash className={dataTableStyles.noDataIcon} />
             <h3 className={dataTableStyles.noDataMessage}>
@@ -795,98 +1056,106 @@ const Income = () => {
             </div>
           </div>
         ) : (
-          <div className={dataTableStyles.tableContainer}>
-            <table className={dataTableStyles.table}>
-              <thead>
-                <tr>
-                  <th width="40">
-                    <label className={dataTableStyles.checkboxContainer}>
-                      <input
-                        type="checkbox"
-                        checked={selectedIncomes.length === incomes.filter(i => !i.is_recurring).length && incomes.length > 0}
-                        onChange={handleSelectAll}
-                        className={dataTableStyles.checkbox}
-                      />
-                      <span className={dataTableStyles.checkmark}></span>
-                    </label>
-                  </th>
-                  <th>Descrição</th>
-                  <th>Valor</th>
-                  <th>Data</th>
-                  <th>Categoria</th>
-                  <th>Banco</th>
-                  <th>Tipo</th>
-                  <th width="100">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {incomes.map((income) => (
-                  <tr key={income.id} className={`${dataTableStyles.tableRow} ${selectedIncomes.includes(income.id) ? dataTableStyles.selected : ''}`}>
-                    <td>
-                      <label className={dataTableStyles.checkboxContainer}>
-                        <input
-                          type="checkbox"
-                          checked={selectedIncomes.includes(income.id)}
-                          onChange={(e) => handleSelectIncome(income.id, e)}
-                          className={dataTableStyles.checkbox}
-                          disabled={income.is_recurring}
-                        />
-                        <span className={dataTableStyles.checkmark}></span>
-                      </label>
-                    </td>
-                    <td>{income.description}</td>
-                    <td>
-                      <span className={`${dataTableStyles.amountBadge} ${dataTableStyles.incomeAmount}`}>
-                        R$ {Number(income.amount).toFixed(2)}
-                      </span>
-                    </td>
-                    <td>{formatDate(income.date)}</td>
-                    <td>
-                      <div className={dataTableStyles.cellWithIcon}>
-                        <BsFolderSymlink />
-                        {income.Category?.category_name || '-'}
-                      </div>
-                    </td>
-                    <td>
-                      <div className={dataTableStyles.cellWithIcon}>
-                        <BsBank2 />
-                        {income.Bank?.name || '-'}
-                      </div>
-                    </td>
-                    <td>
-                      {income.is_recurring ? (
-                        <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
-                          <BsRepeat /> Fixo
-                        </span>
-                      ) : (
-                        <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
-                          <BsCurrencyDollar /> Único
-                        </span>
-                      )}
-                    </td>
-                    <td>
-                      <div className={dataTableStyles.actionButtons}>
-                        <button 
-                          onClick={() => handleEditClick(income)} 
-                          className={dataTableStyles.actionButton}
-                          title="Editar"
-                        >
-                          <BsPencil />
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteClick(income)} 
-                          className={`${dataTableStyles.actionButton} ${dataTableStyles.delete}`}
-                          title="Excluir"
-                        >
-                          <BsTrash />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <>
+            {isMobile ? (
+              // Visualização mobile
+              renderMobileCards()
+            ) : (
+              // Visualização desktop
+              <div className={dataTableStyles.tableContainer} style={{ marginTop: '1rem' }}>
+                <table className={dataTableStyles.table}>
+                  <thead>
+                    <tr>
+                      <th width="40">
+                        <label className={dataTableStyles.checkboxContainer}>
+                          <input
+                            type="checkbox"
+                            checked={selectedIncomes.length === incomes.filter(i => !i.is_recurring).length && incomes.length > 0}
+                            onChange={handleSelectAll}
+                            className={dataTableStyles.checkbox}
+                          />
+                          <span className={dataTableStyles.checkmark}></span>
+                        </label>
+                      </th>
+                      <th>Descrição</th>
+                      <th>Valor</th>
+                      <th>Data</th>
+                      <th>Categoria</th>
+                      <th>Banco</th>
+                      <th>Tipo</th>
+                      <th width="100">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {incomes.map((income) => (
+                      <tr key={income.id} className={`${dataTableStyles.tableRow} ${selectedIncomes.includes(income.id) ? dataTableStyles.selected : ''}`}>
+                        <td>
+                          <label className={dataTableStyles.checkboxContainer}>
+                            <input
+                              type="checkbox"
+                              checked={selectedIncomes.includes(income.id)}
+                              onChange={(e) => handleSelectIncome(income.id, e)}
+                              className={dataTableStyles.checkbox}
+                              disabled={income.is_recurring}
+                            />
+                            <span className={dataTableStyles.checkmark}></span>
+                          </label>
+                        </td>
+                        <td>{income.description}</td>
+                        <td>
+                          <span className={`${dataTableStyles.amountBadge} ${dataTableStyles.incomeAmount}`}>
+                            R$ {Number(income.amount).toFixed(2)}
+                          </span>
+                        </td>
+                        <td>{formatDate(income.date)}</td>
+                        <td>
+                          <div className={dataTableStyles.cellWithIcon}>
+                            <BsFolderSymlink />
+                            {income.Category?.category_name || '-'}
+                          </div>
+                        </td>
+                        <td>
+                          <div className={dataTableStyles.cellWithIcon}>
+                            <BsBank2 />
+                            {income.Bank?.name || '-'}
+                          </div>
+                        </td>
+                        <td>
+                          {income.is_recurring ? (
+                            <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
+                              <BsRepeat /> Fixo
+                            </span>
+                          ) : (
+                            <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
+                              <BsCurrencyDollar /> Único
+                            </span>
+                          )}
+                        </td>
+                        <td>
+                          <div className={dataTableStyles.actionButtons}>
+                            <button 
+                              onClick={() => handleEditClick(income)} 
+                              className={dataTableStyles.actionButton}
+                              title="Editar"
+                            >
+                              <BsPencil />
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteClick(income)} 
+                              className={`${dataTableStyles.actionButton} ${dataTableStyles.delete}`}
+                              title="Excluir"
+                            >
+                              <BsTrash />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -899,7 +1168,7 @@ const Income = () => {
             top: messagePosition.y
           }}
         >
-          Para excluir ganhos recorrentes, use o botão
+          Para excluir receitas recorrentes, use o botão
           <BsTrash className={dataTableStyles.inlineIcon} />
         </div>
       )}

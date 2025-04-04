@@ -60,7 +60,7 @@ const Sidebar = ({ className }) => {
           icon: <BsPlusCircle size={18} />
         },
         // {
-        //   label: 'Editar Ganhos Recorrentes',
+        //   label: 'Editar Receitas Recorrentes',
         //   path: '/edit-recurring-incomes',
         //   icon: <BsPencil size={18} />
         // }
@@ -84,7 +84,7 @@ const Sidebar = ({ className }) => {
   return (
     <div className={`${styles.sidebar} ${className || ''}`}>
       <div className={styles.logo}>
-        <img src={logo} alt="Logo do Planejador de Gastos das Galáxias" className={styles.logoImage} />        
+        <img src={logo} alt="Logo do Planejador de Despesas das Galáxias" className={styles.logoImage} />        
       </div>
 
       <nav className={styles.menu}>

@@ -70,7 +70,7 @@ const SpreadsheetUpload = () => {
       </Typography>
       
       <Typography variant="body1" color="text.secondary" paragraph>
-        Faça upload de uma planilha Excel ou CSV com suas despesas e ganhos.
+        Faça upload de uma planilha Excel ou CSV com suas despesas e receitas.
         Nossa IA irá categorizar automaticamente os itens com base nas descrições.
       </Typography>
 

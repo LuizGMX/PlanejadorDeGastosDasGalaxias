@@ -74,7 +74,7 @@ router.get('/', authenticate, async (req, res) => {
       where,
       include: [
         { model: Category, as: 'Category' },
-        { model: Bank, as: 'Bank' }
+        { model: Bank, as: 'bank' }
       ],
       order: [['expense_date', 'DESC']]
     });
@@ -536,7 +536,7 @@ router.get('/:id', authenticate, async (req, res) => {
       },
       include: [
         { model: Category, as: 'Category' },
-        { model: Bank, as: 'Bank' }
+        { model: Bank, as: 'bank' }
       ]
     });
 
@@ -795,12 +795,12 @@ router.get('/stats', authenticate, async (req, res) => {
       where,
       include: [
         { model: Category, as: 'Category' },
-        { model: Bank, as: 'Bank' }
+        { model: Bank, as: 'bank' }
       ],
       order: [['expense_date', 'ASC']]
     });
 
-    // Dados para o gráfico de linha (evolução de gastos)
+    // Dados para o gráfico de linha (evolução de despesas)
     const expensesByDate = expenses.reduce((acc, expense) => {
       const date = expense.expense_date.toISOString().split('T')[0];
       if (!acc[date]) {
@@ -810,7 +810,7 @@ router.get('/stats', authenticate, async (req, res) => {
       return acc;
     }, {});
 
-    // Dados para o gráfico de pizza (gastos por categoria)
+    // Dados para o gráfico de pizza (despesas por categoria)
     const expensesByCategory = expenses.reduce((acc, expense) => {
       const categoryName = expense.Category.category_name;
       if (!acc[categoryName]) {
@@ -820,9 +820,9 @@ router.get('/stats', authenticate, async (req, res) => {
       return acc;
     }, {});
 
-    // Dados para o gráfico de barras (gastos por banco)
+    // Dados para o gráfico de barras (despesas por banco)
     const expensesByBank = expenses.reduce((acc, expense) => {
-      const bankName = expense.Bank.name;
+      const bankName = expense.bank.name;
       if (!acc[bankName]) {
         acc[bankName] = 0;
       }
@@ -830,7 +830,7 @@ router.get('/stats', authenticate, async (req, res) => {
       return acc;
     }, {});
 
-    // Dados para o gráfico de barras empilhadas (gastos por tipo de pagamento)
+    // Dados para o gráfico de barras empilhadas (despesas por tipo de pagamento)
     const expensesByPaymentMethod = expenses.reduce((acc, expense) => {
       const method = expense.payment_method;
       const categoryName = expense.Category.category_name;
@@ -850,13 +850,13 @@ router.get('/stats', authenticate, async (req, res) => {
       pix: expenses
         .filter(e => e.payment_method === 'pix')
         .map(e => ({
-          bank: e.Bank.name,
+          bank: e.bank.name,
           amount: Number(e.amount)
         })),
       card: expenses
         .filter(e => e.payment_method === 'card')
         .map(e => ({
-          bank: e.Bank.name,
+          bank: e.bank.name,
           amount: Number(e.amount)
         }))
     };

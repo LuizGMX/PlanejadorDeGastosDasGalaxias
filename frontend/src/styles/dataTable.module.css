@@ -2,7 +2,7 @@
 :root {
   --primary-color: #00ff85;
   --primary-rgb: 0, 255, 133;
-  --secondary-color: #ff00ff;
+  --secondary-color: #1A1B23;
   --background: #121212;
   --card-background: #1e1e1e;
   --input-bg: #2a2a2a;
@@ -606,7 +606,7 @@
   color: var(--secondary-color);
 }
 
-/* Adicionando estilos para badges de valor para despesas e ganhos */
+/* Adicionando estilos para badges de valor para despesas e receitas */
 .amountBadge {
   padding: 4px 8px;
   border-radius: 4px;
@@ -639,7 +639,7 @@
 /* Responsividade para dispositivos móveis */
 @media (max-width: 768px) {
   .pageContainer {
-    padding: 16px;
+    padding: 12px;
   }
   
   .pageHeader {
@@ -650,7 +650,8 @@
   }
   
   .pageTitle {
-    font-size: 28px;
+    font-size: 24px;
+    margin-bottom: 8px;
   }
   
   .addButton {
@@ -660,20 +661,39 @@
   }
   
   .filtersContainer {
-    padding: 16px;
+    padding: 16px 12px;
   }
   
   .filterRow {
     flex-direction: column;
     gap: 12px;
+    width: 100%;
+  }
+  
+  .filterGroup {
+    width: 100%;
+    min-width: 100%;
   }
   
   .searchField {
     min-width: auto;
+    width: 100%;
   }
   
   .modernSelectHeader {
     padding: 10px 12px;
+  }
+  
+  /* Improved table responsiveness */
+  .tableContainer {
+    overflow-x: auto;
+    margin: 0 -12px;
+    padding: 0 12px;
+    width: calc(100% + 24px);
+  }
+  
+  .table {
+    min-width: 700px; /* Ensures table won't shrink too much */
   }
   
   .table th, 
@@ -682,25 +702,87 @@
     font-size: 14px;
   }
   
+  .typeStatus {
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+  
   .actionButtons {
-    flex-direction: column;
+    flex-direction: row;
     gap: 4px;
   }
   
   .actionButton {
-    width: 32px;
-    height: 32px;
+    padding: 6px;
+    font-size: 14px;
   }
   
   .modalContent {
-    width: 90%;
+    width: 95%;
     padding: 16px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  
+  /* Collapsible filter section */
+  .filtersToggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px;
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-color);
+    font-size: 14px;
+    margin-bottom: 12px;
+    cursor: pointer;
+  }
+  
+  .filtersToggle svg {
+    color: var(--primary-color);
+  }
+  
+  .filtersCollapsed {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    padding: 0;
+    margin: 0;
+    border-bottom: none;
+  }
+  
+  .filtersExpanded {
+    max-height: 1000px;
+    transition: max-height 0.5s ease;
+  }
+  
+  /* Improved mobile layout for delete confirmation modal */
+  .optionsContainer {
+    padding: 12px;
+  }
+  
+  .optionsList {
+    gap: 8px;
+  }
+  
+  .optionItem {
+    padding: 10px;
   }
 }
 
 @media (max-width: 480px) {
+  .pageContainer {
+    padding: 10px;
+  }
+  
   .pageTitle {
-    font-size: 24px;
+    font-size: 22px;
+  }
+  
+  .dataContainer {
+    padding: 16px 12px;
   }
   
   .table th, 
@@ -709,14 +791,21 @@
     font-size: 13px;
   }
   
+  .table th:nth-child(5),
+  .table td:nth-child(5),
+  .table th:nth-child(6),
+  .table td:nth-child(6) {
+    display: none; /* Hide less important columns on very small screens */
+  }
+  
   .typeStatus {
-    padding: 4px 8px;
+    padding: 3px 6px;
     font-size: 12px;
   }
   
   .amountBadge {
-    padding: 4px 8px;
-    font-size: 13px;
+    padding: 3px 6px;
+    font-size: 12px;
   }
   
   .modalHeader h3 {
@@ -727,10 +816,73 @@
     font-size: 14px;
   }
   
-  .cancelButton,
-  .confirmButton {
-    padding: a10px 14px;
-    font-size: 14px;
+  .modalActions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  /* Improved display of the filter dropdowns */
+  .modernSelectDropdown {
+    max-height: 250px;
+    width: 100%;
+  }
+}
+
+/* Additional style for mobile-friendly filter toggle button */
+.filterToggleButton {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px;
+  background-color: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-color);
+  font-size: 15px;
+  margin-bottom: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.filterToggleButton:hover {
+  background-color: var(--hover-bg);
+}
+
+.filterToggleButton svg {
+  color: var(--primary-color);
+  font-size: 16px;
+}
+
+@media (max-width: 768px) {
+  .filterToggleButton {
+    display: flex;
+    position: sticky;
+    top: 0;
+    margin-top: -8px;
+    margin-bottom: 16px;
+  }
+  
+  .dataContainer {
+    padding-top: 8px;
+  }
+  
+  .filtersCollapsed {
+    display: none;
+    max-height: 0;
+    overflow: hidden;
+  }
+  
+  .filtersExpanded {
+    display: flex;
+    flex-direction: column;
+    max-height: 80vh;
+    overflow-y: auto;
   }
 }
 
@@ -862,6 +1014,15 @@
   
   .formGroupRow {
     flex-direction: column;
+    gap: 8px;
+  }
+  
+  .cancelButton,
+  .confirmButton {
+    width: 100%;
+    padding: 10px;
+    font-size: 14px;
+    justify-content: center;
   }
   
   .modalContent.formModal {
@@ -1249,4 +1410,271 @@
 
 .detailValue {
   color: var(--text-color);
+}
+
+/* Botão de exclusão em massa */
+.bulkActions {
+  display: flex;
+  justify-content: flex-end;
+  margin: 12px 0;
+  padding: 0 12px;
+}
+
+.deleteButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background-color: rgba(var(--error-rgb), 0.1);
+  border: 1px solid var(--error-color);
+  color: var(--error-color);
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.deleteButton svg {
+  font-size: 16px;
+}
+
+.deleteButton:hover {
+  background-color: var(--error-color);
+  color: white;
+}
+
+@media (max-width: 768px) {
+  .bulkActions {
+    justify-content: center;
+    padding: 0;
+  }
+  
+  .deleteButton {
+    width: 100%;
+    justify-content: center;
+    margin-bottom: 12px;
+  }
+}
+
+/* Estilos de visualização em formato de card para mobile */
+.mobileCardView {
+  display: none;
+}
+
+/* Responsive mobile card layout */
+@media (max-width: 768px) {
+  /* Esconder a tabela regular e mostrar os cards em mobile */
+  .table {
+    display: none;
+  }
+  
+  .mobileCardView {
+    display: block;
+    margin: 0 -12px;
+  }
+  
+  .mobileCard {
+    background-color: rgba(30, 30, 30, 0.6);
+    border-radius: 10px;
+    margin-bottom: 16px;
+    padding: 16px;
+    border: 1px solid var(--border-color);
+    position: relative;
+  }
+  
+  .mobileCard:hover {
+    background-color: rgba(var(--primary-rgb), 0.05);
+  }
+  
+  .mobileCardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 14px;
+  }
+  
+  .mobileCardTitle {
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--text-color);
+    margin: 0;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 10px;
+  }
+  
+  .mobileCardAmount {
+    margin: 0;
+    white-space: nowrap;
+  }
+  
+  .mobileCardDetails {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px 16px;
+    margin-bottom: 14px;
+  }
+  
+  .mobileCardDetail {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .mobileCardLabel {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+  }
+  
+  .mobileCardValue {
+    font-size: 14px;
+    color: var(--text-color);
+  }
+  
+  .mobileCardActions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 16px;
+    border-top: 1px solid var(--border-color);
+    padding-top: 16px;
+  }
+  
+  .mobileCardType {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .mobileCardActionButtons {
+    display: flex;
+    gap: 12px;
+  }
+  
+  .mobileCardSelect {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 5;
+  }
+}
+
+@media (max-width: 480px) {
+  .mobileCardDetails {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+/* Additional responsive helper classes */
+.responsiveHideOnMobile {
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .responsiveHideOnMobile {
+    display: none !important;
+  }
+}
+
+/* Estilos para gestos touch nos cards mobile */
+.mobileCard {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s ease, background-color 0.2s ease;
+  cursor: pointer;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobileCard:active {
+  background-color: rgba(var(--primary-rgb), 0.1);
+  transform: scale(0.98);
+}
+
+.mobileCardSwipeActions {
+  position: absolute;
+  top: 0;
+  right: -160px;
+  width: 160px;
+  height: 100%;
+  display: flex;
+  transition: right 0.3s ease;
+}
+
+.mobileCardSwipeEdit,
+.mobileCardSwipeDelete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 100%;
+  color: white;
+  font-weight: 600;
+}
+
+.mobileCardSwipeEdit {
+  background-color: rgba(var(--primary-rgb), 0.8);
+}
+
+.mobileCardSwipeDelete {
+  background-color: rgba(var(--error-rgb), 0.8);
+}
+
+.mobileCardSwipeState {
+  transition: transform 0.3s ease;
+}
+
+.mobileCardSwipeActive .mobileCardSwipeState {
+  transform: translateX(-160px);
+}
+
+.mobileCardSwipeActive .mobileCardSwipeActions {
+  right: 0;
+}
+
+/* Botão para mostrar mais detalhes no card */
+.mobileCardDetailToggle {
+  width: 100%;
+  padding: 10px;
+  background-color: transparent;
+  border: none;
+  border-top: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+  cursor: pointer;
+}
+
+.mobileCardDetailToggle:hover,
+.mobileCardDetailToggle:focus {
+  color: var(--primary-color);
+}
+
+/* Animation for touch feedback */
+@keyframes touchPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.98); }
+  100% { transform: scale(1); }
+}
+
+.touchPulse {
+  animation: touchPulse 0.3s ease;
+}
+
+/* Optimization for touch devices */
+@media (hover: none) {
+  .actionButton,
+  .mobileCardActionButtons button {
+    padding: 10px;
+    min-width: 44px;
+    min-height: 44px;
+  }
 } 

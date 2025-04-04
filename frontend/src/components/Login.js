@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../App';
 import CurrencyInput from 'react-currency-input-field';
@@ -6,6 +6,7 @@ import styles from '../styles/login.module.css';
 import logo from '../assets/logo.svg';
 import { BsEnvelope, BsPerson, BsShieldLock, BsBank2, BsGraphUp, BsTelegram } from 'react-icons/bs';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'react-hot-toast';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -33,6 +34,10 @@ const Login = () => {
   const [botLink, setBotLink] = useState('');
   const [loading, setLoading] = useState(false);
   const [lastSubmitTime, setLastSubmitTime] = useState(0);
+  const [telegramLoading, setTelegramLoading] = useState(false);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [remainingTime, setRemainingTime] = useState(300);
+  const [telegramError, setTelegramError] = useState('');
   const SUBMIT_DELAY = 3000; // 3 segundos entre submissões
   
   // Steps configuration for better progress tracking and visualization
@@ -45,7 +50,7 @@ const Login = () => {
     telegram: { index: 6, title: 'Telegram', icon: <BsTelegram /> },
     'telegram-steps': { index: 6, title: 'Telegram', icon: <BsTelegram /> }
   };
-  
+
   
   // Animation variants for page transitions
   const pageVariants = {
@@ -63,25 +68,24 @@ const Login = () => {
   const fetchBanks = async (retryCount = 0, delay = 1000) => {
     try {
       setLoading(true);
+      setError('');
       console.log('Iniciando busca de bancos...');
+      
       const apiUrl = `${process.env.REACT_APP_API_URL}/api/banks`;
       console.log('URL da API:', apiUrl);
       
       const response = await fetch(apiUrl);
       console.log('Status da resposta:', response.status);
       
-      if (response.status === 429 && retryCount < 3) {
-        console.log(`Recebido erro 429, aguardando ${delay}ms antes de tentar novamente...`);
-        setError(`Muitas requisições. Tentando novamente em ${delay/1000} segundos...`);
-        
-        // Espera pelo tempo de delay antes de tentar novamente
-        await new Promise(resolve => setTimeout(resolve, delay));
-        
-        // Tenta novamente com backoff exponencial (dobra o tempo de espera)
-        return fetchBanks(retryCount + 1, delay * 2);
-      }
-      
       if (!response.ok) {
+        if (response.status === 429 && retryCount < 3) {
+          console.log(`Recebido erro 429, aguardando ${delay}ms antes de tentar novamente...`);
+          setError(`Muitas requisições. Tentando novamente em ${delay/1000} segundos...`);
+          
+          await new Promise(resolve => setTimeout(resolve, delay));
+          return fetchBanks(retryCount + 1, delay * 2);
+        }
+        
         throw new Error(`Erro ao carregar bancos: ${response.status}`);
       }
       
@@ -96,11 +100,12 @@ const Login = () => {
       console.log('Bancos ordenados:', sortedBanks);
       
       setBanks(sortedBanks);
-      setError(''); // Limpa qualquer erro anterior
+      return true;
     } catch (error) {
-      console.error('Erro detalhado ao carregar bancos:', error);
+      console.error('Erro ao carregar bancos:', error);
       setError('Erro ao carregar bancos. Por favor, tente novamente.');
-      setBanks([]); // Limpa o estado dos bancos em caso de erro
+      setBanks([]);
+      throw error; // Re-throw para que o chamador possa tratar o erro
     } finally {
       setLoading(false);
     }
@@ -141,12 +146,17 @@ const Login = () => {
   };
 
   const handleSubmit = async (e) => {
+    console.log('handleSubmit chamado para etapa:', step, 'evento:', e);
     e.preventDefault();
     setError('');
     setSuccess('');
 
-    if (loading) return;
+    if (loading) {
+      console.log('handleSubmit ignorado porque loading=true');
+      return;
+    }
     setLoading(true);
+    console.log('Loading definido como true');
 
     try {
       if (step === 'email') {
@@ -161,10 +171,14 @@ const Login = () => {
           throw new Error('Muitas tentativas. Por favor, aguarde alguns segundos antes de tentar novamente.');
         }
 
+        const responseText = await response.text();
+        console.log('Resposta bruta do check-email:', responseText);
+        
         let data;
         try {
-          data = await response.json();
+          data = JSON.parse(responseText);
         } catch (jsonError) {
+          console.error('Erro ao parsear JSON:', jsonError);
           if (!response.ok) {
             throw new Error('Erro ao verificar email. Por favor, tente novamente.');
           }
@@ -175,29 +189,47 @@ const Login = () => {
           throw new Error(data.message || 'Erro ao verificar email');
         }
 
-        console.log('Resposta do check-email:', data);
+        console.log('Resposta do check-email (parseada):', data);
         
         // Atualiza o estado com base na resposta
-        setIsNewUser(data.isNewUser);
+        const userIsNew = Boolean(data.isNewUser);
+        console.log('É um novo usuário?', userIsNew);
+        
+        setIsNewUser(userIsNew);
         setFormData(prev => ({ 
           ...prev, 
           name: data.name || '',
           email: data.email || formData.email
         }));
         
-        if (data.isNewUser) {
+        if (userIsNew) {
+          console.log('Redirecionando para etapa de nome (novo usuário)');
           setStep('name');
         } else {
+          console.log('Redirecionando para etapa de código (usuário existente)');
           setStep('code');
-          // Solicita o código de acesso automaticamente para usuários existentes
-          await requestAccessCode();
+          setSuccess('Código enviado com sucesso! Verifique seu email.');
         }
       } else if (step === 'name') {
+        console.log('Processando etapa "name" no handleSubmit...');
+        
         if (!formData.name || !formData.desired_budget) {
           throw new Error('Por favor, preencha todos os campos');
         }
-        setStep('banks');
-        await fetchBanks();
+        
+        console.log('Campos validados, avançando para "banks"...');
+        
+        // Primeiro carregamos os bancos e depois mudamos o step
+        try {
+          console.log('Carregando bancos antes de avançar...');
+          await fetchBanks();
+          console.log('Bancos carregados com sucesso, avançando para etapa banks');
+          setStep('banks');
+        } catch (error) {
+          console.error('Erro ao carregar bancos:', error);
+          setError('Erro ao carregar bancos. Tente novamente em alguns instantes.');
+          throw error; // Propaga o erro para que setLoading(false) seja chamado no finally
+        }
       } else if (step === 'banks') {
         if (formData.selectedBanks.length === 0) {
           throw new Error('Por favor, selecione pelo menos um banco');
@@ -237,58 +269,111 @@ const Login = () => {
         }
       } else if (step === 'code') {
         if (!code) {
-          throw new Error('Por favor, digite o código de verificação');
+          setError('Por favor, digite o código de verificação');
+          return;
         }
-        const parsedDesiredBudget = formData.desired_budget ? Number(formData.desired_budget.replace(/\./g, '').replace(',', '.')) : 0;
-        const parsedFinancialGoalAmount = formData.financialGoalAmount ? Number(formData.financialGoalAmount.replace(/\./g, '').replace(',', '.')) : 0;
 
-        console.log('Enviando dados para verify-code:', {
-          email: formData.email,
-          code,
-          name: formData.name,
-          desired_budget: parsedDesiredBudget,
-          financialGoalName: formData.financialGoalName,
-          financialGoalAmount: parsedFinancialGoalAmount,
-          financialGoalPeriodType: formData.financialGoalPeriodType,
-          financialGoalPeriodValue: formData.financialGoalPeriodValue,
-          selectedBanks: formData.selectedBanks
-        });
-
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/verify-code`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+        try {
+          setLoading(true);
+          console.log('Verificando código para usuário:', {
             email: formData.email,
-            code,
-            name: formData.name,
-            desired_budget: parsedDesiredBudget,
-            financialGoalName: formData.financialGoalName,
-            financialGoalAmount: parsedFinancialGoalAmount,
-            financialGoalPeriodType: formData.financialGoalPeriodType,
-            financialGoalPeriodValue: formData.financialGoalPeriodValue,
-            selectedBanks: formData.selectedBanks
-          })
-        });
+            code: code,
+            isNewUser: isNewUser
+          });
+          
+          // Para depuração: simplificar a chamada e os dados enviados
+          const verifyData = {
+            email: formData.email,
+            code: code,
+            isNewUser: isNewUser
+          };
+          
+          // Se for um novo usuário, adicionar os dados necessários
+          if (isNewUser) {
+            console.log('Dados do novo usuário:', {
+              name: formData.name,
+              desired_budget: formData.desired_budget,
+              financialGoal: formData.financialGoalName,
+              selectedBanks: formData.selectedBanks
+            });
+            
+            const parsedDesiredBudget = formData.desired_budget ? 
+              Number(formData.desired_budget.replace(/\./g, '').replace(',', '.')) : 0;
+            const parsedFinancialGoalAmount = formData.financialGoalAmount ? 
+              Number(formData.financialGoalAmount.replace(/\./g, '').replace(',', '.')) : 0;
+            
+            // Adiciona os dados ao objeto de verificação
+            verifyData.name = formData.name;
+            verifyData.desired_budget = parsedDesiredBudget;
+            verifyData.financialGoalName = formData.financialGoalName;
+            verifyData.financialGoalAmount = parsedFinancialGoalAmount;
+            verifyData.financialGoalPeriodType = formData.financialGoalPeriodType;
+            verifyData.financialGoalPeriodValue = formData.financialGoalPeriodValue;
+            verifyData.selectedBanks = formData.selectedBanks;
+          }
+          
+          console.log('Enviando dados para verificação:', verifyData);
+          
+          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/verify-code`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(verifyData)
+          });
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Código inválido');
+          console.log('Resposta do verify-code (status):', response.status);
+          
+          // Se a resposta não for bem-sucedida, capturamos o texto da resposta para análise
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Erro na resposta de verificação:', errorText);
+            
+            // Tenta interpretar a resposta como JSON
+            let errorMessage = 'Código inválido';
+            try {
+              const errorData = JSON.parse(errorText);
+              errorMessage = errorData.message || errorMessage;
+            } catch (e) {
+              console.error('Erro ao parsear resposta de erro:', e);
+            }
+            
+            throw new Error(errorMessage);
+          }
+
+          const data = await response.json();
+          console.log('Resposta do verify-code (sucesso):', data);
+          
+          // Salva o token no localStorage e atualiza o estado de autenticação
+          localStorage.setItem('token', data.token);
+          setAuth({
+            token: data.token,
+            user: data.user
+          });
+          
+          // Mostra mensagem de sucesso
+          setSuccess(isNewUser ? 'Conta criada com sucesso!' : 'Login realizado com sucesso!');
+          
+          // Se for novo usuário, oferece opção de conectar ao Telegram
+          if (isNewUser) {
+            setTimeout(() => {
+              setStep('telegram');
+            }, 1000);
+            return;
+          }
+          
+          // Redireciona após 1.5 segundos para usuários existentes
+          setTimeout(() => {
+            if (data.redirectTo) {
+              navigate(data.redirectTo);
+            } else {
+              navigate('/dashboard');
+            }
+          }, 1500);
+        } catch (error) {
+          console.error('Erro ao verificar código:', error);
+          setError(error.message);
+        } finally {
+          setLoading(false);
         }
-
-        const data = await response.json();
-        console.log('Resposta do verify-code:', data);
-        
-        localStorage.setItem('token', data.token);
-        
-        setAuth({
-          token: data.token,
-          user: data.user
-        });
-        
-        setSuccess('Conta criada com sucesso! Agora vamos conectar seu Telegram...');
-        setTimeout(() => {
-          setStep('telegram');
-        }, 1500);
       } else {
         setSuccess('Telegram connection logic not implemented yet');
       }
@@ -303,59 +388,88 @@ const Login = () => {
 
   const requestAccessCode = async () => {
     try {
-      // Previne múltiplas requisições
-      if (resendDisabled) return;
+      setLoading(true);
+      // Limpar o código existente e resetar o estado
+      setCode('');
+      setError('');
+      // Remover a flag que indica que um código já foi solicitado
+      sessionStorage.removeItem(`code_requested_${formData.email}`);
       
-      const requestData = isNewUser
-        ? {
-            email: formData.email,
-            name: formData.name,
-            financialGoalName: formData.financialGoalName,
-            financialGoalAmount: formData.financialGoalAmount,
-            financialGoalPeriodType: formData.financialGoalPeriodType,
-            financialGoalPeriodValue: formData.financialGoalPeriodValue,
-          }
-        : {
-            email: formData.email,
-            name: formData.name
-          };
+      console.log('Solicitando (re)envio de código para:', formData.email, 'isNewUser:', isNewUser);
+
+      // Criando um objeto com os dados necessários para enviar o código
+      const codeRequestData = {
+        email: formData.email,
+        isNewUser: isNewUser
+      };
+      
+      // Se for um novo usuário, incluir dados adicionais necessários
+      if (isNewUser) {
+        const parsedFinancialGoalAmount = formData.financialGoalAmount ? 
+          Number(formData.financialGoalAmount.replace(/\./g, '').replace(',', '.')) : 0;
+        
+        Object.assign(codeRequestData, {
+          name: formData.name,
+          financialGoalName: formData.financialGoalName,
+          financialGoalAmount: parsedFinancialGoalAmount,
+          financialGoalPeriodType: formData.financialGoalPeriodType,
+          financialGoalPeriodValue: formData.financialGoalPeriodValue
+        });
+      }
+      
+      console.log('Enviando dados para reenvio de código:', codeRequestData);
 
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/send-code`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestData)
+        body: JSON.stringify(codeRequestData)
       });
 
+      console.log('Status da resposta de reenvio:', response.status);
+
+      // Verifica se o código de status indica falha
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Falha ao enviar código');
+        const errorText = await response.text();
+        console.error('Erro na resposta de reenvio:', errorText);
+        
+        let errorMessage = 'Erro ao enviar código';
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.message || errorMessage;
+        } catch (e) {
+          console.error('Erro ao parsear resposta de erro:', e);
+        }
+        
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
+      console.log('Código reenviado com sucesso:', data);
+      
+      // Limpa o campo de código para o usuário inserir o novo
+      setCode('');
       setSuccess('Código enviado com sucesso! Verifique seu email.');
       
+      // Configura o estado para impedir reenvios rápidos
       setResendDisabled(true);
       setResendCountdown(60);
       
-      // Limpa o intervalo anterior se existir
-      if (window.countdownInterval) {
-        clearInterval(window.countdownInterval);
-      }
-      
-      // Armazena o novo intervalo
-      window.countdownInterval = setInterval(() => {
-        setResendCountdown(prevCountdown => {
-          if (prevCountdown <= 1) {
-            clearInterval(window.countdownInterval);
-            window.countdownInterval = null;
+      // Inicia o contador para reenvio
+      const interval = setInterval(() => {
+        setResendCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(interval);
             setResendDisabled(false);
             return 0;
           }
-          return prevCountdown - 1;
+          return prev - 1;
         });
       }, 1000);
     } catch (error) {
-      setError(error.message);
+      console.error('Erro ao solicitar código:', error);
+      setError(error.message || 'Erro ao enviar código. Tente novamente.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -365,7 +479,7 @@ const Login = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${auth.token || localStorage.getItem('token')}`
         }
       });
 
@@ -383,31 +497,37 @@ const Login = () => {
     }
   };
 
-  const requestTelegramCode = async () => {
+  const requestTelegramCode = useCallback(async () => {
+    if (telegramLoading) return;
+    if (verificationCode && remainingTime > 0) {
+      setTelegramError('Você já tem um código válido!');
+      setTimeout(() => setTelegramError(''), 3000);
+      return;
+    }
+    setTelegramError('');
     try {
-      setLoading(true);
+      setTelegramLoading(true);
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/telegram/init-verification`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${auth.token}`
         }
       });
-
       const data = await response.json();
-      if (data.success) {
-        setCode(data.code);
-        setSuccess('Código gerado com sucesso!');
+      if ((response.status === 429 && data.code) || (data.success && data.code)) {
+        setVerificationCode(data.code);
+        setRemainingTime(300);
       } else {
-        setError(data.message || 'Erro ao gerar código');
+        throw new Error(data.message || 'Erro ao gerar código');
       }
     } catch (err) {
-      console.error('Erro ao gerar código de verificação:', err);
-      setError(err.message || 'Erro ao gerar código');
+      setTelegramError(err.message || 'Erro ao solicitar código');
+      setTimeout(() => setTelegramError(''), 3000);
     } finally {
-      setLoading(false);
+      setTelegramLoading(false);
     }
-  };
+  }, [telegramLoading, auth.token, verificationCode, remainingTime]);
 
   const renderStep = () => {
     switch (step) {
@@ -435,7 +555,7 @@ const Login = () => {
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.2 }}
               >
-                Entre com seu e-mail para começar a planejar seus gastos de forma intergaláctica
+                Entre com seu e-mail para começar a planejar seus despesas de forma intergaláctica
               </motion.p>
             </div>
             <motion.div 
@@ -934,7 +1054,7 @@ const Login = () => {
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.1 }}
               >
-                Verificação de Acesso
+                {isNewUser ? 'Verificação de Acesso' : 'Login'}
               </motion.h1>
               <motion.p 
                 className={styles.loginSubtitle}
@@ -942,7 +1062,10 @@ const Login = () => {
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.2 }}
               >
-                Digite o código que enviamos para <strong>{formData.email}</strong>
+                {isNewUser 
+                  ? `Digite o código que enviamos para ${formData.email}`
+                  : `Enviamos um código de acesso para ${formData.email}`
+                }
               </motion.p>
             </div>
             
@@ -956,13 +1079,20 @@ const Login = () => {
                 <input
                   type="text"
                   value={code}
-                  onChange={(e) => setCode(e.target.value)}
+                  onChange={(e) => {
+                    // Remove espaços e garante apenas números
+                    const cleanedCode = e.target.value.replace(/[^0-9]/g, '').substring(0, 6);
+                    setCode(cleanedCode);
+                  }}
                   className={`${styles.loginInput} ${styles.codeInput}`}
                   placeholder="Digite o código de 6 dígitos"
                   required
                   disabled={loading}
                   autoFocus
                   maxLength={6}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  title="O código deve conter apenas números"
                 />
                 <BsShieldLock className={styles.inputIcon} />
               </div>
@@ -1001,6 +1131,22 @@ const Login = () => {
                   <span className="material-icons">help_outline</span>
                   Não recebeu o código? Verifique sua caixa de spam ou lixo eletrônico.
                 </p>
+              </motion.div>
+              
+              <motion.div 
+                className={styles.verifyButtonContainer}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+              >
+                <button
+                  type="button"
+                  onClick={(e) => handleSubmit(e)}
+                  className={`${styles.loginButton} ${loading ? styles.loading : ''}`}
+                  disabled={loading || code.length !== 6}
+                >
+                
+                </button>
               </motion.div>
             </motion.div>
           </motion.div>
@@ -1052,7 +1198,7 @@ const Login = () => {
                   transition={{ delay: 0.4 }}
                 >
                   <span className="material-icons">add_circle</span>
-                  Registre gastos e receitas direto pelo Telegram
+                  Registre despesas e receitas direto pelo Telegram
                 </motion.li>
                 <motion.li
                   initial={{ opacity: 0, x: -20 }}
@@ -1060,7 +1206,7 @@ const Login = () => {
                   transition={{ delay: 0.5 }}
                 >
                   <span className="material-icons">notifications</span>
-                  Receba notificações importantes sobre seus gastos
+                  Receba notificações importantes sobre seus despesas
                 </motion.li>
                 <motion.li
                   initial={{ opacity: 0, x: -20 }}
@@ -1199,32 +1345,36 @@ const Login = () => {
                   <div className={styles.stepContent}>
                     <h4>Use este código de verificação</h4>
                     <div className={styles.verificationCodeWrapper}>
-                      <p className={styles.verificationCodeDisplay}>
-                        {code || (
-                          <button
-                            type="button"
-                            onClick={requestTelegramCode} 
-                            className={styles.generateCodeButton}
-                            disabled={loading}
-                          >
-                            {loading ? 'Gerando...' : 'Gerar Código'}
-                          </button>
-                        )}
-                      </p>
-                      {code && (
+                      {!verificationCode ? (
                         <button
-                          type="button" 
-                          onClick={() => {
-                            navigator.clipboard.writeText(code);
-                            setSuccess('Código copiado!');
-                            setTimeout(() => setSuccess(''), 2000);
-                          }}
-                          className={styles.copyCodeButton}
+                          type="button"
+                          onClick={requestTelegramCode}
+                          className={styles.generateCodeButton}
+                          disabled={telegramLoading}
                         >
-                          <span className="material-icons">content_copy</span>
+                          {telegramLoading ? (
+                            <>
+                              <div className={styles.buttonSpinner}></div>
+                              Gerando código...
+                            </>
+                          ) : (
+                            'Gerar Código de Verificação'
+                          )}
                         </button>
+                      ) : (
+                        <div className={styles.codeDisplay}>
+                          <p className={styles.verificationCodeDisplay}>
+                            {verificationCode}
+                          </p>
+                          <div className={styles.codeTimer}>
+                            <span>Expira em {Math.floor(remainingTime / 60)}:{(remainingTime % 60).toString().padStart(2, '0')}</span>
+                          </div>
+                        </div>
                       )}
                     </div>
+                    {telegramError && (
+                      <p className={styles.errorMessage}>{telegramError}</p>
+                    )}
                   </div>
                 </motion.div>
                 
@@ -1283,161 +1433,63 @@ const Login = () => {
     return now - lastSubmitTime >= SUBMIT_DELAY;
   };
 
-  const handleContinue = async () => {
+  const handleNameStepSubmit = async () => {
+    console.log('handleNameStepSubmit chamado');
+    
+    // Previne submissão se já estiver carregando
+    if (loading) {
+      console.log('Já está carregando, ignorando chamada');
+      return;
+    }
+
+    // Valida os campos obrigatórios
+    if (!formData.name || !formData.desired_budget) {
+      setError('Por favor, preencha todos os campos');
+      return;
+    }
+
     try {
-      if (step === 'email') {
-        setStep('name');
-      } else if (step === 'name') {
-        if (!formData.name || !formData.desired_budget) {
-          setError('Por favor, preencha todos os campos');
-          return;
-        }
-        
-        setLoading(true);
-        try {
-          // Primeiro buscamos os bancos
-          await fetchBanks();
-          // Só avançamos para a próxima etapa se conseguirmos carregar os bancos
-          setStep('banks');
-        } catch (error) {
-          console.error('Erro ao carregar bancos:', error);
-          // Não avançamos a etapa se houver erro ao carregar os bancos
-        } finally {
-          setLoading(false);
-        }
-      } else if (step === 'banks') {
-        if (formData.selectedBanks.length === 0) {
-          setError('Por favor, selecione pelo menos um banco');
-          return;
-        }
-        setStep('goal');
-      } else if (step === 'goal') {
-        console.log('Dados do objetivo financeiro:', {
-          name: formData.financialGoalName,
-          amount: formData.financialGoalAmount,
-          periodType: formData.financialGoalPeriodType,
-          periodValue: formData.financialGoalPeriodValue
-        });
+      setLoading(true);
+      setError('');
 
-        // Verifica cada campo individualmente
-        if (!formData.financialGoalName) {
-          setError('Por favor, preencha o nome do objetivo financeiro');
-          return;
-        }
-        if (!formData.financialGoalAmount) {
-          setError('Por favor, preencha o valor do objetivo financeiro');
-          return;
-        }
-        if (!formData.financialGoalPeriodType) {
-          setError('Por favor, selecione o tipo de período');
-          return;
-        }
-        if (!formData.financialGoalPeriodValue) {
-          setError('Por favor, preencha o valor do período');
-          return;
-        }
-
-        // Se chegou aqui, todos os campos estão preenchidos
-        try {
-          setLoading(true);
-          const parsedFinancialGoalAmount = formData.financialGoalAmount ? 
-            Number(formData.financialGoalAmount.replace(/\./g, '').replace(',', '.')) : 0;
-          
-          console.log('Valor do objetivo financeiro convertido:', parsedFinancialGoalAmount);
-
-          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/send-code`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email: formData.email,
-              name: formData.name,
-              financialGoalName: formData.financialGoalName,
-              financialGoalAmount: parsedFinancialGoalAmount,
-              financialGoalPeriodType: formData.financialGoalPeriodType,
-              financialGoalPeriodValue: formData.financialGoalPeriodValue
-            })
-          });
-
-          if (response.status === 429) {
-            setError('Muitas requisições. Por favor, aguarde alguns segundos antes de tentar novamente.');
-            return;
-          }
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Falha ao enviar código');
-          }
-
-          const data = await response.json();
-          setSuccess('Código enviado com sucesso! Verifique seu email.');
-          setStep('code');
-        } catch (error) {
-          console.error('Erro ao enviar código:', error);
-          setError(error.message);
-        } finally {
-          setLoading(false);
-        }
-      } else if (step === 'code') {
-        if (!code) {
-          setError('Por favor, digite o código de verificação');
-          return;
-        }
-
-        const parsedDesiredBudget = formData.desired_budget ? 
-          Number(formData.desired_budget.replace(/\./g, '').replace(',', '.')) : 0;
-        const parsedFinancialGoalAmount = formData.financialGoalAmount ? 
-          Number(formData.financialGoalAmount.replace(/\./g, '').replace(',', '.')) : 0;
-
-        console.log('Enviando dados para verify-code:', {
-          email: formData.email,
-          code,
-          name: formData.name,
-          desired_budget: parsedDesiredBudget,
-          financialGoalName: formData.financialGoalName,
-          financialGoalAmount: parsedFinancialGoalAmount,
-          financialGoalPeriodType: formData.financialGoalPeriodType,
-          financialGoalPeriodValue: formData.financialGoalPeriodValue,
-          selectedBanks: formData.selectedBanks
-        });
-
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/verify-code`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: formData.email,
-            code,
-            name: formData.name,
-            desired_budget: parsedDesiredBudget,
-            financialGoalName: formData.financialGoalName,
-            financialGoalAmount: parsedFinancialGoalAmount,
-            financialGoalPeriodType: formData.financialGoalPeriodType,
-            financialGoalPeriodValue: formData.financialGoalPeriodValue,
-            selectedBanks: formData.selectedBanks
-          })
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Código inválido');
-        }
-
-        const data = await response.json();
-        console.log('Resposta do verify-code:', data);
-        
-        localStorage.setItem('token', data.token);
-        
-        setAuth({
-          token: data.token,
-          user: data.user
-        });
-        
-        setSuccess('Conta criada com sucesso! Agora vamos conectar seu Telegram...');
-        setTimeout(() => {
-          setStep('telegram');
-        }, 1500);
-      }
+      // Avança para a próxima etapa primeiro
+      setStep('banks');
+      
+      // Depois carrega os bancos
+      console.log('Carregando bancos...');
+      await fetchBanks();
+      
     } catch (error) {
-      console.error('Erro ao continuar:', error);
+      console.error('Erro:', error);
+      setError('Erro ao carregar bancos. Por favor, tente novamente.');
+      // Volta para a etapa anterior em caso de erro
+      setStep('name');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Modificando o handleContinue para usar funções específicas para cada etapa
+  const handleContinue = () => {
+    console.log('handleContinue chamado para etapa:', step);
+    
+    // Se estiver na etapa 'name', não faz nada (será tratado pelo handleNameStepSubmit)
+    if (step === 'name') {
+      console.log('handleContinue ignorado para etapa name');
+      return;
+    }
+
+    // Previne submissão se já estiver carregando
+    if (loading) {
+      console.log('Já está carregando, ignorando chamada');
+      return;
+    }
+
+    try {
+      const syntheticEvent = { preventDefault: () => {} };
+      handleSubmit(syntheticEvent);
+    } catch (error) {
+      console.error('Erro em handleContinue:', error);
       setError('Ocorreu um erro. Por favor, tente novamente.');
     }
   };
@@ -1448,13 +1500,6 @@ const Login = () => {
     if (step === 'goal') setStep('banks');
     if (step === 'code') setStep(isNewUser ? 'goal' : 'email');
   };
-
-  useEffect(() => {
-    if (step === 'banks' && banks.length === 0) {
-      console.log('Step mudou para banks, buscando bancos...');
-      fetchBanks();
-    }
-  }, [step]);
 
   useEffect(() => {
     let checkTelegramInterval;
@@ -1495,17 +1540,83 @@ const Login = () => {
     };
   }, [telegramStep, auth.user?.id, navigate]);
 
-  // Gerar código de verificação quando entrar na tela de telegram-steps
+  // Gera código do Telegram automaticamente quando chega à etapa apropriada
   useEffect(() => {
-    if (step === 'telegram-steps' && !code && auth.token) {
-      requestTelegramCode();
+    if (step === 'telegram-steps') {
+      const token = auth.token || localStorage.getItem('token');
+      if (!token) {
+        console.error('Tentativa de gerar código sem autenticação');
+        setError('Erro de autenticação. Por favor, faça login novamente.');
+        navigate('/');
+        return;
+      }
+
+      if (!code) {
+        console.log('Gerando código do Telegram automaticamente...');
+        requestTelegramCode();
+      }
     }
-  }, [step, code, auth.token]);
+  }, [step, auth.token]);
+
+  // Efeito para reagir a mudanças no tipo de usuário
+  useEffect(() => {
+    console.log('Estado isNewUser atualizado:', isNewUser);
+  }, [isNewUser]);
+
+  // Efeito para limpar o código quando chegar à etapa de verificação
+  useEffect(() => {
+    if (step === 'code') {
+      console.log('Etapa de verificação de código iniciada, limpando código anterior');
+      setCode('');
+      
+      // Verifica se o campo de email está preenchido e se o isNewUser está definido
+      // Importante: só envia o código automaticamente se não houver sucesso anterior
+      // e se o código ainda não foi preenchido
+      if (formData.email && isNewUser !== null && !success && !code) {
+        console.log('Condições para envio automático de código atendidas');
+        
+        // Usamos uma variável para controlar se já foi solicitado o código nesta sessão
+        const codeAlreadyRequested = sessionStorage.getItem(`code_requested_${formData.email}`);
+        
+        if (!codeAlreadyRequested) {
+          console.log('Primeira solicitação de código para', formData.email);
+          // Marcamos que já solicitamos o código para este email na sessão atual
+          sessionStorage.setItem(`code_requested_${formData.email}`, 'true');
+          
+          const timer = setTimeout(() => {
+            requestAccessCode();
+          }, 100);
+          return () => clearTimeout(timer);
+        } else {
+          console.log('Código já foi solicitado anteriormente para', formData.email);
+        }
+      }
+    }
+  }, [step]);
+
+  // Atualiza o tempo restante a cada segundo
+  useEffect(() => {
+    let timer;
+    if (verificationCode && remainingTime > 0) {
+      timer = setInterval(() => {
+        setRemainingTime(prev => {
+          if (prev <= 1) {
+            setVerificationCode('');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [verificationCode, remainingTime]);
 
   return (
     <div className={styles.loginContainer}>
       <div className={styles.loginIllustration}>
-        <img src={logo} alt="Logo do Planejador de Gastos das Galáxias" className={styles.logo} />
+        <img src={logo} alt="Logo do Planejador de Despesas das Galáxias" className={styles.logo} />
       </div>
       <div className={styles.formContainer}>
         <div className={styles.loginCard}>
@@ -1573,12 +1684,25 @@ const Login = () => {
 
           <form onSubmit={(e) => {
             e.preventDefault();
-            if (canSubmit()) {
-              setLastSubmitTime(Date.now());
-              handleSubmit(e);
-            } else {
-              setError('Por favor, aguarde alguns segundos antes de tentar novamente.');
+            
+            // Previne submissão se já estiver carregando
+            if (loading) {
+              console.log('Formulário ignorado - já está carregando');
+              return;
             }
+            
+            console.log('Formulário submetido na etapa:', step);
+            
+            // Se estiver na etapa de nome, usa handleNameStepSubmit
+            if (step === 'name') {
+              console.log('Chamando handleNameStepSubmit via formulário');
+              handleNameStepSubmit();
+              return;
+            }
+            
+            // Para outras etapas, usa handleSubmit
+            console.log('Chamando handleSubmit para outras etapas');
+            handleSubmit(e);
           }} className={styles.loginForm}>
             <AnimatePresence mode="wait">
               {renderStep()}
@@ -1593,9 +1717,21 @@ const Login = () => {
               >
                 <button 
                   type="button" 
-                  onClick={handleContinue}
-                  className={styles.loginButton}
-                  disabled={loading || !canSubmit()}
+                  onClick={() => {
+                    console.log('Botão Continuar clicado na etapa:', step);
+                    if (step === 'name') {
+                      console.log('Chamando handleNameStepSubmit diretamente');
+                      handleNameStepSubmit();
+                    } else {
+                      console.log('Chamando handleContinue para outras etapas');
+                      handleContinue();
+                    }
+                  }}
+                  className={`${styles.loginButton} ${step === 'name' ? styles.nameStepButton : ''}`}
+                  disabled={loading}
+                  data-step={step}
+                  id="continueButton"
+                  style={step === 'name' ? {background: '#00d084', fontWeight: 'bold'} : {}}
                 >
                   {loading ? (
                     <>
@@ -1605,7 +1741,12 @@ const Login = () => {
                   ) : step === 'code' ? (
                     <>
                       <span className="material-icons">login</span>
-                      Entrar
+                      {isNewUser ? 'Verificar' : 'Entrar'}
+                    </>
+                  ) : step === 'name' ? (
+                    <>
+                      <span className="material-icons">arrow_forward</span>
+                      Continuar para Seleção de Bancos
                     </>
                   ) : (
                     <>

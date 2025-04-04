@@ -26,28 +26,24 @@ router.post('/init-verification', authenticate, async (req, res) => {
       });
     }
 
-    // Em desenvolvimento, não verifica código recente
-    if (process.env.NODE_ENV === 'production') {
-      // Verifica se já existe um código recente
-      const recentCode = await VerificationCode.findOne({
-        where: {
-          email: user.email,
-          expires_at: {
-            [Op.gt]: new Date()
-          }
-        }
-      });
-
-      if (recentCode) {
-        console.log('Código recente encontrado:', recentCode.code);
-        return res.json({
-          success: true,
-          message: 'Código recente encontrado. Use o código abaixo:',
-          code: recentCode.code,
-          email: user.email,
-          isRecent: true
-        });
+    // Verifica se já existe um código válido
+    const existingCode = await VerificationCode.findOne({
+      where: {
+        email: user.email,
+        expires_at: {
+          [Op.gt]: new Date()
+        },
+        used: false
       }
+    });
+
+    if (existingCode) {
+      return res.json({
+        success: true,
+        message: 'Código existente ainda válido',
+        code: existingCode.code,
+        expiresAt: existingCode.expires_at
+      });
     }
 
     // Remove códigos antigos
@@ -65,18 +61,15 @@ router.post('/init-verification', authenticate, async (req, res) => {
     await VerificationCode.create({
       email: user.email,
       code: code,
-      expires_at: new Date(Date.now() + 5 * 60 * 1000) // 5 minutos
+      expires_at: new Date(Date.now() + 5 * 60 * 1000), // 5 minutos
+      used: false
     });
-
-    // Envia o código por email
-    await sendVerificationEmail(user.email, code);
 
     res.json({
       success: true,
       message: 'Código gerado com sucesso! Use-o no Telegram.',
       code: code,
-      email: user.email,
-      isRecent: false
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000)
     });
   } catch (error) {
     console.error('Erro ao gerar código:', error);

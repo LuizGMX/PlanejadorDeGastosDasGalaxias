@@ -116,8 +116,8 @@ const groupByDate = (items, dateField) => {
 // Função auxiliar para agrupar por banco
 const groupByBank = (items) => {
   return items.reduce((acc, item) => {
-    if (!item.Bank) return acc;
-    const bank = item.Bank.name;
+    if (!item.bank) return acc;
+    const bank = item.bank.name;
     const existing = acc.find(i => i.bank_name === bank);
     if (existing) {
       existing.total += parseFloat(item.amount);
@@ -201,69 +201,80 @@ router.get('/', authenticate, async (req, res) => {
     console.log('Até:', endDate);
 
     // Busca todas as regras de recorrência do usuário
-    const recurrenceRules = await RecurrenceRule.findAll({
-      where: {
-        user_id: req.user.id,
-        [Op.or]: [
-          { end_date: null },
-          { end_date: { [Op.gte]: startDate } }
-        ],
-        start_date: { [Op.lte]: endDate }
-      },
-      include: [
-        { 
-          model: Category,
-          as: 'Category',
-          attributes: ['id', 'category_name']
+    console.log('Buscando regras de recorrência para o usuário:', req.user.id);
+    let recurrenceRules;
+    try {
+      recurrenceRules = await RecurrenceRule.findAll({
+        where: {
+          user_id: req.user.id,
+          [Op.or]: [
+            { end_date: null },
+            { end_date: { [Op.gte]: startDate } }
+          ],
+          start_date: { [Op.lte]: endDate }
         },
-        { 
-          model: Bank,
-          as: 'Bank',
-          attributes: ['id', 'name']
-        }
-      ]
-    }).catch(error => {
-      console.error('Erro ao buscar regras de recorrência:', error);
-      throw error;
-    });
-
-    console.log('Regras de recorrência encontradas:', recurrenceRules.length);
+        include: [
+          { 
+            model: Category,
+            as: 'Category',
+            attributes: ['id', 'category_name']
+          },
+          { 
+            model: Bank,
+            as: 'bank',
+            attributes: ['id', 'name']
+          }
+        ]
+      });
+      console.log('Regras de recorrência encontradas:', recurrenceRules.length);
+    } catch (error) {
+      console.error('Erro detalhado ao buscar regras de recorrência:', error);
+      console.error('Erro SQL (se disponível):', error.sql);
+      console.error('Stack trace:', error.stack);
+      throw new Error(`Falha ao buscar regras de recorrência: ${error.message}`);
+    }
 
     // Busca todas as exceções do usuário para o período
-    const recurrenceExceptions = await RecurrenceException.findAll({
-      where: {
-        exception_date: {
-          [Op.between]: [startDate, endDate]
-        }
-      },
-      include: [
-        {
-          model: RecurrenceRule,
-          as: 'rule',
-          where: {
-            user_id: req.user.id
-          },
-          include: [
-            { 
-              model: Category,
-              as: 'Category',
-              attributes: ['id', 'category_name']
+    console.log('Buscando exceções de recorrência para o período');
+    let recurrenceExceptions;
+    try {
+      recurrenceExceptions = await RecurrenceException.findAll({
+        where: {
+          exception_date: {
+            [Op.between]: [startDate, endDate]
+          }
+        },
+        include: [
+          {
+            model: RecurrenceRule,
+            as: 'RecurrenceRule',
+            where: {
+              user_id: req.user.id
             },
-            { 
-              model: Bank,
-              as: 'Bank',
-              attributes: ['id', 'name']
-            }
-          ]
-        }
-      ]
-    }).catch(error => {
-      console.error('Erro ao buscar exceções:', error);
-      throw error;
-    });
+            include: [
+              { 
+                model: Category,
+                as: 'Category',
+                attributes: ['id', 'category_name']
+              },
+              { 
+                model: Bank,
+                as: 'bank',
+                attributes: ['id', 'name']
+              }
+            ]
+          }
+        ]
+      });
+      console.log('Exceções encontradas:', recurrenceExceptions.length);
+    } catch (error) {
+      console.error('Erro detalhado ao buscar exceções:', error);
+      console.error('Erro SQL (se disponível):', error.sql);
+      console.error('Stack trace:', error.stack);
+      throw new Error(`Falha ao buscar exceções de recorrência: ${error.message}`);
+    }
 
-    console.log('Exceções encontradas:', recurrenceExceptions.length);
-
+    console.log('Calculando ocorrências para regras de recorrência');
     // Calcula todas as ocorrências para cada regra
     const recurrenceOccurrences = recurrenceRules.flatMap(rule =>
       calculateOccurrences(rule, startDate, endDate, recurrenceExceptions)
@@ -282,7 +293,7 @@ router.get('/', authenticate, async (req, res) => {
         is_recurring: true,
         recurrence_id: occ.rule.id,
         Category: occ.rule.Category,
-        Bank: occ.rule.Bank
+        bank: occ.rule.bank
       }));
 
     const recurrentIncomes = recurrenceOccurrences
@@ -297,7 +308,7 @@ router.get('/', authenticate, async (req, res) => {
         is_recurring: true,
         recurrence_id: occ.rule.id,
         Category: occ.rule.Category,
-        Bank: occ.rule.Bank
+        bank: occ.rule.bank
       }));
 
     // Busca despesas e receitas normais
@@ -321,16 +332,8 @@ router.get('/', authenticate, async (req, res) => {
           })
         },
         include: [
-          { 
-            model: Category,
-            as: 'Category',
-            attributes: ['id', 'category_name']
-          },
-          { 
-            model: Bank,
-            as: 'Bank',
-            attributes: ['id', 'name']
-          }
+          { model: Category, as: 'Category' },
+          { model: Bank, as: 'bank' }
         ]
       }),
       Income.findAll({
@@ -352,16 +355,8 @@ router.get('/', authenticate, async (req, res) => {
           })
         },
         include: [
-          { 
-            model: Category,
-            as: 'Category',
-            attributes: ['id', 'category_name']
-          },
-          { 
-            model: Bank,
-            as: 'Bank',
-            attributes: ['id', 'name']
-          }
+          { model: Category, as: 'Category' },
+          { model: Bank, as: 'bank' }
         ]
       })
     ]).catch(error => {
@@ -611,7 +606,7 @@ router.get('/category-summary', async (req, res) => {
 
     if (!summary || summary.length === 0) {
       return res.json({
-        message: `Não há ${type === 'income' ? 'ganhos' : 'despesas'} registrados para este período.`,
+        message: `Não há ${type === 'income' ? 'receitas' : 'despesas'} registrados para este período.`,
         data: []
       });
     }
@@ -642,7 +637,7 @@ router.get('/period-summary', async (req, res) => {
 
     if (!summary || summary.length === 0) {
       return res.json({
-        message: `Não há ${type === 'income' ? 'ganhos' : 'despesas'} registrados para este período.`,
+        message: `Não há ${type === 'income' ? 'receitas' : 'despesas'} registrados para este período.`,
         data: []
       });
     }
@@ -690,7 +685,7 @@ router.get('/bank-balance-trend', authenticate, async (req, res) => {
         },
         include: [
           { model: Category, as: 'Category' }, 
-          { model: Bank, as: 'Bank' }
+          { model: Bank, as: 'bank' }
         ]
       }),
       Income.findAll({
@@ -702,22 +697,22 @@ router.get('/bank-balance-trend', authenticate, async (req, res) => {
         },
         include: [
           { model: Category, as: 'Category' }, 
-          { model: Bank, as: 'Bank' }
+          { model: Bank, as: 'bank' }
         ]
       })
     ]);
 
-    // Ganhos Projetados: soma de incomes no período
+    // Receitas Projetados: soma de incomes no período
     const totalProjectedIncomes = incomes.reduce((total, income) => {
       return total + parseFloat(income.amount || 0);
     }, 0);
 
-    // Gastos Projetados: soma de todas as expenses no período
+    // Despesas Projetados: soma de todas as expenses no período
     const totalProjectedExpenses = expenses.reduce((total, expense) => {
       return total + parseFloat(expense.amount || 0);
     }, 0);
 
-    // Saldo Final: Ganhos Projetados - Gastos Projetados
+    // Saldo Final: Receitas Projetados - Despesas Projetados
     const finalBalance = totalProjectedIncomes - totalProjectedExpenses;
 
     const projectionData = [];
@@ -733,7 +728,7 @@ router.get('/bank-balance-trend', authenticate, async (req, res) => {
                expenseDate.getFullYear() === currentDate.getFullYear();
       }).reduce((total, expense) => total + parseFloat(expense.amount || 0), 0);
 
-      // Filtra ganhos do mês atual
+      // Filtra receitas do mês atual
       const monthIncomes = incomes.filter(income => {
         const incomeDate = new Date(income.date);
         return incomeDate.getMonth() === currentDate.getMonth() && 
@@ -743,7 +738,7 @@ router.get('/bank-balance-trend', authenticate, async (req, res) => {
       projectionData.push({
         date: lastDayOfMonth.toISOString().split('T')[0],
         despesas: monthExpenses,
-        ganhos: monthIncomes,
+        receitas: monthIncomes,
         saldo: monthIncomes - monthExpenses
       });
     }
@@ -949,30 +944,54 @@ router.get('/projection', authenticate, async (req, res) => {
 router.get('/all-transactions', authenticate, async (req, res) => {
   try {
     console.log('\n=== BUSCA DE TODAS AS TRANSAÇÕES DO USUÁRIO ===');
+    console.log('Usuário ID:', req.user.id);
     
     // Buscar todas as despesas do usuário
-    const expenses = await Expense.findAll({
-      where: { user_id: req.user.id },
-      include: [
-        { model: Category, as: 'Category' },
-        { model: Bank, as: 'Bank' }
-      ],
-      order: [['expense_date', 'DESC']]
-    });
+    console.log('Buscando despesas...');
+    let expenses;
+    try {
+      expenses = await Expense.findAll({
+        where: { user_id: req.user.id },
+        include: [
+          { model: Category, as: 'Category' },
+          { model: Bank, as: 'bank' },
+          { 
+            model: RecurrenceRule, 
+            as: 'recurrence',
+            required: false
+          }
+        ],
+        order: [['expense_date', 'DESC']]
+      });
+      console.log(`Total de despesas encontradas: ${expenses.length}`);
+    } catch (error) {
+      console.error('Erro detalhado ao buscar despesas:', error);
+      console.error('Erro SQL (se disponível):', error.sql);
+      console.error('Stack trace:', error.stack);
+      throw new Error(`Falha ao buscar despesas: ${error.message}`);
+    }
     
     // Buscar todas as receitas do usuário
-    const incomes = await Income.findAll({
-      where: { user_id: req.user.id },
-      include: [
-        { model: Category, as: 'Category' },
-        { model: Bank, as: 'Bank' }
-      ],
-      order: [['date', 'DESC']]
-    });
+    console.log('Buscando receitas...');
+    let incomes;
+    try {
+      incomes = await Income.findAll({
+        where: { user_id: req.user.id },
+        include: [
+          { model: Category, as: 'Category' },
+          { model: Bank, as: 'bank' }
+        ],
+        order: [['date', 'DESC']]
+      });
+      console.log(`Total de receitas encontradas: ${incomes.length}`);
+    } catch (error) {
+      console.error('Erro detalhado ao buscar receitas:', error);
+      console.error('Erro SQL (se disponível):', error.sql);
+      console.error('Stack trace:', error.stack);
+      throw new Error(`Falha ao buscar receitas: ${error.message}`);
+    }
     
-    console.log(`Total de despesas: ${expenses.length}`);
-    console.log(`Total de receitas: ${incomes.length}`);
-    
+    console.log('Retornando dados para o cliente');
     return res.json({
       expenses,
       incomes
@@ -980,7 +999,12 @@ router.get('/all-transactions', authenticate, async (req, res) => {
     
   } catch (error) {
     console.error('Erro ao buscar todas as transações:', error);
-    return res.status(500).json({ message: 'Erro ao buscar dados de transações', error: error.message });
+    console.error('Stack trace completa:', error.stack);
+    return res.status(500).json({ 
+      message: 'Erro ao buscar dados de transações', 
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 

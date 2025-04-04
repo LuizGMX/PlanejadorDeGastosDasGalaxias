@@ -153,12 +153,20 @@ const TelegramVerification = ({
             <span>Registrar uma nova despesa</span>
           </div>
           <div className={styles.command}>
+            <code>/receita</code>
+            <span>Registrar uma nova receita</span>
+          </div>
+          <div className={styles.command}>
             <code>/resumo</code>
             <span>Ver seu resumo financeiro</span>
           </div>
           <div className={styles.command}>
-            <code>/ajuda</code>
+            <code>/help</code>
             <span>Ver todos os comandos disponíveis</span>
+          </div>
+          <div className={styles.command}>
+            <code>/bancos</code>
+            <span>Listar seus bancos ativos</span>
           </div>
         </div>
       </div>

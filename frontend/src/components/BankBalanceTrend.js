@@ -116,9 +116,9 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
             formatter={(value) => {
               let color;
               switch(value) {
-                case 'ganhos':
+                case 'receitas':
                   color = 'var(--success-color)';
-                  value = 'Ganhos';
+                  value = 'Receitas';
                   break;
                 case 'despesas':
                   color = 'var(--error-color)';
@@ -136,7 +136,7 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
           />
           <Line
             type="monotone"
-            dataKey="ganhos"
+            dataKey="receitas"
             stroke="var(--success-color)"
             strokeWidth={2}
             dot={{ fill: 'var(--success-color)', r: 4 }}
@@ -163,7 +163,7 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
 
       <div className={styles.trendChartSummary}>
         <div className={styles.trendChartSummaryItem}>
-          <span>Ganhos Projetados</span>
+          <span>Receitas Projetados</span>
           <strong className={styles.positive}>
             {formatFullCurrency(data.summary.totalProjectedIncomes)}
           </strong>

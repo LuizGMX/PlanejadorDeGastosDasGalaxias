@@ -2,7 +2,7 @@ import { Router } from 'express';
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
 import sgMail from '@sendgrid/mail';
-import { User, VerificationCode, UserBank } from '../models/index.js';
+import { User, VerificationCode, UserBank, Bank } from '../models/index.js';
 import sequelize from '../config/db.js';
 import { Op } from 'sequelize';
 
@@ -112,10 +112,42 @@ router.post('/check-email', async (req, res) => {
     
     console.log('Usuário encontrado:', user ? 'Sim' : 'Não');
     
+    // Se o usuário existir, gera e envia o código imediatamente
+    if (user) {
+      const code = generateVerificationCode();
+      console.log('Código gerado para usuário existente:', code);
+
+      // Remove códigos antigos
+      await VerificationCode.destroy({ where: { email } });
+      
+      // Salva o novo código
+      await VerificationCode.create({
+        email,
+        code,
+        expires_at: new Date(Date.now() + 10 * 60 * 1000)
+      });
+
+      // Envia o email
+      try {
+        await sendVerificationEmail(email, user.name, code);
+        console.log('Email enviado com sucesso para usuário existente');
+      } catch (emailError) {
+        console.error('Erro ao enviar email:', emailError);
+      }
+
+      return res.json({
+        isNewUser: false,
+        name: user.name,
+        email: user.email,
+        message: 'Código enviado com sucesso!'
+      });
+    }
+    
+    // Se não existir, retorna que é um novo usuário
     return res.json({
-      isNewUser: !user,
-      name: user ? user.name : null,
-      email: user ? user.email : null
+      isNewUser: true,
+      name: null,
+      email: null
     });
   } catch (error) {
     console.error('Erro ao verificar email:', error);
@@ -131,25 +163,31 @@ router.post('/send-code', async (req, res) => {
       name,      
       financialGoalName,
       financialGoalAmount,
-      financialGoalTime
+      financialGoalPeriodType,
+      financialGoalPeriodValue,
+      selectedBanks,
+      isNewUser
     } = req.body;
 
-    console.log('Dados recebidos:', { email, name, financialGoalName, financialGoalAmount, financialGoalTime });
+    console.log('Dados recebidos:', { 
+      email, 
+      name,      
+      financialGoalName,
+      financialGoalAmount,
+      financialGoalPeriodType,
+      financialGoalPeriodValue,
+      selectedBanks: selectedBanks ? selectedBanks.length : 0,
+      isNewUser 
+    });
 
     // Validação básica do email
     if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
       return res.status(400).json({ message: 'E-mail inválido' });
     }
 
-    // Verifica se o usuário já existe
-    let user = await User.findOne({ where: { email } });
-    const isNewUser = !user;
-
-    console.log('Status do usuário:', isNewUser ? 'Novo usuário' : 'Usuário existente');
-
-    // Se for novo usuário, valida o nome
-    if (isNewUser && !name) {
-      return res.status(400).json({ message: 'Nome é obrigatório para novos usuários' });
+    // Se for novo usuário, valida os dados necessários
+    if (isNewUser && (!name || !financialGoalName || !financialGoalAmount || !financialGoalPeriodType || !financialGoalPeriodValue)) {
+      return res.status(400).json({ message: 'Todos os dados são obrigatórios para novos usuários' });
     }
 
     // Gera o código de verificação
@@ -158,54 +196,61 @@ router.post('/send-code', async (req, res) => {
 
     // Remove códigos antigos
     await VerificationCode.destroy({ where: { email } });
-    console.log('Códigos antigos removidos');
-    
-    // Armazena os dados do usuário temporariamente junto com o código
-    const verificationData = {
-      email, 
+
+    // Prepara os dados do usuário para salvar com o código
+    const userData = isNewUser ? {
+      name,
+      financialGoalName,
+      financialGoalAmount,
+      financialGoalPeriodType,
+      financialGoalPeriodValue,
+      selectedBanks
+    } : null;
+
+    // Salva o código com os dados do usuário
+    await VerificationCode.create({
+      email,
       code,
-      user_data: JSON.stringify({
-        name,
-        financialGoalName,
-        financialGoalAmount,
-        financialGoalTime
-      }),
-      expires_at: new Date(Date.now() + 10 * 60 * 1000)
-    };
+      user_data: userData ? JSON.stringify(userData) : null,
+      expires_at: new Date(Date.now() + 10 * 60 * 1000) // 10 minutos
+    });
 
-    console.log('Dados de verificação:', verificationData);
-
-    const savedCode = await VerificationCode.create(verificationData);
-    console.log('Código salvo no banco:', savedCode);
-
-    // Tenta enviar o email
+    // Envia o email
     try {
-      await sendVerificationEmail(email, name || (user ? user.name : null), code);
+      await sendVerificationEmail(email, name, code);
       console.log('Email enviado com sucesso');
     } catch (emailError) {
       console.error('Erro ao enviar email:', emailError);
-      // Mesmo se o email falhar, mostramos o código no console
+      throw new Error('Falha ao enviar email de verificação');
     }
-    
-    // Sempre mostra o código no console para desenvolvimento
-    console.log('=================================');
-    console.log(`Código de verificação para ${email}: ${code}`);
-    console.log('=================================');
-    
-    return res.json({ 
-      message: 'Código gerado com sucesso! Verifique seu email ou o console do backend.',
-      code: process.env.NODE_ENV === 'development' ? code : undefined
-    });
+
+    return res.json({ message: 'Código enviado com sucesso!' });
   } catch (error) {
-    console.error('Erro ao gerar código:', error);
-    return res.status(500).json({ message: 'Erro interno ao gerar código' });
+    console.error('Erro ao enviar código:', error);
+    return res.status(500).json({ message: error.message || 'Erro interno ao enviar código' });
   }
 });
 
 router.post('/verify-code', async (req, res) => {
   const t = await sequelize.transaction();
   try {
-    const { email, code, name, desired_budget, financialGoalName, financialGoalAmount, financialGoalPeriodType, financialGoalPeriodValue, selectedBanks } = req.body;
+    const { 
+      email, 
+      code, 
+      isNewUser, 
+      name,
+      financialGoalName,
+      financialGoalAmount,
+      financialGoalPeriodType,
+      financialGoalPeriodValue,
+      selectedBanks 
+    } = req.body;
+
+    console.log('Dados recebidos no verify-code:', {
+      email,
+      isNewUser,
+      selectedBanks: selectedBanks ? selectedBanks.length : 0
+    });
 
     // Validação do código de verificação
     const verificationCode = await VerificationCode.findOne({
@@ -221,53 +266,93 @@ router.post('/verify-code', async (req, res) => {
       return res.status(400).json({ message: 'Código inválido ou expirado' });
     }
 
-    // Calcula a data final do objetivo
-    const startDate = new Date();
-    let endDate = new Date(startDate);
-
-    if (financialGoalPeriodType && financialGoalPeriodValue) {
-      switch (financialGoalPeriodType) {
-        case 'days':
-          endDate.setDate(startDate.getDate() + parseInt(financialGoalPeriodValue));
-          break;
-        case 'months':
-          endDate.setMonth(startDate.getMonth() + parseInt(financialGoalPeriodValue));
-          break;
-        case 'years':
-          endDate.setFullYear(startDate.getFullYear() + parseInt(financialGoalPeriodValue));
-          break;
-      }
-    }
-
-    // Busca ou cria o usuário
+    // Busca o usuário
     let user = await User.findOne({ where: { email } });
     
-    if (!user) {
+    if (isNewUser) {
+      // Se for um novo usuário, valida os dados necessários
+      if (!name || !financialGoalName || !financialGoalAmount || !financialGoalPeriodType || !financialGoalPeriodValue) {
+        await t.rollback();
+        return res.status(400).json({ message: 'Todos os dados são obrigatórios para novos usuários' });
+      }
+
+      // Calcula as datas do objetivo
+      const startDate = new Date();
+      let endDate = new Date(startDate);
+
+      if (financialGoalPeriodType && financialGoalPeriodValue) {
+        switch (financialGoalPeriodType) {
+          case 'days':
+            endDate.setDate(startDate.getDate() + parseInt(financialGoalPeriodValue));
+            break;
+          case 'months':
+            endDate.setMonth(startDate.getMonth() + parseInt(financialGoalPeriodValue));
+            break;
+          case 'years':
+            endDate.setFullYear(startDate.getFullYear() + parseInt(financialGoalPeriodValue));
+            break;
+        }
+      }
+
       // Cria um novo usuário
       user = await User.create({
         email,
-        name,
-        desired_budget: desired_budget ? parseFloat(desired_budget.toString().replace(/\./g, '').replace(',', '.')) : null,
+        name: name,
         financial_goal_name: financialGoalName,
         financial_goal_amount: financialGoalAmount ? parseFloat(financialGoalAmount.toString().replace(/\./g, '').replace(',', '.')) : null,
         financial_goal_start_date: startDate,
         financial_goal_end_date: endDate
       }, { transaction: t });
     } else {
-      // Atualiza o usuário existente
-      await user.update({
-        name,
-        desired_budget: desired_budget ? parseFloat(desired_budget.toString().replace(/\./g, '').replace(',', '.')) : null,
-        financial_goal_name: financialGoalName,
-        financial_goal_amount: financialGoalAmount ? parseFloat(financialGoalAmount.toString().replace(/\./g, '').replace(',', '.')) : null,
-        financial_goal_start_date: startDate,
-        financial_goal_end_date: endDate
-      }, { transaction: t });
+      // Se for um usuário existente, apenas verifica se existe
+      if (!user) {
+        await t.rollback();
+        return res.status(404).json({ message: 'Usuário não encontrado' });
+      }
     }
 
-    // Associa os bancos selecionados ao usuário
+    // Associar bancos ao usuário, se houver
     if (selectedBanks && selectedBanks.length > 0) {
-      await user.setBanks(selectedBanks, { transaction: t });
+      console.log('Associando bancos ao usuário:', { userId: user.id, selectedBanks });
+      
+      try {
+        // Pegar todos os bancos existentes para ter certeza de quais devem ser ativos e inativos
+        const allBanks = await Bank.findAll({
+          attributes: ['id'],
+          transaction: t
+        });
+        
+        // Para cada banco no sistema
+        for (const bank of allBanks) {
+          // Verificar se o banco está na lista de selecionados
+          const isSelected = selectedBanks.includes(bank.id);
+          
+          // Remover qualquer associação existente primeiro
+          await UserBank.destroy({
+            where: { 
+              user_id: user.id, 
+              bank_id: bank.id 
+            },
+            transaction: t
+          });
+          
+          // Criar associação para todos os bancos, mas marcando como ativo apenas os selecionados
+          await UserBank.create({
+            user_id: user.id,
+            bank_id: bank.id,
+            is_active: isSelected // true para selecionados, false para não selecionados
+          }, { 
+            transaction: t
+          });
+          
+          console.log(`Banco ${bank.id} associado com is_active=${isSelected}`);
+        }
+        
+        console.log('Bancos associados com sucesso');
+      } catch (error) {
+        console.error('Erro ao associar bancos:', error);
+        throw error; // Re-throw para que a transação seja revertida
+      }
     }
 
     // Remove o código de verificação
@@ -289,13 +374,13 @@ router.post('/verify-code', async (req, res) => {
         id: user.id,
         name: user.name,
         email: user.email,
-        desired_budget: user.desired_budget,
         financial_goal_name: user.financial_goal_name,
         financial_goal_amount: user.financial_goal_amount,
         financial_goal_start_date: user.financial_goal_start_date,
         financial_goal_end_date: user.financial_goal_end_date,
         telegram_verified: user.telegram_verified
-      }
+      },
+      redirectTo: isNewUser ? '/telegram' : '/dashboard'
     });
   } catch (error) {
     await t.rollback();

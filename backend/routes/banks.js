@@ -20,29 +20,48 @@ router.get('/', async (req, res) => {
 // Rota para listar bancos favoritos do usuário
 router.get('/favorites', authenticate, async (req, res) => {
   try {
-    const userBanks = await UserBank.findAll({
-      where: { 
-        user_id: req.user.id,
-        is_active: true
-      },
-      include: [{
-        model: Bank,
-        attributes: ['id', 'name', 'code']
-      }],
-      order: [[Bank, 'name', 'ASC']]
+    console.log(`Buscando bancos favoritos para o usuário ${req.user.id}`);
+    
+    // Buscar todos os bancos existentes
+    const allBanks = await Bank.findAll({
+      attributes: ['id', 'name', 'code'],
+      order: [['name', 'ASC']]
     });
 
-    // Se não houver bancos favoritos, retorna todos os bancos
-    if (userBanks.length === 0) {
-      const allBanks = await Bank.findAll({
-        attributes: ['id', 'name', 'code'],
-        order: [['name', 'ASC']]
-      });
-      return res.json(allBanks);
+    // Buscar as relações de UserBank para o usuário atual
+    const userBanks = await UserBank.findAll({
+      where: { 
+        user_id: req.user.id
+      },
+      attributes: ['bank_id', 'is_active']
+    });
+
+    console.log('UserBanks encontrados:', userBanks.map(ub => ({bank_id: ub.bank_id, is_active: ub.is_active})));
+
+    // Mapear os IDs dos bancos ativos
+    const userBankMap = {};
+    userBanks.forEach(ub => {
+      userBankMap[ub.bank_id] = ub.is_active;
+    });
+
+    // Adicionar a informação de ativo/inativo a todos os bancos
+    const banksWithStatus = allBanks.map(bank => ({
+      id: bank.id,
+      name: bank.name,
+      code: bank.code,
+      is_active: userBankMap[bank.id] !== undefined ? userBankMap[bank.id] : false
+    }));
+
+    console.log(`Retornando ${banksWithStatus.length} bancos com status para o usuário ${req.user.id}`);
+
+    // Se apenas os ativos foram solicitados, filtrar
+    if (req.query.onlyActive === 'true') {
+      const activeBanks = banksWithStatus.filter(bank => bank.is_active);
+      console.log(`Filtrando apenas bancos ativos: ${activeBanks.length} encontrados`);
+      return res.json(activeBanks);
     }
 
-    const banks = userBanks.map(ub => ub.Bank);
-    res.json(banks);
+    res.json(banksWithStatus);
   } catch (error) {
     console.error('Erro ao listar bancos favoritos:', error);
     res.status(500).json({ message: 'Erro ao listar bancos favoritos' });
@@ -136,12 +155,24 @@ router.post('/favorites', authenticate, async (req, res) => {
       return res.status(404).json({ message: 'Banco não encontrado' });
     }
 
-    const [userBank] = await UserBank.findOrCreate({
-      where: { user_id, bank_id },
-      defaults: { is_active: false }
+    // Primeiro verifica se já existe essa relação
+    let userBank = await UserBank.findOne({
+      where: { user_id, bank_id }
     });
 
-    await userBank.update({ is_active });
+    if (userBank) {
+      // Se já existe, apenas atualiza
+      await userBank.update({ is_active });
+      console.log(`Relação UserBank atualizada: ${userBank.id}, is_active=${is_active}`);
+    } else {
+      // Se não existe, cria uma nova
+      userBank = await UserBank.create({
+        user_id,
+        bank_id,
+        is_active
+      });
+      console.log(`Nova relação UserBank criada: ${userBank.id}, is_active=${is_active}`);
+    }
 
     // Busca os dados atualizados para retornar
     const updatedUserBank = await UserBank.findOne({

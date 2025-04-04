@@ -118,7 +118,7 @@ const AddIncome = () => {
     setLoading(true);
 
     try {
-      // Define as datas para ganhos fixos
+      // Define as datas para receitas fixos
       let start_date = null;
       let end_date = null;
       if (formData.is_recurring) {

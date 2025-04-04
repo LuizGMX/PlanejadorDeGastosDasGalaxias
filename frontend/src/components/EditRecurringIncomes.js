@@ -44,7 +44,7 @@ const EditRecurringIncomes = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Falha ao carregar ganhos');
+        throw new Error('Falha ao carregar receitas');
       }
 
       const data = await response.json();
@@ -53,12 +53,12 @@ const EditRecurringIncomes = () => {
       // Verifica se data.incomes existe, senão usa o próprio data
       const incomesData = data.incomes || data;
       
-      // Filtra apenas ganhos que são recorrentes OU têm parcelas
+      // Filtra apenas receitas que são recorrentes OU têm parcelas
       const filteredIncomes = incomesData.filter(income => 
         income.is_recurring || income.has_installments
       );
       
-      // Agrupa os ganhos por recurring_group_id ou installment_group_id
+      // Agrupa os receitas por recurring_group_id ou installment_group_id
       const groupedIncomes = filteredIncomes.reduce((acc, income) => {
         const groupId = income.recurring_group_id || income.installment_group_id;
         if (!acc[groupId]) {
@@ -79,12 +79,12 @@ const EditRecurringIncomes = () => {
           });
         });
 
-      console.log('Ganhos únicos:', uniqueIncomes);
+      console.log('Receitas únicos:', uniqueIncomes);
       setIncomes(uniqueIncomes);
       setLoading(false);
     } catch (err) {
       console.error('Erro completo:', err);
-      setError('Erro ao carregar ganhos. Por favor, tente novamente.');
+      setError('Erro ao carregar receitas. Por favor, tente novamente.');
       setLoading(false);
     }
   };
@@ -203,7 +203,7 @@ const EditRecurringIncomes = () => {
       <div className={dataTableStyles.header}>
         <div className={dataTableStyles.headerTitleContainer}>
           <BsRepeat size={24} className={dataTableStyles.headerIcon} />
-          <h2>Ganhos Fixos</h2>
+          <h2>Receitas Fixos</h2>
         </div>
         <button 
           onClick={() => navigate('/income')}
@@ -216,7 +216,7 @@ const EditRecurringIncomes = () => {
       {loading ? (
         <div className={dataTableStyles.loadingContainer}>
           <div className={dataTableStyles.loadingSpinner}></div>
-          <p>Carregando ganhos fixos...</p>
+          <p>Carregando receitas fixos...</p>
         </div>
       ) : error ? (
         <div className={dataTableStyles.errorContainer}>

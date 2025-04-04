@@ -21,7 +21,9 @@ import {
   BsCreditCard2Front,
   BsFolderSymlink,
   BsCheck2,
-  BsXLg
+  BsXLg,
+  BsChevronDown,
+  BsChevronUp
 } from 'react-icons/bs';
 
 const Incomes = () => {
@@ -49,6 +51,12 @@ const Incomes = () => {
   const [noIncomesMessage, setNoIncomesMessage] = useState(null);
   const [categories, setCategories] = useState([]);
   const [banks, setBanks] = useState([]);
+  const [showFilters, setShowFilters] = useState(window.innerWidth > 768);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [touchStartX, setTouchStartX] = useState(0);
+  const [touchEndX, setTouchEndX] = useState(0);
+  const [activeSwipeCard, setActiveSwipeCard] = useState(null);
+  const [expandedCardDetails, setExpandedCardDetails] = useState({});
 
   const years = Array.from(
     { length: 11 },
@@ -137,6 +145,52 @@ const Incomes = () => {
     };
   }, []);
 
+  // Detectar tamanho da tela
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      console.log('Is mobile:', mobile);
+      if (!mobile) {
+        setShowFilters(true);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Ajustar posição do botão de filtro
+  useEffect(() => {
+    if (isMobile) {
+      const filterButton = document.querySelector(`.${dataTableStyles.filterToggleButton}`);
+      if (filterButton) {
+        filterButton.style.position = 'sticky';
+        filterButton.style.top = '0';
+        filterButton.style.marginTop = '-8px';
+        filterButton.style.marginBottom = '16px';
+        filterButton.style.zIndex = '20';
+        filterButton.style.width = '100%';
+        filterButton.style.display = 'flex';
+        filterButton.style.alignItems = 'center';
+        filterButton.style.justifyContent = 'center';
+        filterButton.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.15)';
+      }
+
+      const dataContainer = document.querySelector(`.${dataTableStyles.dataContainer}`);
+      if (dataContainer) {
+        dataContainer.style.paddingTop = '8px';
+      }
+      
+      // Resetar style do container de filtros para garantir que não interfira
+      const filtersContainer = document.querySelector(`.${dataTableStyles.filtersContainer}`);
+      if (filtersContainer) {
+        filtersContainer.style.display = !showFilters ? 'none' : 'flex';
+        filtersContainer.style.flexDirection = 'column';
+      }
+    }
+  }, [isMobile, showFilters, dataTableStyles]);
+
   const fetchIncomes = async () => {
     try {
       const queryParams = new URLSearchParams();
@@ -161,7 +215,7 @@ const Incomes = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Erro ao carregar ganhos');
+        throw new Error('Erro ao carregar receitas');
       }
 
       const data = await response.json();
@@ -179,15 +233,15 @@ const Incomes = () => {
           message: 'Nenhum ganho encontrado para os filtros selecionados.',
           suggestion: 'Tente ajustar os filtros para ver mais resultados.'
         } : {
-          message: 'Você ainda não tem ganhos cadastrados para este período.',
+          message: 'Você ainda não tem receitas cadastrados para este período.',
           suggestion: 'Que tal começar adicionando seu primeiro ganho?'
         });
       } else {
         setNoIncomesMessage(null);
       }
     } catch (error) {
-      console.error('Erro ao buscar ganhos:', error);
-      setError('Erro ao carregar ganhos. Por favor, tente novamente.');
+      console.error('Erro ao buscar receitas:', error);
+      setError('Erro ao carregar receitas. Por favor, tente novamente.');
     }
   };
 
@@ -316,7 +370,7 @@ const Incomes = () => {
         console.log('Resposta do servidor (bulk):', responseData);
 
         if (!response.ok) {
-          throw new Error('Falha ao excluir ganhos em massa');
+          throw new Error('Falha ao excluir receitas em massa');
         }
 
         // Limpa os estados do modal
@@ -325,7 +379,7 @@ const Incomes = () => {
         setDeleteOptions({ type: 'single' });
         setSelectedIncomes([]);
 
-        // Recarrega a lista de ganhos
+        // Recarrega a lista de receitas
         await fetchIncomes();
         
         toast.success(`${selectedIncomes.length} ganho(s) excluído(s) com sucesso!`);
@@ -367,7 +421,7 @@ const Incomes = () => {
       setIncomeToDelete(null);
       setDeleteOptions({ type: 'single' });
 
-      // Recarrega a lista de ganhos
+      // Recarrega a lista de receitas
       await fetchIncomes();
       
       toast.success('Ganho excluído com sucesso!');
@@ -435,6 +489,401 @@ const Incomes = () => {
     }
   };
 
+  // Funções para manipulação de gestos de toque
+  const handleTouchStart = (id, e) => {
+    setTouchStartX(e.targetTouches[0].clientX);
+    // Fechamos qualquer cartão aberto que não seja este
+    if (activeSwipeCard && activeSwipeCard !== id) {
+      setActiveSwipeCard(null);
+    }
+  };
+
+  const handleTouchMove = (id, e) => {
+    setTouchEndX(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = (id) => {
+    const swipeThreshold = 100; // pixels mínimos para considerar um swipe
+    const diff = touchStartX - touchEndX;
+    
+    // Se deslizou da direita para a esquerda (diff positivo) além do threshold, ativamos o swipe
+    if (diff > swipeThreshold) {
+      setActiveSwipeCard(id);
+    } 
+    // Se deslizou da esquerda para a direita (diff negativo) além do threshold, fechamos o swipe
+    else if (diff < -swipeThreshold && activeSwipeCard === id) {
+      setActiveSwipeCard(null);
+    }
+    
+    // Resetamos os valores de toque
+    setTouchStartX(0);
+    setTouchEndX(0);
+  };
+
+  const toggleCardDetails = (id) => {
+    setExpandedCardDetails(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+
+  // Função auxiliar para renderizar visualização mobile como cards
+  const renderMobileCards = () => {
+    return (
+      <div className={dataTableStyles.mobileCardView}>
+        {incomes.map((income) => {
+          const isExpanded = expandedCardDetails[income.id];
+          const isSwipeActive = activeSwipeCard === income.id;
+
+          return (
+            <div 
+              key={income.id} 
+              className={`${dataTableStyles.mobileCard} ${isSwipeActive ? dataTableStyles.mobileCardSwipeActive : ''}`}
+              onTouchStart={(e) => handleTouchStart(income.id, e)}
+              onTouchMove={(e) => handleTouchMove(income.id, e)}
+              onTouchEnd={() => handleTouchEnd(income.id)}
+            >
+              <div className={dataTableStyles.mobileCardSwipeState}>
+                <div className={dataTableStyles.mobileCardSelect}>
+                  <label className={dataTableStyles.checkboxContainer}>
+                    <input
+                      type="checkbox"
+                      checked={selectedIncomes.includes(income.id)}
+                      onChange={(e) => handleSelectIncome(income.id, e)}
+                      className={dataTableStyles.checkbox}
+                    />
+                    <span className={dataTableStyles.checkmark}></span>
+                  </label>
+                </div>
+                
+                <div className={dataTableStyles.mobileCardHeader}>
+                  <h3 className={dataTableStyles.mobileCardTitle}>{income.description}</h3>
+                  <span className={`${dataTableStyles.amountBadge} ${dataTableStyles.incomeAmount} ${dataTableStyles.mobileCardAmount}`}>
+                    R$ {Number(income.amount).toFixed(2)}
+                  </span>
+                </div>
+                
+                <div className={dataTableStyles.mobileCardDetails}>
+                  <div className={dataTableStyles.mobileCardDetail}>
+                    <span className={dataTableStyles.mobileCardLabel}>Data</span>
+                    <span className={dataTableStyles.mobileCardValue}>{formatDate(income.date)}</span>
+                  </div>
+                  
+                  <div className={dataTableStyles.mobileCardDetail}>
+                    <span className={dataTableStyles.mobileCardLabel}>Categoria</span>
+                    <span className={dataTableStyles.mobileCardValue}>{income.Category?.category_name}</span>
+                  </div>
+                  
+                  {!isExpanded ? (
+                    <>
+                      <div className={dataTableStyles.mobileCardDetail}>
+                        <span className={dataTableStyles.mobileCardLabel}>Banco</span>
+                        <span className={dataTableStyles.mobileCardValue}>{income.Bank?.name || '-'}</span>
+                      </div>
+                      
+                      {income.is_recurring && (
+                        <div className={dataTableStyles.mobileCardDetail}>
+                          <span className={dataTableStyles.mobileCardLabel}>Recorrência</span>
+                          <span className={dataTableStyles.mobileCardValue}>
+                            {formatRecurrenceType(income.recurrence_type)}
+                          </span>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <div className={dataTableStyles.mobileCardDetail}>
+                        <span className={dataTableStyles.mobileCardLabel}>Banco</span>
+                        <span className={dataTableStyles.mobileCardValue}>{income.Bank?.name || '-'}</span>
+                      </div>
+                      
+                      <div className={dataTableStyles.mobileCardDetail}>
+                        <span className={dataTableStyles.mobileCardLabel}>Tipo</span>
+                        <span className={dataTableStyles.mobileCardValue}>
+                          {income.is_recurring ? 'Receita fixa' : 'Receita única'}
+                        </span>
+                      </div>
+                      
+                      {income.is_recurring && (
+                        <div className={dataTableStyles.mobileCardDetail}>
+                          <span className={dataTableStyles.mobileCardLabel}>Recorrência</span>
+                          <span className={dataTableStyles.mobileCardValue}>
+                            {formatRecurrenceType(income.recurrence_type)}
+                          </span>
+                        </div>
+                      )}
+                      
+                      {income.note && (
+                        <div className={dataTableStyles.mobileCardDetail}>
+                          <span className={dataTableStyles.mobileCardLabel}>Observação</span>
+                          <span className={dataTableStyles.mobileCardValue}>{income.note}</span>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+                
+                <div className={dataTableStyles.mobileCardActions}>
+                  <div className={dataTableStyles.mobileCardType}>
+                    {income.is_recurring ? (
+                      <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
+                        <BsRepeat /> Fixo
+                      </span>
+                    ) : (
+                      <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
+                        <BsCurrencyDollar /> Único
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className={dataTableStyles.mobileCardActionButtons}>
+                    <button
+                      onClick={() => handleEditClick(income)}
+                      className={dataTableStyles.actionButton}
+                      title="Editar"
+                    >
+                      <BsPencil />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteClick(income)}
+                      className={`${dataTableStyles.actionButton} ${dataTableStyles.delete}`}
+                      title="Excluir"
+                    >
+                      <BsTrash />
+                    </button>
+                  </div>
+                </div>
+                
+                <button 
+                  className={dataTableStyles.mobileCardDetailToggle}
+                  onClick={() => toggleCardDetails(income.id)}
+                >
+                  {isExpanded ? (
+                    <>Mostrar Menos <BsChevronUp /></>
+                  ) : (
+                    <>Mostrar Mais <BsChevronDown /></>
+                  )}
+                </button>
+              </div>
+              
+              <div className={dataTableStyles.mobileCardSwipeActions}>
+                <div 
+                  className={dataTableStyles.mobileCardSwipeEdit}
+                  onClick={() => handleEditClick(income)}
+                >
+                  <BsPencil size={20} />
+                </div>
+                <div 
+                  className={dataTableStyles.mobileCardSwipeDelete}
+                  onClick={() => handleDeleteClick(income)}
+                >
+                  <BsTrash size={20} />
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  // Extrair o conteúdo do filtro para uma variável, assim como em Expenses.js
+  const filterRowContent = (
+    <div className={dataTableStyles.filterRow}>
+      <div className={dataTableStyles.filterGroup}>
+        <label className={dataTableStyles.filterLabel}>
+          <BsCalendar3 /> Meses
+        </label>
+        <div 
+          className={`${dataTableStyles.modernSelect} ${openFilter === 'months' ? dataTableStyles.active : ''}`}
+          onClick={() => handleFilterClick('months')}
+        >
+          <div className={dataTableStyles.modernSelectHeader}>
+            <span>
+              {filters.months.length === 0 
+                ? 'Nenhum mês selecionado' 
+                : filters.months.length === 1 
+                  ? months.find(m => m.value === filters.months[0])?.label 
+                  : filters.months.length === months.length 
+                    ? 'Todos os meses' 
+                    : `${filters.months.length} meses selecionados`}
+            </span>
+            <span className={dataTableStyles.arrow}>▼</span>
+          </div>
+          {openFilter === 'months' && (
+            <div className={dataTableStyles.modernSelectDropdown}>
+              <label className={dataTableStyles.modernCheckboxLabel} onClick={handleCheckboxClick}>
+                <div className={dataTableStyles.modernCheckbox}>
+                  <input
+                    type="checkbox"
+                    checked={filters.months.length === months.length}
+                    onChange={() => handleFilterChange('months', 'all')}
+                    onClick={handleCheckboxClick}
+                    className={dataTableStyles.hiddenCheckbox}
+                  />
+                  <div className={dataTableStyles.customCheckbox}></div>
+                </div>
+                <span>Todos os meses</span>
+              </label>
+              {months.map(month => (
+                <label key={month.value} className={dataTableStyles.modernCheckboxLabel} onClick={handleCheckboxClick}>
+                  <div className={dataTableStyles.modernCheckbox}>
+                    <input
+                      type="checkbox"
+                      checked={filters.months.includes(month.value)}
+                      onChange={() => handleFilterChange('months', month.value)}
+                      onClick={handleCheckboxClick}
+                      className={dataTableStyles.hiddenCheckbox}
+                    />
+                    <div className={dataTableStyles.customCheckbox}></div>
+                  </div>
+                  <span>{month.label}</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className={dataTableStyles.filterGroup}>
+        <label className={dataTableStyles.filterLabel}>
+          <BsCalendar3 /> Anos
+        </label>
+        <div 
+          className={`${dataTableStyles.modernSelect} ${openFilter === 'years' ? dataTableStyles.active : ''}`}
+          onClick={() => handleFilterClick('years')}
+        >
+          <div className={dataTableStyles.modernSelectHeader}>
+            <span>
+              {filters.years.length === 0 
+                ? 'Nenhum ano selecionado' 
+                : filters.years.length === 1 
+                  ? filters.years[0] 
+                  : filters.years.length === years.length 
+                    ? 'Todos os anos' 
+                    : `${filters.years.length} anos selecionados`}
+            </span>
+            <span className={dataTableStyles.arrow}>▼</span>
+          </div>
+          {openFilter === 'years' && (
+            <div className={dataTableStyles.modernSelectDropdown}>
+              <label className={dataTableStyles.modernCheckboxLabel} onClick={handleCheckboxClick}>
+                <div className={dataTableStyles.modernCheckbox}>
+                  <input
+                    type="checkbox"
+                    checked={filters.years.length === years.length}
+                    onChange={() => handleFilterChange('years', 'all')}
+                    onClick={handleCheckboxClick}
+                    className={dataTableStyles.hiddenCheckbox}
+                  />
+                  <div className={dataTableStyles.customCheckbox}></div>
+                </div>
+                <span>Todos os anos</span>
+              </label>
+              {years.map(year => (
+                <label key={year.value} className={dataTableStyles.modernCheckboxLabel} onClick={handleCheckboxClick}>
+                  <div className={dataTableStyles.modernCheckbox}>
+                    <input
+                      type="checkbox"
+                      checked={filters.years.includes(year.value)}
+                      onChange={() => handleFilterChange('years', year.value)}
+                      onClick={handleCheckboxClick}
+                      className={dataTableStyles.hiddenCheckbox}
+                    />
+                    <div className={dataTableStyles.customCheckbox}></div>
+                  </div>
+                  <span>{year.label}</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className={dataTableStyles.filterGroup}>
+        <label className={dataTableStyles.filterLabel}>
+          <BsFolderSymlink /> Categoria
+        </label>
+        <div 
+          className={`${dataTableStyles.modernSelect} ${openFilter === 'category' ? dataTableStyles.active : ''}`}
+          onClick={() => handleFilterClick('category')}
+        >
+          <div className={dataTableStyles.modernSelectHeader}>
+            <span>
+              {filters.category === 'all' 
+                ? 'Todas as categorias' 
+                : categories.find(c => c.id === Number(filters.category))?.category_name || 'Selecione uma categoria'}
+            </span>
+            <span className={dataTableStyles.arrow}>▼</span>
+          </div>
+          {openFilter === 'category' && (
+            <div className={dataTableStyles.modernSelectDropdown}>
+              <label 
+                className={dataTableStyles.modernCheckboxLabel}
+                onClick={(e) => {
+                  handleCheckboxClick(e);
+                  handleFilterChange('category', 'all');
+                }}
+              >
+                <div className={dataTableStyles.modernCheckbox}>
+                  <input
+                    type="radio"
+                    checked={filters.category === 'all'}
+                    className={dataTableStyles.hiddenCheckbox}
+                    readOnly
+                  />
+                  <div className={dataTableStyles.customCheckbox}></div>
+                </div>
+                <span>Todas as categorias</span>
+              </label>
+              {categories.map(category => (
+                <label 
+                  key={category.id} 
+                  className={dataTableStyles.modernCheckboxLabel}
+                  onClick={(e) => {
+                    handleCheckboxClick(e);
+                    handleFilterChange('category', category.id.toString());
+                  }}
+                >
+                  <div className={dataTableStyles.modernCheckbox}>
+                    <input
+                      type="radio"
+                      checked={filters.category === category.id.toString()}
+                      className={dataTableStyles.hiddenCheckbox}
+                      readOnly
+                    />
+                    <div className={dataTableStyles.customCheckbox}></div>
+                  </div>
+                  <span>{category.category_name}</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className={dataTableStyles.searchField}>
+        <BsSearch className={dataTableStyles.searchIcon} />
+        <input 
+          type="text" 
+          placeholder="Buscar por descrição..." 
+          value={filters.description} 
+          onChange={(e) => handleFilterChange('description', e.target.value)} 
+          className={dataTableStyles.searchInput}
+        />
+      </div>
+
+      {incomes.length > 0 && (
+        <div className={dataTableStyles.filterSummary}>
+          Total de receitas para os filtros selecionados: 
+          <strong className={dataTableStyles.incomeAmount}>
+            R$ {incomes.reduce((sum, income) => sum + Number(income.amount), 0).toFixed(2)}
+          </strong>
+        </div>
+      )}
+    </div>
+  );
+
   if (loading) {
     return (
       <div className={dataTableStyles.pageContainer}>
@@ -458,7 +907,7 @@ const Incomes = () => {
   return (
     <div className={dataTableStyles.pageContainer}>
       <div className={dataTableStyles.pageHeader}>
-        <h1 className={dataTableStyles.pageTitle}>Meus Ganhos</h1>
+        <h1 className={dataTableStyles.pageTitle}>Minhas Receitas</h1>
         <button 
           onClick={() => navigate('/add-income')} 
           className={dataTableStyles.addButton}
@@ -468,197 +917,36 @@ const Incomes = () => {
       </div>
 
       <div className={dataTableStyles.dataContainer}>
+        {isMobile && (
+          <div style={{ width: '100%', display: 'block', position: 'relative', marginTop: '-8px', marginBottom: '16px' }}>
+            <button 
+              className={dataTableStyles.filterToggleButton} 
+              onClick={() => {
+                setShowFilters(!showFilters);
+                console.log('Show filters:', !showFilters);
+              }}
+            >
+              <BsFilter size={16} /> 
+              {showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}
+              {showFilters ? <BsChevronUp /> : <BsChevronDown />}
+            </button>
+          </div>
+        )}
+
+        <div className={`${dataTableStyles.filtersContainer} ${isMobile && !showFilters ? dataTableStyles.filtersCollapsed : ''} ${isMobile && showFilters ? dataTableStyles.filtersExpanded : ''}`} style={isMobile ? { display: showFilters ? 'flex' : 'none', flexDirection: 'column' } : {}}>
+          {filterRowContent}
+        </div>
+
         {selectedIncomes.length > 0 && (
           <div className={dataTableStyles.bulkActions}>
             <button
               className={dataTableStyles.deleteButton}
               onClick={() => handleDeleteClick()}
             >
-              Excluir {selectedIncomes.length} {selectedIncomes.length === 1 ? 'item selecionado' : 'itens selecionados'}
+              <BsTrash /> Excluir {selectedIncomes.length} {selectedIncomes.length === 1 ? 'item' : 'itens'}
             </button>
           </div>
         )}
-
-        <div className={dataTableStyles.filtersContainer}>
-          <div className={dataTableStyles.filterRow}>
-            <div className={dataTableStyles.filterGroup}>
-              <label className={dataTableStyles.filterLabel}>
-                <BsCalendar3 /> Meses
-              </label>
-              <div 
-                className={`${dataTableStyles.modernSelect} ${openFilter === 'months' ? dataTableStyles.active : ''}`}
-                onClick={() => handleFilterClick('months')}
-              >
-                <div className={dataTableStyles.modernSelectHeader}>
-                  <span>
-                    {filters.months.length === 0 
-                      ? 'Nenhum mês selecionado' 
-                      : filters.months.length === 1 
-                        ? months.find(m => m.value === filters.months[0])?.label 
-                        : filters.months.length === months.length 
-                          ? 'Todos os meses' 
-                          : `${filters.months.length} meses selecionados`}
-                  </span>
-                  <span className={dataTableStyles.arrow}>▼</span>
-                </div>
-                {openFilter === 'months' && (
-                  <div className={dataTableStyles.modernSelectDropdown}>
-                    <label className={dataTableStyles.modernCheckboxLabel}>
-                      <div className={dataTableStyles.modernCheckbox}>
-                        <input
-                          type="checkbox"
-                          checked={filters.months.length === months.length}
-                          onChange={() => handleFilterChange('months', 'all')}
-                          onClick={handleCheckboxClick}
-                          className={dataTableStyles.hiddenCheckbox}
-                        />
-                        <div className={dataTableStyles.customCheckbox}></div>
-                      </div>
-                      <span>Todos os meses</span>
-                    </label>
-                    {months.map(month => (
-                      <label key={month.value} className={dataTableStyles.modernCheckboxLabel}>
-                        <div className={dataTableStyles.modernCheckbox}>
-                          <input
-                            type="checkbox"
-                            checked={filters.months.includes(month.value)}
-                            onChange={() => handleFilterChange('months', month.value)}
-                            onClick={handleCheckboxClick}
-                            className={dataTableStyles.hiddenCheckbox}
-                          />
-                          <div className={dataTableStyles.customCheckbox}></div>
-                        </div>
-                        <span>{month.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className={dataTableStyles.filterGroup}>
-              <label className={dataTableStyles.filterLabel}>
-                <BsCalendar3 /> Anos
-              </label>
-              <div 
-                className={`${dataTableStyles.modernSelect} ${openFilter === 'years' ? dataTableStyles.active : ''}`}
-                onClick={() => handleFilterClick('years')}
-              >
-                <div className={dataTableStyles.modernSelectHeader}>
-                  <span>
-                    {filters.years.length === 0 
-                      ? 'Nenhum ano selecionado' 
-                      : filters.years.length === 1 
-                        ? filters.years[0] 
-                        : filters.years.length === years.length 
-                          ? 'Todos os anos' 
-                          : `${filters.years.length} anos selecionados`}
-                  </span>
-                  <span className={dataTableStyles.arrow}>▼</span>
-                </div>
-                {openFilter === 'years' && (
-                  <div className={dataTableStyles.modernSelectDropdown}>
-                    <label className={dataTableStyles.modernCheckboxLabel}>
-                      <div className={dataTableStyles.modernCheckbox}>
-                        <input
-                          type="checkbox"
-                          checked={filters.years.length === years.length}
-                          onChange={() => handleFilterChange('years', 'all')}
-                          onClick={handleCheckboxClick}
-                          className={dataTableStyles.hiddenCheckbox}
-                        />
-                        <div className={dataTableStyles.customCheckbox}></div>
-                      </div>
-                      <span>Todos os anos</span>
-                    </label>
-                    {years.map(year => (
-                      <label key={year.value} className={dataTableStyles.modernCheckboxLabel}>
-                        <div className={dataTableStyles.modernCheckbox}>
-                          <input
-                            type="checkbox"
-                            checked={filters.years.includes(year.value)}
-                            onChange={() => handleFilterChange('years', year.value)}
-                            onClick={handleCheckboxClick}
-                            className={dataTableStyles.hiddenCheckbox}
-                          />
-                          <div className={dataTableStyles.customCheckbox}></div>
-                        </div>
-                        <span>{year.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className={dataTableStyles.filterGroup}>
-              <label className={dataTableStyles.filterLabel}>
-                <BsFolderSymlink /> Categoria
-              </label>
-              <div 
-                className={`${dataTableStyles.modernSelect} ${openFilter === 'category' ? dataTableStyles.active : ''}`}
-                onClick={() => handleFilterClick('category')}
-              >
-                <div className={dataTableStyles.modernSelectHeader}>
-                  <span>
-                    {filters.category === 'all' 
-                      ? 'Todas as categorias' 
-                      : categories.find(c => c.id === Number(filters.category))?.category_name || 'Selecione uma categoria'}
-                  </span>
-                  <span className={dataTableStyles.arrow}>▼</span>
-                </div>
-                {openFilter === 'category' && (
-                  <div className={dataTableStyles.modernSelectDropdown}>
-                    <label 
-                      className={dataTableStyles.modernCheckboxLabel}
-                      onClick={() => handleFilterChange('category', 'all')}
-                    >
-                      <div className={dataTableStyles.modernCheckbox}>
-                        <input
-                          type="radio"
-                          checked={filters.category === 'all'}
-                          className={dataTableStyles.hiddenCheckbox}
-                          readOnly
-                        />
-                        <div className={dataTableStyles.customCheckbox}></div>
-                      </div>
-                      <span>Todas as categorias</span>
-                    </label>
-                    {categories.map(category => (
-                      <label 
-                        key={category.id} 
-                        className={dataTableStyles.modernCheckboxLabel}
-                        onClick={() => handleFilterChange('category', category.id.toString())}
-                      >
-                        <div className={dataTableStyles.modernCheckbox}>
-                          <input
-                            type="radio"
-                            checked={filters.category === category.id.toString()}
-                            className={dataTableStyles.hiddenCheckbox}
-                            readOnly
-                          />
-                          <div className={dataTableStyles.customCheckbox}></div>
-                        </div>
-                        <span>{category.category_name}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className={dataTableStyles.searchField}>
-              <BsSearch className={dataTableStyles.searchIcon} />
-              <input 
-                type="text" 
-                placeholder="Buscar por descrição..." 
-                value={filters.description} 
-                onChange={(e) => handleFilterChange('description', e.target.value)} 
-                className={dataTableStyles.searchInput}
-              />
-            </div>
-          </div>
-        </div>
 
         {noIncomesMessage ? (
           <div className={dataTableStyles.noDataContainer}>
@@ -667,89 +955,92 @@ const Incomes = () => {
             <p className={dataTableStyles.noDataSuggestion}>{noIncomesMessage.suggestion}</p>
           </div>
         ) : (
-          <div className={dataTableStyles.tableContainer}>
-            <table className={dataTableStyles.table}>
-          <thead>
-            <tr>
-                  <th width="40">
-                    <label className={dataTableStyles.checkboxContainer}>
-                <input
-                  type="checkbox"
-                  checked={selectedIncomes.length === incomes.length && incomes.length > 0}
-                  onChange={handleSelectAll}
-                        className={dataTableStyles.checkbox}
-                />
-                      <span className={dataTableStyles.checkmark}></span>
-                    </label>
-              </th>
-              <th>Descrição</th>
-              <th>Valor</th>
-              <th>Data</th>
-              <th>Categoria</th>
-              <th>Banco</th>
-              <th>Tipo</th>
-              <th>Recorrência</th>
-                  <th width="100">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {incomes.map((income) => (
-                  <tr key={income.id} className={dataTableStyles.tableRow}>
-                <td>
+          <>
+            {renderMobileCards()}
+            <div className={dataTableStyles.tableContainer}>
+              <table className={dataTableStyles.table}>
+                <thead>
+                  <tr>
+                    <th width="40">
                       <label className={dataTableStyles.checkboxContainer}>
-                  <input
-                    type="checkbox"
-                    checked={selectedIncomes.includes(income.id)}
-                    onChange={(e) => handleSelectIncome(income.id, e)}
+                        <input
+                          type="checkbox"
+                          checked={selectedIncomes.length === incomes.length && incomes.length > 0}
+                          onChange={handleSelectAll}
                           className={dataTableStyles.checkbox}
-                  />
+                        />
                         <span className={dataTableStyles.checkmark}></span>
                       </label>
-                </td>
-                <td>{income.description}</td>
-                    <td>
-                      <span className={`${dataTableStyles.amountBadge} ${dataTableStyles.incomeAmount}`}>
-                        R$ {Number(income.amount).toFixed(2)}
-                      </span>
-                    </td>
-                <td>{formatDate(income.date)}</td>
-                <td>{income.Category?.category_name}</td>
-                    <td>{income.Bank?.name || '-'}</td>
-                <td>
-                  {income.is_recurring ? (
-                        <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
-                          <BsRepeat /> Fixo
+                    </th>
+                    <th>Descrição</th>
+                    <th>Valor</th>
+                    <th>Data</th>
+                    <th>Categoria</th>
+                    <th>Banco</th>
+                    <th>Tipo</th>
+                    <th>Recorrência</th>
+                    <th width="100">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {incomes.map((income) => (
+                    <tr key={income.id} className={dataTableStyles.tableRow}>
+                      <td>
+                        <label className={dataTableStyles.checkboxContainer}>
+                          <input
+                            type="checkbox"
+                            checked={selectedIncomes.includes(income.id)}
+                            onChange={(e) => handleSelectIncome(income.id, e)}
+                            className={dataTableStyles.checkbox}
+                          />
+                          <span className={dataTableStyles.checkmark}></span>
+                        </label>
+                      </td>
+                      <td>{income.description}</td>
+                      <td>
+                        <span className={`${dataTableStyles.amountBadge} ${dataTableStyles.incomeAmount}`}>
+                          R$ {Number(income.amount).toFixed(2)}
                         </span>
-                      ) : (
-                        <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
-                          <BsCurrencyDollar /> Único
-                        </span>
-                      )}
-                </td>
-                    <td>{income.is_recurring ? formatRecurrenceType(income.recurrence_type) : '-'}</td>
-                    <td>
-                      <div className={dataTableStyles.actionButtons}>
-                    <button
-                      onClick={() => handleEditClick(income)}
-                          className={dataTableStyles.actionButton}
-                          title="Editar"
-                    >
-                          <BsPencil />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteClick(income)}
-                          className={`${dataTableStyles.actionButton} ${dataTableStyles.delete}`}
-                          title="Excluir"
-                    >
-                          <BsTrash />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                      </td>
+                      <td>{formatDate(income.date)}</td>
+                      <td>{income.Category?.category_name}</td>
+                      <td>{income.Bank?.name || '-'}</td>
+                      <td>
+                        {income.is_recurring ? (
+                          <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
+                            <BsRepeat /> Fixo
+                          </span>
+                        ) : (
+                          <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
+                            <BsCurrencyDollar /> Único
+                          </span>
+                        )}
+                      </td>
+                      <td>{income.is_recurring ? formatRecurrenceType(income.recurrence_type) : '-'}</td>
+                      <td>
+                        <div className={dataTableStyles.actionButtons}>
+                          <button
+                            onClick={() => handleEditClick(income)}
+                            className={dataTableStyles.actionButton}
+                            title="Editar"
+                          >
+                            <BsPencil />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteClick(income)}
+                            className={`${dataTableStyles.actionButton} ${dataTableStyles.delete}`}
+                            title="Excluir"
+                          >
+                            <BsTrash />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 
@@ -779,7 +1070,7 @@ const Incomes = () => {
                     </label>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <input type="radio" name="deleteType" value="all" checked={deleteOptions.type === 'all'} />
-                      <span>Excluir este e todos os ganhos futuros desta série</span>
+                      <span>Excluir este e todos os receitas futuros desta série</span>
                     </label>
                   </div>
                 </div>
@@ -788,7 +1079,7 @@ const Incomes = () => {
               {deleteOptions.type === 'bulk' && (
                 <div>
                   <p className={dataTableStyles.modalMessage}>
-                    Serão excluídos <strong>{deleteOptions.ids.length}</strong> ganhos.
+                    Serão excluídos <strong>{deleteOptions.ids.length}</strong> receitas.
                   </p>
                 </div>
               )}
