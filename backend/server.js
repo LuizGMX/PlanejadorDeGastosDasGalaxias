@@ -1,30 +1,73 @@
 // server.js
 
-import dotenv from 'dotenv';
-import sgMail from '@sendgrid/mail';
-import { sequelize } from './models/index.js';
-import seedDatabase from './seeders/index.js';
-import { writeFileSync } from 'fs';
-import { telegramService } from './services/telegramService.js';
-import app from './app.js';
-import https from 'https';
-import fs from 'fs';
-import http from 'http'; // Para desenvolvimento
+import express from 'express';
+import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
-
-// Caminho para o arquivo de migração
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const migrationScriptPath = path.join(__dirname, 'models', 'remove-subcategories-with-models.js');
+import { dirname } from 'path';
+import fs from 'fs';
+import http from 'http';
+import https from 'https';
+import sgMail from '@sendgrid/mail';
+import dotenv from 'dotenv';
+import { writeFileSync } from 'fs';
+import { configureRateLimit, authLimiter } from './middleware/rateLimit.js';
+import helmet from 'helmet';
+import authRoutes from './routes/auth.js';
+import categoryRoutes from './routes/categories.js';
+import expenseRoutes from './routes/expenses.js';
+import incomeRoutes from './routes/incomes.js';
+import dashboardRoutes from './routes/dashboard.js';
+import bankRoutes from './routes/banks.js';
+import budgetRoutes from './routes/budgets.js';
+import spreadsheetRoutes from './routes/spreadsheetRoutes.js';
+import userRoutes from './routes/users.js';
+import recurrencesRouter from './routes/recurrences.js';
+import telegramRoutes from './routes/telegramRoutes.js';
+import { sequelize } from './models/index.js';
+import seedDatabase from './seeders/index.js';
+import { telegramService } from './services/telegramService.js';
 
 dotenv.config();
 
+// Configuração do __dirname para ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Inicializar o app Express
+const app = express();
+
+// Middlewares
+app.use(helmet());
+app.use(cors({
+  origin: process.env.FRONTEND_URL,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Configurar rate limiting
+configureRateLimit(app);
+
 // Servir arquivos estáticos do frontend (SPA)
-const staticPath = path.join(__dirname, '../frontend/build'); // Alterado para apontar para o build do frontend
+const staticPath = '/var/www/PlanejadorDeGastosDasGalaxias/frontend/build'; // Caminho absoluto para o build
 app.use(express.static(staticPath));
 
-// Rota fallback para SPA
+// Rotas da API
+app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/expenses', expenseRoutes);
+app.use('/api/incomes', incomeRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/banks', bankRoutes);
+app.use('/api/budgets', budgetRoutes);
+app.use('/api/spreadsheet', spreadsheetRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/recurrences', recurrencesRouter);
+app.use('/api/telegram', telegramRoutes);
+
+// Rota fallback para SPA - IMPORTANTE: deve vir depois de todas as outras rotas da API
 app.get('*', (req, res) => {
   res.sendFile(path.join(staticPath, 'index.html'));
 });
