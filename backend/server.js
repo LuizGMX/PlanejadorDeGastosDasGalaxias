@@ -37,6 +37,7 @@ const __dirname = dirname(__filename);
 // Inicializar o app Express
 const app = express();
 
+
 // Middlewares
 app.use(helmet());
 app.use(cors({
