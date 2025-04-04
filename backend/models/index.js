@@ -153,7 +153,8 @@ User.hasMany(UserBank, {
 
 // UserBank-Bank
 UserBank.belongsTo(Bank, {
-  foreignKey: 'bank_id'
+  foreignKey: 'bank_id',
+  as: 'bank'
 });
 Bank.hasMany(UserBank, {
   foreignKey: 'bank_id',

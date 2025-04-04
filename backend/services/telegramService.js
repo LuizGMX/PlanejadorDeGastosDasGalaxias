@@ -1017,7 +1017,8 @@ Digite SIM para confirmar ou NÃO para cancelar.
             is_active: false
           },
           include: [{
-            model: Bank
+            model: Bank,
+            as: 'bank'
           }]
         });
         
