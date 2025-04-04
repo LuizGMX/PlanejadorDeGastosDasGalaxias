@@ -20,6 +20,15 @@ const migrationScriptPath = path.join(__dirname, 'models', 'remove-subcategories
 
 dotenv.config();
 
+// Servir arquivos estáticos do frontend (SPA)
+const staticPath = path.join(__dirname, 'public'); // Altere 'public' para sua pasta de build (ex: 'dist' ou 'build')
+app.use(express.static(staticPath));
+
+// Rota fallback para SPA
+app.get('*', (req, res) => {
+  res.sendFile(path.join(staticPath, 'index.html'));
+});
+
 // Definir o servidor
 let server;
 
@@ -148,7 +157,7 @@ const startServer = async () => {
     }
 
     // Sincronizar modelos com banco
-    await sequelize.sync({ force: false,alter: true });
+    await sequelize.sync({ force: false, alter: true });
     
     console.log('Modelos sincronizados com banco de dados.');
 
