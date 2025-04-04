@@ -149,6 +149,7 @@ const startServer = async () => {
 
     // Sincronizar modelos com banco
     await sequelize.sync({ force: false,alter: true });
+    
     console.log('Modelos sincronizados com banco de dados.');
 
     // Executar seeders apenas se a variável de ambiente estiver configurada
