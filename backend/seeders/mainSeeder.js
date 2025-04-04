@@ -14,6 +14,7 @@ async function runAllSeeders() {
     // Sincronizar todos os modelos
     console.log('Iniciando sincronização do banco de dados...');
     await sequelize.sync({ force: false });
+    
     console.log('Banco de dados sincronizado com sucesso.');
 
     // Executar todos os seeders
