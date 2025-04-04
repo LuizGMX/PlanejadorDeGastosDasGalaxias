@@ -27,6 +27,7 @@ import telegramRoutes from './routes/telegramRoutes.js';
 import { sequelize } from './models/index.js';
 import seedDatabase from './seeders/index.js';
 import { telegramService } from './services/telegramService.js';
+import { Sequelize } from 'sequelize';
 
 dotenv.config();
 
@@ -171,11 +172,22 @@ const startServer = async () => {
         // Verificar e remover colunas subcategory_id de cada tabela
         for (const table of tables) {
           try {
-            await sequelize.query(
-              `ALTER TABLE ${table} DROP COLUMN IF EXISTS subcategory_id`,
-              { transaction }
+            // Primeiro verificar se a coluna existe
+            const hasColumn = await sequelize.query(
+              `SHOW COLUMNS FROM ${table} LIKE 'subcategory_id'`,
+              { type: Sequelize.QueryTypes.SELECT, transaction }
             );
-            console.log(`Tentativa de remover subcategory_id da tabela ${table} concluída`);
+            
+            if (hasColumn.length > 0) {
+              console.log(`Removendo coluna subcategory_id da tabela ${table}`);
+              await sequelize.query(
+                `ALTER TABLE ${table} DROP COLUMN subcategory_id`,
+                { transaction }
+              );
+              console.log(`Coluna subcategory_id removida da tabela ${table}`);
+            } else {
+              console.log(`Tabela ${table} não possui coluna subcategory_id`);
+            }
           } catch (error) {
             console.log(`Erro ao remover coluna de ${table}:`, error.message);
           }
@@ -183,11 +195,22 @@ const startServer = async () => {
         
         // Tentar remover a tabela subcategories
         try {
-          await sequelize.query(
-            `DROP TABLE IF EXISTS subcategories`,
-            { transaction }
+          // Verificar se a tabela existe
+          const hasTable = await sequelize.query(
+            `SHOW TABLES LIKE 'subcategories'`,
+            { type: Sequelize.QueryTypes.SELECT, transaction }
           );
-          console.log('Tentativa de remover tabela subcategories concluída');
+          
+          if (hasTable.length > 0) {
+            console.log('Removendo tabela subcategories');
+            await sequelize.query(
+              `DROP TABLE subcategories`,
+              { transaction }
+            );
+            console.log('Tabela subcategories removida com sucesso');
+          } else {
+            console.log('Tabela subcategories não existe');
+          }
         } catch (error) {
           console.log('Erro ao remover tabela subcategories:', error.message);
         }

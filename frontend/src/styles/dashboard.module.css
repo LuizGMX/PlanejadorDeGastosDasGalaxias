@@ -423,15 +423,28 @@
   width: 100%;
 }
 
+/* Estilo especial para a primeira grid - orçamento e objetivo lado a lado */
+.chartsGrid:first-of-type {
+  grid-template-columns: repeat(2, 1fr);
+}
+
 /* Para telas menores */
 @media (max-width: 1200px) {
   .chartsGrid {
     grid-template-columns: repeat(auto-fill, minmax(45%, 1fr));
   }
+  
+  .chartsGrid:first-of-type {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 768px) {
   .chartsGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .chartsGrid:first-of-type {
     grid-template-columns: 1fr;
   }
 }
@@ -863,8 +876,14 @@
   background: linear-gradient(145deg, var(--card-background), rgba(26, 27, 35, 0.9));
   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.15);
   border: 1px solid var(--primary-color);
-  max-width: 1200px;
   margin: 0 auto;
+}
+
+.highlightedChart .goalCard {
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--primary-color);
+  background: linear-gradient(145deg, var(--card-background), rgba(26, 27, 35, 0.9));
+  height: 100%;
 }
 
 .loading {

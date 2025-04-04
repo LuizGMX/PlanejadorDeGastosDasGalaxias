@@ -3581,9 +3581,17 @@ const Dashboard = () => {
 
   const renderOverviewCharts = () => (
     <>
-      {/* Exibir o gráfico de orçamento em destaque */}
-      <div className={`${styles.chartContainer} ${styles.highlightedChart}`}>
-        {renderBudgetChart()}
+      {/* Exibir o orçamento e o objetivo financeiro lado a lado */}
+      <div className={styles.chartsGrid}>
+        {/* Orçamento em destaque */}
+        <div className={`${styles.chartContainer} ${styles.highlightedChart}`}>
+          {renderBudgetChart()}
+        </div>
+        
+        {/* Objetivo financeiro ao lado do orçamento */}
+        <div className={`${styles.chartContainer} ${styles.highlightedChart}`}>
+          {renderFinancialGoalChart()}
+        </div>
       </div>
       
       <div className={styles.chartsGrid}>
@@ -3613,10 +3621,6 @@ const Dashboard = () => {
         
         <div className={styles.chartContainer}>
           {renderIncomeVsExpensesChart()}
-        </div>
-        
-        <div className={styles.chartContainer}>
-          {renderFinancialGoalChart()}
         </div>
       </div>
     </>
