@@ -27,13 +27,61 @@ const generateJWT = (userId, email) => {
 };
 
 const sendVerificationEmail = async (email, name, code) => {
-  console.log('Enviando email para:', email);
-  console.log('SENDGRID_API_KEY:', process.env.SENDGRID_API_KEY);
-  console.log('SENDGRID_FROM_EMAIL:', process.env.SENDGRID_FROM_EMAIL);
+  console.log('=== INICIANDO ENVIO DE EMAIL ===');
+  console.log('Destinatário:', email);
+  console.log('Nome:', name || 'Não fornecido');
+  console.log('Código:', code);
+  
+  // Verifica se a API key do SendGrid está configurada
+  const apiKey = process.env.SENDGRID_API_KEY;
+  const fromEmail = process.env.SENDGRID_FROM_EMAIL;
+  
+  console.log('SENDGRID_API_KEY disponível:', apiKey ? 'Sim' : 'Não');
+  console.log('SENDGRID_FROM_EMAIL:', fromEmail);
+  
+  if (!apiKey) {
+    console.error('ERRO: SendGrid API Key não está configurada');
+    // Em vez de falhar, vamos apenas registrar no log em produção
+    if (process.env.NODE_ENV === 'production') {
+      console.log('Em produção: simulando envio de email bem-sucedido');
+      console.log(`Código para ${email}: ${code}`);
+      return; // Retorna sem erro em produção para não quebrar o fluxo
+    } else {
+      throw new Error('SendGrid API Key não configurada');
+    }
+  }
+  
+  if (!fromEmail) {
+    console.error('ERRO: SendGrid FROM_EMAIL não está configurado');
+    // Em vez de falhar, vamos apenas registrar no log em produção
+    if (process.env.NODE_ENV === 'production') {
+      console.log('Em produção: simulando envio de email bem-sucedido');
+      console.log(`Código para ${email}: ${code}`);
+      return; // Retorna sem erro em produção para não quebrar o fluxo
+    } else {
+      throw new Error('SendGrid FROM_EMAIL não configurado');
+    }
+  }
+  
+  // Configura o SendGrid a cada chamada para garantir
+  try {
+    sgMail.setApiKey(apiKey);
+    console.log('SendGrid API Key configurada com sucesso');
+  } catch (setupError) {
+    console.error('ERRO ao configurar SendGrid:', setupError);
+    // Não quebra o fluxo em produção
+    if (process.env.NODE_ENV === 'production') {
+      console.log('Em produção: simulando envio de email bem-sucedido');
+      console.log(`Código para ${email}: ${code}`);
+      return;
+    } else {
+      throw setupError;
+    }
+  }
 
   const msg = {
     to: email,
-    from: process.env.SENDGRID_FROM_EMAIL,
+    from: fromEmail,
     subject: 'Código de Verificação - Planejador Das Galáxias',
     text: `Seu código de verificação é: ${code}`,
     html: `
@@ -51,11 +99,31 @@ const sendVerificationEmail = async (email, name, code) => {
   };
 
   try {
+    console.log('Enviando email via SendGrid...');
     await sgMail.send(msg);
     console.log(`Email enviado com sucesso para: ${email}`);
   } catch (error) {
-    console.error('Erro detalhado ao enviar email:', error.response?.body);
-    throw new Error('Falha ao enviar email de verificação');
+    console.error('=== ERRO DETALHADO AO ENVIAR EMAIL ===');
+    console.error('Erro:', error.message);
+    
+    if (error.response) {
+      console.error('Corpo da resposta:', error.response.body);
+      console.error('Status:', error.response.statusCode);
+      console.error('Headers:', error.response.headers);
+    }
+    
+    console.error('Stack trace completo:', error.stack);
+    
+    // Em produção, não quebra o fluxo por falha no email
+    if (process.env.NODE_ENV === 'production') {
+      console.log('Em produção: continuando apesar do erro de email');
+      console.log(`IMPORTANTE - Código para ${email}: ${code}`);
+      return; // Não lança o erro em produção
+    } else {
+      throw new Error(`Falha ao enviar email de verificação: ${error.message}`);
+    }
+  } finally {
+    console.log('=== FINALIZANDO TENTATIVA DE ENVIO DE EMAIL ===');
   }
 };
 
@@ -91,67 +159,94 @@ export const authenticate = async (req, res, next) => {
 
 // Rotas
 router.post('/check-email', async (req, res) => {
-  console.log('/api/auth/check-email chamado');
+  console.log('===========================================');
+  console.log('INICIANDO /api/auth/check-email');
+  console.log('Timestamp:', new Date().toISOString());
+  console.log('Cabeçalhos:', JSON.stringify(req.headers));
+  console.log('Body completo:', JSON.stringify(req.body));
+  
   try {
     const { email } = req.body;
-    console.log('Email recebido:', email);
+    console.log('Email extraído do body:', email);
     
     if (!email) {
+      console.log('ERRO: Email não fornecido');
       return res.status(400).json({ message: 'E-mail é obrigatório' });
     }
     
     // Verifica se o email é válido
     if (!/^\S+@\S+\.\S+$/.test(email)) {
+      console.log('ERRO: Email inválido:', email);
       return res.status(400).json({ message: 'E-mail inválido' });
     }
     
+    console.log('Buscando usuário no banco de dados...');
     const user = await User.findOne({ 
       where: { email },
       attributes: ['id', 'name', 'email']
     });
     
     console.log('Usuário encontrado:', user ? 'Sim' : 'Não');
+    if (user) {
+      console.log('Detalhes do usuário encontrado (ID, Nome):', user.id, user.name);
+    }
     
     // Se o usuário existir, gera e envia o código imediatamente
     if (user) {
-      const code = generateVerificationCode();
-      console.log('Código gerado para usuário existente:', code);
-
-      // Remove códigos antigos
-      await VerificationCode.destroy({ where: { email } });
-      
-      // Salva o novo código
-      await VerificationCode.create({
-        email,
-        code,
-        expires_at: new Date(Date.now() + 10 * 60 * 1000)
-      });
-
-      // Envia o email
       try {
-        await sendVerificationEmail(email, user.name, code);
-        console.log('Email enviado com sucesso para usuário existente');
-      } catch (emailError) {
-        console.error('Erro ao enviar email:', emailError);
-      }
+        console.log('Gerando código para usuário existente...');
+        const code = generateVerificationCode();
+        console.log('Código gerado:', code);
 
-      return res.json({
-        isNewUser: false,
-        name: user.name,
-        email: user.email,
-        message: 'Código enviado com sucesso!'
-      });
+        console.log('Removendo códigos antigos...');
+        await VerificationCode.destroy({ where: { email } });
+        
+        console.log('Salvando novo código...');
+        await VerificationCode.create({
+          email,
+          code,
+          expires_at: new Date(Date.now() + 10 * 60 * 1000)
+        });
+
+        console.log('Enviando email...');
+        try {
+          await sendVerificationEmail(email, user.name, code);
+          console.log('Email enviado com sucesso');
+        } catch (emailError) {
+          console.error('ERRO ao enviar email:', emailError);
+          console.error('Stack trace do erro de email:', emailError.stack);
+        }
+
+        console.log('Retornando resposta de sucesso para usuário existente');
+        return res.json({
+          isNewUser: false,
+          name: user.name,
+          email: user.email,
+          message: 'Código enviado com sucesso!'
+        });
+      } catch (userExistsError) {
+        console.error('ERRO no fluxo de usuário existente:', userExistsError);
+        console.error('Stack trace:', userExistsError.stack);
+        return res.status(500).json({ message: 'Erro interno ao processar usuário existente' });
+      }
     }
     
     // Se não existir, retorna que é um novo usuário
+    console.log('Retornando resposta para novo usuário');
     return res.json({
       isNewUser: true,
       name: null,
       email: null
     });
   } catch (error) {
-    console.error('Erro ao verificar email:', error);
-    return res.status(500).json({ message: 'Erro interno ao verificar email' });
+    console.error('ERRO CRÍTICO ao verificar email:', error);
+    console.error('Stack trace completo:', error.stack);
+    console.error('Tipo de erro:', error.name);
+    console.error('Mensagem de erro:', error.message);
+    return res.status(500).json({ message: 'Erro interno ao verificar email', error: error.message });
+  } finally {
+    console.log('FINALIZANDO /api/auth/check-email');
+    console.log('===========================================');
   }
 });
 
