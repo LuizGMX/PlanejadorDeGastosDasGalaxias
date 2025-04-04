@@ -64,7 +64,7 @@ const AddIncome = () => {
   useEffect(() => {
     const fetchBanks = async () => {
       try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/banks/favorites`, {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/banks/users`, {
           headers: {
             'Authorization': `Bearer ${auth.token}`
           }

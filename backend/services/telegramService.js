@@ -225,7 +225,7 @@ export class TelegramService {
       });
 
       if (existingUser) {
-        ctx.reply('Você já está conectado! Use /help para ver os comandos disponíveis.');
+        ctx.reply('Você já está conectado! Use /help para ver os comandos disponíveis. Você pode clicar nas opções em azul também');
         return;
       }
 
@@ -318,7 +318,12 @@ export class TelegramService {
         // Limpa o estado do usuário
         await this.clearUserState(chatId);
 
-        ctx.reply('Conta verificada com sucesso! 🎉\nAgora você pode usar os comandos do bot.');
+        ctx.reply('Conta verificada com sucesso! 🎉\n\nComandos disponíveis:\n\n' +
+          '/despesa - Registrar uma nova despesa\n' +
+          '/receita - Registrar uma nova receita\n' +
+          '/resumo - Ver resumo das despesas\n' +
+          '/ajuda - Ver todos os comandos disponíveis\n\n' +
+          'Você pode clicar nas opções em azul também para usar os comandos');
       }
     } catch (error) {
       console.error('Erro ao processar mensagem:', error);
@@ -537,7 +542,7 @@ ${balance >= 0
       }) > 0;
       
       // Montar a lista de comandos disponíveis
-      let message = '🚀 Comandos disponíveis:\n\n';
+      let message = '🚀 Comandos disponíveis: Você pode clicar nas opções em azul também\n\n';
       
       // Comandos básicos para todos os usuários autenticados
       message += '/bancos - Listar seus bancos cadastrados\n';
@@ -779,13 +784,13 @@ Digite SIM para confirmar ou NÃO para cancelar.
           is_recurring: false
         });
 
-        ctx.reply('✅ Despesa registrada com sucesso!\n\nUse /menu para ver mais opções.');
+        ctx.reply('✅ Despesa registrada com sucesso!\n\nUse /help para ver mais opções.');
       } catch (error) {
         console.error('Erro ao registrar despesa:', error);
         ctx.reply('❌ Ocorreu um erro ao registrar a despesa. Tente novamente mais tarde.');
       }
     } else if (confirmation === 'NÃO') {
-      ctx.reply('❌ Operação cancelada.\n\nUse /menu para ver as opções disponíveis.');
+      ctx.reply('❌ Operação cancelada.\n\nUse /help para ver as opções disponíveis.');
     } else {
       ctx.reply('❌ Por favor, digite SIM para confirmar ou NÃO para cancelar.');
       return;
@@ -958,13 +963,13 @@ Digite SIM para confirmar ou NÃO para cancelar.
           date: new Date()
         });
 
-        ctx.reply('✅ Receita registrada com sucesso!\n\nUse /menu para ver mais opções.');
+        ctx.reply('✅ Receita registrada com sucesso!\n\nUse /help para ver mais opções.');
       } catch (error) {
         console.error('Erro ao registrar receita:', error);
         ctx.reply('❌ Ocorreu um erro ao registrar a receita. Tente novamente mais tarde.');
       }
     } else if (confirmation === 'NÃO') {
-      ctx.reply('❌ Operação cancelada.\n\nUse /menu para ver as opções disponíveis.');
+      ctx.reply('❌ Operação cancelada.\n\nUse /help para ver as opções disponíveis.');
     } else {
       ctx.reply('❌ Por favor, digite SIM para confirmar ou NÃO para cancelar.');
       return;

@@ -52,9 +52,16 @@ app.use(express.urlencoded({ extended: true }));
 // Configurar rate limiting
 configureRateLimit(app);
 
-// Servir arquivos estáticos do frontend (SPA)
-const staticPath = '/var/www/PlanejadorDeGastosDasGalaxias/frontend/build'; // Caminho absoluto para o build
-app.use(express.static(staticPath));
+// Servir arquivos estáticos do frontend (SPA) apenas em produção
+if (process.env.NODE_ENV === 'production') {
+  const staticPath = '/var/www/PlanejadorDeGastosDasGalaxias/frontend/build';
+  app.use(express.static(staticPath));
+  
+  // Rota fallback para SPA - IMPORTANTE: deve vir depois de todas as outras rotas da API
+  app.get('*', (req, res) => {
+    res.sendFile('index.html', { root: staticPath });
+  });
+}
 
 // Rotas da API
 app.use('/api/auth', authLimiter, authRoutes);
@@ -68,11 +75,6 @@ app.use('/api/spreadsheet', spreadsheetRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/recurrences', recurrencesRouter);
 app.use('/api/telegram', telegramRoutes);
-
-// Rota fallback para SPA - IMPORTANTE: deve vir depois de todas as outras rotas da API
-app.get('*', (req, res) => {
-  res.sendFile(path.join(staticPath, 'index.html'));
-});
 
 // Definir o servidor
 let server;

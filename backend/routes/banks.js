@@ -68,6 +68,37 @@ router.get('/favorites', authenticate, async (req, res) => {
   }
 });
 
+// Rota para listar bancos ativos do usuário
+router.get('/users', authenticate, async (req, res) => {
+  try {
+    // Buscar as relações de UserBank para o usuário atual onde is_active é true
+    const userBanks = await UserBank.findAll({
+      where: { 
+        user_id: req.user.id,
+        is_active: true
+      },
+      include: [{
+        model: Bank,
+        as: 'bank',
+        attributes: ['id', 'name', 'code']
+      }]
+    });
+
+    // Mapear o resultado para o formato esperado
+    const activeBanks = userBanks.map(ub => ({
+      id: ub.bank.id,
+      name: ub.bank.name,
+      code: ub.bank.code
+    }));
+
+    console.log(`Retornando ${activeBanks.length} bancos ativos para o usuário ${req.user.id}`);
+    res.json(activeBanks);
+  } catch (error) {
+    console.error('Erro ao listar bancos do usuário:', error);
+    res.status(500).json({ message: 'Erro ao listar bancos do usuário' });
+  }
+});
+
 // // Listar bancos do usuário
 // router.get('/my-banks', authenticate, async (req, res) => {
 //   try {

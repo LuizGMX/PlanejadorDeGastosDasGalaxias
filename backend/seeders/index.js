@@ -112,6 +112,85 @@ const incomeCategories = [
   }
 ];
 
+const expenseCategories = [
+  {
+    category_name: 'Moradia',
+    type: 'expense'
+  },
+  {
+    category_name: 'Alimentação',
+    type: 'expense'
+  },
+  {
+    category_name: 'Transporte',
+    type: 'expense'
+  },
+  {
+    category_name: 'Saúde',
+    type: 'expense'
+  },
+  {
+    category_name: 'Educação',
+    type: 'expense'
+  },
+  {
+    category_name: 'Lazer',
+    type: 'expense'
+  },
+  {
+    category_name: 'Vestuário',
+    type: 'expense'
+  },
+  {
+    category_name: 'Contas',
+    type: 'expense'
+  },
+  {
+    category_name: 'Impostos',
+    type: 'expense'
+  },
+  {
+    category_name: 'Outros',
+    type: 'expense'
+  },
+  {
+    category_name: 'Investimentos',
+    type: 'expense'
+  },
+  {
+    category_name: 'Fatura Cartão de Crédito',
+    type: 'expense'
+  },
+  {
+    category_name: 'Água',
+    type: 'expense'
+  },
+  {
+    category_name: 'Luz',
+    type: 'expense'
+  },
+  {
+    category_name: 'Internet',
+    type: 'expense'
+  },
+  {
+    category_name: 'Condomínio',
+    type: 'expense'
+  },
+  {
+    category_name: 'IPTU',
+    type: 'expense'
+  },
+  {
+    category_name: 'IPVA',
+    type: 'expense'
+  },
+  {
+    category_name: 'Seguro',
+    type: 'expense'
+  }  
+];
+
 const seedBanks = async () => {
   try {
     // Verifica se já existem bancos
@@ -127,6 +206,32 @@ const seedBanks = async () => {
     throw error;
   }
 };
+
+const seedExpenseCategories = async () => {
+  try {
+    // Verifica se já existem categorias de despesa
+    const existingCategories = await Category.findAll({
+      where: { type: 'expense' }
+    });
+
+    if (existingCategories.length === 0) {
+      // Cria as categorias de despesa
+      for (const category of expenseCategories) {
+        const createdCategory = await Category.create({
+          category_name: category.category_name,
+          type: 'expense' 
+        });
+      }
+      console.log('Categorias de despesa criadas com sucesso!');
+    } else {
+      console.log('Categorias de despesa já existem no banco de dados.'); 
+    }
+  } catch (error) {
+    console.error('Erro ao criar categorias de despesa:', error);
+    throw error;
+  }
+};    
+
 
 const seedIncomeCategories = async () => {
   try {
@@ -161,6 +266,9 @@ const seedDatabase = async () => {
 
     // Executa o seed de bancos
     await seedBanks();
+
+    // Executa o seed de categorias de despesa
+    await seedExpenseCategories();
 
     // Executa o seed de usuário e despesas
     // await seedUserAndExpenses();
