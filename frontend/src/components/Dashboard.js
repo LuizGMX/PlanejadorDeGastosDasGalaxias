@@ -837,353 +837,262 @@ const Dashboard = () => {
     '#CDDC39', // Lime
   ];
   
+  // Definição das funções fetchData e fetchAllTransactions fora do useEffect
+  // para que possam ser acessadas de qualquer lugar no componente
+  const fetchData = async () => {
+    let retryCount = 0;
+    const maxRetries = 3;
+    
+    const attemptFetch = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Construir queryParams baseado nos filtros
+        const queryParams = new URLSearchParams();
+        
+        // Adiciona período ao filtro
+        let startDate, endDate;
+        
+        if (selectedPeriod === 'current') {
+          // Mês atual
+          const now = new Date();
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+          queryParams.append('startDate', startDate.toISOString().split('T')[0]);
+          queryParams.append('endDate', endDate.toISOString().split('T')[0]);
+        } else if (selectedPeriod === 'last') {
+          // Mês anterior
+          const now = new Date();
+          startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+          queryParams.append('startDate', startDate.toISOString().split('T')[0]);
+          queryParams.append('endDate', endDate.toISOString().split('T')[0]);
+        } else if (selectedPeriod === 'next') {
+          // Próximo mês
+          const now = new Date();
+          startDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+          endDate = new Date(now.getFullYear(), now.getMonth() + 2, 0);
+          queryParams.append('startDate', startDate.toISOString().split('T')[0]);
+          queryParams.append('endDate', endDate.toISOString().split('T')[0]);
+        } else if (selectedPeriod === 'year') {
+          // Ano atual
+          const now = new Date();
+          startDate = new Date(now.getFullYear(), 0, 1);
+          endDate = new Date(now.getFullYear(), 11, 31);
+          queryParams.append('startDate', startDate.toISOString().split('T')[0]);
+          queryParams.append('endDate', endDate.toISOString().split('T')[0]);
+        } else if (selectedPeriod === 'custom' && customDateRange) {
+          // Período personalizado
+          startDate = createDateWithStartOfDay(customDateRange.start);
+          endDate = createDateWithEndOfDay(customDateRange.end);
+          queryParams.append('startDate', customDateRange.start);
+          queryParams.append('endDate', customDateRange.end);
+        }
+        
+        // Adiciona categorias ao filtro
+        if (selectedCategories.length > 0) {
+          selectedCategories.forEach(category => queryParams.append('categories[]', category));
+        }
+        
+        // Adiciona bancos ao filtro
+        if (selectedBanks.length > 0) {
+          selectedBanks.forEach(bank => queryParams.append('banks[]', bank));
+        }
+
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/dashboard?${queryParams}`, {
+          headers: {
+            'Authorization': `Bearer ${auth.token}`
+          }
+        });
+        
+        if (response.status === 401) {
+          navigate('/login');
+          return;
+        }
+        
+        if (!response.ok) {
+          // Get detailed error message if available
+          let errorMessage = 'Erro ao carregar dados do dashboard';
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.message || errorMessage;
+          } catch (e) {
+            // If can't parse error JSON, use status text
+            errorMessage = `${errorMessage}: ${response.statusText}`;
+          }
+          throw new Error(errorMessage);
+        }
+        
+        const jsonData = await response.json();
+        console.log("Dashboard API response:", jsonData);
+        
+        // Verificar se há despesas e receitas
+        setHasExpenses(jsonData.expenses && jsonData.expenses.length > 0);
+        setHasIncome(jsonData.incomes && jsonData.incomes.length > 0);
+        
+        setData(jsonData);
+
+        // Processar transações
+        const expensesData = jsonData.expenses ? jsonData.expenses.map(item => ({
+          id: item.id || `expense-${Math.random().toString(36).substr(2, 9)}`,
+          date: new Date(item.expense_date || item.date),
+          description: item.description,
+          amount: item.amount,
+          type: 'expense',
+          category: item.Category?.category_name || 'Sem categoria',
+          categoryId: item.Category?.id,
+          bank: item.Bank?.name || 'Sem banco',
+          is_recurring: item.is_recurring,
+          recurrence_id: item.recurrence_id
+        })) : [];
+        
+        const incomesData = jsonData.incomes ? jsonData.incomes.map(item => ({
+          id: item.id || `income-${Math.random().toString(36).substr(2, 9)}`,
+          date: new Date(item.date),
+          description: item.description,
+          amount: item.amount,
+          type: 'income',
+          category: item.Category?.category_name || 'Sem categoria',
+          categoryId: item.Category?.id,
+          bank: item.Bank?.name || 'Sem banco',
+          is_recurring: item.is_recurring,
+          recurrence_id: item.recurrence_id
+        })) : [];
+        
+        console.log("Total expenses found:", expensesData.length);
+        console.log("Total incomes found:", incomesData.length);
+        
+        setTransactions([...expensesData, ...incomesData]);
+        
+        setLoading(false);
+      } catch (err) {
+        console.error("Dashboard fetch error:", err);
+        
+        // If we haven't exceeded max retries and it's a server error (500)
+        if (retryCount < maxRetries && (err.message.includes('500') || err.message.includes('502'))) {
+          retryCount++;
+          console.log(`Retrying dashboard fetch (${retryCount}/${maxRetries})...`);
+          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount)); // Exponential backoff
+          return attemptFetch();
+        }
+        
+        setError(err.message);
+        setLoading(false);
+      }
+    };
+    
+    try {
+      await attemptFetch();
+    } catch (err) {
+      console.error("Unhandled error in fetchData:", err);
+      setError("Erro inesperado ao buscar dados. Por favor, tente novamente.");
+      setLoading(false);
+    }
+  };
+  
+  const fetchAllTransactions = async () => {
+    let retryCount = 0;
+    const maxRetries = 3;
+    
+    const attemptFetch = async () => {
+      try {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/dashboard/all-transactions`, {
+          headers: {
+            'Authorization': `Bearer ${auth.token}`
+          }
+        });
+        
+        if (!response.ok) {
+          // Get detailed error message if available
+          let errorMessage = 'Erro ao carregar todas as transações';
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.message || errorMessage;
+          } catch (e) {
+            // If can't parse error JSON, use status text
+            errorMessage = `${errorMessage}: ${response.statusText}`;
+          }
+          throw new Error(errorMessage);
+        }
+        
+        const jsonData = await response.json();
+        
+        // Processar transações de despesas
+        const expensesData = jsonData.expenses ? jsonData.expenses.map(item => ({
+          id: item.id || `expense-${Math.random().toString(36).substr(2, 9)}`,
+          date: new Date(item.expense_date || item.date),
+          description: item.description,
+          amount: item.amount,
+          type: 'expense',
+          category: item.Category?.category_name || 'Sem categoria',
+          categoryId: item.Category?.id,
+          bank: item.Bank?.name || 'Sem banco'
+        })) : [];
+        
+        // Processar transações de receitas
+        const incomesData = jsonData.incomes ? jsonData.incomes.map(item => ({
+          id: item.id || `income-${Math.random().toString(36).substr(2, 9)}`,
+          date: new Date(item.date),
+          description: item.description,
+          amount: item.amount,
+          type: 'income',
+          category: item.Category?.category_name || 'Sem categoria',
+          categoryId: item.Category?.id,
+          bank: item.Bank?.name || 'Sem banco'
+        })) : [];
+        
+        console.log("Total de despesas encontradas:", expensesData.length);
+        console.log("Total de receitas encontradas:", incomesData.length);
+        
+        setAllExpenses(expensesData);
+        setAllIncomes(incomesData);
+        setHasExpenses(expensesData.length > 0);
+        setHasIncome(incomesData.length > 0);
+        
+      } catch (err) {
+        console.error('Erro ao buscar todas as transações:', err);
+        
+        // If we haven't exceeded max retries and it's a server error (500)
+        if (retryCount < maxRetries && (err.message.includes('500') || err.message.includes('502'))) {
+          retryCount++;
+          console.log(`Retrying all transactions fetch (${retryCount}/${maxRetries})...`);
+          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount)); // Exponential backoff
+          return attemptFetch();
+        }
+        
+        // If all retries failed, set empty data but don't show error to user
+        // since this is supplementary data
+        setAllExpenses([]);
+        setAllIncomes([]);
+        setHasExpenses(false);
+        setHasIncome(false);
+      }
+    };
+    
+    try {
+      await attemptFetch();
+    } catch (err) {
+      console.error("Unhandled error in fetchAllTransactions:", err);
+      // Não mostramos esse erro ao usuário, apenas preenchemos com dados vazios
+      setAllExpenses([]);
+      setAllIncomes([]);
+    }
+  };
+  
+  // useEffect para carregar dados iniciais
   useEffect(() => {
     if (!auth.token) {
-      navigate('/login');
       return;
     }
-
-    const fetchData = async () => {
-      let retryCount = 0;
-      const maxRetries = 3;
-      
-      const attemptFetch = async () => {
-        try {
-          const queryParams = new URLSearchParams();
-          
-          // Use a combination of filters and selectedPeriod
-          let monthsToFilter = [];
-          let yearsToFilter = [];
-          
-          // Apply period filter if selectedPeriod is set
-          if (selectedPeriod === 'month' || selectedPeriod === 'current') {
-            // Current month
-            const now = new Date();
-            monthsToFilter = [now.getMonth() + 1]; // +1 because JS months are 0-based
-            yearsToFilter = [now.getFullYear()];
-          } else if (selectedPeriod === 'year') {
-            // Current year - all months
-            const now = new Date();
-            monthsToFilter = Array.from({length: 12}, (_, i) => i + 1); // 1-12
-            yearsToFilter = [now.getFullYear()];
-          } else if (selectedPeriod === 'last') {
-            // Previous month
-            const now = new Date();
-            let previousMonth = now.getMonth(); // 0-based, so this is already the previous month
-            let year = now.getFullYear();
-            
-            // Handle December of previous year
-            if (previousMonth === 0) {
-              previousMonth = 12;
-              year = year - 1;
-            }
-            
-            monthsToFilter = [previousMonth];
-            yearsToFilter = [year];
-          } else if (selectedPeriod === 'next') {
-            // Next month
-            const now = new Date();
-            let nextMonth = now.getMonth() + 1; // Próximo mês (0-based)
-            let year = now.getFullYear();
-            
-            // Handle January of next year
-            if (nextMonth > 11) {
-              nextMonth = 0;
-              year = year + 1;
-            }
-            
-            // +1 porque os meses são armazenados como 1-12 no backend
-            monthsToFilter = [nextMonth + 1];
-            yearsToFilter = [year];
-            
-            console.log(`Próximo mês (API): ${monthsToFilter[0]}/${yearsToFilter[0]}`);
-          } else if (selectedPeriod === 'custom' && customDateRange) {
-            // Período personalizado - com melhor tratamento de timezone
-            let startDate, endDate;
-            
-            if (customDateRange.startNormalized) {
-              startDate = new Date(customDateRange.startNormalized);
-              endDate = new Date(customDateRange.endNormalized);
-            } else {
-              // Compatibilidade com dados antigos - fixar horários para início e fim do dia
-              const [startYear, startMonth, startDay] = customDateRange.start.split('-').map(num => parseInt(num, 10));
-              const [endYear, endMonth, endDay] = customDateRange.end.split('-').map(num => parseInt(num, 10));
-              
-              startDate = new Date(startYear, startMonth - 1, startDay, 0, 0, 0, 0);
-              endDate = new Date(endYear, endMonth - 1, endDay, 23, 59, 59, 999);
-            }
-            
-            console.log('Datas de filtro calculadas:', {
-              startDate: startDate.toISOString(),
-              endDate: endDate.toISOString()
-            });
-            
-            // Colete todos meses e anos entre as datas inicial e final
-            const months = new Set();
-            const years = new Set();
-            
-            // Adicionar mês e ano da data inicial
-            months.add(startDate.getMonth() + 1); // +1 porque meses no JS são 0-11
-            years.add(startDate.getFullYear());
-            
-            // Adicionar mês e ano da data final
-            months.add(endDate.getMonth() + 1);
-            years.add(endDate.getFullYear());
-            
-            // Se as datas estão em meses ou anos diferentes, adicionar todos os meses intermediários
-            if (
-              startDate.getFullYear() !== endDate.getFullYear() || 
-              startDate.getMonth() !== endDate.getMonth()
-            ) {
-              let currentDate = new Date(startDate);
-              // Avançar para o próximo mês
-              currentDate.setDate(1); // Ir para o primeiro dia do mês
-              currentDate.setMonth(currentDate.getMonth() + 1);
-              
-              // Continuar avançando mês a mês até chegar no mês final
-              while (
-                currentDate.getFullYear() < endDate.getFullYear() || 
-                (currentDate.getFullYear() === endDate.getFullYear() && 
-                 currentDate.getMonth() <= endDate.getMonth())
-              ) {
-                months.add(currentDate.getMonth() + 1);
-                years.add(currentDate.getFullYear());
-                
-                // Avançar para o próximo mês
-                currentDate.setMonth(currentDate.getMonth() + 1);
-              }
-            }
-            
-            monthsToFilter = Array.from(months);
-            yearsToFilter = Array.from(years);
-            
-            console.log('Meses e anos para filtrar:', {
-              meses: monthsToFilter,
-              anos: yearsToFilter
-            });
-          } else {
-            // Use filters from filter state
-            monthsToFilter = filters.months;
-            yearsToFilter = filters.years;
-          }
-          
-          // Add months and years to query params
-          monthsToFilter.forEach(month => queryParams.append('months[]', month));
-          yearsToFilter.forEach(year => queryParams.append('years[]', year));
-          
-          // Adiciona categorias ao filtro
-          if (selectedCategories.length > 0) {
-            selectedCategories.forEach(category => queryParams.append('categories[]', category));
-          }
-          
-          // Adiciona bancos ao filtro
-          if (selectedBanks.length > 0) {
-            selectedBanks.forEach(bank => queryParams.append('banks[]', bank));
-          }
-
-          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/dashboard?${queryParams}`, {
-            headers: {
-              'Authorization': `Bearer ${auth.token}`
-            }
-          });
-          
-          if (response.status === 401) {
-            navigate('/login');
-            return;
-          }
-          
-          if (!response.ok) {
-            // Get detailed error message if available
-            let errorMessage = 'Erro ao carregar dados do dashboard';
-            try {
-              const errorData = await response.json();
-              errorMessage = errorData.message || errorMessage;
-            } catch (e) {
-              // If can't parse error JSON, use status text
-              errorMessage = `${errorMessage}: ${response.statusText}`;
-            }
-            throw new Error(errorMessage);
-          }
-          
-          const jsonData = await response.json();
-          console.log("Dashboard API response:", jsonData);
-          
-          // APENAS PARA FINS DE DEMONSTRAÇÃO - Gerar dados de exemplo para o balanço bancário
-          // Remova esse código em ambiente de produção
-          if (!jsonData.bank_balance_trend || jsonData.bank_balance_trend.length === 0) {
-            // Verificar se há parâmetro na URL indicando que queremos ver dados de demonstração
-            const urlParams = new URLSearchParams(window.location.search);
-            const demoMode = urlParams.get('demo') === 'true';
-            
-            if (demoMode) {
-              const today = new Date();
-              const demoData = [];
-              
-              // Gerar dados de saldo bancário dos últimos 30 dias
-              for (let i = 30; i >= 0; i--) {
-                const date = new Date();
-                date.setDate(today.getDate() - i);
-                
-                // Saldo com algumas flutuações para simular atividade real
-                const baseBalance = 5000; // Saldo base
-                const randomVariation = Math.sin(i / 3) * 800; // Variação senoidal
-                const dailyTrend = i * 30; // Tendência geral de crescimento
-                
-                demoData.push({
-                  date: date.toISOString().split('T')[0],
-                  balance: baseBalance + randomVariation + dailyTrend
-                });
-              }
-              
-              jsonData.bank_balance_trend = demoData;
-            }
-          }
-          
-          setData(jsonData);
-          setError(null);
-
-          // Processar transações
-          const expensesData = jsonData.expenses ? jsonData.expenses.map(item => ({
-            id: item.id || `expense-${Math.random().toString(36).substr(2, 9)}`,
-            date: new Date(item.expense_date || item.date),
-            description: item.description,
-            amount: item.amount,
-            type: 'expense',
-            category: item.Category?.category_name || 'Sem categoria',
-            categoryId: item.Category?.id,
-            bank: item.Bank?.name || 'Sem banco',
-            is_recurring: item.is_recurring,
-            recurrence_id: item.recurrence_id
-          })) : [];
-          
-          const incomesData = jsonData.incomes ? jsonData.incomes.map(item => ({
-            id: item.id || `income-${Math.random().toString(36).substr(2, 9)}`,
-            date: new Date(item.date),
-            description: item.description,
-            amount: item.amount,
-            type: 'income',
-            category: item.Category?.category_name || 'Sem categoria',
-            categoryId: item.Category?.id,
-            bank: item.Bank?.name || 'Sem banco',
-            is_recurring: item.is_recurring,
-            recurrence_id: item.recurrence_id
-          })) : [];
-          
-          console.log("Total expenses found:", expensesData.length);
-          console.log("Total incomes found:", incomesData.length);
-          
-          setTransactions([...expensesData, ...incomesData]);
-
-        } catch (err) {
-          console.error("Dashboard fetch error:", err);
-          
-          // If we haven't exceeded max retries and it's a server error (500)
-          if (retryCount < maxRetries && err.message.includes('500')) {
-            retryCount++;
-            console.log(`Retrying fetch (${retryCount}/${maxRetries})...`);
-            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount)); // Exponential backoff
-            return attemptFetch();
-          }
-          
-          setError(`Não foi possível carregar os dados do dashboard. ${err.message}`);
-          setData(null);
-        } finally {
-          setLoading(false);
-        }
-      };
-      
-      await attemptFetch();
-    };
-
+    
     fetchData();
-  }, [auth.token, navigate, filters, selectedCategories, selectedBanks, selectedPeriod, customDateRange]);
+  }, [auth.token, selectedPeriod, selectedCategories, selectedBanks, customDateRange]);
   
-  // Novo useEffect para buscar todas as transações independente dos filtros
+  // Efeito para buscar todas as transações (não filtradas)
   useEffect(() => {
     if (!auth.token) return;
-
-    const fetchAllTransactions = async () => {
-      let retryCount = 0;
-      const maxRetries = 3;
-      
-      const attemptFetch = async () => {
-        try {
-          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/dashboard/all-transactions`, {
-            headers: {
-              'Authorization': `Bearer ${auth.token}`
-            }
-          });
-          
-          if (!response.ok) {
-            // Get detailed error message if available
-            let errorMessage = 'Erro ao carregar todas as transações';
-            try {
-              const errorData = await response.json();
-              errorMessage = errorData.message || errorMessage;
-            } catch (e) {
-              // If can't parse error JSON, use status text
-              errorMessage = `${errorMessage}: ${response.statusText}`;
-            }
-            throw new Error(errorMessage);
-          }
-          
-          const jsonData = await response.json();
-          
-          // Processar transações de despesas
-          const expensesData = jsonData.expenses ? jsonData.expenses.map(item => ({
-            id: item.id || `expense-${Math.random().toString(36).substr(2, 9)}`,
-            date: new Date(item.expense_date || item.date),
-            description: item.description,
-            amount: item.amount,
-            type: 'expense',
-            category: item.Category?.category_name || 'Sem categoria',
-            categoryId: item.Category?.id,
-            bank: item.Bank?.name || 'Sem banco'
-          })) : [];
-          
-          // Processar transações de receitas
-          const incomesData = jsonData.incomes ? jsonData.incomes.map(item => ({
-            id: item.id || `income-${Math.random().toString(36).substr(2, 9)}`,
-            date: new Date(item.date),
-            description: item.description,
-            amount: item.amount,
-            type: 'income',
-            category: item.Category?.category_name || 'Sem categoria',
-            categoryId: item.Category?.id,
-            bank: item.Bank?.name || 'Sem banco'
-          })) : [];
-          
-          console.log("Total de despesas encontradas:", expensesData.length);
-          console.log("Total de receitas encontradas:", incomesData.length);
-          
-          setAllExpenses(expensesData);
-          setAllIncomes(incomesData);
-          setHasExpenses(expensesData.length > 0);
-          setHasIncome(incomesData.length > 0);
-          
-        } catch (err) {
-          console.error('Erro ao buscar todas as transações:', err);
-          
-          // If we haven't exceeded max retries and it's a server error (500)
-          if (retryCount < maxRetries && err.message.includes('500')) {
-            retryCount++;
-            console.log(`Retrying all transactions fetch (${retryCount}/${maxRetries})...`);
-            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount)); // Exponential backoff
-            return attemptFetch();
-          }
-          
-          // If all retries failed, set empty data but don't show error to user
-          // since this is supplementary data
-          setAllExpenses([]);
-          setAllIncomes([]);
-          setHasExpenses(false);
-          setHasIncome(false);
-        }
-      };
-      
-      await attemptFetch();
-    };
-
+    
     fetchAllTransactions();
   }, [auth.token]);
 
@@ -3644,8 +3553,24 @@ const Dashboard = () => {
         onClick={() => {
           setLoading(true);
           setError(null);
-          fetchData();
-          fetchAllTransactions();
+          
+          // Usando try/catch para tratar possíveis erros na chamada das funções
+          try {
+            const fetchDataPromise = fetchData();
+            const fetchAllTransactionsPromise = fetchAllTransactions();
+            
+            // Execute as duas chamadas em paralelo
+            Promise.all([fetchDataPromise, fetchAllTransactionsPromise])
+              .catch(err => {
+                console.error("Erro ao tentar novamente:", err);
+                setError("Falha ao reconectar. Verifique sua conexão e tente novamente.");
+                setLoading(false);
+              });
+          } catch (err) {
+            console.error("Erro ao iniciar tentativa:", err);
+            setError("Não foi possível iniciar a reconexão. Recarregue a página.");
+            setLoading(false);
+          }
         }}
       >
         Tentar novamente
