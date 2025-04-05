@@ -34,34 +34,61 @@ function App() {
 
   useEffect(() => {
     const fetchUser = async () => {
-      if (auth.token && auth.loading) {
+      const token = localStorage.getItem('token');
+      
+      if (token) {
         try {
+          console.log('Tentando buscar dados do usuário com token armazenado');
           const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/me`, {
             headers: {
-              'Authorization': `Bearer ${auth.token}`
+              'Authorization': `Bearer ${token}`
             }
           });
           
           if (response.ok) {
             const userData = await response.json();
-            setAuth(prev => ({ ...prev, user: userData, loading: false }));
+            console.log('Dados do usuário recuperados com sucesso');
+            
+            setAuth({ 
+              token: token, 
+              user: userData, 
+              loading: false 
+            });
           } else {
             console.error('Erro na resposta da API:', await response.text());
-            localStorage.removeItem('token');
-            setAuth({ token: null, user: null, loading: false });
+            if (response.status === 401) {
+              console.log('Token inválido ou expirado, removendo do localStorage');
+              localStorage.removeItem('token');
+              setAuth({ token: null, user: null, loading: false });
+            }
           }
         } catch (error) {
           console.error('Erro ao buscar dados do usuário:', error);
-          localStorage.removeItem('token');
-          setAuth({ token: null, user: null, loading: false });
+          setAuth(prev => ({ ...prev, loading: false }));
         }
-      } else if (!auth.token) {
-        setAuth(prev => ({ ...prev, loading: false }));
+      } else {
+        setAuth({ token: null, user: null, loading: false });
       }
     };
 
     fetchUser();
-  }, [auth.token]);
+    
+    const handleStorageChange = (e) => {
+      if (e.key === 'token') {
+        if (e.newValue) {
+          fetchUser();
+        } else {
+          setAuth({ token: null, user: null, loading: false });
+        }
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
 
   const PrivateRoute = ({ children }) => {
     if (auth.loading) {

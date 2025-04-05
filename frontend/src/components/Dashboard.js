@@ -848,6 +848,24 @@ const Dashboard = () => {
         setLoading(true);
         setError(null);
         
+        // Garantir que temos um token válido, mesmo após refresh da página
+        // Tentar primeiro do contexto de autenticação
+        let token = auth.token;
+        
+        // Se não tiver um token no contexto, tentar buscar do localStorage
+        if (!token) {
+          console.log('Token não encontrado no contexto, buscando do localStorage...');
+          token = localStorage.getItem('token');
+          
+          if (!token) {
+            console.error('Nenhum token de autenticação encontrado');
+            navigate('/login');
+            return;
+          } else {
+            console.log('Token recuperado do localStorage');
+          }
+        }
+        
         // Construir queryParams baseado nos filtros
         const queryParams = new URLSearchParams();
         
@@ -902,7 +920,7 @@ const Dashboard = () => {
 
         const response = await fetch(`${process.env.REACT_APP_API_URL}/api/dashboard?${queryParams}`, {
           headers: {
-            'Authorization': `Bearer ${auth.token}`
+            'Authorization': `Bearer ${token}`
           }
         });
         
@@ -997,9 +1015,25 @@ const Dashboard = () => {
     
     const attemptFetch = async () => {
       try {
+        // Garantir que temos um token válido, mesmo após refresh da página
+        let token = auth.token;
+        
+        // Se não tiver um token no contexto, tentar buscar do localStorage
+        if (!token) {
+          console.log('Token não encontrado no contexto, buscando do localStorage para fetchAllTransactions...');
+          token = localStorage.getItem('token');
+          
+          if (!token) {
+            console.error('Nenhum token de autenticação encontrado para fetchAllTransactions');
+            return;
+          } else {
+            console.log('Token recuperado do localStorage para fetchAllTransactions');
+          }
+        }
+        
         const response = await fetch(`${process.env.REACT_APP_API_URL}/api/dashboard/all-transactions`, {
           headers: {
-            'Authorization': `Bearer ${auth.token}`
+            'Authorization': `Bearer ${token}`
           }
         });
         
@@ -1080,21 +1114,20 @@ const Dashboard = () => {
     }
   };
   
-  // useEffect para carregar dados iniciais
+  // useEffect para carregar dados iniciais - com lógica mais robusta
   useEffect(() => {
-    if (!auth.token) {
-      return;
-    }
-    
+    // Tentamos carregar independentemente do auth.token
+    // dentro da função fetchData já verificamos o token tanto do contexto quanto do localStorage
     fetchData();
-  }, [auth.token, selectedPeriod, selectedCategories, selectedBanks, customDateRange]);
+    
+    // Esta função será chamada quando qualquer um dos valores de dependência mudar
+  }, [selectedPeriod, selectedCategories, selectedBanks, customDateRange]);
   
   // Efeito para buscar todas as transações (não filtradas)
   useEffect(() => {
-    if (!auth.token) return;
-    
+    // Tentamos sempre carregar dados ao montar o componente
     fetchAllTransactions();
-  }, [auth.token]);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
