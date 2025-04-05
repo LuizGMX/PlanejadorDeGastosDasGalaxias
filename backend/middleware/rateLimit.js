@@ -38,15 +38,6 @@ export const configureRateLimit = (options = {}) => {
 };
 
 /**
- * Configuração de rate limiting para APIs específicas que precisam de limites mais estritos
- */
-export const strictApiLimiter = configureRateLimit({
-  windowMs: 5 * 60 * 1000, // 5 minutos
-  max: 20, // limite mais restrito
-  message: 'Limite de requisições excedido para esta API, tente novamente em alguns minutos.',
-});
-
-/**
  * Configuração de rate limiting para autenticação
  */
 export const authLimiter = configureRateLimit({

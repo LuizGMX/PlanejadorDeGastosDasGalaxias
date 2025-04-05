@@ -45,7 +45,8 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-configureRateLimit(app);
+// Aplicar rate limiting global
+app.use(configureRateLimit());
 
 // Define API_PREFIX from environment variable with "api" as default
 const API_PREFIX = `/${process.env.API_PREFIX || ''}`;

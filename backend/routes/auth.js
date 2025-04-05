@@ -3,8 +3,8 @@ import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
 import sgMail from '@sendgrid/mail';
 import { User, VerificationCode, UserBank, Bank } from '../models/index.js';
-import sequelize from '../config/db.js';
 import { Op } from 'sequelize';
+import { sequelize } from '../config/database.js';
 
 dotenv.config();
 
@@ -160,10 +160,12 @@ export const authenticate = async (req, res, next) => {
 // Rotas
 router.post('/check-email', async (req, res) => {
   console.log('===========================================');
-  console.log('INICIANDO /${process.env.API_PREFIX}/auth/check-email');
+  console.log(`INICIANDO ${process.env.API_PREFIX}/auth/check-email`);
   console.log('Timestamp:', new Date().toISOString());
   console.log('Cabeçalhos:', JSON.stringify(req.headers));
   console.log('Body completo:', JSON.stringify(req.body));
+  
+  const t = await sequelize.transaction();
   
   try {
     const { email } = req.body;
@@ -183,7 +185,8 @@ router.post('/check-email', async (req, res) => {
     console.log('Buscando usuário no banco de dados...');
     const user = await User.findOne({ 
       where: { email },
-      attributes: ['id', 'name', 'email']
+      attributes: ['id', 'name', 'email'],
+      transaction: t
     });
     
     console.log('Usuário encontrado:', user ? 'Sim' : 'Não');
@@ -199,22 +202,28 @@ router.post('/check-email', async (req, res) => {
         console.log('Código gerado:', code);
 
         console.log('Removendo códigos antigos...');
-        await VerificationCode.destroy({ where: { email } });
+        await VerificationCode.destroy({ 
+          where: { email },
+          transaction: t
+        });
         
         console.log('Salvando novo código...');
         await VerificationCode.create({
           email,
           code,
           expires_at: new Date(Date.now() + 10 * 60 * 1000)
-        });
+        }, { transaction: t });
 
         console.log('Enviando email...');
         try {
           await sendVerificationEmail(email, user.name, code);
           console.log('Email enviado com sucesso');
+          await t.commit();
         } catch (emailError) {
+          await t.rollback();
           console.error('ERRO ao enviar email:', emailError);
           console.error('Stack trace do erro de email:', emailError.stack);
+          throw emailError;
         }
 
         console.log('Retornando resposta de sucesso para usuário existente');
@@ -225,6 +234,7 @@ router.post('/check-email', async (req, res) => {
           message: 'Código enviado com sucesso!'
         });
       } catch (userExistsError) {
+        await t.rollback();
         console.error('ERRO no fluxo de usuário existente:', userExistsError);
         console.error('Stack trace:', userExistsError.stack);
         return res.status(500).json({ message: 'Erro interno ao processar usuário existente' });
@@ -232,6 +242,7 @@ router.post('/check-email', async (req, res) => {
     }
     
     // Se não existir, retorna que é um novo usuário
+    await t.commit();
     console.log('Retornando resposta para novo usuário');
     return res.json({
       isNewUser: true,
@@ -239,13 +250,14 @@ router.post('/check-email', async (req, res) => {
       email: null
     });
   } catch (error) {
+    await t.rollback();
     console.error('ERRO CRÍTICO ao verificar email:', error);
     console.error('Stack trace completo:', error.stack);
     console.error('Tipo de erro:', error.name);
     console.error('Mensagem de erro:', error.message);
     return res.status(500).json({ message: 'Erro interno ao verificar email', error: error.message });
   } finally {
-    console.log('FINALIZANDO /${process.env.API_PREFIX}/auth/check-email');
+    console.log(`FINALIZANDO ${process.env.API_PREFIX}/auth/check-email`);
     console.log('===========================================');
   }
 });
