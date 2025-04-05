@@ -104,40 +104,76 @@ const Expenses = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Obter um token válido, tentando primeiro o contexto e depois localStorage
+        let token = auth.token;
+        if (!token) {
+          console.log('Token não encontrado no contexto, buscando do localStorage para fetchData...');
+          token = localStorage.getItem('token');
+          if (!token) {
+            console.error('Nenhum token de autenticação encontrado para fetchData');
+            navigate('/login');
+            return;
+          }
+        }
+        
+        const categoriesPromise = fetch(`${process.env.REACT_APP_API_URL}/api/categories`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        const banksPromise = fetch(`${process.env.REACT_APP_API_URL}/api/banks/favorites`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
         const [categoriesResponse, banksResponse] = await Promise.all([
-          fetch(`${process.env.REACT_APP_API_URL}/api/categories`, {
-            headers: {
-              'Authorization': `Bearer ${auth.token}`
-            }
-          }),
-          fetch(`${process.env.REACT_APP_API_URL}/api/banks/favorites`, {
-            headers: {
-              'Authorization': `Bearer ${auth.token}`
-            }
-          })
+          categoriesPromise,
+          banksPromise
         ]);
-
+        
+        // Processar a resposta das categorias
+        const categoriesText = await categoriesResponse.text();
+        if (categoriesText.toLowerCase().includes('<!doctype')) {
+          console.error('Resposta de categorias contém HTML. Possível erro 502.');
+          throw new Error('Servidor temporariamente indisponível. Por favor, tente novamente em alguns instantes.');
+        }
+        
+        // Processar a resposta dos bancos
+        const banksText = await banksResponse.text();
+        if (banksText.toLowerCase().includes('<!doctype')) {
+          console.error('Resposta de bancos contém HTML. Possível erro 502.');
+          throw new Error('Servidor temporariamente indisponível. Por favor, tente novamente em alguns instantes.');
+        }
+        
+        // Verificar se as respostas foram bem-sucedidas
         if (!categoriesResponse.ok || !banksResponse.ok) {
           throw new Error('Erro ao carregar dados');
         }
-
-        const [categoriesData, banksData] = await Promise.all([
-          categoriesResponse.json(),
-          banksResponse.json()
-        ]);
+        
+        // Parsear os dados como JSON
+        let categoriesData, banksData;
+        try {
+          categoriesData = JSON.parse(categoriesText);
+          banksData = JSON.parse(banksText);
+        } catch (jsonError) {
+          console.error('Erro ao parsear JSON:', jsonError);
+          throw new Error('Erro ao processar resposta do servidor');
+        }
 
         setCategories(categoriesData);
         setBanks(banksData);
         setLoading(false);
       } catch (error) {
         console.error('Erro ao carregar dados:', error);
-        setError('Erro ao carregar dados. Por favor, tente novamente.');
+        setError(error.message || 'Erro ao carregar dados. Por favor, tente novamente.');
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [auth.token]);
+  }, [auth.token, navigate]);
 
   useEffect(() => {
     fetchExpenses();
@@ -237,51 +273,90 @@ const Expenses = () => {
         queryParams.append('is_recurring', filters.is_recurring);
       }
 
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/expenses?${queryParams}`, {
-          headers: {
-            'Authorization': `Bearer ${auth.token}`
-          }
-        });
-
-        if (response.status === 401) {
+      // Obter um token válido, tentando primeiro o contexto e depois localStorage
+      let token = auth.token;
+      if (!token) {
+        console.log('Token não encontrado no contexto, buscando do localStorage...');
+        token = localStorage.getItem('token');
+        if (!token) {
+          console.error('Nenhum token de autenticação encontrado');
           navigate('/login');
           return;
         }
-        
-        if (!response.ok) {
+      }
+
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/expenses?${queryParams}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+      if (response.status === 401) {
+        navigate('/login');
+        return;
+      }
+      
+      // Verificar se a resposta parece ser HTML (possível página de erro 502)
+      const contentType = response.headers.get('content-type');
+      const responseText = await response.text();
+      
+      // Se parece ser HTML ou contém <!doctype, é provavelmente uma página de erro
+      if (contentType?.includes('text/html') || responseText.toLowerCase().includes('<!doctype')) {
+        console.error('Resposta da API contém HTML ao invés de JSON. Possível erro 502 Bad Gateway.');
+        console.log('Conteúdo da resposta (primeiros 100 caracteres):', responseText.substring(0, 100));
+        throw new Error('Servidor temporariamente indisponível. Por favor, tente novamente em alguns instantes.');
+      }
+      
+      if (!response.ok) {
+        try {
+          // Tentar parsear o erro como JSON
+          const errorData = JSON.parse(responseText);
+          throw new Error(errorData.message || 'Erro ao carregar despesas');
+        } catch (jsonError) {
+          // Se não for possível parsear como JSON
           throw new Error('Erro ao carregar despesas');
         }
-
-        const data = await response.json();
-        setExpenses(Array.isArray(data) ? data : []);
-        setSelectedExpenses([]);
-
-        // Define a mensagem quando não há despesas
-        if (!data || !Array.isArray(data) || data.length === 0) {
-          // Verifica se há filtros ativos
-          const hasActiveFilters = filters.months.length !== 1 || 
-                                 filters.years.length !== 1 || 
-                                 filters.category !== 'all' || 
-                                 filters.paymentMethod !== 'all' || 
-                                 filters.hasInstallments !== 'all' || 
-                                 filters.description !== '' || 
-                                 filters.is_recurring !== '';
-
-          setNoExpensesMessage(hasActiveFilters ? {
-            message: 'Nenhuma despesa encontrada para os filtros selecionados.',
-            suggestion: 'Tente ajustar os filtros para ver mais resultados.'
-          } : {
-            message: 'Você ainda não tem despesas cadastradas para este período.',
-            suggestion: 'Que tal começar adicionando sua primeira despesa?'
-          });
-        } else {
-          setNoExpensesMessage(null);
-        }
-      } catch (err) {
-        setError('Erro ao carregar despesas');
-      } finally {
-        setLoading(false);
       }
+
+      // Parse the response text as JSON
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (jsonError) {
+        console.error('Erro ao parsear JSON da resposta:', jsonError);
+        throw new Error('Erro ao processar resposta do servidor');
+      }
+
+      setExpenses(Array.isArray(data) ? data : []);
+      setSelectedExpenses([]);
+
+      // Define a mensagem quando não há despesas
+      if (!data || !Array.isArray(data) || data.length === 0) {
+        // Verifica se há filtros ativos
+        const hasActiveFilters = filters.months.length !== 1 || 
+                               filters.years.length !== 1 || 
+                               filters.category !== 'all' || 
+                               filters.paymentMethod !== 'all' || 
+                               filters.hasInstallments !== 'all' || 
+                               filters.description !== '' || 
+                               filters.is_recurring !== '';
+
+        setNoExpensesMessage(hasActiveFilters ? {
+          message: 'Nenhuma despesa encontrada para os filtros selecionados.',
+          suggestion: 'Tente ajustar os filtros para ver mais resultados.'
+        } : {
+          message: 'Você ainda não tem despesas cadastradas para este período.',
+          suggestion: 'Que tal começar adicionando sua primeira despesa?'
+        });
+      } else {
+        setNoExpensesMessage(null);
+      }
+    } catch (err) {
+      console.error('Erro ao carregar despesas:', err);
+      setError(err.message || 'Erro ao carregar despesas');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const formatCurrency = (value) => {

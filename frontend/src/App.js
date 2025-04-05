@@ -45,25 +45,55 @@ function App() {
             }
           });
           
-          if (response.ok) {
-            const userData = await response.json();
-            console.log('Dados do usuário recuperados com sucesso');
+          // Verificar se a resposta parece ser HTML (possível página de erro 502)
+          const contentType = response.headers.get('content-type');
+          const responseText = await response.text();
+          
+          // Se parece ser HTML ou contém <!doctype, é provavelmente uma página de erro
+          if (contentType?.includes('text/html') || responseText.toLowerCase().includes('<!doctype')) {
+            console.error('Resposta da API contém HTML ao invés de JSON. Possível erro 502 Bad Gateway.');
+            console.log('Conteúdo da resposta (primeiros 100 caracteres):', responseText.substring(0, 100));
             
-            setAuth({ 
-              token: token, 
-              user: userData, 
-              loading: false 
-            });
+            // Não removemos o token para permitir novas tentativas quando o servidor voltar
+            setAuth(prev => ({ ...prev, loading: false }));
+            return;
+          }
+          
+          if (response.ok) {
+            try {
+              // Parsear o JSON manualmente já que usamos text() acima
+              const userData = JSON.parse(responseText);
+              console.log('Dados do usuário recuperados com sucesso');
+              
+              setAuth({ 
+                token: token, 
+                user: userData, 
+                loading: false 
+              });
+            } catch (jsonError) {
+              console.error('Erro ao parsear JSON da resposta:', jsonError);
+              console.error('Conteúdo da resposta:', responseText);
+              setAuth(prev => ({ ...prev, loading: false }));
+            }
           } else {
-            console.error('Erro na resposta da API:', await response.text());
+            console.error('Erro na resposta da API (status):', response.status);
+            console.error('Conteúdo da resposta:', responseText);
+            
             if (response.status === 401) {
               console.log('Token inválido ou expirado, removendo do localStorage');
               localStorage.removeItem('token');
               setAuth({ token: null, user: null, loading: false });
+            } else {
+              // Para outros erros, mantemos o token para permitir novas tentativas
+              setAuth(prev => ({ ...prev, loading: false }));
             }
           }
         } catch (error) {
           console.error('Erro ao buscar dados do usuário:', error);
+          // Verificamos se é problema de conexão (não remover token)
+          if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+            console.log('Possível problema de conexão. Mantendo token para novas tentativas.');
+          }
           setAuth(prev => ({ ...prev, loading: false }));
         }
       } else {

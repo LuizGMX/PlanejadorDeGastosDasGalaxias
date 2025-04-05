@@ -28,29 +28,64 @@ const ExpenseForm = () => {
     const fetchData = async () => {
       try {
         console.log('Iniciando busca de dados...');
+        
+        // Obter um token válido, tentando primeiro o contexto e depois localStorage
+        let token = auth.token;
+        if (!token) {
+          console.log('Token não encontrado no contexto, buscando do localStorage...');
+          token = localStorage.getItem('token');
+          if (!token) {
+            console.error('Nenhum token de autenticação encontrado');
+            navigate('/login');
+            return;
+          }
+        }
+        
         const categoriesResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/expenses/categories`, {
           headers: {
-            'Authorization': `Bearer ${auth.token}`,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         });
-        if (!categoriesResponse.ok) {
-          const errorData = await categoriesResponse.json();
-          throw new Error(errorData.message || 'Erro ao carregar categorias');
+        
+        // Capturar o conteúdo da resposta como texto
+        const responseText = await categoriesResponse.text();
+        
+        // Verificar se a resposta parece ser HTML (erro 502)
+        if (responseText.toLowerCase().includes('<!doctype')) {
+          console.error('Resposta contém HTML. Possível erro 502 Bad Gateway.');
+          throw new Error('Servidor temporariamente indisponível. Por favor, tente novamente em alguns instantes.');
         }
-        const categoriesData = await categoriesResponse.json();
+        
+        if (!categoriesResponse.ok) {
+          try {
+            const errorData = JSON.parse(responseText);
+            throw new Error(errorData.message || 'Erro ao carregar categorias');
+          } catch (jsonError) {
+            throw new Error('Erro ao carregar categorias');
+          }
+        }
+        
+        // Parsear o JSON manualmente
+        let categoriesData;
+        try {
+          categoriesData = JSON.parse(responseText);
+        } catch (jsonError) {
+          console.error('Erro ao parsear JSON:', jsonError);
+          throw new Error('Erro ao processar resposta do servidor');
+        }
+        
         setCategories(categoriesData);
-
         setLoading(false);
       } catch (err) {
         console.error('Erro ao carregar dados:', err);
-        setError(err.message);
+        setError(err.message || 'Erro desconhecido ao carregar dados.');
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [auth.token]);
+  }, [auth.token, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
