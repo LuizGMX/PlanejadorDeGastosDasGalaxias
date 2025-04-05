@@ -41,7 +41,7 @@ function App() {
       if (token) {
         try {
           console.log('Tentando buscar dados do usuário com token armazenado');
-          const response = await fetch(`${process.env.REACT_APP_API_URL}/${process.env.API_PREFIX}/auth/me`, {
+          const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/auth/me`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }

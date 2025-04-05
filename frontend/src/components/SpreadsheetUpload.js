@@ -45,7 +45,7 @@ const SpreadsheetUpload = () => {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await axios.post(`${process.env.REACT_APP_API_URL}/${process.env.API_PREFIX}/spreadsheet/upload`, formData, {
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/spreadsheet/upload`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${token}`
