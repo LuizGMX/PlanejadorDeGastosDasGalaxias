@@ -1,4 +1,4 @@
-import { Bank, Category } from '../models/index.js';
+import { Bank, Category } from '../../models/index.js';
 
 // import { seedUserAndExpenses } from './userAndExpensesSeeder.js';
 // import { seedUserAndIncomes } from './userAndIncomesSeeder.js';

@@ -21,7 +21,7 @@ import userRoutes from './routes/users.js';
 import recurrencesRouter from './routes/recurrences.js';
 import telegramRoutes from './routes/telegramRoutes.js';
 import { sequelize } from './models/index.js';
-import seedDatabase from './seeders/index.js';
+import seedDatabase from './database/seeds/index.js';
 import { telegramService } from './services/telegramService.js';
 import { Sequelize } from 'sequelize';
 import healthRoutes from './routes/healthRoutes.js';

@@ -53,6 +53,4 @@ export const authLimiter = configureRateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
   max: 10, // limite ainda mais restrito para tentativas de login
   message: 'Muitas tentativas de login, tente novamente mais tarde.',
-});
-
-export default configureRateLimit; 
+}); 

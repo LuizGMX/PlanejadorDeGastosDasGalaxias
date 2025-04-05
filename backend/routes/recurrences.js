@@ -1,7 +1,7 @@
 import express from 'express';
 import { authenticate } from '../middleware/auth.js';
 import RecurrenceRule from '../models/recurrenceRule.js';
-import RecurrenceException from '../models/recurrenceException.js ';
+import RecurrenceException from '../models/recurrenceException.js';
 import { calculateOccurrences } from '../utils/recurrenceCalculator.js';
 import Category from '../models/category.js';
 import Bank from '../models/bank.js';
