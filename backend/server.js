@@ -86,6 +86,7 @@ if (process.env.NODE_ENV === 'production') {
   const ca = fs.readFileSync('/etc/letsencrypt/live/planejadordasgalaxias.com.br/chain.pem', 'utf8');
 
   const credentials = { key: privateKey, cert: certificate, ca: ca };
+  
 
   // Iniciar servidor HTTPS na porta 5000
   server = https.createServer(credentials, app);
@@ -93,7 +94,7 @@ if (process.env.NODE_ENV === 'production') {
     console.log('🚀 Servidor HTTPS rodando na porta 5000 em modo produção');
   });
 
-  
+
 } else {
   // Iniciar servidor HTTP na porta 5000 para desenvolvimento
   server = http.createServer(app);
