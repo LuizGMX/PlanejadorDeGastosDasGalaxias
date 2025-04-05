@@ -929,11 +929,23 @@ const Dashboard = () => {
           return;
         }
         
+        // Verificar se a resposta parece ser HTML (possível página de erro 502)
+        const contentType = response.headers.get('content-type');
+        const responseText = await response.text();
+        
+        // Se parece ser HTML ou contém <!doctype, é provavelmente uma página de erro
+        if (contentType?.includes('text/html') || responseText.toLowerCase().includes('<!doctype')) {
+          console.error('Resposta da API contém HTML ao invés de JSON. Possível erro 502 Bad Gateway.');
+          console.log('Conteúdo da resposta (primeiros 100 caracteres):', responseText.substring(0, 100));
+          throw new Error('Servidor temporariamente indisponível. Por favor, tente novamente em alguns instantes.');
+        }
+        
         if (!response.ok) {
           // Get detailed error message if available
           let errorMessage = 'Erro ao carregar dados do dashboard';
           try {
-            const errorData = await response.json();
+            // Parsear o JSON manualmente já que usamos text() acima
+            const errorData = JSON.parse(responseText);
             errorMessage = errorData.message || errorMessage;
           } catch (e) {
             // If can't parse error JSON, use status text
@@ -942,7 +954,15 @@ const Dashboard = () => {
           throw new Error(errorMessage);
         }
         
-        const jsonData = await response.json();
+        // Parsear o JSON manualmente já que usamos text() acima
+        let jsonData;
+        try {
+          jsonData = JSON.parse(responseText);
+        } catch (jsonError) {
+          console.error('Erro ao parsear JSON da resposta:', jsonError);
+          throw new Error('Erro ao processar resposta do servidor');
+        }
+        
         console.log("Dashboard API response:", jsonData);
         
         // Verificar se há despesas e receitas
@@ -1037,11 +1057,23 @@ const Dashboard = () => {
           }
         });
         
+        // Verificar se a resposta parece ser HTML (possível página de erro 502)
+        const contentType = response.headers.get('content-type');
+        const responseText = await response.text();
+        
+        // Se parece ser HTML ou contém <!doctype, é provavelmente uma página de erro
+        if (contentType?.includes('text/html') || responseText.toLowerCase().includes('<!doctype')) {
+          console.error('Resposta de all-transactions contém HTML. Possível erro 502 Bad Gateway.');
+          console.log('Conteúdo da resposta (primeiros 100 caracteres):', responseText.substring(0, 100));
+          throw new Error('Servidor temporariamente indisponível. Por favor, tente novamente em alguns instantes.');
+        }
+        
         if (!response.ok) {
           // Get detailed error message if available
           let errorMessage = 'Erro ao carregar todas as transações';
           try {
-            const errorData = await response.json();
+            // Parsear o JSON manualmente já que usamos text() acima
+            const errorData = JSON.parse(responseText);
             errorMessage = errorData.message || errorMessage;
           } catch (e) {
             // If can't parse error JSON, use status text
@@ -1050,7 +1082,14 @@ const Dashboard = () => {
           throw new Error(errorMessage);
         }
         
-        const jsonData = await response.json();
+        // Parsear o JSON manualmente já que usamos text() acima
+        let jsonData;
+        try {
+          jsonData = JSON.parse(responseText);
+        } catch (jsonError) {
+          console.error('Erro ao parsear JSON da resposta:', jsonError);
+          throw new Error('Erro ao processar resposta do servidor');
+        }
         
         // Processar transações de despesas
         const expensesData = jsonData.expenses ? jsonData.expenses.map(item => ({

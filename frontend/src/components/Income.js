@@ -98,40 +98,78 @@ const Income = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Obter um token válido, tentando primeiro o contexto e depois localStorage
+        let token = auth.token;
+        if (!token) {
+          console.log('Token não encontrado no contexto, buscando do localStorage...');
+          token = localStorage.getItem('token');
+          if (!token) {
+            console.error('Nenhum token de autenticação encontrado');
+            navigate('/login');
+            return;
+          }
+        }
+        
+        // Fazer as requisições para categorias e bancos
+        const categoriesPromise = fetch(`${process.env.REACT_APP_API_URL}/api/categories`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        const banksPromise = fetch(`${process.env.REACT_APP_API_URL}/api/banks/favorites`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        // Esperar as respostas
         const [categoriesResponse, banksResponse] = await Promise.all([
-          fetch(`${process.env.REACT_APP_API_URL}/api/categories`, {
-            headers: {
-              'Authorization': `Bearer ${auth.token}`
-            }
-          }),
-          fetch(`${process.env.REACT_APP_API_URL}/api/banks/favorites`, {
-            headers: {
-              'Authorization': `Bearer ${auth.token}`
-            }
-          })
+          categoriesPromise,
+          banksPromise
         ]);
-
+        
+        // Processar a resposta das categorias
+        const categoriesText = await categoriesResponse.text();
+        if (categoriesText.toLowerCase().includes('<!doctype')) {
+          console.error('Resposta de categorias contém HTML. Possível erro 502.');
+          throw new Error('Servidor temporariamente indisponível. Por favor, tente novamente em alguns instantes.');
+        }
+        
+        // Processar a resposta dos bancos
+        const banksText = await banksResponse.text();
+        if (banksText.toLowerCase().includes('<!doctype')) {
+          console.error('Resposta de bancos contém HTML. Possível erro 502.');
+          throw new Error('Servidor temporariamente indisponível. Por favor, tente novamente em alguns instantes.');
+        }
+        
+        // Verificar se as respostas foram bem-sucedidas
         if (!categoriesResponse.ok || !banksResponse.ok) {
           throw new Error('Erro ao carregar dados');
         }
-
-        const [categoriesData, banksData] = await Promise.all([
-          categoriesResponse.json(),
-          banksResponse.json()
-        ]);
+        
+        // Parsear os dados como JSON
+        let categoriesData, banksData;
+        try {
+          categoriesData = JSON.parse(categoriesText);
+          banksData = JSON.parse(banksText);
+        } catch (jsonError) {
+          console.error('Erro ao parsear JSON:', jsonError);
+          throw new Error('Erro ao processar resposta do servidor');
+        }
 
         setCategories(categoriesData);
         setBanks(banksData);
         setLoading(false);
       } catch (error) {
         console.error('Erro ao carregar dados:', error);
-        setError('Erro ao carregar dados. Por favor, tente novamente.');
+        setError(error.message || 'Erro ao carregar dados. Por favor, tente novamente.');
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [auth.token]);
+  }, [auth.token, navigate]);
 
   const fetchIncomes = async () => {
     try {
@@ -147,12 +185,24 @@ const Income = () => {
       if (filters.description) queryParams.append('description', filters.description);
       if (filters.is_recurring !== '') queryParams.append('is_recurring', filters.is_recurring);
 
+      // Obter um token válido, tentando primeiro o contexto e depois localStorage
+      let token = auth.token;
+      if (!token) {
+        console.log('Token não encontrado no contexto, buscando do localStorage para fetchIncomes...');
+        token = localStorage.getItem('token');
+        if (!token) {
+          console.error('Nenhum token de autenticação encontrado para fetchIncomes');
+          navigate('/login');
+          return;
+        }
+      }
+
       const url = `${process.env.REACT_APP_API_URL}/api/incomes?${queryParams}`;
       console.log('Fetching from URL:', url);
       
       const response = await fetch(url, {
         headers: {
-          'Authorization': `Bearer ${auth.token}`
+          'Authorization': `Bearer ${token}`
         }
       });
       
@@ -162,12 +212,40 @@ const Income = () => {
         return;
       }
       
-      if (!response.ok) {
-        console.error('Response not OK:', response.status, response.statusText);
-        throw new Error('Erro ao carregar receitas');
+      // Verificar se a resposta parece ser HTML (possível página de erro 502)
+      const contentType = response.headers.get('content-type');
+      const responseText = await response.text();
+      
+      // Se parece ser HTML ou contém <!doctype, é provavelmente uma página de erro
+      if (contentType?.includes('text/html') || responseText.toLowerCase().includes('<!doctype')) {
+        console.error('Resposta da API contém HTML ao invés de JSON. Possível erro 502 Bad Gateway.');
+        console.log('Conteúdo da resposta (primeiros 100 caracteres):', responseText.substring(0, 100));
+        throw new Error('Servidor temporariamente indisponível. Por favor, tente novamente em alguns instantes.');
       }
       
-      const data = await response.json();
+      if (!response.ok) {
+        console.error('Response not OK:', response.status, response.statusText);
+        let errorMessage = 'Erro ao carregar receitas';
+        try {
+          // Parsear o JSON manualmente já que usamos text() acima
+          const errorData = JSON.parse(responseText);
+          errorMessage = errorData.message || errorMessage;
+        } catch (e) {
+          // Se não puder parsear como JSON, usar o texto de status
+          errorMessage = `${errorMessage}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
+      }
+      
+      // Parsear o JSON manualmente já que usamos text() acima
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (jsonError) {
+        console.error('Erro ao parsear JSON da resposta:', jsonError);
+        throw new Error('Erro ao processar resposta do servidor');
+      }
+      
       console.log('Received data structure:', {
         hasIncomes: !!data.incomes,
         incomesIsArray: Array.isArray(data.incomes),

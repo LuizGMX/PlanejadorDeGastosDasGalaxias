@@ -47,48 +47,130 @@ const AddExpense = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
+        // Obter um token válido, tentando primeiro o contexto e depois localStorage
+        let token = auth.token;
+        if (!token) {
+          console.log('Token não encontrado no contexto, buscando do localStorage...');
+          token = localStorage.getItem('token');
+          if (!token) {
+            console.error('Nenhum token de autenticação encontrado');
+            navigate('/login');
+            return;
+          }
+        }
+        
         const response = await fetch(`${process.env.REACT_APP_API_URL}/api/expenses/categories`, {
           headers: {
-            'Authorization': `Bearer ${auth.token}`
+            'Authorization': `Bearer ${token}`
           }
         });
 
+        // Verificar se a resposta parece ser HTML (possível página de erro 502)
+        const contentType = response.headers.get('content-type');
+        const responseText = await response.text();
+        
+        // Se parece ser HTML ou contém <!doctype, é provavelmente uma página de erro
+        if (contentType?.includes('text/html') || responseText.toLowerCase().includes('<!doctype')) {
+          console.error('Resposta de categorias contém HTML. Possível erro 502 Bad Gateway.');
+          console.log('Conteúdo da resposta (primeiros 100 caracteres):', responseText.substring(0, 100));
+          throw new Error('Servidor temporariamente indisponível. Por favor, tente novamente em alguns instantes.');
+        }
+        
         if (!response.ok) {
-          throw new Error('Falha ao carregar categorias');
+          let errorMessage = 'Falha ao carregar categorias';
+          try {
+            // Parsear o JSON manualmente já que usamos text() acima
+            const errorData = JSON.parse(responseText);
+            errorMessage = errorData.message || errorMessage;
+          } catch (e) {
+            // Se não puder parsear como JSON, usar o texto de status
+            errorMessage = `${errorMessage}: ${response.statusText}`;
+          }
+          throw new Error(errorMessage);
         }
 
-        const data = await response.json();
+        // Parsear o JSON manualmente já que usamos text() acima
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (jsonError) {
+          console.error('Erro ao parsear JSON da resposta:', jsonError);
+          throw new Error('Erro ao processar resposta do servidor');
+        }
+        
         setCategories(data);
       } catch (err) {
-        setError('Erro ao carregar categorias. Por favor, tente novamente.');
+        console.error('Erro ao carregar categorias:', err);
+        setError(err.message || 'Erro ao carregar categorias. Por favor, tente novamente.');
       }
     };
 
     fetchCategories();
-  }, [auth.token]);
+  }, [auth.token, navigate]);
 
   useEffect(() => {
     const fetchBanks = async () => {
       try {
+        // Obter um token válido, tentando primeiro o contexto e depois localStorage
+        let token = auth.token;
+        if (!token) {
+          console.log('Token não encontrado no contexto, buscando do localStorage...');
+          token = localStorage.getItem('token');
+          if (!token) {
+            console.error('Nenhum token de autenticação encontrado');
+            navigate('/login');
+            return;
+          }
+        }
+        
         const response = await fetch(`${process.env.REACT_APP_API_URL}/api/banks/users`, {
           headers: {
-            'Authorization': `Bearer ${auth.token}`
+            'Authorization': `Bearer ${token}`
           }
         });
 
+        // Verificar se a resposta parece ser HTML (possível página de erro 502)
+        const contentType = response.headers.get('content-type');
+        const responseText = await response.text();
+        
+        // Se parece ser HTML ou contém <!doctype, é provavelmente uma página de erro
+        if (contentType?.includes('text/html') || responseText.toLowerCase().includes('<!doctype')) {
+          console.error('Resposta de bancos contém HTML. Possível erro 502 Bad Gateway.');
+          console.log('Conteúdo da resposta (primeiros 100 caracteres):', responseText.substring(0, 100));
+          throw new Error('Servidor temporariamente indisponível. Por favor, tente novamente em alguns instantes.');
+        }
+        
         if (!response.ok) {
-          throw new Error('Falha ao carregar bancos');
+          let errorMessage = 'Falha ao carregar bancos';
+          try {
+            // Parsear o JSON manualmente já que usamos text() acima
+            const errorData = JSON.parse(responseText);
+            errorMessage = errorData.message || errorMessage;
+          } catch (e) {
+            // Se não puder parsear como JSON, usar o texto de status
+            errorMessage = `${errorMessage}: ${response.statusText}`;
+          }
+          throw new Error(errorMessage);
         }
 
-        const data = await response.json();
+        // Parsear o JSON manualmente já que usamos text() acima
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (jsonError) {
+          console.error('Erro ao parsear JSON da resposta:', jsonError);
+          throw new Error('Erro ao processar resposta do servidor');
+        }
+        
         setBanks(data);
       } catch (err) {
-        setError('Erro ao carregar bancos. Por favor, tente novamente.');
+        console.error('Erro ao carregar bancos:', err);
+        setError(err.message || 'Erro ao carregar bancos. Por favor, tente novamente.');
       }
     };
 
     fetchBanks();
-  }, [auth.token]);
+  }, [auth.token, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -300,22 +382,59 @@ const AddExpense = () => {
 
       console.log('Enviando dados:', JSON.stringify(dataToSend, null, 2));
 
+      // Obter um token válido, tentando primeiro o contexto e depois localStorage
+      let token = auth.token;
+      if (!token) {
+        console.log('Token não encontrado no contexto, buscando do localStorage para handleSubmit...');
+        token = localStorage.getItem('token');
+        if (!token) {
+          console.error('Nenhum token de autenticação encontrado para handleSubmit');
+          navigate('/login');
+          return;
+        }
+      }
+
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/expenses`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${auth.token}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(dataToSend)
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Erro da API:', errorData);
-        throw new Error(errorData.message || 'Falha ao adicionar despesa');
+      // Verificar se a resposta parece ser HTML (possível página de erro 502)
+      const contentType = response.headers.get('content-type');
+      const responseText = await response.text();
+      
+      // Se parece ser HTML ou contém <!doctype, é provavelmente uma página de erro
+      if (contentType?.includes('text/html') || responseText.toLowerCase().includes('<!doctype')) {
+        console.error('Resposta da API contém HTML ao invés de JSON. Possível erro 502 Bad Gateway.');
+        console.log('Conteúdo da resposta (primeiros 100 caracteres):', responseText.substring(0, 100));
+        throw new Error('Servidor temporariamente indisponível. Por favor, tente novamente em alguns instantes.');
       }
 
-      const result = await response.json();
+      if (!response.ok) {
+        // Parsear o JSON manualmente já que usamos text() acima
+        try {
+          const errorData = JSON.parse(responseText);
+          console.error('Erro da API:', errorData);
+          throw new Error(errorData.message || 'Falha ao adicionar despesa');
+        } catch (jsonError) {
+          console.error('Erro ao parsear JSON da resposta de erro:', jsonError);
+          throw new Error('Erro ao processar resposta do servidor');
+        }
+      }
+
+      // Parsear o JSON manualmente já que usamos text() acima
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch (jsonError) {
+        console.error('Erro ao parsear JSON da resposta:', jsonError);
+        throw new Error('Erro ao processar resposta do servidor');
+      }
+      
       console.log('Resposta do servidor:', result);
 
       setSuccess('Despesa adicionada com sucesso!');

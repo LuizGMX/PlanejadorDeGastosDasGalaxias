@@ -117,22 +117,62 @@ const Profile = () => {
   // Funções de API
   const saveProfile = async () => {
     try {
+      // Obter um token válido, tentando primeiro o contexto e depois localStorage
+      let token = auth.token;
+      if (!token) {
+        console.log('Token não encontrado no contexto, buscando do localStorage para saveProfile...');
+        token = localStorage.getItem('token');
+        if (!token) {
+          console.error('Nenhum token de autenticação encontrado para saveProfile');
+          navigate('/login');
+          return;
+        }
+      }
+      
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/user/me`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${auth.token}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ name: formData.name, email: formData.email })
       });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erro ao atualizar perfil');
+      
+      // Verificar se a resposta parece ser HTML (possível página de erro 502)
+      const contentType = response.headers.get('content-type');
+      const responseText = await response.text();
+      
+      // Se parece ser HTML ou contém <!doctype, é provavelmente uma página de erro
+      if (contentType?.includes('text/html') || responseText.toLowerCase().includes('<!doctype')) {
+        console.error('Resposta da API contém HTML ao invés de JSON. Possível erro 502 Bad Gateway.');
+        console.log('Conteúdo da resposta (primeiros 100 caracteres):', responseText.substring(0, 100));
+        throw new Error('Servidor temporariamente indisponível. Por favor, tente novamente em alguns instantes.');
       }
-      const data = await response.json();
+      
+      if (!response.ok) {
+        try {
+          // Parsear o JSON manualmente já que usamos text() acima
+          const errorData = JSON.parse(responseText);
+          throw new Error(errorData.message || 'Erro ao atualizar perfil');
+        } catch (jsonError) {
+          console.error('Erro ao parsear JSON da resposta de erro:', jsonError);
+          throw new Error('Erro ao processar resposta do servidor');
+        }
+      }
+      
+      // Parsear o JSON manualmente já que usamos text() acima
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (jsonError) {
+        console.error('Erro ao parsear JSON da resposta:', jsonError);
+        throw new Error('Erro ao processar resposta do servidor');
+      }
+      
       setAuth(prev => ({ ...prev, user: data }));
       setMessage({ type: 'success', text: 'Perfil atualizado com sucesso!' });
     } catch (err) {
+      console.error('Erro ao atualizar perfil:', err);
       setMessage({ type: 'error', text: err.message || 'Erro ao atualizar perfil' });
     }
   };
@@ -146,11 +186,23 @@ const Profile = () => {
         financial_goal_period_value: formData.financialGoalPeriodValue
       });
 
+      // Obter um token válido, tentando primeiro o contexto e depois localStorage
+      let token = auth.token;
+      if (!token) {
+        console.log('Token não encontrado no contexto, buscando do localStorage para saveFinancialGoal...');
+        token = localStorage.getItem('token');
+        if (!token) {
+          console.error('Nenhum token de autenticação encontrado para saveFinancialGoal');
+          navigate('/login');
+          return;
+        }
+      }
+
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/me`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${auth.token}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           name: formData.name,
@@ -165,12 +217,37 @@ const Profile = () => {
         })
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erro ao atualizar meta financeira');
+      // Verificar se a resposta parece ser HTML (possível página de erro 502)
+      const contentType = response.headers.get('content-type');
+      const responseText = await response.text();
+      
+      // Se parece ser HTML ou contém <!doctype, é provavelmente uma página de erro
+      if (contentType?.includes('text/html') || responseText.toLowerCase().includes('<!doctype')) {
+        console.error('Resposta da API contém HTML ao invés de JSON. Possível erro 502 Bad Gateway.');
+        console.log('Conteúdo da resposta (primeiros 100 caracteres):', responseText.substring(0, 100));
+        throw new Error('Servidor temporariamente indisponível. Por favor, tente novamente em alguns instantes.');
       }
 
-      const data = await response.json();
+      if (!response.ok) {
+        try {
+          // Parsear o JSON manualmente já que usamos text() acima
+          const errorData = JSON.parse(responseText);
+          throw new Error(errorData.message || 'Erro ao atualizar meta financeira');
+        } catch (jsonError) {
+          console.error('Erro ao parsear JSON da resposta de erro:', jsonError);
+          throw new Error('Erro ao processar resposta do servidor');
+        }
+      }
+
+      // Parsear o JSON manualmente já que usamos text() acima
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (jsonError) {
+        console.error('Erro ao parsear JSON da resposta:', jsonError);
+        throw new Error('Erro ao processar resposta do servidor');
+      }
+      
       console.log('Resposta do servidor:', data);
       
       setAuth(prev => ({ ...prev, user: data }));
@@ -185,24 +262,50 @@ const Profile = () => {
     setMessage(null);
     setError(null);
     try {
+      // Obter um token válido, tentando primeiro o contexto e depois localStorage
+      let token = auth.token;
+      if (!token) {
+        console.log('Token não encontrado no contexto, buscando do localStorage para changeEmail...');
+        token = localStorage.getItem('token');
+        if (!token) {
+          console.error('Nenhum token de autenticação encontrado para changeEmail');
+          navigate('/login');
+          return;
+        }
+      }
+
       if (emailChangeData.step === 'input') {
         const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/change-email/request`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${auth.token}`
+            'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({
             current_email: emailChangeData.current_email,
             new_email: emailChangeData.new_email
           })
         });
+        
+        // Verificar se a resposta parece ser HTML (possível página de erro 502)
+        const contentType = response.headers.get('content-type');
+        const responseText = await response.text();
+        
+        // Se parece ser HTML ou contém <!doctype, é provavelmente uma página de erro
+        if (contentType?.includes('text/html') || responseText.toLowerCase().includes('<!doctype')) {
+          console.error('Resposta da API contém HTML ao invés de JSON. Possível erro 502 Bad Gateway.');
+          console.log('Conteúdo da resposta (primeiros 100 caracteres):', responseText.substring(0, 100));
+          throw new Error('Servidor temporariamente indisponível. Por favor, tente novamente em alguns instantes.');
+        }
+        
         let data;
         try {
-          data = await response.json();
-        } catch {
+          data = JSON.parse(responseText);
+        } catch (jsonError) {
+          console.error('Erro ao parsear JSON da resposta:', jsonError);
           throw new Error('Erro ao processar resposta do servidor');
         }
+        
         if (!response.ok) throw new Error(data?.message || 'Aguarde alguns minutos.');
         setEmailChangeData(prev => ({ ...prev, step: 'verify' }));
         setMessage({ type: 'success', text: 'Código de verificação enviado!' });
@@ -223,19 +326,33 @@ const Profile = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${auth.token}`
+            'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({
             new_email: emailChangeData.new_email,
             code: emailChangeData.code
           })
         });
+        
+        // Verificar se a resposta parece ser HTML (possível página de erro 502)
+        const contentType = response.headers.get('content-type');
+        const responseText = await response.text();
+        
+        // Se parece ser HTML ou contém <!doctype, é provavelmente uma página de erro
+        if (contentType?.includes('text/html') || responseText.toLowerCase().includes('<!doctype')) {
+          console.error('Resposta da API contém HTML ao invés de JSON. Possível erro 502 Bad Gateway.');
+          console.log('Conteúdo da resposta (primeiros 100 caracteres):', responseText.substring(0, 100));
+          throw new Error('Servidor temporariamente indisponível. Por favor, tente novamente em alguns instantes.');
+        }
+        
         let data;
         try {
-          data = await response.json();
-        } catch {
+          data = JSON.parse(responseText);
+        } catch (jsonError) {
+          console.error('Erro ao parsear JSON da resposta:', jsonError);
           throw new Error('Erro ao processar resposta do servidor');
         }
+        
         if (!response.ok) throw new Error(data?.message || 'Erro na verificação do código.');
         setAuth(prev => ({ ...prev, user: data.user }));
         setEmailChangeData({
@@ -247,24 +364,56 @@ const Profile = () => {
         setMessage({ type: 'success', text: 'Email atualizado com sucesso!' });
       }
     } catch (err) {
+      console.error('Erro ao mudar email:', err);
       setError(err.message || 'Erro ao processar sua solicitação.');
     }
-  }, [auth.token, emailChangeData, setAuth]);
+  }, [auth.token, emailChangeData, setAuth, navigate]);
 
   const resendCode = useCallback(async () => {
     try {
+      // Obter um token válido, tentando primeiro o contexto e depois localStorage
+      let token = auth.token;
+      if (!token) {
+        console.log('Token não encontrado no contexto, buscando do localStorage para resendCode...');
+        token = localStorage.getItem('token');
+        if (!token) {
+          console.error('Nenhum token de autenticação encontrado para resendCode');
+          navigate('/login');
+          return;
+        }
+      }
+
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/change-email/request`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${auth.token}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           current_email: emailChangeData.current_email,
           new_email: emailChangeData.new_email
         })
       });
-      const data = await response.json();
+      
+      // Verificar se a resposta parece ser HTML (possível página de erro 502)
+      const contentType = response.headers.get('content-type');
+      const responseText = await response.text();
+      
+      // Se parece ser HTML ou contém <!doctype, é provavelmente uma página de erro
+      if (contentType?.includes('text/html') || responseText.toLowerCase().includes('<!doctype')) {
+        console.error('Resposta da API contém HTML ao invés de JSON. Possível erro 502 Bad Gateway.');
+        console.log('Conteúdo da resposta (primeiros 100 caracteres):', responseText.substring(0, 100));
+        throw new Error('Servidor temporariamente indisponível. Por favor, tente novamente em alguns instantes.');
+      }
+      
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (jsonError) {
+        console.error('Erro ao parsear JSON da resposta:', jsonError);
+        throw new Error('Erro ao processar resposta do servidor');
+      }
+      
       if (!response.ok) throw new Error(data.message || 'Erro ao reenviar código');
       setMessage({ type: 'success', text: 'Novo código enviado!' });
       setResendDisabled(true);
@@ -280,9 +429,10 @@ const Profile = () => {
         });
       }, 1000);
     } catch (err) {
+      console.error('Erro ao reenviar código:', err);
       setError(err.message);
     }
-  }, [auth.token, emailChangeData]);
+  }, [auth.token, emailChangeData, navigate]);
 
   const requestTelegramCode = useCallback(async () => {
     if (telegramLoading) return;
@@ -294,14 +444,47 @@ const Profile = () => {
     setTelegramError('');
     try {
       setTelegramLoading(true);
+      
+      // Obter um token válido, tentando primeiro o contexto e depois localStorage
+      let token = auth.token;
+      if (!token) {
+        console.log('Token não encontrado no contexto, buscando do localStorage para requestTelegramCode...');
+        token = localStorage.getItem('token');
+        if (!token) {
+          console.error('Nenhum token de autenticação encontrado para requestTelegramCode');
+          navigate('/login');
+          return;
+        }
+      }
+      
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/telegram/init-verification`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${auth.token}`
+          'Authorization': `Bearer ${token}`
         }
       });
-      const data = await response.json();
+      
+      // Verificar se a resposta parece ser HTML (possível página de erro 502)
+      const contentType = response.headers.get('content-type');
+      const responseText = await response.text();
+      
+      // Se parece ser HTML ou contém <!doctype, é provavelmente uma página de erro
+      if (contentType?.includes('text/html') || responseText.toLowerCase().includes('<!doctype')) {
+        console.error('Resposta da API contém HTML ao invés de JSON. Possível erro 502 Bad Gateway.');
+        console.log('Conteúdo da resposta (primeiros 100 caracteres):', responseText.substring(0, 100));
+        throw new Error('Servidor temporariamente indisponível. Por favor, tente novamente em alguns instantes.');
+      }
+      
+      // Parsear o JSON manualmente já que usamos text() acima
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (jsonError) {
+        console.error('Erro ao parsear JSON da resposta:', jsonError);
+        throw new Error('Erro ao processar resposta do servidor');
+      }
+      
       if ((response.status === 429 && data.code) || (data.success && data.code)) {
         setVerificationCode(data.code);
         setRemainingTime(300);
@@ -309,24 +492,56 @@ const Profile = () => {
         throw new Error(data.message || 'Erro ao gerar código');
       }
     } catch (err) {
+      console.error('Erro ao solicitar código Telegram:', err);
       setTelegramError(err.message || 'Erro ao solicitar código');
       setTimeout(() => setTelegramError(''), 3000);
     } finally {
       setTelegramLoading(false);
     }
-  }, [telegramLoading, auth.token, verificationCode, remainingTime]);
+  }, [telegramLoading, auth.token, verificationCode, remainingTime, navigate]);
   
   // Refresh user data from the server
   const refreshUserData = useCallback(async () => {
     try {
+      // Obter um token válido, tentando primeiro o contexto e depois localStorage
+      let token = auth.token;
+      if (!token) {
+        console.log('Token não encontrado no contexto, buscando do localStorage para refreshUserData...');
+        token = localStorage.getItem('token');
+        if (!token) {
+          console.error('Nenhum token de autenticação encontrado para refreshUserData');
+          navigate('/login');
+          return;
+        }
+      }
+      
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/me`, {
         headers: {
-          'Authorization': `Bearer ${auth.token}`
+          'Authorization': `Bearer ${token}`
         }
       });
       
+      // Verificar se a resposta parece ser HTML (possível página de erro 502)
+      const contentType = response.headers.get('content-type');
+      const responseText = await response.text();
+      
+      // Se parece ser HTML ou contém <!doctype, é provavelmente uma página de erro
+      if (contentType?.includes('text/html') || responseText.toLowerCase().includes('<!doctype')) {
+        console.error('Resposta da API contém HTML ao invés de JSON. Possível erro 502 Bad Gateway.');
+        console.log('Conteúdo da resposta (primeiros 100 caracteres):', responseText.substring(0, 100));
+        throw new Error('Servidor temporariamente indisponível. Por favor, tente novamente em alguns instantes.');
+      }
+      
       if (response.ok) {
-        const userData = await response.json();
+        // Parsear o JSON manualmente já que usamos text() acima
+        let userData;
+        try {
+          userData = JSON.parse(responseText);
+        } catch (jsonError) {
+          console.error('Erro ao parsear JSON da resposta:', jsonError);
+          throw new Error('Erro ao processar resposta do servidor');
+        }
+        
         setAuth({
           ...auth,
           user: userData
@@ -343,7 +558,7 @@ const Profile = () => {
       console.error('Erro ao atualizar dados do usuário:', error);
       setError('Falha ao verificar status do Telegram. Tente novamente.');
     }
-  }, [auth, setAuth]);
+  }, [auth, setAuth, navigate]);
 
   const disconnectTelegram = useCallback(async () => {
     if (telegramLoading) return;
@@ -352,15 +567,45 @@ const Profile = () => {
       setTelegramLoading(true);
       setTelegramError('');
       
+      // Obter um token válido, tentando primeiro o contexto e depois localStorage
+      let token = auth.token;
+      if (!token) {
+        console.log('Token não encontrado no contexto, buscando do localStorage para disconnectTelegram...');
+        token = localStorage.getItem('token');
+        if (!token) {
+          console.error('Nenhum token de autenticação encontrado para disconnectTelegram');
+          navigate('/login');
+          return;
+        }
+      }
+      
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/telegram/disconnect`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${auth.token}`
+          'Authorization': `Bearer ${token}`
         }
       });
       
-      const data = await response.json();
+      // Verificar se a resposta parece ser HTML (possível página de erro 502)
+      const contentType = response.headers.get('content-type');
+      const responseText = await response.text();
+      
+      // Se parece ser HTML ou contém <!doctype, é provavelmente uma página de erro
+      if (contentType?.includes('text/html') || responseText.toLowerCase().includes('<!doctype')) {
+        console.error('Resposta da API contém HTML ao invés de JSON. Possível erro 502 Bad Gateway.');
+        console.log('Conteúdo da resposta (primeiros 100 caracteres):', responseText.substring(0, 100));
+        throw new Error('Servidor temporariamente indisponível. Por favor, tente novamente em alguns instantes.');
+      }
+      
+      // Parsear o JSON manualmente já que usamos text() acima
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (jsonError) {
+        console.error('Erro ao parsear JSON da resposta:', jsonError);
+        throw new Error('Erro ao processar resposta do servidor');
+      }
       
       if (!response.ok) {
         throw new Error(data.message || 'Erro ao desconectar Telegram');
@@ -372,12 +617,13 @@ const Profile = () => {
       // Exibe mensagem de sucesso
       setMessage({ type: 'success', text: 'Telegram desconectado com sucesso!' });
     } catch (err) {
+      console.error('Erro ao desconectar Telegram:', err);
       setTelegramError(err.message || 'Erro ao desconectar Telegram');
       setTimeout(() => setTelegramError(''), 3000);
     } finally {
       setTelegramLoading(false);
     }
-  }, [telegramLoading, auth.token, refreshUserData]);
+  }, [telegramLoading, auth.token, refreshUserData, navigate]);
 
   const logout = useCallback(() => {
     setAuth({ token: null, user: null });
