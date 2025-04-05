@@ -111,13 +111,13 @@ const Income = () => {
         }
         
         // Fazer as requisições para categorias e bancos
-        const categoriesPromise = fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/categories`, {
+        const categoriesPromise = fetch(`${process.env.REACT_APP_API_URL}${process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : ''}/categories`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
         
-        const banksPromise = fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/banks/favorites`, {
+        const banksPromise = fetch(`${process.env.REACT_APP_API_URL}${process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : ''}/banks/favorites`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -197,7 +197,7 @@ const Income = () => {
         }
       }
 
-      const url = `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes?${queryParams}`;
+      const url = `${process.env.REACT_APP_API_URL}${process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : ''}/incomes?${queryParams}`;
       console.log('Fetching from URL:', url);
       
       const response = await fetch(url, {
@@ -413,7 +413,7 @@ const Income = () => {
     }
     try {
       if (deleteOptions.type === 'bulk') {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/bulk`, {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : ''}/incomes/bulk`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
@@ -450,7 +450,7 @@ const Income = () => {
         return;
       }
 
-      let url = `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${income.id}`;
+      let url = `${process.env.REACT_APP_API_URL}${process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : ''}/incomes/${income.id}`;
       if (deleteOption) {
         url += `?deleteOption=${deleteOption}`;
       }
@@ -519,7 +519,7 @@ const Income = () => {
 
   const handleUpdate = async (updatedIncome) => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${updatedIncome.id}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : ''}/incomes/${updatedIncome.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -545,7 +545,7 @@ const Income = () => {
 
   const handleSave = async (incomeData) => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${incomeData.id}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : ''}/incomes/${incomeData.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -576,7 +576,7 @@ const Income = () => {
       if (!incomeToDelete) return;
       setIsDeleting(true);
 
-      let url = `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${incomeToDelete.id}`;
+      let url = `${process.env.REACT_APP_API_URL}${process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : ''}/incomes/${incomeToDelete.id}`;
       const queryParams = new URLSearchParams();
 
       if (incomeToDelete.is_recurring) {

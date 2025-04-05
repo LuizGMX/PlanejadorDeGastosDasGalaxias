@@ -37,7 +37,7 @@ const EditRecurringIncomes = () => {
 
   const fetchIncomes = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/incomes`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : ''}/incomes`, {
         headers: {
           'Authorization': `Bearer ${auth.token}`
         }
@@ -106,7 +106,7 @@ const EditRecurringIncomes = () => {
 
   const handleDelete = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/incomes/${selectedIncome.id}?delete_all=true`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : ''}/incomes/${selectedIncome.id}?delete_all=true`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${auth.token}`
@@ -165,7 +165,7 @@ const EditRecurringIncomes = () => {
 
       console.log('Payload da atualização:', payload);
 
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/incomes/${updatedIncome.id}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : ''}/incomes/${updatedIncome.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

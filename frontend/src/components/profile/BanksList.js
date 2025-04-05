@@ -105,18 +105,20 @@ const BanksList = ({ auth, setMessage, setError }) => {
   useEffect(() => {
     const fetchBanks = async () => {
       try {
-        const [banksResponse, favoritesResponse] = await Promise.all([
-          fetch(`${process.env.REACT_APP_API_URL}/banks`),
-          fetch(`${process.env.REACT_APP_API_URL}/banks/favorites`, {
-            headers: { 'Authorization': `Bearer ${auth.token}` }
+        const [availableBanksResponse, userBanksResponse] = await Promise.all([
+          fetch(`${process.env.REACT_APP_API_URL}${process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : ''}/banks`),
+          fetch(`${process.env.REACT_APP_API_URL}${process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : ''}/banks/favorites`, {
+            headers: {
+              'Authorization': `Bearer ${auth.token}`
+            }
           })
         ]);
-        if (!banksResponse.ok || !favoritesResponse.ok) {
+        if (!availableBanksResponse.ok || !userBanksResponse.ok) {
           throw new Error('Erro ao carregar bancos');
         }
         const [allBanks, favorites] = await Promise.all([
-          banksResponse.json(),
-          favoritesResponse.json()
+          availableBanksResponse.json(),
+          userBanksResponse.json()
         ]);
         
         setBanks(allBanks);
@@ -148,8 +150,8 @@ const BanksList = ({ auth, setMessage, setError }) => {
         prev.includes(bankId) ? prev.filter(id => id !== bankId) : [...prev, bankId]
       );
       
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/banks/favorites`, {
-        method: 'POST',
+      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : ''}/banks/favorites`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${auth.token}`

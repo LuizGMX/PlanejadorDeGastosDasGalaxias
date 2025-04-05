@@ -4,7 +4,7 @@ import { jest } from '@jest/globals';
 import { User, VerificationCode } from '../models/index.js';
 
 // For tests, define API_PREFIX
-const API_PREFIX = process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : '';
+const API_PREFIX = `/${process.env.API_PREFIX || 'api'}`;
 
 describe('Autenticação', () => {
   beforeEach(async () => {
@@ -12,7 +12,7 @@ describe('Autenticação', () => {
     await VerificationCode.destroy({ where: {} });
   });
 
-  describe(`POST ${API_PREFIX}/auth/check-email`, () => {
+  describe('POST ${API_PREFIX}/auth/check-email', () => {
     it('should check if email exists', async () => {
       await request(app)
       .post(`${API_PREFIX}/auth/check-email`)
@@ -32,11 +32,11 @@ describe('Autenticação', () => {
     });
   });
 
-  describe(`POST ${API_PREFIX}/auth/send-code`, () => {
+  describe('POST ${API_PREFIX}/auth/send-code', () => {
     it('should send verification code', async () => {
       await request(app)
       .post(`${API_PREFIX}/auth/send-code`)
-      .send({
+        .send({
         email: 'test@example.com'
       })
       .expect(200);

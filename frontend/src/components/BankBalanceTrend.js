@@ -23,7 +23,7 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
     const fetchData = async () => {
       try {
         const response = await fetch(
-          `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/dashboard/bank-balance-trend?months=${projectionMonths}`,
+          `${process.env.REACT_APP_API_URL}${process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : ''}/dashboard/bank-balance-trend?months=${projectionMonths}`,
           {
             headers: {
               'Authorization': `Bearer ${auth.token}`
