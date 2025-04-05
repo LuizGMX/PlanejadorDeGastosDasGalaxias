@@ -212,6 +212,7 @@ const startServer = async () => {
       console.log('Seeders ignorados. Configure RUN_SEEDERS=true para executá-los.');
     }
 
+    
     if (process.env.TELEGRAM_BOT_TOKEN) {
       try {
         await telegramService.init();
