@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import sgMail from '@sendgrid/mail';
 import { User, VerificationCode, UserBank, Bank } from '../models/index.js';
 import { Op } from 'sequelize';
-import { sequelize } from '../config/db.js';
+import sequelize from '../config/db.js';
 
 dotenv.config();
 
