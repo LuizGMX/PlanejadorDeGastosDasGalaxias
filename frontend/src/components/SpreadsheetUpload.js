@@ -36,19 +36,20 @@ const SpreadsheetUpload = () => {
       return;
     }
 
-    const formData = new FormData();
-    formData.append('file', file);
-
     setLoading(true);
     setError('');
     setSuccess('');
 
     try {
-      const response = await axios.post('/api/spreadsheet/upload', formData, {
+      const token = localStorage.getItem('token');
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/${process.env.API_PREFIX}/spreadsheet/upload`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${auth.token}`
-        },
+          'Authorization': `Bearer ${token}`
+        }
       });
 
       setSuccess(`Planilha processada com sucesso! ${response.data.processedItems} itens foram importados.`);

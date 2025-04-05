@@ -17,7 +17,7 @@ const EditExpense = () => {
   useEffect(() => {
     const fetchExpense = async () => {
       try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/expenses/${id}`, {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}`${API_PREFIX}/expenses/${id}`, {
           headers: {
             'Authorization': `Bearer ${auth.token}`
           }
@@ -46,7 +46,7 @@ const EditExpense = () => {
 
   const handleSave = async (expenseData) => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/expenses/${id}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}`${API_PREFIX}/expenses/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

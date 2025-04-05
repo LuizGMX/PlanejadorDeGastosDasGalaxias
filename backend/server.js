@@ -47,19 +47,22 @@ app.use(express.urlencoded({ extended: true }));
 
 configureRateLimit(app);
 
+// Define API_PREFIX from environment variable with "api" as default
+const API_PREFIX = `/${process.env.API_PREFIX || 'api'}`;
+
 // Rotas da API
-app.use('/api/auth', authLimiter, authRoutes);
-app.use('/api/categories', categoryRoutes);
-app.use('/api/expenses', expenseRoutes);
-app.use('/api/incomes', incomeRoutes);
-app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/banks', bankRoutes);
-app.use('/api/budgets', budgetRoutes);
-app.use('/api/spreadsheet', spreadsheetRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/recurrences', recurrencesRouter);
-app.use('/api/telegram', telegramRoutes);
-app.use('/api/health', healthRoutes);
+app.use(`${API_PREFIX}/auth`, authLimiter, authRoutes);
+app.use(`${API_PREFIX}/categories`, categoryRoutes);
+app.use(`${API_PREFIX}/expenses`, expenseRoutes);
+app.use(`${API_PREFIX}/incomes`, incomeRoutes);
+app.use(`${API_PREFIX}/dashboard`, dashboardRoutes);
+app.use(`${API_PREFIX}/banks`, bankRoutes);
+app.use(`${API_PREFIX}/budgets`, budgetRoutes);
+app.use(`${API_PREFIX}/spreadsheet`, spreadsheetRoutes);
+app.use(`${API_PREFIX}/users`, userRoutes);
+app.use(`${API_PREFIX}/recurrences`, recurrencesRouter);
+app.use(`${API_PREFIX}/telegram`, telegramRoutes);
+app.use(`${API_PREFIX}/health`, healthRoutes);
 
 let server;
 
@@ -68,9 +71,9 @@ if (process.env.NODE_ENV === 'production') {
   const staticPath = '/var/www/PlanejadorDeGastosDasGalaxias/frontend/build';
   app.use(express.static(staticPath));
 
-  // Rota fallback para SPA, apenas para rotas não iniciadas com /api
+  // Rota fallback para SPA, apenas para rotas não iniciadas com o prefixo da API
   app.get('*', (req, res) => {
-    if (!req.path.startsWith('/api')) {
+    if (!req.path.startsWith(API_PREFIX)) {
       res.sendFile('index.html', { root: staticPath });
     }
   });

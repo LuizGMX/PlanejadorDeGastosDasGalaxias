@@ -43,12 +43,12 @@ const EditExpenseForm = ({ expense, onSave, onCancel }) => {
     const fetchData = async () => {
       try {
         const [categoriesResponse, banksResponse] = await Promise.all([
-          fetch(`${process.env.REACT_APP_API_URL}/api/expenses/categories`, {
+          fetch(`${process.env.REACT_APP_API_URL}`${API_PREFIX}/expenses/categories`, {
             headers: {
               'Authorization': `Bearer ${auth.token}`
             }
           }),
-          fetch(`${process.env.REACT_APP_API_URL}/api/banks/favorites`, {
+          fetch(`${process.env.REACT_APP_API_URL}`${API_PREFIX}/banks/favorites`, {
             headers: {
               'Authorization': `Bearer ${auth.token}`
             }

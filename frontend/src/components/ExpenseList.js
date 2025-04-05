@@ -49,7 +49,7 @@ const ExpenseList = () => {
     const fetchData = async () => {
       try {
         // Busca categorias
-        const categoriesResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/expenses/categories`, {
+        const categoriesResponse = await fetch(`${process.env.REACT_APP_API_URL}`${API_PREFIX}/expenses/categories`, {
           headers: { 'Authorization': `Bearer ${auth.token}` }
         });
         if (!categoriesResponse.ok) throw new Error('Erro ao carregar categorias');
@@ -64,7 +64,7 @@ const ExpenseList = () => {
         if (filters.description) queryParams.append('description', filters.description);
         if (filters.is_recurring !== '') queryParams.append('is_recurring', filters.is_recurring);
 
-        const expensesResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/expenses?${queryParams}`, {
+        const expensesResponse = await fetch(`${process.env.REACT_APP_API_URL}`${API_PREFIX}/expenses?${queryParams}`, {
           headers: { 'Authorization': `Bearer ${auth.token}` }
         });
         if (!expensesResponse.ok) throw new Error('Erro ao carregar despesas');
@@ -194,7 +194,7 @@ const ExpenseList = () => {
 
       for (const batch of batches) {
         try {
-          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/expenses/bulk`, {
+          const response = await fetch(`${process.env.REACT_APP_API_URL}`${API_PREFIX}/expenses/bulk`, {
             method: 'DELETE',
             headers: {
               'Content-Type': 'application/json',

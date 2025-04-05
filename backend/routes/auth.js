@@ -160,7 +160,7 @@ export const authenticate = async (req, res, next) => {
 // Rotas
 router.post('/check-email', async (req, res) => {
   console.log('===========================================');
-  console.log('INICIANDO /api/auth/check-email');
+  console.log('INICIANDO /${process.env.API_PREFIX}/auth/check-email');
   console.log('Timestamp:', new Date().toISOString());
   console.log('Cabeçalhos:', JSON.stringify(req.headers));
   console.log('Body completo:', JSON.stringify(req.body));
@@ -245,13 +245,13 @@ router.post('/check-email', async (req, res) => {
     console.error('Mensagem de erro:', error.message);
     return res.status(500).json({ message: 'Erro interno ao verificar email', error: error.message });
   } finally {
-    console.log('FINALIZANDO /api/auth/check-email');
+    console.log('FINALIZANDO /${process.env.API_PREFIX}/auth/check-email');
     console.log('===========================================');
   }
 });
 
 router.post('/send-code', async (req, res) => {
-  console.log('/api/auth/send-code chamado');
+  console.log('/${process.env.API_PREFIX}/auth/send-code chamado');
   try {
     const { 
       email, 
@@ -485,7 +485,7 @@ router.post('/verify-code', async (req, res) => {
 });
 
 router.post('/send-access-code', async (req, res) => {
-  console.log('/api/auth/send-access-code chamado');
+  console.log('/${process.env.API_PREFIX}/auth/send-access-code chamado');
   try {
     const { email } = req.body;
     if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
@@ -526,7 +526,7 @@ router.post('/send-access-code', async (req, res) => {
 });
 
 router.get('/me', authenticate, async (req, res) => {
-  console.log('/api/auth/me chamado');
+  console.log('/${process.env.API_PREFIX}/auth/me chamado');
   try {
     const user = await User.findByPk(req.user.id);
     return res.json({ 

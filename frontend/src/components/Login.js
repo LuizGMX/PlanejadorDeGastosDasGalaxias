@@ -71,7 +71,7 @@ const Login = () => {
       setError('');
       console.log('Iniciando busca de bancos...');
       
-      const apiUrl = `${process.env.REACT_APP_API_URL}/api/banks`;
+      const apiUrl = `${process.env.REACT_APP_API_URL}/${process.env.API_PREFIX}/banks`;
       console.log('URL da API:', apiUrl);
       
       const response = await fetch(apiUrl);
@@ -161,7 +161,7 @@ const Login = () => {
     try {
       if (step === 'email') {
         console.log('Enviando email para verificação:', formData.email);
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/check-email`, {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/${process.env.API_PREFIX}/auth/check-email`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: formData.email })
@@ -242,7 +242,7 @@ const Login = () => {
         try {
           const parsedFinancialGoalAmount = formData.financialGoalAmount ? Number(formData.financialGoalAmount.replace(/\./g, '').replace(',', '.')) : 0;
           
-          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/send-code`, {
+          const response = await fetch(`${process.env.REACT_APP_API_URL}/${process.env.API_PREFIX}/auth/send-code`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -314,7 +314,7 @@ const Login = () => {
           
           console.log('Enviando dados para verificação:', verifyData);
           
-          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/verify-code`, {
+          const response = await fetch(`${process.env.REACT_APP_API_URL}/${process.env.API_PREFIX}/auth/verify-code`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(verifyData)
@@ -419,7 +419,7 @@ const Login = () => {
       
       console.log('Enviando dados para reenvio de código:', codeRequestData);
 
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/send-code`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/${process.env.API_PREFIX}/auth/send-code`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(codeRequestData)
@@ -475,7 +475,7 @@ const Login = () => {
 
   const handleTelegramLink = async () => {
     try {
-      const verificationResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/telegram/init-verification`, {
+      const verificationResponse = await fetch(`${process.env.REACT_APP_API_URL}/${process.env.API_PREFIX}/telegram/init-verification`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -507,7 +507,7 @@ const Login = () => {
     setTelegramError('');
     try {
       setTelegramLoading(true);
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/telegram/init-verification`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/${process.env.API_PREFIX}/telegram/init-verification`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1507,7 +1507,7 @@ const Login = () => {
     if (telegramStep === 'link' && auth.user?.id) {
       checkTelegramInterval = setInterval(async () => {
         try {
-          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/me`, {
+          const response = await fetch(`${process.env.REACT_APP_API_URL}/${process.env.API_PREFIX}/auth/me`, {
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('token')}`
             }

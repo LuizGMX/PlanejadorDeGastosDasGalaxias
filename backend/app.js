@@ -47,22 +47,22 @@ try {
 }
 
 // Rotas
-app.use('/api/auth', authLimiter, authRoutes); // Aplicamos um rate limit mais restrito para autenticação
-app.use('/api/categories', categoryRoutes);
-app.use('/api/expenses', expenseRoutes);
-app.use('/api/incomes', incomeRoutes);
-app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/banks', configureRateLimit({
+app.use(`${API_PREFIX}/auth`, authLimiter, authRoutes); // Aplicamos um rate limit mais restrito para autenticação
+app.use(`${API_PREFIX}/categories`, categoryRoutes);
+app.use(`${API_PREFIX}/expenses`, expenseRoutes);
+app.use(`${API_PREFIX}/incomes`, incomeRoutes);
+app.use(`${API_PREFIX}/dashboard`, dashboardRoutes);
+app.use(`${API_PREFIX}/banks`, configureRateLimit({
   // Esta configuração só será aplicada em produção, devido à lógica do middleware
   windowMs: 10 * 60 * 1000, // 10 minutos
   max: 50, // Um limite um pouco maior para bancos
   message: 'Muitas requisições para bancos, tente novamente em alguns minutos.',
 }), bankRoutes);
-app.use('/api/budgets', budgetRoutes);
-app.use('/api/spreadsheet', spreadsheetRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/recurrences', recurrencesRouter);
-app.use('/api/telegram', telegramRoutes);
+app.use(`${API_PREFIX}/budgets`, budgetRoutes);
+app.use(`${API_PREFIX}/spreadsheet`, spreadsheetRoutes);
+app.use(`${API_PREFIX}/users`, userRoutes);
+app.use(`${API_PREFIX}/recurrences`, recurrencesRouter);
+app.use(`${API_PREFIX}/telegram`, telegramRoutes);
 
 // Tratamento de erros
 app.use((err, req, res, next) => {

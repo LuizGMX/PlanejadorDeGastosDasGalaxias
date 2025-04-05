@@ -41,7 +41,7 @@ const ExpenseForm = () => {
           }
         }
         
-        const categoriesResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/expenses/categories`, {
+        const categoriesResponse = await fetch(`${process.env.REACT_APP_API_URL}/${process.env.API_PREFIX}/expenses/categories`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -105,7 +105,7 @@ const ExpenseForm = () => {
         amount: parseFloat(formData.amount.replace('R$', '').replace(',', '.').trim())
       };
 
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/expenses`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/${process.env.API_PREFIX}/expenses`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
