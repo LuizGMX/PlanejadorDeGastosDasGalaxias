@@ -108,14 +108,22 @@ const expenseCategories = [
 
 const seedBanks = async () => {
   try {
-    // Verifica se já existem bancos
+    // Busca todos os bancos existentes
     const existingBanks = await Bank.findAll();
-    if (existingBanks.length === 0) {
-      await Bank.bulkCreate(banks);
-      console.log('Bancos criados com sucesso!');
+    
+    // Mapeia os códigos dos bancos já cadastrados
+    const existingBankCodes = existingBanks.map(bank => bank.code);
+    
+    // Filtra apenas os bancos que ainda não existem
+    const banksToCreate = banks.filter(bank => !existingBankCodes.includes(bank.code));
+    
+    if (banksToCreate.length > 0) {
+      await Bank.bulkCreate(banksToCreate);
+      console.log(`${banksToCreate.length} novos bancos foram criados com sucesso!`);
     } else {
-      console.log('Bancos já existem no banco de dados.');
+      console.log('Todos os bancos já existem no banco de dados.');
     }
+    
     return true;
   } catch (error) {
     console.error('Erro ao criar bancos:', error);
@@ -125,18 +133,26 @@ const seedBanks = async () => {
 
 const seedExpenseCategories = async () => {
   try {
-    // Verifica se já existem categorias de despesa
+    // Busca todas as categorias de despesa existentes
     const existingCategories = await Category.findAll({
       where: { type: 'expense' }
     });
-
-    if (existingCategories.length === 0) {
-      // Usa bulkCreate para inserir todas as categorias de uma vez
-      await Category.bulkCreate(expenseCategories);
-      console.log('Categorias de despesa criadas com sucesso!');
+    
+    // Mapeia os nomes das categorias já cadastradas
+    const existingCategoryNames = existingCategories.map(category => category.category_name);
+    
+    // Filtra apenas as categorias que ainda não existem
+    const categoriesToCreate = expenseCategories.filter(
+      category => !existingCategoryNames.includes(category.category_name)
+    );
+    
+    if (categoriesToCreate.length > 0) {
+      await Category.bulkCreate(categoriesToCreate);
+      console.log(`${categoriesToCreate.length} novas categorias de despesa criadas com sucesso!`);
     } else {
-      console.log('Categorias de despesa já existem no banco de dados.'); 
+      console.log('Todas as categorias de despesa já existem no banco de dados.');
     }
+    
     return true;
   } catch (error) {
     console.error('Erro ao criar categorias de despesa:', error);
@@ -146,21 +162,29 @@ const seedExpenseCategories = async () => {
 
 const seedIncomeCategories = async () => {
   try {
-    // Verifica se já existem categorias de ganho
+    // Busca todas as categorias de receita existentes
     const existingCategories = await Category.findAll({
       where: { type: 'income' }
     });
-
-    if (existingCategories.length === 0) {
-      // Usa bulkCreate para inserir todas as categorias de uma vez
-      await Category.bulkCreate(incomeCategories);
-      console.log('Categorias de ganho criadas com sucesso!');
+    
+    // Mapeia os nomes das categorias já cadastradas
+    const existingCategoryNames = existingCategories.map(category => category.category_name);
+    
+    // Filtra apenas as categorias que ainda não existem
+    const categoriesToCreate = incomeCategories.filter(
+      category => !existingCategoryNames.includes(category.category_name)
+    );
+    
+    if (categoriesToCreate.length > 0) {
+      await Category.bulkCreate(categoriesToCreate);
+      console.log(`${categoriesToCreate.length} novas categorias de receita criadas com sucesso!`);
     } else {
-      console.log('Categorias de ganho já existem no banco de dados.');
+      console.log('Todas as categorias de receita já existem no banco de dados.');
     }
+    
     return true;
   } catch (error) {
-    console.error('Erro ao criar categorias de ganho:', error);
+    console.error('Erro ao criar categorias de receita:', error);
     return false;
   }
 };
