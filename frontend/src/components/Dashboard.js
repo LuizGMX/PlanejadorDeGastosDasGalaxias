@@ -839,12 +839,12 @@ const Dashboard = () => {
   
   // Definição das funções fetchData e fetchAllTransactions fora do useEffect
   // para que possam ser acessadas de qualquer lugar no componente
-  const fetchData = async () => {
-    let retryCount = 0;
-    const maxRetries = 3;
-    
-    const attemptFetch = async () => {
-      try {
+    const fetchData = async () => {
+      let retryCount = 0;
+      const maxRetries = 3;
+      
+      const attemptFetch = async () => {
+        try {
         setLoading(true);
         setError(null);
         
@@ -870,8 +870,8 @@ const Dashboard = () => {
         const queryParams = new URLSearchParams();
         
         // Adiciona período ao filtro
-        let startDate, endDate;
-        
+            let startDate, endDate;
+            
         if (selectedPeriod === 'current') {
           // Mês atual
           const now = new Date();
@@ -907,27 +907,27 @@ const Dashboard = () => {
           queryParams.append('startDate', customDateRange.start);
           queryParams.append('endDate', customDateRange.end);
         }
-        
-        // Adiciona categorias ao filtro
-        if (selectedCategories.length > 0) {
-          selectedCategories.forEach(category => queryParams.append('categories[]', category));
-        }
-        
-        // Adiciona bancos ao filtro
-        if (selectedBanks.length > 0) {
-          selectedBanks.forEach(bank => queryParams.append('banks[]', bank));
-        }
-
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/dashboard?${queryParams}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
+          
+          // Adiciona categorias ao filtro
+          if (selectedCategories.length > 0) {
+            selectedCategories.forEach(category => queryParams.append('categories[]', category));
           }
-        });
-        
-        if (response.status === 401) {
-          navigate('/login');
-          return;
-        }
+          
+          // Adiciona bancos ao filtro
+          if (selectedBanks.length > 0) {
+            selectedBanks.forEach(bank => queryParams.append('banks[]', bank));
+          }
+
+          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/dashboard?${queryParams}`, {
+            headers: {
+            'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          if (response.status === 401) {
+            navigate('/login');
+            return;
+          }
         
         // Verificar se a resposta parece ser HTML (possível página de erro 502)
         const contentType = response.headers.get('content-type');
@@ -941,21 +941,21 @@ const Dashboard = () => {
           console.log('Conteúdo da resposta (primeiros 100 caracteres):', responseText.substring(0, 100));
           throw new Error('Servidor temporariamente indisponível ou configuração incorreta. Por favor, verifique os logs e tente novamente.');
         }
-        
-        if (!response.ok) {
-          // Get detailed error message if available
-          let errorMessage = 'Erro ao carregar dados do dashboard';
-          try {
+          
+          if (!response.ok) {
+            // Get detailed error message if available
+            let errorMessage = 'Erro ao carregar dados do dashboard';
+            try {
             // Parsear o JSON manualmente já que usamos text() acima
             const errorData = JSON.parse(responseText);
-            errorMessage = errorData.message || errorMessage;
-          } catch (e) {
-            // If can't parse error JSON, use status text
-            errorMessage = `${errorMessage}: ${response.statusText}`;
+              errorMessage = errorData.message || errorMessage;
+            } catch (e) {
+              // If can't parse error JSON, use status text
+              errorMessage = `${errorMessage}: ${response.statusText}`;
+            }
+            throw new Error(errorMessage);
           }
-          throw new Error(errorMessage);
-        }
-        
+          
         // Parsear o JSON manualmente já que usamos text() acima
         let jsonData;
         try {
@@ -970,58 +970,58 @@ const Dashboard = () => {
         // Verificar se há despesas e receitas
         setHasExpenses(jsonData.expenses && jsonData.expenses.length > 0);
         setHasIncome(jsonData.incomes && jsonData.incomes.length > 0);
-        
-        setData(jsonData);
+          
+          setData(jsonData);
 
-        // Processar transações
-        const expensesData = jsonData.expenses ? jsonData.expenses.map(item => ({
-          id: item.id || `expense-${Math.random().toString(36).substr(2, 9)}`,
-          date: new Date(item.expense_date || item.date),
-          description: item.description,
-          amount: item.amount,
-          type: 'expense',
-          category: item.Category?.category_name || 'Sem categoria',
-          categoryId: item.Category?.id,
-          bank: item.Bank?.name || 'Sem banco',
-          is_recurring: item.is_recurring,
-          recurrence_id: item.recurrence_id
-        })) : [];
-        
-        const incomesData = jsonData.incomes ? jsonData.incomes.map(item => ({
-          id: item.id || `income-${Math.random().toString(36).substr(2, 9)}`,
-          date: new Date(item.date),
-          description: item.description,
-          amount: item.amount,
-          type: 'income',
-          category: item.Category?.category_name || 'Sem categoria',
-          categoryId: item.Category?.id,
-          bank: item.Bank?.name || 'Sem banco',
-          is_recurring: item.is_recurring,
-          recurrence_id: item.recurrence_id
-        })) : [];
-        
-        console.log("Total expenses found:", expensesData.length);
-        console.log("Total incomes found:", incomesData.length);
-        
-        setTransactions([...expensesData, ...incomesData]);
-        
+          // Processar transações
+          const expensesData = jsonData.expenses ? jsonData.expenses.map(item => ({
+            id: item.id || `expense-${Math.random().toString(36).substr(2, 9)}`,
+            date: new Date(item.expense_date || item.date),
+            description: item.description,
+            amount: item.amount,
+            type: 'expense',
+            category: item.Category?.category_name || 'Sem categoria',
+            categoryId: item.Category?.id,
+            bank: item.Bank?.name || 'Sem banco',
+            is_recurring: item.is_recurring,
+            recurrence_id: item.recurrence_id
+          })) : [];
+          
+          const incomesData = jsonData.incomes ? jsonData.incomes.map(item => ({
+            id: item.id || `income-${Math.random().toString(36).substr(2, 9)}`,
+            date: new Date(item.date),
+            description: item.description,
+            amount: item.amount,
+            type: 'income',
+            category: item.Category?.category_name || 'Sem categoria',
+            categoryId: item.Category?.id,
+            bank: item.Bank?.name || 'Sem banco',
+            is_recurring: item.is_recurring,
+            recurrence_id: item.recurrence_id
+          })) : [];
+          
+          console.log("Total expenses found:", expensesData.length);
+          console.log("Total incomes found:", incomesData.length);
+          
+          setTransactions([...expensesData, ...incomesData]);
+
         setLoading(false);
-      } catch (err) {
-        console.error("Dashboard fetch error:", err);
-        
-        // If we haven't exceeded max retries and it's a server error (500)
+        } catch (err) {
+          console.error("Dashboard fetch error:", err);
+          
+          // If we haven't exceeded max retries and it's a server error (500)
         if (retryCount < maxRetries && (err.message.includes('500') || err.message.includes('502'))) {
-          retryCount++;
+            retryCount++;
           console.log(`Retrying dashboard fetch (${retryCount}/${maxRetries})...`);
-          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount)); // Exponential backoff
-          return attemptFetch();
-        }
-        
+            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount)); // Exponential backoff
+            return attemptFetch();
+          }
+          
         setError(err.message);
-        setLoading(false);
-      }
-    };
-    
+          setLoading(false);
+        }
+      };
+      
     try {
       await attemptFetch();
     } catch (err) {
@@ -1030,13 +1030,13 @@ const Dashboard = () => {
       setLoading(false);
     }
   };
-  
-  const fetchAllTransactions = async () => {
-    let retryCount = 0;
-    const maxRetries = 3;
-    
-    const attemptFetch = async () => {
-      try {
+
+    const fetchAllTransactions = async () => {
+      let retryCount = 0;
+      const maxRetries = 3;
+      
+      const attemptFetch = async () => {
+        try {
         // Garantir que temos um token válido, mesmo após refresh da página
         let token = auth.token;
         
@@ -1053,8 +1053,8 @@ const Dashboard = () => {
           }
         }
         
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/dashboard/all-transactions`, {
-          headers: {
+          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/dashboard/all-transactions`, {
+            headers: {
             'Authorization': `Bearer ${token}`
           }
         });
@@ -1069,21 +1069,21 @@ const Dashboard = () => {
           console.log('Conteúdo da resposta (primeiros 100 caracteres):', responseText.substring(0, 100));
           throw new Error('Servidor temporariamente indisponível. Por favor, tente novamente em alguns instantes.');
         }
-        
-        if (!response.ok) {
-          // Get detailed error message if available
-          let errorMessage = 'Erro ao carregar todas as transações';
-          try {
+          
+          if (!response.ok) {
+            // Get detailed error message if available
+            let errorMessage = 'Erro ao carregar todas as transações';
+            try {
             // Parsear o JSON manualmente já que usamos text() acima
             const errorData = JSON.parse(responseText);
-            errorMessage = errorData.message || errorMessage;
-          } catch (e) {
-            // If can't parse error JSON, use status text
-            errorMessage = `${errorMessage}: ${response.statusText}`;
+              errorMessage = errorData.message || errorMessage;
+            } catch (e) {
+              // If can't parse error JSON, use status text
+              errorMessage = `${errorMessage}: ${response.statusText}`;
+            }
+            throw new Error(errorMessage);
           }
-          throw new Error(errorMessage);
-        }
-        
+          
         // Parsear o JSON manualmente já que usamos text() acima
         let jsonData;
         try {
@@ -1092,59 +1092,59 @@ const Dashboard = () => {
           console.error('Erro ao parsear JSON da resposta:', jsonError);
           throw new Error('Erro ao processar resposta do servidor');
         }
-        
-        // Processar transações de despesas
-        const expensesData = jsonData.expenses ? jsonData.expenses.map(item => ({
-          id: item.id || `expense-${Math.random().toString(36).substr(2, 9)}`,
-          date: new Date(item.expense_date || item.date),
-          description: item.description,
-          amount: item.amount,
-          type: 'expense',
-          category: item.Category?.category_name || 'Sem categoria',
-          categoryId: item.Category?.id,
-          bank: item.Bank?.name || 'Sem banco'
-        })) : [];
-        
-        // Processar transações de receitas
-        const incomesData = jsonData.incomes ? jsonData.incomes.map(item => ({
-          id: item.id || `income-${Math.random().toString(36).substr(2, 9)}`,
-          date: new Date(item.date),
-          description: item.description,
-          amount: item.amount,
-          type: 'income',
-          category: item.Category?.category_name || 'Sem categoria',
-          categoryId: item.Category?.id,
-          bank: item.Bank?.name || 'Sem banco'
-        })) : [];
-        
-        console.log("Total de despesas encontradas:", expensesData.length);
-        console.log("Total de receitas encontradas:", incomesData.length);
-        
-        setAllExpenses(expensesData);
-        setAllIncomes(incomesData);
-        setHasExpenses(expensesData.length > 0);
-        setHasIncome(incomesData.length > 0);
-        
-      } catch (err) {
-        console.error('Erro ao buscar todas as transações:', err);
-        
-        // If we haven't exceeded max retries and it's a server error (500)
+          
+          // Processar transações de despesas
+          const expensesData = jsonData.expenses ? jsonData.expenses.map(item => ({
+            id: item.id || `expense-${Math.random().toString(36).substr(2, 9)}`,
+            date: new Date(item.expense_date || item.date),
+            description: item.description,
+            amount: item.amount,
+            type: 'expense',
+            category: item.Category?.category_name || 'Sem categoria',
+            categoryId: item.Category?.id,
+            bank: item.Bank?.name || 'Sem banco'
+          })) : [];
+          
+          // Processar transações de receitas
+          const incomesData = jsonData.incomes ? jsonData.incomes.map(item => ({
+            id: item.id || `income-${Math.random().toString(36).substr(2, 9)}`,
+            date: new Date(item.date),
+            description: item.description,
+            amount: item.amount,
+            type: 'income',
+            category: item.Category?.category_name || 'Sem categoria',
+            categoryId: item.Category?.id,
+            bank: item.Bank?.name || 'Sem banco'
+          })) : [];
+          
+          console.log("Total de despesas encontradas:", expensesData.length);
+          console.log("Total de receitas encontradas:", incomesData.length);
+          
+          setAllExpenses(expensesData);
+          setAllIncomes(incomesData);
+          setHasExpenses(expensesData.length > 0);
+          setHasIncome(incomesData.length > 0);
+          
+        } catch (err) {
+          console.error('Erro ao buscar todas as transações:', err);
+          
+          // If we haven't exceeded max retries and it's a server error (500)
         if (retryCount < maxRetries && (err.message.includes('500') || err.message.includes('502'))) {
-          retryCount++;
-          console.log(`Retrying all transactions fetch (${retryCount}/${maxRetries})...`);
-          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount)); // Exponential backoff
-          return attemptFetch();
+            retryCount++;
+            console.log(`Retrying all transactions fetch (${retryCount}/${maxRetries})...`);
+            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount)); // Exponential backoff
+            return attemptFetch();
+          }
+          
+          // If all retries failed, set empty data but don't show error to user
+          // since this is supplementary data
+          setAllExpenses([]);
+          setAllIncomes([]);
+          setHasExpenses(false);
+          setHasIncome(false);
         }
-        
-        // If all retries failed, set empty data but don't show error to user
-        // since this is supplementary data
-        setAllExpenses([]);
-        setAllIncomes([]);
-        setHasExpenses(false);
-        setHasIncome(false);
-      }
-    };
-    
+      };
+      
     try {
       await attemptFetch();
     } catch (err) {

@@ -1,17 +1,13 @@
-// server.js
-
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-import fs from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 import http from 'http';
 import https from 'https';
 import sgMail from '@sendgrid/mail';
 import dotenv from 'dotenv';
-import { writeFileSync } from 'fs';
-import { configureRateLimit, authLimiter } from './middleware/rateLimit.js';
 import helmet from 'helmet';
 import authRoutes from './routes/auth.js';
 import categoryRoutes from './routes/categories.js';
@@ -28,43 +24,28 @@ import { sequelize } from './models/index.js';
 import seedDatabase from './seeders/index.js';
 import { telegramService } from './services/telegramService.js';
 import { Sequelize } from 'sequelize';
-
-// Importar healthcheck routes usando ES modules
 import healthRoutes from './routes/healthRoutes.js';
+import { configureRateLimit, authLimiter } from './middleware/rateLimit.js';
 
 dotenv.config();
 
-// Configuração do __dirname para ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Inicializar o app Express
 const app = express();
 
-
-// Middlewares
 app.use(helmet());
-app.use(cors({
-  origin: process.env.FRONTEND_URL,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Configurar rate limiting
 configureRateLimit(app);
-
-// Servir arquivos estáticos do frontend (SPA) apenas em produção
-if (process.env.NODE_ENV === 'production') {
-  const staticPath = '/var/www/PlanejadorDeGastosDasGalaxias/frontend/build';
-  app.use(express.static(staticPath));
-  
-  // Rota fallback para SPA - IMPORTANTE: deve vir depois de todas as outras rotas da API
-  app.get('*', (req, res) => {
-    res.sendFile('index.html', { root: staticPath });
-  });
-}
 
 // Rotas da API
 app.use('/api/auth', authLimiter, authRoutes);
@@ -78,79 +59,85 @@ app.use('/api/spreadsheet', spreadsheetRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/recurrences', recurrencesRouter);
 app.use('/api/telegram', telegramRoutes);
-app.use('/api/health', healthRoutes); // Rota de healthcheck sem autenticação
+app.use('/api/health', healthRoutes);
 
-// Definir o servidor
 let server;
 
 if (process.env.NODE_ENV === 'production') {
-  // Carregar certificados apenas se for ambiente de produção
-  const privateKey = fs.readFileSync('/etc/letsencrypt/live/planejadordasgalaxias.com.br/privkey.pem', 'utf8');
-  const certificate = fs.readFileSync('/etc/letsencrypt/live/planejadordasgalaxias.com.br/cert.pem', 'utf8');
-  const ca = fs.readFileSync('/etc/letsencrypt/live/planejadordasgalaxias.com.br/chain.pem', 'utf8');
 
-  const credentials = { key: privateKey, cert: certificate, ca: ca };
-  
+  const staticPath = '/var/www/PlanejadorDeGastosDasGalaxias/frontend/build';
+  app.use(express.static(staticPath));
 
-  // Iniciar servidor HTTPS na porta 5000
-  server = https.createServer(credentials, app);
-  server.listen(5000, '0.0.0.0',() => {
-    console.log('🚀 Servidor HTTPS rodando na porta 5000 em modo produção');
+  // Rota fallback para SPA, apenas para rotas não iniciadas com /api
+  app.get('*', (req, res) => {
+    if (!req.path.startsWith('/api')) {
+      res.sendFile('index.html', { root: staticPath });
+    }
   });
 
+  const privateKey = readFileSync(
+    '/etc/letsencrypt/live/planejadordasgalaxias.com.br/privkey.pem',
+    'utf8'
+  );
+  const certificate = readFileSync(
+    '/etc/letsencrypt/live/planejadordasgalaxias.com.br/cert.pem',
+    'utf8'
+  );
+  const ca = readFileSync(
+    '/etc/letsencrypt/live/planejadordasgalaxias.com.br/chain.pem',
+    'utf8'
+  );
 
+  const credentials = { key: privateKey, cert: certificate, ca: ca };
+
+  server = https.createServer(credentials, app);
+  server.listen(5000, '0.0.0.0', () => {
+    console.log('🚀 Servidor HTTPS rodando na porta 5000 em modo produção');
+  });
 } else {
-  // Iniciar servidor HTTP na porta 5000 para desenvolvimento
   server = http.createServer(app);
   server.listen(5000, () => {
     console.log('🚀 Servidor HTTP rodando na porta 5000 em modo desenvolvimento');
   });
 }
 
-// Configurar SendGrid
 if (process.env.SENDGRID_API_KEY) {
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 }
 
-// Salva o PID do processo em um arquivo
 writeFileSync('./pid.log', process.pid.toString());
 
-// Função para desligar o servidor graciosamente
 const gracefulShutdown = (server) => {
   console.log('Iniciando desligamento gracioso...');
-  
   server.close(() => {
     console.log('Servidor HTTP fechado.');
-    
-    // Fechar conexão com banco de dados
-    sequelize.close().then(() => {
-      console.log('Conexão com banco de dados fechada.');
-      process.exit(0);
-    }).catch((err) => {
-      console.error('Erro ao fechar conexão com banco de dados:', err);
-      process.exit(1);
-    });
+    sequelize
+      .close()
+      .then(() => {
+        console.log('Conexão com banco de dados fechada.');
+        process.exit(0);
+      })
+      .catch((err) => {
+        console.error('Erro ao fechar conexão com banco de dados:', err);
+        process.exit(1);
+      });
   });
-
-  // Se o servidor não fechar em 10s, forçar
   setTimeout(() => {
     console.error('Não foi possível fechar conexões em tempo, forçando saída');
     process.exit(1);
   }, 10000);
 };
 
-// Função para iniciar o servidor
+const migrationScriptPath = './migrations/removeSubcategories.js';
+
 const startServer = async () => {
   try {
-    // Autenticar conexão com banco
     await sequelize.authenticate();
     console.log('Conexão com banco estabelecida com sucesso.');
 
-    // Executar script de remoção de subcategorias
     try {
       console.log('Executando migração para remover subcategorias...');
       try {
-        // Tentar importar o script de migração
         const migrationModule = await import(migrationScriptPath);
         if (migrationModule && migrationModule.default) {
           await migrationModule.default(sequelize);
@@ -161,7 +148,6 @@ const startServer = async () => {
       } catch (importError) {
         console.warn('Não foi possível importar o script de migração:', importError.message);
         console.log('Tentando solução alternativa...');
-        // Executa alterações SQL diretamente
         await executeManualMigration();
       }
     } catch (migrationError) {
@@ -169,30 +155,22 @@ const startServer = async () => {
       console.log('Continuando inicialização do servidor...');
     }
 
-    // Função para executar migração manualmente com SQL
     async function executeManualMigration() {
       const transaction = await sequelize.transaction();
       try {
         console.log('Executando migração manual para remover subcategorias');
-        
-        // Tabelas para verificar
         const tables = ['expenses', 'incomes', 'recurrence_rules'];
-        
-        // Verificar e remover colunas subcategory_id de cada tabela
         for (const table of tables) {
           try {
-            // Primeiro verificar se a coluna existe
             const hasColumn = await sequelize.query(
               `SHOW COLUMNS FROM ${table} LIKE 'subcategory_id'`,
               { type: Sequelize.QueryTypes.SELECT, transaction }
             );
-            
             if (hasColumn.length > 0) {
               console.log(`Removendo coluna subcategory_id da tabela ${table}`);
-              await sequelize.query(
-                `ALTER TABLE ${table} DROP COLUMN subcategory_id`,
-                { transaction }
-              );
+              await sequelize.query(`ALTER TABLE ${table} DROP COLUMN subcategory_id`, {
+                transaction
+              });
               console.log(`Coluna subcategory_id removida da tabela ${table}`);
             } else {
               console.log(`Tabela ${table} não possui coluna subcategory_id`);
@@ -201,21 +179,14 @@ const startServer = async () => {
             console.log(`Erro ao remover coluna de ${table}:`, error.message);
           }
         }
-        
-        // Tentar remover a tabela subcategories
         try {
-          // Verificar se a tabela existe
           const hasTable = await sequelize.query(
             `SHOW TABLES LIKE 'subcategories'`,
             { type: Sequelize.QueryTypes.SELECT, transaction }
           );
-          
           if (hasTable.length > 0) {
             console.log('Removendo tabela subcategories');
-            await sequelize.query(
-              `DROP TABLE subcategories`,
-              { transaction }
-            );
+            await sequelize.query(`DROP TABLE subcategories`, { transaction });
             console.log('Tabela subcategories removida com sucesso');
           } else {
             console.log('Tabela subcategories não existe');
@@ -223,7 +194,6 @@ const startServer = async () => {
         } catch (error) {
           console.log('Erro ao remover tabela subcategories:', error.message);
         }
-        
         await transaction.commit();
         console.log('Migração manual concluída');
       } catch (error) {
@@ -232,12 +202,9 @@ const startServer = async () => {
       }
     }
 
-    // Sincronizar modelos com banco
     await sequelize.sync({ force: false, alter: true });
-    
     console.log('Modelos sincronizados com banco de dados.');
 
-    // Executar seeders apenas se a variável de ambiente estiver configurada
     if (process.env.RUN_SEEDERS === 'true') {
       await seedDatabase();
       console.log('Dados iniciais carregados com sucesso.');
@@ -245,7 +212,6 @@ const startServer = async () => {
       console.log('Seeders ignorados. Configure RUN_SEEDERS=true para executá-los.');
     }
 
-    // Inicializar serviço do Telegram se token estiver configurado
     if (process.env.TELEGRAM_BOT_TOKEN) {
       try {
         await telegramService.init();
@@ -255,17 +221,14 @@ const startServer = async () => {
       }
     }
 
-    // Configurar handlers para desligamento gracioso
     process.on('SIGTERM', () => gracefulShutdown(server));
     process.on('SIGINT', () => gracefulShutdown(server));
-
   } catch (error) {
     console.error('Erro ao iniciar servidor:', error);
     process.exit(1);
   }
 };
 
-// Tratamento de erros não capturados
 process.on('uncaughtException', (error) => {
   console.error('Erro não capturado:', error);
   process.exit(1);
@@ -276,5 +239,4 @@ process.on('unhandledRejection', (reason, promise) => {
   process.exit(1);
 });
 
-// Iniciar servidor
 startServer();
