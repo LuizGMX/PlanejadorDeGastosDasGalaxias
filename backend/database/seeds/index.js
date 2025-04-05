@@ -70,125 +70,40 @@ const banks = [
   { "name": "CM Capital Markets", "code": "180" },
   { "name": "Cofibra", "code": "413" },
   { "name": "Outro", "code": "000" }
-
 ];
 
 const incomeCategories = [
-  {
-    category_name: 'Salário',
-    type: 'income'
-  },
-  {
-    category_name: 'Freelance',
-    type: 'income'
-  },
-  {
-    category_name: 'Investimentos',
-    type: 'income'
-  },
-  {
-    category_name: 'Aluguel',
-    type: 'income'
-  },
-  {
-    category_name: 'Vendas',
-    type: 'income'
-  },
-  {
-    category_name: 'Rendimentos',
-    type: 'income'
-  },
-  {
-    category_name: 'Negócio Próprio',
-    type: 'income'
-  },
-  {
-    category_name: 'Benefícios',
-    type: 'income'
-  },
-  {
-    category_name: 'Outros',
-    type: 'income'
-  }
+  { category_name: 'Salário', type: 'income' },
+  { category_name: 'Freelance', type: 'income' },
+  { category_name: 'Investimentos', type: 'income' },
+  { category_name: 'Aluguel', type: 'income' },
+  { category_name: 'Vendas', type: 'income' },
+  { category_name: 'Rendimentos', type: 'income' },
+  { category_name: 'Negócio Próprio', type: 'income' },
+  { category_name: 'Benefícios', type: 'income' },
+  { category_name: 'Outros', type: 'income' }
 ];
 
 const expenseCategories = [
-  {
-    category_name: 'Moradia',
-    type: 'expense'
-  },
-  {
-    category_name: 'Alimentação',
-    type: 'expense'
-  },
-  {
-    category_name: 'Transporte',
-    type: 'expense'
-  },
-  {
-    category_name: 'Saúde',
-    type: 'expense'
-  },
-  {
-    category_name: 'Educação',
-    type: 'expense'
-  },
-  {
-    category_name: 'Lazer',
-    type: 'expense'
-  },
-  {
-    category_name: 'Vestuário',
-    type: 'expense'
-  },
-  {
-    category_name: 'Contas',
-    type: 'expense'
-  },
-  {
-    category_name: 'Impostos',
-    type: 'expense'
-  },
-  {
-    category_name: 'Outros',
-    type: 'expense'
-  },
-  {
-    category_name: 'Investimentos',
-    type: 'expense'
-  },
-  {
-    category_name: 'Fatura Cartão de Crédito',
-    type: 'expense'
-  },
-  {
-    category_name: 'Água',
-    type: 'expense'
-  },
-  {
-    category_name: 'Luz',
-    type: 'expense'
-  },
-  {
-    category_name: 'Internet',
-    type: 'expense'
-  },
-  {
-    category_name: 'Condomínio',
-    type: 'expense'
-  },
-  {
-    category_name: 'IPTU',
-    type: 'expense'
-  },
-  {
-    category_name: 'IPVA',
-    type: 'expense'
-  },
-  {
-    category_name: 'Seguro',
-    type: 'expense'
-  }  
+  { category_name: 'Moradia', type: 'expense' },
+  { category_name: 'Alimentação', type: 'expense' },
+  { category_name: 'Transporte', type: 'expense' },
+  { category_name: 'Saúde', type: 'expense' },
+  { category_name: 'Educação', type: 'expense' },
+  { category_name: 'Lazer', type: 'expense' },
+  { category_name: 'Vestuário', type: 'expense' },
+  { category_name: 'Contas', type: 'expense' },
+  { category_name: 'Impostos', type: 'expense' },
+  { category_name: 'Outros', type: 'expense' },
+  { category_name: 'Investimentos', type: 'expense' },
+  { category_name: 'Fatura Cartão de Crédito', type: 'expense' },
+  { category_name: 'Água', type: 'expense' },
+  { category_name: 'Luz', type: 'expense' },
+  { category_name: 'Internet', type: 'expense' },
+  { category_name: 'Condomínio', type: 'expense' },
+  { category_name: 'IPTU', type: 'expense' },
+  { category_name: 'IPVA', type: 'expense' },
+  { category_name: 'Seguro', type: 'expense' }  
 ];
 
 const seedBanks = async () => {
@@ -201,9 +116,10 @@ const seedBanks = async () => {
     } else {
       console.log('Bancos já existem no banco de dados.');
     }
+    return true;
   } catch (error) {
     console.error('Erro ao criar bancos:', error);
-    throw error;
+    return false;
   }
 };
 
@@ -215,23 +131,18 @@ const seedExpenseCategories = async () => {
     });
 
     if (existingCategories.length === 0) {
-      // Cria as categorias de despesa
-      for (const category of expenseCategories) {
-        const createdCategory = await Category.create({
-          category_name: category.category_name,
-          type: 'expense' 
-        });
-      }
+      // Usa bulkCreate para inserir todas as categorias de uma vez
+      await Category.bulkCreate(expenseCategories);
       console.log('Categorias de despesa criadas com sucesso!');
     } else {
       console.log('Categorias de despesa já existem no banco de dados.'); 
     }
+    return true;
   } catch (error) {
     console.error('Erro ao criar categorias de despesa:', error);
-    throw error;
+    return false;
   }
 };    
-
 
 const seedIncomeCategories = async () => {
   try {
@@ -241,45 +152,39 @@ const seedIncomeCategories = async () => {
     });
 
     if (existingCategories.length === 0) {
-      // Cria as categorias de ganho
-      for (const category of incomeCategories) {
-        const createdCategory = await Category.create({
-          category_name: category.category_name,
-          type: 'income'
-        });
-      }
+      // Usa bulkCreate para inserir todas as categorias de uma vez
+      await Category.bulkCreate(incomeCategories);
       console.log('Categorias de ganho criadas com sucesso!');
     } else {
       console.log('Categorias de ganho já existem no banco de dados.');
     }
+    return true;
   } catch (error) {
     console.error('Erro ao criar categorias de ganho:', error);
-    throw error;
+    return false;
   }
 };
 
 const seedDatabase = async () => {
   try {
+    const results = await Promise.allSettled([
+      seedIncomeCategories(),
+      seedBanks(),
+      seedExpenseCategories()
+    ]);
+    
+    const failures = results.filter(result => result.status === 'rejected' || (result.status === 'fulfilled' && result.value === false));
+    
+    if (failures.length > 0) {
+      console.warn(`Alguns seeds falharam: ${failures.length} falhas`);
+    } else {
+      console.log('Todos os seeds foram executados com sucesso!');
+    }
 
-    // Executa o seed de categorias de ganho
-    await seedIncomeCategories();
-
-    // Executa o seed de bancos
-    await seedBanks();
-
-    // Executa o seed de categorias de despesa
-    await seedExpenseCategories();
-
-    // Executa o seed de usuário e despesas
-    // await seedUserAndExpenses();
-
-    // Executa o seed de receitas
-    // await seedUserAndIncomes();
-
-    console.log('Todos os seeds foram executados com sucesso!');
+    return failures.length === 0;
   } catch (error) {
     console.error('Erro ao executar seeds:', error);
-    throw error;
+    return false;
   }
 };
 
