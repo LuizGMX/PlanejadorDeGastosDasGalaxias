@@ -1,6 +1,5 @@
 import express from 'express';
 import cors from 'cors';
-import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { readFileSync, writeFileSync } from 'fs';
@@ -245,6 +244,10 @@ process.on('uncaughtException', (error) => {
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Promessa rejeitada não tratada:', reason);
   process.exit(1);
+});
+
+app.get('/', (req, res) => {
+  res.send('Backend está funcionando');
 });
 
 startServer();
