@@ -263,7 +263,9 @@ router.post('/check-email', async (req, res) => {
 });
 
 router.post('/send-code', async (req, res) => {
-  console.log('/${process.env.API_PREFIX}/auth/send-code chamado');
+  console.log(`INICIANDO ${process.env.API_PREFIX}/auth/send-code`);
+  const t = await sequelize.transaction();
+  
   try {
     const { 
       email, 
@@ -289,11 +291,13 @@ router.post('/send-code', async (req, res) => {
 
     // Validação básica do email
     if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+      await t.rollback();
       return res.status(400).json({ message: 'E-mail inválido' });
     }
 
     // Se for novo usuário, valida os dados necessários
     if (isNewUser && (!name || !financialGoalName || !financialGoalAmount || !financialGoalPeriodType || !financialGoalPeriodValue)) {
+      await t.rollback();
       return res.status(400).json({ message: 'Todos os dados são obrigatórios para novos usuários' });
     }
 
@@ -302,7 +306,10 @@ router.post('/send-code', async (req, res) => {
     console.log('Código gerado:', code);
 
     // Remove códigos antigos
-    await VerificationCode.destroy({ where: { email } });
+    await VerificationCode.destroy({ 
+      where: { email },
+      transaction: t
+    });
 
     // Prepara os dados do usuário para salvar com o código
     const userData = isNewUser ? {
@@ -320,21 +327,26 @@ router.post('/send-code', async (req, res) => {
       code,
       user_data: userData ? JSON.stringify(userData) : null,
       expires_at: new Date(Date.now() + 10 * 60 * 1000) // 10 minutos
-    });
+    }, { transaction: t });
 
     // Envia o email
     try {
       await sendVerificationEmail(email, name, code);
       console.log('Email enviado com sucesso');
+      await t.commit();
     } catch (emailError) {
+      await t.rollback();
       console.error('Erro ao enviar email:', emailError);
       throw new Error('Falha ao enviar email de verificação');
     }
 
     return res.json({ message: 'Código enviado com sucesso!' });
   } catch (error) {
+    await t.rollback();
     console.error('Erro ao enviar código:', error);
     return res.status(500).json({ message: error.message || 'Erro interno ao enviar código' });
+  } finally {
+    console.log(`FINALIZANDO ${process.env.API_PREFIX}/auth/send-code`);
   }
 });
 
@@ -497,15 +509,23 @@ router.post('/verify-code', async (req, res) => {
 });
 
 router.post('/send-access-code', async (req, res) => {
-  console.log('/${process.env.API_PREFIX}/auth/send-access-code chamado');
+  console.log(`INICIANDO ${process.env.API_PREFIX}/auth/send-access-code`);
+  const t = await sequelize.transaction();
+  
   try {
     const { email } = req.body;
     if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+      await t.rollback();
       return res.status(400).json({ message: 'E-mail inválido' });
     }
 
-    const user = await User.findOne({ where: { email } });
+    const user = await User.findOne({ 
+      where: { email },
+      transaction: t
+    });
+    
     if (!user) {
+      await t.rollback();
       return res.status(404).json({ message: 'Usuário não encontrado' });
     }
 
@@ -513,27 +533,41 @@ router.post('/send-access-code', async (req, res) => {
     const code = generateVerificationCode();
     
     // Remove códigos antigos
-    await VerificationCode.destroy({ where: { email } });
+    await VerificationCode.destroy({ 
+      where: { email },
+      transaction: t
+    });
     
     // Cria novo código
     await VerificationCode.create({ 
       email, 
       code, 
       expires_at: new Date(Date.now() + 10 * 60 * 1000) // 10 minutos
-    });
+    }, { transaction: t });
 
     // Envia o email
-    await sendVerificationEmail(email, user.name, code);
-
-    // Log para debug
-    console.log('=================================');
-    console.log(`Novo código de acesso para ${email}: ${code}`);
-    console.log('=================================');
-
-    return res.json({ message: 'Código de acesso enviado com sucesso!' });
+    try {
+      await sendVerificationEmail(email, user.name, code);
+      console.log('Email enviado com sucesso');
+      
+      // Log para debug
+      console.log('=================================');
+      console.log(`Novo código de acesso para ${email}: ${code}`);
+      console.log('=================================');
+      
+      await t.commit();
+      return res.json({ message: 'Código de acesso enviado com sucesso!' });
+    } catch (emailError) {
+      await t.rollback();
+      console.error('Erro ao enviar email:', emailError);
+      throw new Error('Falha ao enviar email de verificação');
+    }
   } catch (error) {
+    await t.rollback();
     console.error('Erro ao enviar código de acesso:', error);
     return res.status(500).json({ message: 'Erro interno ao enviar código de acesso' });
+  } finally {
+    console.log(`FINALIZANDO ${process.env.API_PREFIX}/auth/send-access-code`);
   }
 });
 
