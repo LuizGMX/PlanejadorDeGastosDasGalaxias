@@ -49,7 +49,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(configureRateLimit());
 
 // Define API_PREFIX from environment variable with "api" as default
-const API_PREFIX = `/${process.env.API_PREFIX || ''}`;
+const API_PREFIX = `${process.env.API_PREFIX || ''}`;
+
+console.log("API_PREFIX " + API_PREFIX);
 
 // Rotas da API
 app.use(`${API_PREFIX}/auth`, authLimiter, authRoutes);
