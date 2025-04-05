@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import sgMail from '@sendgrid/mail';
 import { User, VerificationCode, UserBank, Bank } from '../models/index.js';
 import { Op } from 'sequelize';
-import { sequelize } from '../config/database.js';
+import { sequelize } from '../config/db.js';
 
 dotenv.config();
 
@@ -129,43 +129,72 @@ const sendVerificationEmail = async (email, name, code) => {
 
 // Middleware de autenticação
 export const authenticate = async (req, res, next) => {
+  console.log(`INICIANDO ${process.env.API_PREFIX}/auth/authenticate middleware`);
+  const t = await sequelize.transaction();
+  
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
+      await t.rollback();
       return res.status(401).json({ message: 'Token não fornecido' });
     }
 
     const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
-    const user = await User.findByPk(decoded.userId);
-    if (!user) {
-      return res.status(401).json({ message: 'Usuário não encontrado' });
+    if (!token) {
+      await t.rollback();
+      return res.status(401).json({ message: 'Token mal formatado' });
     }
 
-    req.user = user;
-    next();
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const user = await User.findByPk(decoded.userId, { transaction: t });
+      
+      if (!user) {
+        await t.rollback();
+        return res.status(401).json({ message: 'Usuário não encontrado' });
+      }
+
+      req.user = user;
+      await t.commit();
+      next();
+    } catch (jwtError) {
+      await t.rollback();
+      console.error('Erro na verificação do JWT:', {
+        error: jwtError.message,
+        name: jwtError.name,
+        stack: jwtError.stack,
+        token: token.substring(0, 10) + '...' // Log apenas parte do token por segurança
+      });
+
+      if (jwtError.name === 'JsonWebTokenError') {
+        return res.status(401).json({ message: 'Token inválido' });
+      }
+      if (jwtError.name === 'TokenExpiredError') {
+        return res.status(401).json({ message: 'Token expirado' });
+      }
+      throw jwtError;
+    }
   } catch (error) {
-    console.error('Erro detalhado na autenticação:', error);
-    if (error.name === 'JsonWebTokenError') {
-      return res.status(401).json({ message: 'Token inválido' });
-    }
-    if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({ message: 'Token expirado' });
-    }
+    await t.rollback();
+    console.error('Erro detalhado na autenticação:', {
+      message: error.message,
+      name: error.name,
+      stack: error.stack,
+      headers: req.headers
+    });
     res.status(500).json({ message: 'Erro ao autenticar usuário' });
+  } finally {
+    console.log(`FINALIZANDO ${process.env.API_PREFIX}/auth/authenticate middleware`);
   }
 };
 
 // Rotas
 router.post('/check-email', async (req, res) => {
   console.log('===========================================');
-  console.log(`INICIANDO ${process.env.API_PREFIX}/auth/check-email`);
+  console.log('INICIANDO /${process.env.API_PREFIX}/auth/check-email');
   console.log('Timestamp:', new Date().toISOString());
   console.log('Cabeçalhos:', JSON.stringify(req.headers));
   console.log('Body completo:', JSON.stringify(req.body));
-  
-  const t = await sequelize.transaction();
   
   try {
     const { email } = req.body;
@@ -185,8 +214,7 @@ router.post('/check-email', async (req, res) => {
     console.log('Buscando usuário no banco de dados...');
     const user = await User.findOne({ 
       where: { email },
-      attributes: ['id', 'name', 'email'],
-      transaction: t
+      attributes: ['id', 'name', 'email']
     });
     
     console.log('Usuário encontrado:', user ? 'Sim' : 'Não');
@@ -202,28 +230,22 @@ router.post('/check-email', async (req, res) => {
         console.log('Código gerado:', code);
 
         console.log('Removendo códigos antigos...');
-        await VerificationCode.destroy({ 
-          where: { email },
-          transaction: t
-        });
+        await VerificationCode.destroy({ where: { email } });
         
         console.log('Salvando novo código...');
         await VerificationCode.create({
           email,
           code,
           expires_at: new Date(Date.now() + 10 * 60 * 1000)
-        }, { transaction: t });
+        });
 
         console.log('Enviando email...');
         try {
           await sendVerificationEmail(email, user.name, code);
           console.log('Email enviado com sucesso');
-          await t.commit();
         } catch (emailError) {
-          await t.rollback();
           console.error('ERRO ao enviar email:', emailError);
           console.error('Stack trace do erro de email:', emailError.stack);
-          throw emailError;
         }
 
         console.log('Retornando resposta de sucesso para usuário existente');
@@ -234,7 +256,6 @@ router.post('/check-email', async (req, res) => {
           message: 'Código enviado com sucesso!'
         });
       } catch (userExistsError) {
-        await t.rollback();
         console.error('ERRO no fluxo de usuário existente:', userExistsError);
         console.error('Stack trace:', userExistsError.stack);
         return res.status(500).json({ message: 'Erro interno ao processar usuário existente' });
@@ -242,7 +263,6 @@ router.post('/check-email', async (req, res) => {
     }
     
     // Se não existir, retorna que é um novo usuário
-    await t.commit();
     console.log('Retornando resposta para novo usuário');
     return res.json({
       isNewUser: true,
@@ -250,22 +270,19 @@ router.post('/check-email', async (req, res) => {
       email: null
     });
   } catch (error) {
-    await t.rollback();
     console.error('ERRO CRÍTICO ao verificar email:', error);
     console.error('Stack trace completo:', error.stack);
     console.error('Tipo de erro:', error.name);
     console.error('Mensagem de erro:', error.message);
     return res.status(500).json({ message: 'Erro interno ao verificar email', error: error.message });
   } finally {
-    console.log(`FINALIZANDO ${process.env.API_PREFIX}/auth/check-email`);
+    console.log('FINALIZANDO /${process.env.API_PREFIX}/auth/check-email');
     console.log('===========================================');
   }
 });
 
 router.post('/send-code', async (req, res) => {
-  console.log(`INICIANDO ${process.env.API_PREFIX}/auth/send-code`);
-  const t = await sequelize.transaction();
-  
+  console.log('/${process.env.API_PREFIX}/auth/send-code chamado');
   try {
     const { 
       email, 
@@ -291,13 +308,11 @@ router.post('/send-code', async (req, res) => {
 
     // Validação básica do email
     if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
-      await t.rollback();
       return res.status(400).json({ message: 'E-mail inválido' });
     }
 
     // Se for novo usuário, valida os dados necessários
     if (isNewUser && (!name || !financialGoalName || !financialGoalAmount || !financialGoalPeriodType || !financialGoalPeriodValue)) {
-      await t.rollback();
       return res.status(400).json({ message: 'Todos os dados são obrigatórios para novos usuários' });
     }
 
@@ -306,10 +321,7 @@ router.post('/send-code', async (req, res) => {
     console.log('Código gerado:', code);
 
     // Remove códigos antigos
-    await VerificationCode.destroy({ 
-      where: { email },
-      transaction: t
-    });
+    await VerificationCode.destroy({ where: { email } });
 
     // Prepara os dados do usuário para salvar com o código
     const userData = isNewUser ? {
@@ -327,26 +339,21 @@ router.post('/send-code', async (req, res) => {
       code,
       user_data: userData ? JSON.stringify(userData) : null,
       expires_at: new Date(Date.now() + 10 * 60 * 1000) // 10 minutos
-    }, { transaction: t });
+    });
 
     // Envia o email
     try {
       await sendVerificationEmail(email, name, code);
       console.log('Email enviado com sucesso');
-      await t.commit();
     } catch (emailError) {
-      await t.rollback();
       console.error('Erro ao enviar email:', emailError);
       throw new Error('Falha ao enviar email de verificação');
     }
 
     return res.json({ message: 'Código enviado com sucesso!' });
   } catch (error) {
-    await t.rollback();
     console.error('Erro ao enviar código:', error);
     return res.status(500).json({ message: error.message || 'Erro interno ao enviar código' });
-  } finally {
-    console.log(`FINALIZANDO ${process.env.API_PREFIX}/auth/send-code`);
   }
 });
 
@@ -509,23 +516,15 @@ router.post('/verify-code', async (req, res) => {
 });
 
 router.post('/send-access-code', async (req, res) => {
-  console.log(`INICIANDO ${process.env.API_PREFIX}/auth/send-access-code`);
-  const t = await sequelize.transaction();
-  
+  console.log('/${process.env.API_PREFIX}/auth/send-access-code chamado');
   try {
     const { email } = req.body;
     if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
-      await t.rollback();
       return res.status(400).json({ message: 'E-mail inválido' });
     }
 
-    const user = await User.findOne({ 
-      where: { email },
-      transaction: t
-    });
-    
+    const user = await User.findOne({ where: { email } });
     if (!user) {
-      await t.rollback();
       return res.status(404).json({ message: 'Usuário não encontrado' });
     }
 
@@ -533,41 +532,27 @@ router.post('/send-access-code', async (req, res) => {
     const code = generateVerificationCode();
     
     // Remove códigos antigos
-    await VerificationCode.destroy({ 
-      where: { email },
-      transaction: t
-    });
+    await VerificationCode.destroy({ where: { email } });
     
     // Cria novo código
     await VerificationCode.create({ 
       email, 
       code, 
       expires_at: new Date(Date.now() + 10 * 60 * 1000) // 10 minutos
-    }, { transaction: t });
+    });
 
     // Envia o email
-    try {
-      await sendVerificationEmail(email, user.name, code);
-      console.log('Email enviado com sucesso');
-      
-      // Log para debug
-      console.log('=================================');
-      console.log(`Novo código de acesso para ${email}: ${code}`);
-      console.log('=================================');
-      
-      await t.commit();
-      return res.json({ message: 'Código de acesso enviado com sucesso!' });
-    } catch (emailError) {
-      await t.rollback();
-      console.error('Erro ao enviar email:', emailError);
-      throw new Error('Falha ao enviar email de verificação');
-    }
+    await sendVerificationEmail(email, user.name, code);
+
+    // Log para debug
+    console.log('=================================');
+    console.log(`Novo código de acesso para ${email}: ${code}`);
+    console.log('=================================');
+
+    return res.json({ message: 'Código de acesso enviado com sucesso!' });
   } catch (error) {
-    await t.rollback();
     console.error('Erro ao enviar código de acesso:', error);
     return res.status(500).json({ message: 'Erro interno ao enviar código de acesso' });
-  } finally {
-    console.log(`FINALIZANDO ${process.env.API_PREFIX}/auth/send-access-code`);
   }
 });
 
@@ -592,6 +577,8 @@ router.get('/me', authenticate, async (req, res) => {
 });
 
 router.put('/me', authenticate, async (req, res) => {
+  const t = await sequelize.transaction();
+  
   try {
     console.log('=================================');
     console.log('=== ATUALIZAÇÃO DE PERFIL ===');
@@ -609,6 +596,7 @@ router.put('/me', authenticate, async (req, res) => {
 
     // Validação dos campos obrigatórios
     if (!name) {
+      await t.rollback();
       console.log('Erro: Nome é obrigatório');
       return res.status(400).json({ message: 'Nome é obrigatório' });
     }
@@ -622,6 +610,7 @@ router.put('/me', authenticate, async (req, res) => {
       
       const periodValue = parseInt(financial_goal_period_value);
       if (isNaN(periodValue)) {
+        await t.rollback();
         console.log('Erro: Período inválido');
         return res.status(400).json({ message: 'Período inválido' });
       }
@@ -638,10 +627,12 @@ router.put('/me', authenticate, async (req, res) => {
             endDate.setFullYear(startDate.getFullYear() + periodValue);
             break;
           default:
+            await t.rollback();
             console.log('Erro: Tipo de período inválido');
             return res.status(400).json({ message: 'Tipo de período inválido' });
         }
       } catch (dateError) {
+        await t.rollback();
         console.error('Erro ao calcular datas:', dateError);
         return res.status(400).json({ message: 'Erro ao calcular datas do objetivo' });
       }
@@ -655,10 +646,12 @@ router.put('/me', authenticate, async (req, res) => {
       try {
         processedAmount = parseFloat(financial_goal_amount.toString().replace(/\./g, '').replace(',', '.'));
         if (isNaN(processedAmount)) {
+          await t.rollback();
           console.log('Erro: Valor do objetivo inválido');
           return res.status(400).json({ message: 'Valor do objetivo inválido' });
         }
       } catch (amountError) {
+        await t.rollback();
         console.error('Erro ao processar valor:', amountError);
         return res.status(400).json({ message: 'Erro ao processar valor do objetivo' });
       }
@@ -673,8 +666,9 @@ router.put('/me', authenticate, async (req, res) => {
         financial_goal_amount: processedAmount,
         financial_goal_start_date: startDate,
         financial_goal_end_date: endDate
-      });
+      }, { transaction: t });
 
+      await t.commit();
       console.log('Usuário atualizado:', updatedUser.toJSON());
       console.log('=================================');
 
@@ -691,6 +685,7 @@ router.put('/me', authenticate, async (req, res) => {
         message: 'Perfil atualizado com sucesso!'
       });
     } catch (updateError) {
+      await t.rollback();
       console.error('Erro ao atualizar usuário:', updateError);
       return res.status(500).json({ 
         message: 'Erro ao atualizar usuário',
@@ -698,6 +693,7 @@ router.put('/me', authenticate, async (req, res) => {
       });
     }
   } catch (error) {
+    await t.rollback();
     console.error('=================================');
     console.error('=== ERRO NA ATUALIZAÇÃO DE PERFIL ===');
     console.error('Mensagem:', error.message);
