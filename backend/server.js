@@ -134,32 +134,12 @@ const gracefulShutdown = (server) => {
   }, 10000);
 };
 
-const migrationScriptPath = './migrations/removeSubcategories.js';
+
 
 const startServer = async () => {
   try {
     await sequelize.authenticate();
     console.log('Conexão com banco estabelecida com sucesso.');
-
-    try {
-      console.log('Executando migração para remover subcategorias...');
-      try {
-        const migrationModule = await import(migrationScriptPath);
-        if (migrationModule && migrationModule.default) {
-          await migrationModule.default(sequelize);
-          console.log('Migração de subcategorias concluída com sucesso.');
-        } else {
-          console.warn('Módulo de migração importado, mas não contém função padrão.');
-        }
-      } catch (importError) {
-        console.warn('Não foi possível importar o script de migração:', importError.message);
-        console.log('Tentando solução alternativa...');
-        await executeManualMigration();
-      }
-    } catch (migrationError) {
-      console.warn('Aviso ao executar migração de subcategorias:', migrationError.message);
-      console.log('Continuando inicialização do servidor...');
-    }
 
     async function executeManualMigration() {
       const transaction = await sequelize.transaction();
