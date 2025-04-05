@@ -935,9 +935,11 @@ const Dashboard = () => {
         
         // Se parece ser HTML ou contém <!doctype, é provavelmente uma página de erro
         if (contentType?.includes('text/html') || responseText.toLowerCase().includes('<!doctype')) {
-          console.error('Resposta da API contém HTML ao invés de JSON. Possível erro 502 Bad Gateway.');
+          console.error('Resposta da API contém HTML ao invés de JSON. Possível erro 502 Bad Gateway ou URL incorreta.');
+          console.log('URL da requisição:', `${process.env.REACT_APP_API_URL}/api/dashboard?${queryParams}`);
+          console.log('Valor de REACT_APP_API_URL:', process.env.REACT_APP_API_URL);
           console.log('Conteúdo da resposta (primeiros 100 caracteres):', responseText.substring(0, 100));
-          throw new Error('Servidor temporariamente indisponível. Por favor, tente novamente em alguns instantes.');
+          throw new Error('Servidor temporariamente indisponível ou configuração incorreta. Por favor, verifique os logs e tente novamente.');
         }
         
         if (!response.ok) {

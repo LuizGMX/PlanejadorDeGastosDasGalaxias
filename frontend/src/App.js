@@ -15,6 +15,7 @@ import Layout from './components/Layout';
 import EditRecurringIncomes from './components/EditRecurringIncomes';
 import styles from './styles/app.module.css';
 import './styles/navbar.mobile.css';
+import { checkApiHealth, diagnoseProblem } from './utils/apiHealth';
 
 export const AuthContext = React.createContext();
 
@@ -31,6 +32,7 @@ function App() {
     const token = localStorage.getItem('token');
     return { token, user: null, loading: !!token };
   });
+  const [apiStatus, setApiStatus] = useState(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -120,6 +122,27 @@ function App() {
     };
   }, []);
 
+  // Verificar a saúde da API ao iniciar o aplicativo
+  useEffect(() => {
+    async function checkHealth() {
+      try {
+        const healthResult = await checkApiHealth();
+        setApiStatus(healthResult);
+        
+        if (!healthResult.healthy) {
+          console.error('API não está saudável:', healthResult);
+          const diagnosis = diagnoseProblem(healthResult);
+          console.log('Diagnóstico do problema:', diagnosis);
+        }
+      } catch (error) {
+        console.error('Erro ao verificar saúde da API:', error);
+        setApiStatus({ healthy: false, error: error.message });
+      }
+    }
+    
+    checkHealth();
+  }, []);
+
   const PrivateRoute = ({ children }) => {
     if (auth.loading) {
       return <div>Carregando...</div>;
@@ -138,6 +161,23 @@ function App() {
     <AuthContext.Provider value={{ auth, setAuth }}>
       <Router {...routerConfig}>
         <Toaster position="top-right" />
+        {/* Banner de aviso quando a API não está disponível */}
+        {apiStatus && !apiStatus.healthy && (
+          <div style={{
+            position: 'fixed', 
+            top: 0, 
+            left: 0, 
+            right: 0, 
+            backgroundColor: '#f44336', 
+            color: 'white', 
+            padding: '10px', 
+            textAlign: 'center', 
+            zIndex: 9999
+          }}>
+            Erro de conexão com o servidor. Algumas funcionalidades podem não estar disponíveis. 
+            {apiStatus.error && ` Erro: ${apiStatus.error}`}
+          </div>
+        )}
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<Navigate to={auth.token ? "/dashboard" : "/login"} />} />

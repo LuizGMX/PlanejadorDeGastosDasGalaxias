@@ -29,6 +29,9 @@ import seedDatabase from './seeders/index.js';
 import { telegramService } from './services/telegramService.js';
 import { Sequelize } from 'sequelize';
 
+// Importar healthcheck routes usando ES modules
+import healthRoutes from './routes/healthRoutes.js';
+
 dotenv.config();
 
 // Configuração do __dirname para ES modules
@@ -75,6 +78,7 @@ app.use('/api/spreadsheet', spreadsheetRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/recurrences', recurrencesRouter);
 app.use('/api/telegram', telegramRoutes);
+app.use('/api/health', healthRoutes); // Rota de healthcheck sem autenticação
 
 // Definir o servidor
 let server;
