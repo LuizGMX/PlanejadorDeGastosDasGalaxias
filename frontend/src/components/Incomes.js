@@ -85,12 +85,12 @@ const Incomes = () => {
     const fetchData = async () => {
       try {
         const [categoriesResponse, banksResponse] = await Promise.all([
-          fetch(`${process.env.REACT_APP_API_URL}`${API_PREFIX}/incomes/categories`, {
+          fetch(`${process.env.REACT_APP_API_URL}/incomes/categories`, {
             headers: {
               'Authorization': `Bearer ${auth.token}`
             }
           }),
-          fetch(`${process.env.REACT_APP_API_URL}`${API_PREFIX}/banks/favorites`, {
+          fetch(`${process.env.REACT_APP_API_URL}/banks/favorites`, {
             headers: {
               'Authorization': `Bearer ${auth.token}`
             }
@@ -208,7 +208,7 @@ const Incomes = () => {
         queryParams.append('is_recurring', filters.is_recurring);
       }
 
-      const response = await fetch(`${process.env.REACT_APP_API_URL}`${API_PREFIX}/incomes?${queryParams}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/incomes?${queryParams}`, {
         headers: {
           'Authorization': `Bearer ${auth.token}`
         }
@@ -357,7 +357,7 @@ const Incomes = () => {
 
       if (deleteOptions.type === 'bulk') {
         console.log('Excluindo em massa:', selectedIncomes);
-        const response = await fetch(`${process.env.REACT_APP_API_URL}`${API_PREFIX}/incomes/bulk`, {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/incomes/bulk`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${auth.token}`,
@@ -393,7 +393,7 @@ const Incomes = () => {
         throw new Error('ID do ganho não encontrado');
       }
 
-      let url = `${process.env.REACT_APP_API_URL}`${API_PREFIX}/incomes/${incomeId}`;
+      let url = `${process.env.REACT_APP_API_URL}/incomes/${incomeId}`;
       
       // Adicionar parâmetro para excluir futuros se necessário
       if (deleteOptions.type === 'all' && incomeToDelete.is_recurring) {
@@ -460,7 +460,7 @@ const Incomes = () => {
 
       // Determinar se é uma atualização ou criação
       const isUpdate = Boolean(incomeData.id);
-      const url = `${process.env.REACT_APP_API_URL}`${API_PREFIX}/incomes${isUpdate ? `/${incomeData.id}` : ''}`;
+      const url = `${process.env.REACT_APP_API_URL}/incomes${isUpdate ? `/${incomeData.id}` : ''}`;
       
       console.log('URL da requisição:', url, 'Método:', isUpdate ? 'PUT' : 'POST');
 

@@ -41,7 +41,7 @@ const AddIncome = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}`${API_PREFIX}/incomes/categories`, {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/incomes/categories`, {
           headers: {
             'Authorization': `Bearer ${auth.token}`
           }
@@ -64,7 +64,7 @@ const AddIncome = () => {
   useEffect(() => {
     const fetchBanks = async () => {
       try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}`${API_PREFIX}/banks/users`, {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/banks/users`, {
           headers: {
             'Authorization': `Bearer ${auth.token}`
           }
@@ -136,7 +136,7 @@ const AddIncome = () => {
         end_date
       };
 
-      const response = await fetch(`${process.env.REACT_APP_API_URL}`${API_PREFIX}/incomes`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/incomes`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -59,7 +59,7 @@ const AddExpense = () => {
           }
         }
         
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/expenses/categories`, {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/expenses/categories`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -123,7 +123,7 @@ const AddExpense = () => {
           }
         }
         
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/banks/users`, {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/banks/users`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -394,7 +394,7 @@ const AddExpense = () => {
         }
       }
 
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/expenses`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/expenses`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

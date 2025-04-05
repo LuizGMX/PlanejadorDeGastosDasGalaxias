@@ -106,8 +106,8 @@ const BanksList = ({ auth, setMessage, setError }) => {
     const fetchBanks = async () => {
       try {
         const [banksResponse, favoritesResponse] = await Promise.all([
-          fetch(`${process.env.REACT_APP_API_URL}`${API_PREFIX}/banks`),
-          fetch(`${process.env.REACT_APP_API_URL}`${API_PREFIX}/banks/favorites`, {
+          fetch(`${process.env.REACT_APP_API_URL}/banks`),
+          fetch(`${process.env.REACT_APP_API_URL}/banks/favorites`, {
             headers: { 'Authorization': `Bearer ${auth.token}` }
           })
         ]);
@@ -148,7 +148,7 @@ const BanksList = ({ auth, setMessage, setError }) => {
         prev.includes(bankId) ? prev.filter(id => id !== bankId) : [...prev, bankId]
       );
       
-      const response = await fetch(`${process.env.REACT_APP_API_URL}`${API_PREFIX}/banks/favorites`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/banks/favorites`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
