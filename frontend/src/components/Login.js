@@ -162,7 +162,13 @@ const Login = () => {
       if (step === 'email') {
         console.log('Enviando email para verificação:', formData.email);
         console.log('REACT_APP_API_PREFIX:' + process.env.REACT_APP_API_PREFIX + ' REACT_APP_API_URL:' + process.env.REACT_APP_API_URL);
-        const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/auth/check-email`, {
+        
+
+
+        const prefix = process.env.REACT_APP_API_PREFIX?.trim();
+        const url = `${process.env.REACT_APP_API_URL}${prefix ? `/${prefix}` : ''}/auth/check-email`;
+        console.log('URL:' + url);
+        const response = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: formData.email })
