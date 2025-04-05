@@ -34,7 +34,7 @@ const __dirname = dirname(__filename);
 
 const app = express();
 
-app.set('trust proxy', 1); // <- adicione isso aqui
+app.set('trust proxy', 1);
 
 app.use(helmet());
 app.use(
