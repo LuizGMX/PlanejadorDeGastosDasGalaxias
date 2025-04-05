@@ -161,6 +161,7 @@ const Login = () => {
     try {
       if (step === 'email') {
         console.log('Enviando email para verificação:', formData.email);
+        console.log('REACT_APP_API_PREFIX:' + process.env.REACT_APP_API_PREFIX + ' REACT_APP_API_URL:' + process.env.REACT_APP_API_URL);
         const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/auth/check-email`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
