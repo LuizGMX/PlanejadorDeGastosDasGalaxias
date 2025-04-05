@@ -116,13 +116,13 @@ const Expenses = () => {
           }
         }
         
-        const categoriesPromise = fetch(`${process.env.REACT_APP_API_URL}${process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : ''}/categories`, {
+        const categoriesPromise = fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/categories`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
         
-        const banksPromise = fetch(`${process.env.REACT_APP_API_URL}${process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : ''}/banks/favorites`, {
+        const banksPromise = fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/banks/favorites`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -285,7 +285,7 @@ const Expenses = () => {
         }
       }
 
-      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : ''}/expenses?${queryParams}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses?${queryParams}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -439,7 +439,7 @@ const Expenses = () => {
     try {
       // Se for deleção em massa
       if (deleteOptions.type === 'bulk') {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : ''}/expenses/bulk`, {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses/bulk`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${auth.token}`,
@@ -483,7 +483,7 @@ const Expenses = () => {
 
       if (expense.is_recurring) {
         // Para despesas recorrentes, usar a rota específica
-        url = `${process.env.REACT_APP_API_URL}${process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : ''}/expenses/${expense.id}/recurring`;
+        url = `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses/${expense.id}/recurring`;
         headers['Content-Type'] = 'application/json';
         body = JSON.stringify({ deleteType: deleteOption });
         
@@ -492,14 +492,14 @@ const Expenses = () => {
       else if (expense.has_installments) {
         // Para despesas parceladas
         if (deleteOption === 'all') {
-          url = `${process.env.REACT_APP_API_URL}${process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : ''}/expenses/${expense.id}?delete_all_installments=true`;
+          url = `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses/${expense.id}?delete_all_installments=true`;
         } else {
-          url = `${process.env.REACT_APP_API_URL}${process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : ''}/expenses/${expense.id}`;
+          url = `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses/${expense.id}`;
         }
       }
       else {
         // Para despesas normais
-        url = `${process.env.REACT_APP_API_URL}${process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : ''}/expenses/${expense.id}`;
+        url = `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses/${expense.id}`;
       }
 
       console.log('URL de exclusão:', url);
@@ -550,7 +550,7 @@ const Expenses = () => {
         payload.end_date = '2099-12-31';
       }
 
-      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : ''}/expenses/${editingExpense ? editingExpense.id : ''}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses/${editingExpense ? editingExpense.id : ''}`, {
         method: editingExpense ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -577,7 +577,7 @@ const Expenses = () => {
     try {
       if (!expenseToDelete) return;
 
-      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : ''}/expenses/${expenseToDelete.id}/recurring`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses/${expenseToDelete.id}/recurring`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -911,7 +911,7 @@ const Expenses = () => {
     const loadExpenseToEdit = async () => {
       if (id) {
         try {
-          const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : ''}/expenses/${id}`, {
+          const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses/${id}`, {
             headers: {
               'Authorization': `Bearer ${auth.token}`
             }

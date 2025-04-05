@@ -17,7 +17,7 @@ const EditIncome = () => {
   useEffect(() => {
     const fetchIncome = async () => {
       try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : ''}/incomes/${id}`, {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${id}`, {
           headers: {
             'Authorization': `Bearer ${auth.token}`
           }
@@ -46,7 +46,7 @@ const EditIncome = () => {
 
   const handleSave = async (incomeData) => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : ''}/incomes/${id}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

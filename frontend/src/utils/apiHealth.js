@@ -7,11 +7,11 @@ export const checkApiHealth = async () => {
     console.log('Verificando conectividade com a API...');
     console.log('REACT_APP_API_URL:', process.env.REACT_APP_API_URL);
     console.log('NODE_ENV:', process.env.NODE_ENV);
-    console.log('API_PREFIX:', process.env.API_PREFIX);
+    console.log('REACT_APP_API_PREFIX:', process.env.REACT_APP_API_PREFIX);
     
     // Tenta acessar a API com um endpoint simples
     const startTime = Date.now();
-    const response = await fetch(`${process.env.REACT_APP_API_URL}/health`, {
+    const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/health`, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',

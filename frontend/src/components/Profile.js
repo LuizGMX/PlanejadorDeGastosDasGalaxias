@@ -129,7 +129,7 @@ const Profile = () => {
         }
       }
       
-      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : ''}/user/me`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/user/me`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -198,7 +198,7 @@ const Profile = () => {
         }
       }
 
-      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : ''}/auth/me`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/auth/me`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -275,7 +275,7 @@ const Profile = () => {
       }
 
       if (emailChangeData.step === 'input') {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : ''}/auth/change-email/request`, {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/auth/change-email/request`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -322,7 +322,7 @@ const Profile = () => {
           });
         }, 1000);
       } else {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : ''}/auth/change-email/verify`, {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/auth/change-email/verify`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -383,7 +383,7 @@ const Profile = () => {
         }
       }
 
-      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : ''}/auth/change-email/request`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/auth/change-email/request`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -457,7 +457,7 @@ const Profile = () => {
         }
       }
       
-      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : ''}/telegram/init-verification`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/telegram/init-verification`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -515,7 +515,7 @@ const Profile = () => {
         }
       }
       
-      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : ''}/auth/me`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/auth/me`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -579,7 +579,7 @@ const Profile = () => {
         }
       }
       
-      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : ''}/telegram/disconnect`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/telegram/disconnect`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

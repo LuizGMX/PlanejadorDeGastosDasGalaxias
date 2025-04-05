@@ -39,9 +39,10 @@ app.set('trust proxy', 1);
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL,
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Accept'],
+    credentials: true
   })
 );
 app.use(express.json());
@@ -51,7 +52,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(configureRateLimit());
 
 // Define API_PREFIX from environment variable with "api" as default
-const API_PREFIX = `${process.env.API_PREFIX || ''}`;
+const API_PREFIX = process.env.NODE_ENV === 'production' 
+  ? `${process.env.API_PREFIX || ''}`
+  : '/api';
 
 console.log("API_PREFIX " + API_PREFIX);
 
