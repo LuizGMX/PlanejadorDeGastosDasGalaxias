@@ -14,7 +14,13 @@
   --gradient-end: #80FFB9;
   --button-text-color: #000000;
   --button-background-color: #00FF85;
+}
 
+html {
+  overflow-x: hidden;
+  width: 100%;
+  height: 100%;
+  position: fixed; /* Impede scroll da página inteira */
 }
 
 body {
@@ -25,6 +31,20 @@ body {
   padding: 0;
   min-height: 100vh;
   box-sizing: border-box;
+  width: 100%;
+  position: fixed; /* Impede scroll do body */
+  overflow-y: auto; /* Permite scroll vertical interno */
+  overflow-x: hidden; /* Esconde scroll horizontal */
+  -webkit-overflow-scrolling: touch; /* Smooth scroll em dispositivos iOS */
+  height: 100%;
+}
+
+#root {
+  height: 100%;
+  width: 100%;
+  overflow: auto; /* Scroll apenas no conteúdo */
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 70px; /* Espaço para a navbar */
 }
 
 *, *:before, *:after {
@@ -33,7 +53,7 @@ body {
 
 button {
   background-color: var(--primary-color);
-  color: ;
+  color: var(--button-text-color);
   border: none;
   padding: 10px 20px;
   border-radius: 5px;
@@ -61,13 +81,52 @@ input, select {
   .mobileNavbar {
     display: block !important;
     z-index: 9999 !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
   }
   
   body {
-    padding-bottom: 60px;
+    padding-bottom: 0; /* Removendo o padding do body */
   }
   
-  .mainContent.withMobileNav {
-    padding-bottom: 70px !important;
+  #root {
+    padding-bottom: 70px; /* Espaço para a navbar */
+  }
+  
+  /* Estilo para fixar a posição durante a exibição de modais */
+  body.modal-open,
+  html.modal-open {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+  }
+  
+  /* Classes para controlar melhor o comportamento móvel */
+  .overflow-hidden {
+    overflow: hidden !important;
+  }
+  
+  .mobile-scroll-container {
+    height: calc(100vh - 70px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Fixando o tamanho do formModal para eliminar scroll */
+  .formModal {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    margin: 0 !important;
+    max-height: none !important;
+    height: auto !important;
+    max-width: 95% !important;
+    overflow: visible !important;
+    overflow-x: hidden !important;
+    border-radius: 10px !important;
   }
 }

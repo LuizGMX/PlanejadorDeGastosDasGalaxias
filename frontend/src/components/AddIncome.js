@@ -176,7 +176,22 @@ const AddIncome = () => {
           <h3>Adicionar Ganho</h3>
         </div>
 
-        {error && <p className={dataTableStyles.errorMessage}>{error}</p>}
+        {error && (
+          <div className={dataTableStyles.errorCard}>
+            <div>
+              <div className={dataTableStyles.errorIcon}>!</div>
+              <p className={dataTableStyles.errorMessage}>{error}</p>
+            </div>
+            <button 
+              type="button" 
+              className={dataTableStyles.errorRetryButton}
+              onClick={() => window.location.reload()}
+            >
+              Tentar novamente
+            </button>
+          </div>
+        )}
+        
         {success && (
           <div className={sharedStyles.successMessage}>
             {success}
@@ -232,14 +247,14 @@ const AddIncome = () => {
                 className={`${dataTableStyles.toggleButton} ${!formData.is_recurring ? dataTableStyles.active : ''}`}
                 onClick={() => handleToggleChange('is_recurring', false)}
               >
-                <BsCurrencyDollar /> Único
+                <BsCurrencyDollar size={16} /> Único
               </button>
               <button
                 type="button"
                 className={`${dataTableStyles.toggleButton} ${formData.is_recurring ? dataTableStyles.active : ''}`}
                 onClick={() => handleToggleChange('is_recurring', true)}
               >
-                <BsRepeat /> Fixo
+                <BsRepeat size={16} /> Fixo
               </button>
             </div>
           </div>
@@ -306,7 +321,7 @@ const AddIncome = () => {
 
           <div className={dataTableStyles.formGroup}>
             <label className={dataTableStyles.formLabel}>
-              <BsFolderSymlink /> Categoria
+              <BsFolderSymlink size={16} /> Categoria
             </label>
             <select
               name="category_id"
@@ -326,22 +341,28 @@ const AddIncome = () => {
 
           <div className={dataTableStyles.formGroup}>
             <label className={dataTableStyles.formLabel}>
-              <BsBank2 /> Banco/Carteira
+              <BsBank2 size={16} /> Banco/Carteira
             </label>
-            <select
-              name="bank_id"
-              value={formData.bank_id}
-              onChange={handleChange}
-              className={dataTableStyles.formInput}
-              required
-            >
-              <option value="">Selecione um banco</option>
-              {banks.map(bank => (
-                <option key={bank.id} value={bank.id}>
-                  {bank.name}
-                </option>
-              ))}
-            </select>
+            {banks.length > 0 ? (
+              <select
+                name="bank_id"
+                value={formData.bank_id}
+                onChange={handleChange}
+                className={dataTableStyles.formInput}
+                required
+              >
+                <option value="">Selecione um banco</option>
+                {banks.map(bank => (
+                  <option key={bank.id} value={bank.id}>
+                    {bank.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className={dataTableStyles.emptySelectError}>
+                Erro ao carregar bancos. Por favor, tente novamente.
+              </div>
+            )}
           </div>
 
           <div className={dataTableStyles.modalActions}>
