@@ -48,6 +48,7 @@ const motivationalPhrases = [
   "Seja dono do seu dinheiro antes que ele seja dono de você."
 ];
 
+
 const getGreeting = (userName) => {
   const hour = new Date().getHours();
   let greeting = '';
