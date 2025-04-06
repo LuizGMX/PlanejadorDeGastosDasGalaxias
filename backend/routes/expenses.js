@@ -159,17 +159,22 @@ router.post('/', authenticate, async (req, res) => {
 
     if (has_installments) {
       const installmentGroupId = uuidv4();
-      const installmentAmount = Number((parsedAmount / total_installments).toFixed(2));
-      const roundingAdjustment = Number((parsedAmount - (installmentAmount * total_installments)).toFixed(2));
-
-      for (let i = 0; i < total_installments; i++) {
+      // Usar o valor da parcela informado pelo usuário diretamente
+      // current_installment começa a partir da parcela atual e vai até o total
+      const current = req.body.current_installment || 1;
+      
+      // Criar apenas as parcelas restantes
+      for (let i = current - 1; i < total_installments; i++) {
         const installmentDate = adjustDate(expense_date);
-        installmentDate.setMonth(installmentDate.getMonth() + i);
+        // Ajustar data apenas para parcelas futuras em relação à atual
+        if (i > current - 1) {
+          installmentDate.setMonth(installmentDate.getMonth() + (i - (current - 1)));
+        }
 
         expenses.push({
           user_id: req.user.id,
           description: `${description} (${i + 1}/${total_installments})`,
-          amount: i === total_installments - 1 ? installmentAmount + roundingAdjustment : installmentAmount,
+          amount: parsedAmount, // Usa o valor da parcela diretamente, sem calcular
           category_id,
           bank_id,
           expense_date: installmentDate,

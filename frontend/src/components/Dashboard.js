@@ -941,16 +941,16 @@ const Dashboard = () => {
           // Período personalizado
           queryParams = `?startDate=${customDateRange.startNormalized || customDateRange.start}&endDate=${customDateRange.endNormalized || customDateRange.end}`;
         }
-        
+          
         // Adicionar filtros para categorias e bancos se selecionados
-        if (selectedCategories.length > 0) {
+          if (selectedCategories.length > 0) {
           queryParams += `&categories=${selectedCategories.join(',')}`;
-        }
-        
-        if (selectedBanks.length > 0) {
+          }
+          
+          if (selectedBanks.length > 0) {
           queryParams += `&banks=${selectedBanks.join(',')}`;
-        }
-        
+          }
+
         const response = await fetch(
           `${process.env.REACT_APP_API_URL}/${process.env.REACT_APP_API_PREFIX}/dashboard${queryParams}`,
           {
@@ -960,8 +960,8 @@ const Dashboard = () => {
             credentials: 'include'
           }
         );
-
-        if (!response.ok) {
+          
+          if (!response.ok) {
           throw new Error(`Falha ao carregar dados (${response.status})`);
         }
 
@@ -976,12 +976,12 @@ const Dashboard = () => {
         if (result.incomes && result.incomes.length > 0) {
           setHasIncome(true);
         }
-      } catch (err) {
+    } catch (err) {
         console.error("Erro ao buscar dados do dashboard:", err);
         setError(err.message || "Falha ao carregar os dados do dashboard. Por favor, tente novamente.");
-      }
-    };
-    
+    }
+  };
+
     const fetchAllTransactions = async () => {
       try {
         console.log("Buscando todas as transações...");
@@ -995,8 +995,8 @@ const Dashboard = () => {
             credentials: 'include'
           }
         );
-
-        if (!response.ok) {
+          
+          if (!response.ok) {
           throw new Error(`Falha ao carregar transações (${response.status})`);
         }
 
@@ -1735,7 +1735,7 @@ const Dashboard = () => {
               <Pie
                 data={chartData}
                       dataKey="value"
-                      nameKey="name"
+                      nameKey="category"
                       cx="50%"
                       cy="50%"
                 outerRadius={isMobile ? 80 : 100}
@@ -1884,8 +1884,8 @@ const Dashboard = () => {
           </div>
         </div>
         <div className={styles.categoriesPieContainer}>
-          <ResponsiveContainer width="100%" height={isMobile ? 220 : 280}>
-            <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
+          <ResponsiveContainer width="100%" height={isMobile ? 220 : 350}>
+            <PieChart margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
               <defs>
                 {categoriesData.map((entry, index) => (
                   <filter key={`shadow-${index}`} id={`shadow-${index}`} x="-20%" y="-20%" width="140%" height="140%">
@@ -1898,12 +1898,12 @@ const Dashboard = () => {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                outerRadius={isMobile ? 70 : 100}
-                innerRadius={isMobile ? 30 : 50}
+                outerRadius={isMobile ? 70 : 130}
+                innerRadius={isMobile ? 30 : 60}
                 paddingAngle={2}
                 fill="#8884d8"
                 dataKey="value"
-                nameKey="name"
+                nameKey="category"
                 label={getCustomizedPieLabel}
                 filter="url(#shadow)"
                 animationDuration={800}
@@ -2774,8 +2774,8 @@ const Dashboard = () => {
         </div>
         
         <div className={styles.categoriesPieContainer}>
-          <ResponsiveContainer width="100%" height={isMobile ? 220 : 280}>
-            <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
+          <ResponsiveContainer width="100%" height={isMobile ? 220 : 350}>
+            <PieChart margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
               <defs>
                 {categoryData.map((entry, index) => (
                   <filter key={`shadow-${index}`} id={`shadow-cat-${index}`} x="-20%" y="-20%" width="140%" height="140%">
@@ -2788,8 +2788,8 @@ const Dashboard = () => {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                outerRadius={isMobile ? 70 : 100}
-                innerRadius={isMobile ? 30 : 50}
+                outerRadius={isMobile ? 70 : 130}
+                innerRadius={isMobile ? 30 : 60}
                 paddingAngle={2}
                 fill="#8884d8"
                 dataKey="amount"
@@ -2808,8 +2808,8 @@ const Dashboard = () => {
                     strokeWidth={1} 
                     filter={`url(#shadow-cat-${index})`} 
                   />
-                ))}
-              </Pie>
+                      ))}
+                    </Pie>
               <Tooltip content={<CustomPieTooltip />} />
               <Legend 
                 layout={isMobile ? "horizontal" : "vertical"}
@@ -2825,7 +2825,7 @@ const Dashboard = () => {
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    maxWidth: isMobile ? '60px' : '110px',
+                    maxWidth: isMobile ? '60px' : '150px',
                     display: 'inline-block'
                   }}>
                     {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
@@ -2833,7 +2833,7 @@ const Dashboard = () => {
                   </span>
                 )}
                 wrapperStyle={{ 
-                  paddingLeft: isMobile ? '0px' : '10px', 
+                  paddingLeft: isMobile ? '0px' : '20px', 
                   fontSize: isMobile ? '10px' : '12px',
                   overflowY: 'auto', 
                   maxHeight: isMobile ? '80px' : '180px',
@@ -2844,7 +2844,7 @@ const Dashboard = () => {
                   gap: isMobile ? '5px' : '0'
                 }}
               />
-            </PieChart>
+                  </PieChart>
           </ResponsiveContainer>
         </div>
         
@@ -2915,7 +2915,7 @@ const Dashboard = () => {
     
     // Calculate total income for this period to find percentages
     const totalIncome = incomeCategoryData.reduce((sum, item) => sum + item.amount, 0);
-
+    
     return (
       <div className={styles.chartContainer}>
         <div className={styles.chartHeader}>
@@ -2926,10 +2926,10 @@ const Dashboard = () => {
             </span>
           </div>
         </div>
-        
+
         <div className={styles.categoriesPieContainer}>
-          <ResponsiveContainer width="100%" height={isMobile ? 220 : 280}>
-            <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
+          <ResponsiveContainer width="100%" height={isMobile ? 220 : 350}>
+            <PieChart margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
               <defs>
                 {incomeCategoryData.map((entry, index) => (
                   <filter key={`shadow-${index}`} id={`shadow-income-${index}`} x="-20%" y="-20%" width="140%" height="140%">
@@ -2942,8 +2942,8 @@ const Dashboard = () => {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                outerRadius={isMobile ? 70 : 100}
-                innerRadius={isMobile ? 30 : 50}
+                outerRadius={isMobile ? 70 : 130}
+                innerRadius={isMobile ? 30 : 60}
                 paddingAngle={2}
                 fill="#8884d8"
                 dataKey="amount"
@@ -2973,7 +2973,7 @@ const Dashboard = () => {
                 iconSize={isMobile ? 8 : 10}
                 formatter={(value, entry) => (
                   <span style={{ 
-                    color: 'var(--text-color)', 
+                  color: 'var(--text-color)',
                     fontSize: isMobile ? '10px' : '12px', 
                     fontWeight: entry.payload.category === incomeCategoryData[0]?.category ? 'bold' : 'normal',
                     whiteSpace: 'nowrap',
@@ -3110,8 +3110,8 @@ const Dashboard = () => {
           </div>
         </div>
         <div className={styles.bankPieContainer}>
-          <ResponsiveContainer width="100%" height={isMobile ? 220 : 280}>
-            <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
+          <ResponsiveContainer width="100%" height={isMobile ? 220 : 350}>
+            <PieChart margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
               <defs>
                 {bankData.map((entry, index) => (
                   <filter key={`shadow-${index}`} id={`bank-shadow-${index}`} x="-20%" y="-20%" width="140%" height="140%">
@@ -3124,12 +3124,12 @@ const Dashboard = () => {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                outerRadius={isMobile ? 70 : 100}
-                innerRadius={isMobile ? 30 : 50}
+                outerRadius={isMobile ? 70 : 130}
+                innerRadius={isMobile ? 30 : 60}
                 paddingAngle={2}
                 fill="#8884d8"
                 dataKey="value"
-                nameKey="name"
+                nameKey="category"
                 label={getCustomizedPieLabel}
                 animationDuration={800}
                 animationBegin={200}

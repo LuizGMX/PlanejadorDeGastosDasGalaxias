@@ -295,29 +295,35 @@ const AddExpense = () => {
       if (formData.has_installments) {
         // Validação do número de parcelas
         if (!formData.total_installments) {
-          throw new Error('O número de parcelas é obrigatório');
+          throw new Error('O número total de parcelas é obrigatório');
         }
         if (formData.total_installments < 2) {
-          throw new Error('O número de parcelas deve ser no mínimo 2');
+          throw new Error('O número total de parcelas deve ser no mínimo 2');
         }
         if (formData.total_installments > 100) {
-          throw new Error('O número de parcelas não pode ser maior que 100');
+          throw new Error('O número total de parcelas não pode ser maior que 100');
         }
 
         // Validação da parcela atual
-        if (formData.current_installment !== undefined && formData.current_installment !== '') {
-          if (formData.current_installment < 1) {
-            throw new Error('O número da parcela atual deve ser no mínimo 1');
-          }
-          if (formData.current_installment > formData.total_installments) {
-            throw new Error('O número da parcela atual não pode ser maior que o total de parcelas');
-          }
+        if (!formData.current_installment) {
+          throw new Error('O número da parcela atual é obrigatório');
+        }
+        if (formData.current_installment < 1) {
+          throw new Error('O número da parcela atual deve ser no mínimo 1');
+        }
+        if (formData.current_installment > formData.total_installments) {
+          throw new Error('O número da parcela atual não pode ser maior que o total de parcelas');
         }
 
         // Validação da data para pagamento parcelado
         const expenseDate = new Date(formData.expense_date);
         if (isNaN(expenseDate.getTime())) {
-          throw new Error('A data da despesa é obrigatória para pagamento parcelado');
+          throw new Error('A data da parcela atual é obrigatória');
+        }
+        
+        // Informe o usuário que o valor inserido é o valor da parcela e não o total
+        if (amount <= 0) {
+          throw new Error('O valor da parcela deve ser maior que zero');
         }
       }
 
@@ -339,34 +345,21 @@ const AddExpense = () => {
         cleanAmount = cleanAmount.replace(',', '.');
       }
       
-      const totalAmount = parseFloat(cleanAmount) || 0;
+      const amount = parseFloat(cleanAmount) || 0;
       
-      if (totalAmount <= 0) {
+      if (amount <= 0) {
         throw new Error('O valor da despesa deve ser maior que zero');
       }
       
-      // Calcula o valor da parcela se for pagamento parcelado
-      const installmentAmount = formData.has_installments
-        ? (totalAmount / formData.total_installments).toFixed(2)
-        : totalAmount.toFixed(2);
+      // Não calculamos mais o valor da parcela - usamos diretamente o valor informado
+      // Para parcelas, o amount já é o valor de cada parcela
 
-      // Calcula a data da primeira parcela
-      let first_installment_date = formData.expense_date;
-      if (formData.has_installments && formData.current_installment && formData.current_installment > 1) {
-        const firstDate = new Date(new Date(formData.expense_date));
-        firstDate.setMonth(firstDate.getMonth() - (formData.current_installment - 1));
-        first_installment_date = firstDate.toISOString().split('T')[0];
-      }
-
-      // Define as datas para despesas fixas
-      let start_date = null;
-      if (formData.is_recurring) {        
-        start_date = formData.start_date || formData.expense_date;
-      }
+      // Não precisamos mais calcular a data da primeira parcela, pois só registramos
+      // as parcelas a partir da atual
 
       const dataToSend = {
         description: formData.description,
-        amount: parseFloat(installmentAmount),
+        amount: amount,
         category_id: parseInt(formData.category_id),
         bank_id: parseInt(formData.bank_id),
         expense_date: formData.expense_date,
@@ -374,9 +367,7 @@ const AddExpense = () => {
         has_installments: Boolean(formData.has_installments),
         is_recurring: Boolean(formData.is_recurring),
         is_in_cash: !formData.is_recurring && !formData.has_installments,
-        first_installment_date,
-        start_date,
-        end_date: null,
+        current_installment: formData.has_installments ? parseInt(formData.current_installment) : null,
         total_installments: formData.has_installments ? parseInt(formData.total_installments) : null,
         recurrence_type: formData.is_recurring ? formData.recurrence_type : null,
         user_id: auth.user?.id // Garante que o ID do usuário está incluído
@@ -456,17 +447,11 @@ const AddExpense = () => {
   };
 
   const getInstallmentMessage = (total, current) => {
-    if (current === 1) {
-      if (total - 1 === 1) {
-        return `Será criada uma outra parcela (a última), além da parcela atual`;
-      }
-      return `Serão criadas as próximas ${formatPluralText(total - 1, 'parcela', 'parcelas')} a partir desta data`;
-    } else if (current === total) {
-      return `${total - 1 === 1 ? 'Será criada' : 'Serão criadas'} ${formatPluralText(total - 1, 'parcela anterior', 'parcelas anteriores')} a esta data`;
+    if (current === total) {
+      return `Esta é a última parcela de ${total}`;
     } else {
-      const anteriores = current - 1;
-      const posteriores = total - current;
-      return `Além da parcela atual, ${anteriores + posteriores === 1 ? 'será criada' : 'serão criadas'} ${formatPluralText(anteriores, 'parcela anterior', 'parcelas anteriores')} e ${formatPluralText(posteriores, 'parcela posterior', 'parcelas posteriores')} a esta data`;
+      const restantes = total - current;
+      return `Serão registradas apenas ${formatPluralText(restantes, 'a parcela restante', 'as ' + restantes + ' parcelas restantes')} a partir desta`;
     }
   };
 
@@ -518,26 +503,23 @@ const AddExpense = () => {
 
             <div className={dataTableStyles.formGroup}>
               <label className={dataTableStyles.formLabel}>
-                Valor
+                <BsCurrencyDollar size={16} /> {formData.has_installments ? 'Valor da Parcela' : 'Valor'}
               </label>
-              <div className={dataTableStyles.input}>
-                
-                <CurrencyInput
-                  name="amount"
-                  placeholder="R$ 0,00"
-                  decimalsLimit={2}
-                  prefix="R$ "
-                  decimalSeparator=","
-                  groupSeparator="."
-                  value={formData.amount}
-                  onValueChange={(value) => {
-                    const numericValue = value ? parseFloat(value.replace(/\./g, '').replace(',', '.')) : '';
-                    setFormData(prev => ({ ...prev, amount: numericValue }));
-                  }}
-                  className={dataTableStyles.formInput}
-                  required
-                />
-              </div>
+              <CurrencyInput
+                name="amount"
+                value={formData.amount}
+                placeholder="R$ 0,00"
+                decimalsLimit={2}
+                onValueChange={(value) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    amount: value
+                  }));
+                }}
+                intlConfig={{ locale: 'pt-BR', currency: 'BRL' }}
+                className={dataTableStyles.formInput}
+                required
+              />
             </div>
           </div>
 
@@ -598,7 +580,7 @@ const AddExpense = () => {
               </label>
               <div className={dataTableStyles.inlineFieldsContainer}>
                 <div className={dataTableStyles.formGroupHalf}>
-                  <label className={dataTableStyles.formLabel}>Data da Primeira Parcela</label>
+                  <label className={dataTableStyles.formLabel}>Data da Parcela Atual</label>
                   <input
                     type="date"
                     name="expense_date"
@@ -610,18 +592,37 @@ const AddExpense = () => {
                 </div>
                 
                 <div className={dataTableStyles.formGroupHalf}>
-                  <label className={dataTableStyles.formLabel}>Número de Parcelas</label>
-                  <input
-                    type="number"
-                    min="2"
-                    max="60"
-                    name="total_installments"
-                    value={formData.total_installments}
-                    onChange={handleChange}
-                    className={dataTableStyles.formInput}
-                    required
-                  />
+                  <label className={dataTableStyles.formLabel}>Parcela Atual / Total</label>
+                  <div className={dataTableStyles.inlineFields}>
+                    <input
+                      type="number"
+                      min="1"
+                      max={formData.total_installments}
+                      name="current_installment"
+                      value={formData.current_installment}
+                      onChange={handleChange}
+                      className={dataTableStyles.formInput}
+                      style={{width: '45%'}}
+                      required
+                    />
+                    <span style={{margin: '0 5px'}}>/</span>
+                    <input
+                      type="number"
+                      min={formData.current_installment}
+                      max="60"
+                      name="total_installments"
+                      value={formData.total_installments}
+                      onChange={handleChange}
+                      className={dataTableStyles.formInput}
+                      style={{width: '45%'}}
+                      required
+                    />
+                  </div>
                 </div>
+              </div>
+              <div className={dataTableStyles.formHelpText} style={{marginTop: '8px', fontSize: '0.85em', color: 'var(--text-muted)'}}>
+                <p>* O valor informado acima é o valor de cada parcela individualmente.</p>
+                <p>* Apenas as parcelas restantes a partir da atual serão registradas.</p>
               </div>
             </div>
           )}
