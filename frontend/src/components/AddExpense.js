@@ -322,20 +322,21 @@ const AddExpense = () => {
         }
         
         // Informe o usuário que o valor inserido é o valor da parcela e não o total
-        let amount;
-        // Garante que o amount seja um número e não uma string
-        let cleanAmount = formData.amount;
-        if (typeof cleanAmount === 'string') {
+        let amount = formData.amount;
+        
+        // Verifica se o amount é uma string e converte para número se necessário
+        if (typeof amount === 'string' && amount) {
           // Remove caracteres não numéricos exceto pontos e vírgulas
-          cleanAmount = cleanAmount.replace(/[^\d,.]/g, '');
-          // Substitui vírgula por ponto
-          cleanAmount = cleanAmount.replace(',', '.');
+          amount = amount.replace(/[^\d,.]/g, '');
+          // Substitui vírgula por ponto para conversão correta
+          amount = amount.replace(',', '.');
+          // Converte para número
+          amount = parseFloat(amount);
         }
         
-        amount = parseFloat(cleanAmount) || 0;
-        
-        if (amount <= 0) {
-          throw new Error('O valor da parcela deve ser maior que zero');
+        // Se após a conversão o valor não for um número válido, usa 0
+        if (isNaN(amount)) {
+          amount = 0;
         }
       }
 
