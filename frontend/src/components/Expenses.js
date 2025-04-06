@@ -59,9 +59,6 @@ const Expenses = () => {
   const [noExpensesMessage, setNoExpensesMessage] = useState(null);
   const [showFilters, setShowFilters] = useState(window.innerWidth > 768);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-  const [touchStartX, setTouchStartX] = useState(0);
-  const [touchEndX, setTouchEndX] = useState(0);
-  const [activeSwipeCard, setActiveSwipeCard] = useState(null);
   const [expandedCardDetails, setExpandedCardDetails] = useState({});
 
   const years = Array.from(
@@ -957,37 +954,6 @@ const Expenses = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, [isMobile]);
 
-  // Funções para manipulação de gestos de toque
-  const handleTouchStart = (id, e) => {
-    setTouchStartX(e.targetTouches[0].clientX);
-    // Fechamos qualquer cartão aberto que não seja este
-    if (activeSwipeCard && activeSwipeCard !== id) {
-      setActiveSwipeCard(null);
-    }
-  };
-
-  const handleTouchMove = (id, e) => {
-    setTouchEndX(e.targetTouches[0].clientX);
-  };
-
-  const handleTouchEnd = (id) => {
-    const swipeThreshold = 100; // pixels mínimos para considerar um swipe
-    const diff = touchStartX - touchEndX;
-    
-    // Se deslizou da direita para a esquerda (diff positivo) além do threshold, ativamos o swipe
-    if (diff > swipeThreshold) {
-      setActiveSwipeCard(id);
-    } 
-    // Se deslizou da esquerda para a direita (diff negativo) além do threshold, fechamos o swipe
-    else if (diff < -swipeThreshold && activeSwipeCard === id) {
-      setActiveSwipeCard(null);
-    }
-    
-    // Resetamos os valores de toque
-    setTouchStartX(0);
-    setTouchEndX(0);
-  };
-
   const toggleCardDetails = (id) => {
     setExpandedCardDetails(prev => ({
       ...prev,
@@ -1067,168 +1033,146 @@ const Expenses = () => {
               <div className={dataTableStyles.mobileCardView}>
                 {expenses.map((expense) => {
                   const isExpanded = expandedCardDetails[expense.id];
-                  const isSwipeActive = activeSwipeCard === expense.id;
 
                   return (
                     <div 
                       key={expense.id} 
-                      className={`${dataTableStyles.mobileCard} ${isSwipeActive ? dataTableStyles.mobileCardSwipeActive : ''}`}
-                      onTouchStart={(e) => handleTouchStart(expense.id, e)}
-                      onTouchMove={(e) => handleTouchMove(expense.id, e)}
-                      onTouchEnd={() => handleTouchEnd(expense.id)}
+                      className={dataTableStyles.mobileCard}
                     >
-                      {/* Mobile card content - using the same structure as renderMobileCards */}
-                      <div className={dataTableStyles.mobileCardSwipeState}>
-                        <div className={dataTableStyles.mobileCardSelect}>
-                          <label className={dataTableStyles.checkboxContainer}>
-                            <input
-                              type="checkbox"
-                              checked={selectedExpenses.includes(expense.id)}
-                              onChange={(e) => handleSelectExpense(expense.id, e)}
-                              className={dataTableStyles.checkbox}
-                              disabled={expense.has_installments}
-                            />
-                            <span className={dataTableStyles.checkmark}></span>
-                          </label>
-                        </div>
-                        
-                        <div className={dataTableStyles.mobileCardHeader}>
-                          <h3 className={dataTableStyles.mobileCardTitle}>{expense.description}</h3>
-                          <span className={`${dataTableStyles.amountBadge} ${dataTableStyles.expenseAmount} ${dataTableStyles.mobileCardAmount}`}>
-                            R$ {Number(expense.amount).toFixed(2)}
-                          </span>
-                        </div>
-                        
-                        <div className={dataTableStyles.mobileCardDetails}>
-                          <div className={dataTableStyles.mobileCardDetail}>
-                            <span className={dataTableStyles.mobileCardLabel}>Data</span>
-                            <span className={dataTableStyles.mobileCardValue}>{formatDate(expense.expense_date)}</span>
-                          </div>
-                          
-                          <div className={dataTableStyles.mobileCardDetail}>
-                            <span className={dataTableStyles.mobileCardLabel}>Categoria</span>
-                            <span className={dataTableStyles.mobileCardValue}>{expense.Category?.category_name}</span>
-                          </div>
-                          
-                          {(!isExpanded) ? (
-                            <>
-                              <div className={dataTableStyles.mobileCardDetail}>
-                                <span className={dataTableStyles.mobileCardLabel}>Método</span>
-                                <span className={dataTableStyles.mobileCardValue}>
-                                  {expense.payment_method === 'credit_card' ? 'Cartão de Crédito' : 
-                                  expense.payment_method === 'debit_card' ? 'Cartão de Débito' : 
-                                  expense.payment_method === 'pix' ? 'PIX' : 'Dinheiro'}
-                                </span>
-                              </div>
-                              
-                              {expense.has_installments && (
-                                <div className={dataTableStyles.mobileCardDetail}>
-                                  <span className={dataTableStyles.mobileCardLabel}>Parcelas</span>
-                                  <span className={dataTableStyles.mobileCardValue}>
-                                    {expense.current_installment}/{expense.total_installments}
-                                  </span>
-                                </div>
-                              )}
-                            </>
-                          ) : (
-                            <>
-                              <div className={dataTableStyles.mobileCardDetail}>
-                                <span className={dataTableStyles.mobileCardLabel}>Método</span>
-                                <span className={dataTableStyles.mobileCardValue}>
-                                  {expense.payment_method === 'credit_card' ? 'Cartão de Crédito' : 
-                                  expense.payment_method === 'debit_card' ? 'Cartão de Débito' : 
-                                  expense.payment_method === 'pix' ? 'PIX' : 'Dinheiro'}
-                                </span>
-                              </div>
-                              
-                              {expense.has_installments && (
-                                <div className={dataTableStyles.mobileCardDetail}>
-                                  <span className={dataTableStyles.mobileCardLabel}>Parcelas</span>
-                                  <span className={dataTableStyles.mobileCardValue}>
-                                    {expense.current_installment}/{expense.total_installments}
-                                  </span>
-                                </div>
-                              )}
-                              
-                              <div className={dataTableStyles.mobileCardDetail}>
-                                <span className={dataTableStyles.mobileCardLabel}>Tipo</span>
-                                <span className={dataTableStyles.mobileCardValue}>
-                                  {expense.is_recurring ? 'Despesa fixa' : 
-                                  expense.has_installments ? 'Parcelado' : 'Pagamento único'}
-                                </span>
-                              </div>
-                              
-                              {expense.note && (
-                                <div className={dataTableStyles.mobileCardDetail}>
-                                  <span className={dataTableStyles.mobileCardLabel}>Observação</span>
-                                  <span className={dataTableStyles.mobileCardValue}>{expense.note}</span>
-                                </div>
-                              )}
-                            </>
-                          )}
-                        </div>
-                        
-                        <div className={dataTableStyles.mobileCardActions}>
-                          <div className={dataTableStyles.mobileCardType}>
-                            {expense.is_recurring ? (
-                              <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
-                                <BsRepeat /> Fixo
-                              </span>
-                            ) : expense.has_installments ? (
-                              <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.installmentsType}`}>
-                                <BsCreditCard2Front /> Parcelado
-                              </span>
-                            ) : (
-                              <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
-                                <BsCurrencyDollar /> Único
-                              </span>
-                            )}
-                          </div>
-                          
-                          <div className={dataTableStyles.mobileCardActionButtons}>
-                            <button 
-                              onClick={() => handleEditClick(expense)} 
-                              className={dataTableStyles.actionButton}
-                              title="Editar"
-                            >
-                              <BsPencil />
-                            </button>
-                            <button 
-                              onClick={() => handleDeleteClick(expense)} 
-                              className={`${dataTableStyles.actionButton} ${dataTableStyles.delete}`}
-                              title="Excluir"
-                            >
-                              <BsTrash />
-                            </button>
-                          </div>
-                        </div>
-                        
-                        <button 
-                          className={dataTableStyles.mobileCardDetailToggle}
-                          onClick={() => toggleCardDetails(expense.id)}
-                        >
-                          {isExpanded ? (
-                            <>Mostrar Menos <BsChevronUp /></>
-                          ) : (
-                            <>Mostrar Mais <BsChevronDown /></>
-                          )}
-                        </button>
+                      <div className={dataTableStyles.mobileCardSelect}>
+                        <label className={dataTableStyles.checkboxContainer}>
+                          <input
+                            type="checkbox"
+                            checked={selectedExpenses.includes(expense.id)}
+                            onChange={(e) => handleSelectExpense(expense.id, e)}
+                            className={dataTableStyles.checkbox}
+                            disabled={expense.has_installments}
+                          />
+                          <span className={dataTableStyles.checkmark}></span>
+                        </label>
                       </div>
                       
-                      <div className={dataTableStyles.mobileCardSwipeActions}>
-                        <div 
-                          className={dataTableStyles.mobileCardSwipeEdit}
-                          onClick={() => handleEditClick(expense)}
-                        >
-                          <BsPencil size={20} />
+                      <div className={dataTableStyles.mobileCardHeader}>
+                        <h3 className={dataTableStyles.mobileCardTitle}>{expense.description}</h3>
+                        <span className={`${dataTableStyles.amountBadge} ${dataTableStyles.expenseAmount} ${dataTableStyles.mobileCardAmount}`}>
+                          R$ {Number(expense.amount).toFixed(2)}
+                        </span>
+                      </div>
+                      
+                      <div className={dataTableStyles.mobileCardDetails}>
+                        <div className={dataTableStyles.mobileCardDetail}>
+                          <span className={dataTableStyles.mobileCardLabel}>Data</span>
+                          <span className={dataTableStyles.mobileCardValue}>{formatDate(expense.expense_date)}</span>
                         </div>
-                        <div 
-                          className={dataTableStyles.mobileCardSwipeDelete}
-                          onClick={() => handleDeleteClick(expense)}
-                        >
-                          <BsTrash size={20} />
+                        
+                        <div className={dataTableStyles.mobileCardDetail}>
+                          <span className={dataTableStyles.mobileCardLabel}>Categoria</span>
+                          <span className={dataTableStyles.mobileCardValue}>{expense.Category?.category_name}</span>
+                        </div>
+                        
+                        {(!isExpanded) ? (
+                          <>
+                            <div className={dataTableStyles.mobileCardDetail}>
+                              <span className={dataTableStyles.mobileCardLabel}>Método</span>
+                              <span className={dataTableStyles.mobileCardValue}>
+                                {expense.payment_method === 'credit_card' ? 'Cartão de Crédito' : 
+                                expense.payment_method === 'debit_card' ? 'Cartão de Débito' : 
+                                expense.payment_method === 'pix' ? 'PIX' : 'Dinheiro'}
+                              </span>
+                            </div>
+                            
+                            {expense.has_installments && (
+                              <div className={dataTableStyles.mobileCardDetail}>
+                                <span className={dataTableStyles.mobileCardLabel}>Parcelas</span>
+                                <span className={dataTableStyles.mobileCardValue}>
+                                  {expense.current_installment}/{expense.total_installments}
+                                </span>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <div className={dataTableStyles.mobileCardDetail}>
+                              <span className={dataTableStyles.mobileCardLabel}>Método</span>
+                              <span className={dataTableStyles.mobileCardValue}>
+                                {expense.payment_method === 'credit_card' ? 'Cartão de Crédito' : 
+                                expense.payment_method === 'debit_card' ? 'Cartão de Débito' : 
+                                expense.payment_method === 'pix' ? 'PIX' : 'Dinheiro'}
+                              </span>
+                            </div>
+                            
+                            {expense.has_installments && (
+                              <div className={dataTableStyles.mobileCardDetail}>
+                                <span className={dataTableStyles.mobileCardLabel}>Parcelas</span>
+                                <span className={dataTableStyles.mobileCardValue}>
+                                  {expense.current_installment}/{expense.total_installments}
+                                </span>
+                              </div>
+                            )}
+                            
+                            <div className={dataTableStyles.mobileCardDetail}>
+                              <span className={dataTableStyles.mobileCardLabel}>Tipo</span>
+                              <span className={dataTableStyles.mobileCardValue}>
+                                {expense.is_recurring ? 'Despesa fixa' : 
+                                expense.has_installments ? 'Parcelado' : 'Pagamento único'}
+                              </span>
+                            </div>
+                            
+                            {expense.note && (
+                              <div className={dataTableStyles.mobileCardDetail}>
+                                <span className={dataTableStyles.mobileCardLabel}>Observação</span>
+                                <span className={dataTableStyles.mobileCardValue}>{expense.note}</span>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                      
+                      <div className={dataTableStyles.mobileCardActions}>
+                        <div className={dataTableStyles.mobileCardType}>
+                          {expense.is_recurring ? (
+                            <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
+                              <BsRepeat /> Fixo
+                            </span>
+                          ) : expense.has_installments ? (
+                            <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.installmentsType}`}>
+                              <BsCreditCard2Front /> Parcelado
+                            </span>
+                          ) : (
+                            <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
+                              <BsCurrencyDollar /> Único
+                            </span>
+                          )}
+                        </div>
+                        
+                        <div className={dataTableStyles.mobileCardActionButtons}>
+                          <button 
+                            onClick={() => handleEditClick(expense)} 
+                            className={dataTableStyles.actionButton}
+                            title="Editar"
+                          >
+                            <BsPencil />
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteClick(expense)} 
+                            className={`${dataTableStyles.actionButton} ${dataTableStyles.delete}`}
+                            title="Excluir"
+                          >
+                            <BsTrash />
+                          </button>
                         </div>
                       </div>
+                      
+                      <button 
+                        className={dataTableStyles.mobileCardDetailToggle}
+                        onClick={() => toggleCardDetails(expense.id)}
+                      >
+                        {isExpanded ? (
+                          <>Mostrar Menos <BsChevronUp /></>
+                        ) : (
+                          <>Mostrar Mais <BsChevronDown /></>
+                        )}
+                      </button>
                     </div>
                   );
                 })}

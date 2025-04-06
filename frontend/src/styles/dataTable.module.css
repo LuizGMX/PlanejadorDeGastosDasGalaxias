@@ -1064,114 +1064,176 @@
   }
 }
 
-/* Mobile card view container */
-.mobileCardView {
-  display: none !important; /* Ensure it's hidden on desktop */
-  flex-direction: column;
-  gap: 16px;
-  width: 100%;
-  margin-bottom: 24px;
-}
-
-/* Table container for desktop view */
-.tableContainer {
-  display: block; /* Ensure it's visible on desktop */
-  width: 100%;
-  overflow-x: auto;
-}
-
-/* Media query for mobile devices */
-@media (max-width: 768px) {
-  .mobileCardView {
-    display: flex !important; /* Force display on mobile */
-  }
-  
-  .tableContainer {
-    display: none !important; /* Force hide on mobile */
-  }
-}
-
-/* Estilos para gestos touch nos cards mobile */
+/* Improved mobile card styling */
 .mobileCard {
   position: relative;
-  overflow: hidden;
-  transition: transform 0.3s ease, background-color 0.2s ease;
-  cursor: pointer;
-  touch-action: pan-y;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
   background-color: var(--card-background);
-  border-radius: 12px;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   border: 1px solid var(--border-color);
-  padding: 16px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
 }
 
 .mobileCard:active {
-  background-color: rgba(var(--primary-rgb), 0.1);
   transform: scale(0.98);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
+/* Remove swipe actions */
 .mobileCardSwipeActions {
+  display: none;
+}
+
+/* Improved mobile card header */
+.mobileCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mobileCardHeader::after {
+  content: '';
   position: absolute;
   top: 0;
-  right: -160px;
-  width: 160px;
-  height: 100%;
-  display: flex;
-  transition: right 0.3s ease;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary-color) 0%, var(--gradient-end) 100%);
+  border-radius: 16px 16px 0 0;
 }
 
-.mobileCardSwipeEdit,
-.mobileCardSwipeDelete {
+.mobileCardTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin: 0;
+  flex: 1;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.mobileCardAmount {
+  font-size: 16px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 8px;
+  margin-left: 10px;
+}
+
+/* Mobile card details styling */
+.mobileCardDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.mobileCardDetail {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mobileCardLabel {
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.mobileCardValue {
+  font-size: 14px;
+  color: var(--text-color);
+  font-weight: 500;
+  text-align: right;
+}
+
+/* Actions section styling */
+.mobileCardActions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+}
+
+.mobileCardType {
+  display: flex;
+  align-items: center;
+}
+
+.mobileCardActionButtons {
+  display: flex;
+  gap: 8px;
+}
+
+/* Improved action buttons */
+.mobileCardActionButtons .actionButton {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 80px;
-  height: 100%;
+  background-color: var(--secondary-color);
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+  transition: all 0.2s ease;
+}
+
+.mobileCardActionButtons .actionButton:hover,
+.mobileCardActionButtons .actionButton:active {
+  background-color: var(--primary-color);
+  color: var(--button-text-color);
+}
+
+.mobileCardActionButtons .actionButton.delete {
+  color: var(--error-color);
+  border-color: var(--error-color);
+}
+
+.mobileCardActionButtons .actionButton.delete:hover,
+.mobileCardActionButtons .actionButton.delete:active {
+  background-color: var(--error-color);
   color: white;
-  font-weight: 600;
 }
 
-.mobileCardSwipeEdit {
-  background-color: rgba(var(--primary-rgb), 0.8);
-}
-
-.mobileCardSwipeDelete {
-  background-color: rgba(var(--error-rgb), 0.8);
-}
-
-.mobileCardSwipeState {
-  transition: transform 0.3s ease;
-}
-
-.mobileCardSwipeActive .mobileCardSwipeState {
-  transform: translateX(-160px);
-}
-
-.mobileCardSwipeActive .mobileCardSwipeActions {
-  right: 0;
-}
-
-/* Botão para mostrar mais detalhes no card */
+/* Show/hide details button */
 .mobileCardDetailToggle {
   width: 100%;
   padding: 10px;
-  background-color: transparent;
-  border: none;
-  border-top: 1px solid var(--border-color);
+  background-color: var(--secondary-color);
+  border: 1px solid var(--border-color);
   color: var(--text-secondary);
   font-size: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 16px;
   cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s ease;
 }
 
 .mobileCardDetailToggle:hover,
 .mobileCardDetailToggle:focus {
   color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+/* Selection checkbox styling */
+.mobileCardSelect {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 5;
 }
 
 /* Animation for touch feedback */
@@ -1538,4 +1600,110 @@
   .inlineFieldsContainer .inputIcon {
     font-size: 14px;
   }
+}
+
+.mobileCardType .typeStatus {
+  margin: 0;
+  font-size: 13px;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mobileCardType .typeStatus svg {
+  font-size: 14px;
+}
+
+.fixedType {
+  background-color: rgba(79, 70, 229, 0.1);
+  color: #6366f1;
+  border: 1px solid #6366f1;
+}
+
+.oneTimeType {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border: 1px solid #10b981;
+}
+
+.installmentsType {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+  border: 1px solid #f59e0b;
+}
+
+/* Multiple cards arrangement for tablets */
+@media (min-width: 600px) and (max-width: 768px) {
+  .mobileCardView {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+  }
+  
+  .mobileCard {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .mobileCardActions {
+    margin-top: auto;
+  }
+}
+
+/* Mobile card view container */
+.mobileCardView {
+  display: none !important; /* Ensure it's hidden on desktop */
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  margin-bottom: 24px;
+  padding: 0 8px;
+}
+
+@media (max-width: 768px) {
+  .mobileCardView {
+    display: flex !important; /* Force display on mobile */
+  }
+  
+  .tableContainer {
+    display: none !important; /* Force hide on mobile */
+  }
+}
+
+/* Improved mobile card header with gradient bar */
+.mobileCardHeader::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary-color) 0%, var(--gradient-end) 100%);
+  border-radius: 16px 16px 0 0;
+}
+
+/* Enhanced expense amount styling */
+.expenseAmount.mobileCardAmount {
+  font-size: 15px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 8px;
+  margin-left: 10px;
+  background-color: rgba(255, 107, 107, 0.15);
+  color: var(--error-color);
+  border: 1px solid var(--error-color);
+}
+
+/* Badge styling in mobile view */
+.typeStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
 } 
