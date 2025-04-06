@@ -452,7 +452,7 @@
 .chartContainer {
   background-color: var(--card-background);
   border-radius: 12px;
-  padding: 20px;
+  
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   min-height: 380px;
   display: flex;
@@ -938,22 +938,33 @@
 @media (max-width: 768px) {
   .dashboardContainer {
     padding: 1rem;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
   }
 
   .chartsGrid {
     grid-template-columns: 1fr;
+    margin: 0 auto;
+    width: 100%;
   }
 
   .chartContainer {
-    min-height: 300px;
+    margin: 0 auto;
+    width: 100%;
   }
 
   .chartContainer.expanded {
-    min-height: 400px;
+    width: 100%;
   }
 
   .filtersContainer {
     flex-direction: column;
+    width: 100%;
+  }
+
+  .filterSelector {
+    width: 100%;
   }
 
   .filterSelect {
@@ -970,7 +981,105 @@
   }
 
   .budgetStats {
-    grid-template-columns: 1fr;
+    flex-direction: column;
+    padding: 1rem;
+  }
+  
+  .filterRow {
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+  
+  .filtersContainer {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .emptyStateContainer {
+    width: 100%;
+    text-align: center;
+    padding: 1rem;
+  }
+  
+  .emptyStateButtons {
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+  
+  .addExpenseButton,
+  .addIncomeButton {
+    width: 100%;
+    max-width: 300px;
+    margin: 0.5rem 0;
+  }
+  
+  .navigationTabs {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .navTab {
+    flex: 1;
+    text-align: center;
+  }
+  
+  .greeting {
+    text-align: center;
+    width: 100%;
+  }
+  
+  .dashboardHeader {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+  
+  .chartHeader {
+    text-align: center;
+  }
+  
+  .chartSubtitle {
+    justify-content: center;
+  }
+
+  /* Ajustes específicos para centralizar certos componentes */
+  .bankPieContainer, 
+  .bankInsights,
+  .chartBody,
+  .chartHeader {
+    margin: 0 auto;
+    width: 100%;
+    text-align: center;
+  }
+  
+  .budgetInfoContainer,
+  .goalCard,
+  .timelineContainer {
+    margin: 0 auto;
+    width: 100%;
+  }
+  
+  /* Centralizar informações e estatísticas */
+  .infoItem,
+  .statCard,
+  .budgetStat {
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  /* Manter os gráficos centralizados */
+  .recharts-responsive-container {
+    margin: 0 auto !important;
+  }
+  
+  /* Melhorar o espaçamento interior dos cartões */
+  .chartContainer,
+  .timelineContainer,
+  .budgetInfoContainer,
+  .goalCard {
+    padding: 0.75rem;
   }
 }
 
