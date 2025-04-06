@@ -835,14 +835,33 @@ const Dashboard = () => {
     '#673AB7', // Deep purple
   ];
 
-  // Shared label renderer for better pie chart labels
-  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }) => {
+  // Utility function to detect mobile view
+  const isMobileView = () => {
+    return window.innerWidth <= 768;
+  };
+
+  // Use a hook to track window size changes
+  const [isMobile, setIsMobile] = useState(isMobileView());
+  
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(isMobileView());
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  // Shared function for customizing label rendering based on device
+  const getCustomizedPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }) => {
+    if (isMobile || percent < 0.05) return null;
+    
     const RADIAN = Math.PI / 180;
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-    if (percent < 0.05) return null; // Don't show labels for tiny slices
 
     return (
       <text 
@@ -860,384 +879,6 @@ const Dashboard = () => {
       </text>
     );
   };
-
-  // Custom tooltip component for all charts
-  const CustomPieTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div style={{ 
-          backgroundColor: 'var(--card-background)', 
-          border: '1px solid var(--border-color)',
-          borderRadius: '6px',
-          padding: '10px',
-          boxShadow: '0 4px 8px rgba(0,0,0,0.15)'
-        }}>
-          <p style={{ margin: '0 0 5px 0', fontWeight: 'bold', color: 'var(--text-color)' }}>
-            {payload[0].name}
-          </p>
-          <p style={{ margin: '0', color: payload[0].color }}>
-            {formatCurrency(payload[0].value)} ({(payload[0].payload.percent * 100).toFixed(1)}%)
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
-  
-  // Definição das funções fetchData e fetchAllTransactions fora do useEffect
-  // para que possam ser acessadas de qualquer lugar no componente
-    const fetchData = async () => {
-      let retryCount = 0;
-      const maxRetries = 3;
-      
-      const attemptFetch = async () => {
-        try {
-        setLoading(true);
-        setError(null);
-        
-        // Garantir que temos um token válido, mesmo após refresh da página
-        // Tentar primeiro do contexto de autenticação
-        let token = auth.token;
-        
-        // Se não tiver um token no contexto, tentar buscar do localStorage
-        if (!token) {
-          console.log('Token não encontrado no contexto, buscando do localStorage...');
-          token = localStorage.getItem('token');
-          
-          if (!token) {
-            console.error('Nenhum token de autenticação encontrado');
-            navigate('/login');
-            return;
-          } else {
-            console.log('Token recuperado do localStorage');
-          }
-        }
-        
-        // Construir queryParams baseado nos filtros
-        const queryParams = new URLSearchParams();
-        
-        // Adiciona período ao filtro
-            let startDate, endDate;
-            
-        if (selectedPeriod === 'current') {
-          // Mês atual
-          const now = new Date();
-          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-          endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-          queryParams.append('startDate', startDate.toISOString().split('T')[0]);
-          queryParams.append('endDate', endDate.toISOString().split('T')[0]);
-        } else if (selectedPeriod === 'last') {
-          // Mês anterior
-          const now = new Date();
-          startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-          endDate = new Date(now.getFullYear(), now.getMonth(), 0);
-          queryParams.append('startDate', startDate.toISOString().split('T')[0]);
-          queryParams.append('endDate', endDate.toISOString().split('T')[0]);
-        } else if (selectedPeriod === 'next') {
-          // Próximo mês
-          const now = new Date();
-          startDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-          endDate = new Date(now.getFullYear(), now.getMonth() + 2, 0);
-          queryParams.append('startDate', startDate.toISOString().split('T')[0]);
-          queryParams.append('endDate', endDate.toISOString().split('T')[0]);
-        } else if (selectedPeriod === 'year') {
-          // Ano atual
-          const now = new Date();
-          startDate = new Date(now.getFullYear(), 0, 1);
-          endDate = new Date(now.getFullYear(), 11, 31);
-          queryParams.append('startDate', startDate.toISOString().split('T')[0]);
-          queryParams.append('endDate', endDate.toISOString().split('T')[0]);
-        } else if (selectedPeriod === 'custom' && customDateRange) {
-          // Período personalizado
-          startDate = createDateWithStartOfDay(customDateRange.start);
-          endDate = createDateWithEndOfDay(customDateRange.end);
-          queryParams.append('startDate', customDateRange.start);
-          queryParams.append('endDate', customDateRange.end);
-        }
-          
-          // Adiciona categorias ao filtro
-          if (selectedCategories.length > 0) {
-            selectedCategories.forEach(category => queryParams.append('categories[]', category));
-          }
-          
-          // Adiciona bancos ao filtro
-          if (selectedBanks.length > 0) {
-            selectedBanks.forEach(bank => queryParams.append('banks[]', bank));
-          }
-
-          const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/dashboard?${queryParams}`, {
-            headers: {
-            'Authorization': `Bearer ${token}`
-            }
-          });
-          
-          if (response.status === 401) {
-            navigate('/login');
-            return;
-          }
-        
-        // Verificar se a resposta parece ser HTML (possível página de erro 502)
-        const contentType = response.headers.get('content-type');
-        const responseText = await response.text();
-        
-        // Se parece ser HTML ou contém <!doctype, é provavelmente uma página de erro
-        if (contentType?.includes('text/html') || responseText.toLowerCase().includes('<!doctype')) {
-          console.error('Resposta da API contém HTML ao invés de JSON. Possível erro 502 Bad Gateway ou URL incorreta.');
-          console.log('URL da requisição:', `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/dashboard?${queryParams}`);
-          console.log('Valor de REACT_APP_API_URL:', process.env.REACT_APP_API_URL);
-          console.log('Conteúdo da resposta (primeiros 100 caracteres):', responseText.substring(0, 100));
-          throw new Error('Servidor temporariamente indisponível ou configuração incorreta. Por favor, verifique os logs e tente novamente.');
-        }
-          
-          if (!response.ok) {
-            // Get detailed error message if available
-            let errorMessage = 'Erro ao carregar dados do dashboard';
-            try {
-            // Parsear o JSON manualmente já que usamos text() acima
-            const errorData = JSON.parse(responseText);
-              errorMessage = errorData.message || errorMessage;
-            } catch (e) {
-              // If can't parse error JSON, use status text
-              errorMessage = `${errorMessage}: ${response.statusText}`;
-            }
-            throw new Error(errorMessage);
-          }
-          
-        // Parsear o JSON manualmente já que usamos text() acima
-        let jsonData;
-        try {
-          jsonData = JSON.parse(responseText);
-        } catch (jsonError) {
-          console.error('Erro ao parsear JSON da resposta:', jsonError);
-          throw new Error('Erro ao processar resposta do servidor');
-        }
-        
-        console.log("Dashboard API response:", jsonData);
-        
-        // Verificar se há despesas e receitas
-        setHasExpenses(jsonData.expenses && jsonData.expenses.length > 0);
-        setHasIncome(jsonData.incomes && jsonData.incomes.length > 0);
-          
-          setData(jsonData);
-
-          // Processar transações
-          const expensesData = jsonData.expenses ? jsonData.expenses.map(item => ({
-            id: item.id || `expense-${Math.random().toString(36).substr(2, 9)}`,
-            date: new Date(item.expense_date || item.date),
-            description: item.description,
-            amount: item.amount,
-            type: 'expense',
-            category: item.Category?.category_name || 'Sem categoria',
-            categoryId: item.Category?.id,
-            bank: item.Bank?.name || 'Sem banco',
-            is_recurring: item.is_recurring,
-            recurrence_id: item.recurrence_id
-          })) : [];
-          
-          const incomesData = jsonData.incomes ? jsonData.incomes.map(item => ({
-            id: item.id || `income-${Math.random().toString(36).substr(2, 9)}`,
-            date: new Date(item.date),
-            description: item.description,
-            amount: item.amount,
-            type: 'income',
-            category: item.Category?.category_name || 'Sem categoria',
-            categoryId: item.Category?.id,
-            bank: item.Bank?.name || 'Sem banco',
-            is_recurring: item.is_recurring,
-            recurrence_id: item.recurrence_id
-          })) : [];
-          
-          console.log("Total expenses found:", expensesData.length);
-          console.log("Total incomes found:", incomesData.length);
-          
-          setTransactions([...expensesData, ...incomesData]);
-
-        setLoading(false);
-        } catch (err) {
-          console.error("Dashboard fetch error:", err);
-          
-          // If we haven't exceeded max retries and it's a server error (500)
-        if (retryCount < maxRetries && (err.message.includes('500') || err.message.includes('502'))) {
-            retryCount++;
-          console.log(`Retrying dashboard fetch (${retryCount}/${maxRetries})...`);
-            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount)); // Exponential backoff
-            return attemptFetch();
-          }
-          
-        setError(err.message);
-          setLoading(false);
-        }
-      };
-      
-    try {
-      await attemptFetch();
-    } catch (err) {
-      console.error("Unhandled error in fetchData:", err);
-      setError("Erro inesperado ao buscar dados. Por favor, tente novamente.");
-      setLoading(false);
-    }
-  };
-
-    const fetchAllTransactions = async () => {
-      let retryCount = 0;
-      const maxRetries = 3;
-      
-      const attemptFetch = async () => {
-        try {
-        // Garantir que temos um token válido, mesmo após refresh da página
-        let token = auth.token;
-        
-        // Se não tiver um token no contexto, tentar buscar do localStorage
-        if (!token) {
-          console.log('Token não encontrado no contexto, buscando do localStorage para fetchAllTransactions...');
-          token = localStorage.getItem('token');
-          
-          if (!token) {
-            console.error('Nenhum token de autenticação encontrado para fetchAllTransactions');
-            return;
-          } else {
-            console.log('Token recuperado do localStorage para fetchAllTransactions');
-          }
-        }
-        
-          const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/dashboard/all-transactions`, {
-            headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        // Verificar se a resposta parece ser HTML (possível página de erro 502)
-        const contentType = response.headers.get('content-type');
-        const responseText = await response.text();
-        
-        // Se parece ser HTML ou contém <!doctype, é provavelmente uma página de erro
-        if (contentType?.includes('text/html') || responseText.toLowerCase().includes('<!doctype')) {
-          console.error('Resposta de all-transactions contém HTML. Possível erro 502 Bad Gateway.');
-          console.log('Conteúdo da resposta (primeiros 100 caracteres):', responseText.substring(0, 100));
-          throw new Error('Servidor temporariamente indisponível. Por favor, tente novamente em alguns instantes.');
-        }
-          
-          if (!response.ok) {
-            // Get detailed error message if available
-            let errorMessage = 'Erro ao carregar todas as transações';
-            try {
-            // Parsear o JSON manualmente já que usamos text() acima
-            const errorData = JSON.parse(responseText);
-              errorMessage = errorData.message || errorMessage;
-            } catch (e) {
-              // If can't parse error JSON, use status text
-              errorMessage = `${errorMessage}: ${response.statusText}`;
-            }
-            throw new Error(errorMessage);
-          }
-          
-        // Parsear o JSON manualmente já que usamos text() acima
-        let jsonData;
-        try {
-          jsonData = JSON.parse(responseText);
-        } catch (jsonError) {
-          console.error('Erro ao parsear JSON da resposta:', jsonError);
-          throw new Error('Erro ao processar resposta do servidor');
-        }
-          
-          // Processar transações de despesas
-          const expensesData = jsonData.expenses ? jsonData.expenses.map(item => ({
-            id: item.id || `expense-${Math.random().toString(36).substr(2, 9)}`,
-            date: new Date(item.expense_date || item.date),
-            description: item.description,
-            amount: item.amount,
-            type: 'expense',
-            category: item.Category?.category_name || 'Sem categoria',
-            categoryId: item.Category?.id,
-            bank: item.Bank?.name || 'Sem banco'
-          })) : [];
-          
-          // Processar transações de receitas
-          const incomesData = jsonData.incomes ? jsonData.incomes.map(item => ({
-            id: item.id || `income-${Math.random().toString(36).substr(2, 9)}`,
-            date: new Date(item.date),
-            description: item.description,
-            amount: item.amount,
-            type: 'income',
-            category: item.Category?.category_name || 'Sem categoria',
-            categoryId: item.Category?.id,
-            bank: item.Bank?.name || 'Sem banco'
-          })) : [];
-          
-          console.log("Total de despesas encontradas:", expensesData.length);
-          console.log("Total de receitas encontradas:", incomesData.length);
-          
-          setAllExpenses(expensesData);
-          setAllIncomes(incomesData);
-          setHasExpenses(expensesData.length > 0);
-          setHasIncome(incomesData.length > 0);
-          
-        } catch (err) {
-          console.error('Erro ao buscar todas as transações:', err);
-          
-          // If we haven't exceeded max retries and it's a server error (500)
-        if (retryCount < maxRetries && (err.message.includes('500') || err.message.includes('502'))) {
-            retryCount++;
-            console.log(`Retrying all transactions fetch (${retryCount}/${maxRetries})...`);
-            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount)); // Exponential backoff
-            return attemptFetch();
-          }
-          
-          // If all retries failed, set empty data but don't show error to user
-          // since this is supplementary data
-          setAllExpenses([]);
-          setAllIncomes([]);
-          setHasExpenses(false);
-          setHasIncome(false);
-        }
-      };
-      
-    try {
-      await attemptFetch();
-    } catch (err) {
-      console.error("Unhandled error in fetchAllTransactions:", err);
-      // Não mostramos esse erro ao usuário, apenas preenchemos com dados vazios
-      setAllExpenses([]);
-      setAllIncomes([]);
-    }
-  };
-  
-  // useEffect para carregar dados iniciais - com lógica mais robusta
-  useEffect(() => {
-    // Tentamos carregar independentemente do auth.token
-    // dentro da função fetchData já verificamos o token tanto do contexto quanto do localStorage
-    fetchData();
-    
-    // Esta função será chamada quando qualquer um dos valores de dependência mudar
-  }, [selectedPeriod, selectedCategories, selectedBanks, customDateRange]);
-  
-  // Efeito para buscar todas as transações (não filtradas)
-  useEffect(() => {
-    // Tentamos sempre carregar dados ao montar o componente
-    fetchAllTransactions();
-  }, []);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      const dropdowns = document.querySelectorAll(`.${styles.modernSelect}`);
-      let clickedOutside = true;
-
-      dropdowns.forEach(dropdown => {
-        if (dropdown.contains(event.target)) {
-          clickedOutside = false;
-        }
-      });
-
-      if (clickedOutside) {
-        setOpenFilter(null);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
 
   useEffect(() => {
     const resizeObserver = new ResizeObserver(entries => {
@@ -1848,13 +1489,16 @@ const Dashboard = () => {
     );
   };
 
-  // Improved renderIncomeVsExpensesChart
+  // Improved renderIncomeVsExpensesChart with mobile optimization
   const renderIncomeVsExpensesChart = () => {
     if (!data?.budget_info) return null;
 
     const available = Math.max(0, data.budget_info.total_budget - data.budget_info.total_spent);
     const totalSpent = data.budget_info.total_spent;
     const total = available + totalSpent;
+    
+    // Detect if we're on mobile
+    const isMobileView = window.innerWidth <= 768;
     
     const chartData = [
       {
@@ -1882,7 +1526,7 @@ const Dashboard = () => {
           </div>
         </div>
         <div className={styles.incomeVsExpensesContainer}>
-          <ResponsiveContainer width="100%" height={280}>
+          <ResponsiveContainer width="100%" height={isMobileView ? 220 : 280}>
             <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
               <defs>
                 <filter id="income-vs-expense-shadow" x="-20%" y="-20%" width="140%" height="140%">
@@ -1895,7 +1539,7 @@ const Dashboard = () => {
                 nameKey="name"
                 cx="50%"
                 cy="50%"
-                outerRadius={100}
+                outerRadius={isMobileView ? 70 : 100}
                 innerRadius={0}
                 startAngle={90}
                 endAngle={-270}
@@ -1903,9 +1547,19 @@ const Dashboard = () => {
                 animationDuration={800}
                 animationBegin={200}
                 animationEasing="ease-out"
+                label={isMobileView ? null : ({ name, percent }) => {
+                  if (percent < 0.05) return null;
+                  return `${(percent * 100).toFixed(0)}%`;
+                }}
+                labelLine={false}
               >
                 {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} stroke="#ffffff" strokeWidth={2} />
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={entry.color} 
+                    stroke="#ffffff" 
+                    strokeWidth={2} 
+                  />
                 ))}
               </Pie>
               <Tooltip 
@@ -1920,16 +1574,24 @@ const Dashboard = () => {
                 }}
               />
               <Legend
-                layout="vertical"
+                layout={isMobileView ? "horizontal" : "vertical"}
                 align="center"
                 verticalAlign="bottom"
                 iconType="circle"
-                iconSize={10}
+                iconSize={isMobileView ? 8 : 10}
                 formatter={(value, entry) => (
-                  <span style={{ color: 'var(--text-color)', fontSize: '12px', fontWeight: 'bold' }}>
-                    {value}: {formatCurrency(entry.payload.value)} ({(entry.payload.percent * 100).toFixed(0)}%)
+                  <span style={{ 
+                    color: 'var(--text-color)', 
+                    fontSize: isMobileView ? '10px' : '12px', 
+                    fontWeight: 'bold'
+                  }}>
+                    {value}{isMobileView ? '' : `: ${formatCurrency(entry.payload.value)}`} ({(entry.payload.percent * 100).toFixed(0)}%)
                   </span>
                 )}
+                wrapperStyle={{
+                  paddingTop: isMobileView ? '8px' : '10px',
+                  fontSize: isMobileView ? '10px' : '12px'
+                }}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -1953,7 +1615,7 @@ const Dashboard = () => {
     );
   };
 
-  // Improved renderExpensesByCategoryChart with better visualization
+  // Improved renderExpensesByCategoryChart with better visualization and mobile optimization
   const renderExpensesByCategoryChart = () => {
     if (!data || !data.expenses_by_category || data.expenses_by_category.length === 0) {
       return (
@@ -1974,11 +1636,38 @@ const Dashboard = () => {
       );
     }
 
-    const categoriesData = data.expenses_by_category.map((category, index) => ({
+    // Detect if we're on mobile
+    const isMobileView = window.innerWidth <= 768;
+
+    // Limit the number of categories shown for mobile view
+    const maxCategoriesToShow = isMobileView ? 5 : data.expenses_by_category.length;
+    
+    // Sort categories by amount and take the top categories
+    const sortedCategories = [...data.expenses_by_category].sort((a, b) => b.total - a.total);
+    
+    // Create "Outros" category if we're limiting the display
+    let processedCategories = sortedCategories.slice(0, maxCategoriesToShow);
+    let othersTotal = 0;
+    
+    if (isMobileView && sortedCategories.length > maxCategoriesToShow) {
+      othersTotal = sortedCategories.slice(maxCategoriesToShow).reduce((sum, cat) => sum + cat.total, 0);
+      
+      if (othersTotal > 0) {
+        processedCategories.push({
+          category_name: "Outros",
+          total: othersTotal
+        });
+      }
+    }
+
+    // Format data for the chart
+    const categoriesData = processedCategories.map((category, index) => ({
       id: index,
       name: category.category_name,
       value: category.total,
-      color: COLORS[index % COLORS.length],
+      color: category.category_name === "Outros" 
+        ? "#999999" 
+        : COLORS[index % COLORS.length],
       percent: 0 // Will be calculated below
     }));
 
@@ -1999,7 +1688,7 @@ const Dashboard = () => {
           </div>
         </div>
         <div className={styles.categoriesPieContainer}>
-          <ResponsiveContainer width="100%" height={280}>
+          <ResponsiveContainer width="100%" height={isMobileView ? 220 : 280}>
             <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
               <defs>
                 {categoriesData.map((entry, index) => (
@@ -2013,13 +1702,13 @@ const Dashboard = () => {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                outerRadius={100}
-                innerRadius={50}
+                outerRadius={isMobileView ? 70 : 100}
+                innerRadius={isMobileView ? 30 : 50}
                 paddingAngle={2}
                 fill="#8884d8"
                 dataKey="value"
                 nameKey="name"
-                label={renderCustomizedLabel}
+                label={isMobileView ? null : renderCustomizedPieLabel}
                 filter="url(#shadow)"
                 animationDuration={800}
                 animationBegin={200}
@@ -2037,17 +1726,37 @@ const Dashboard = () => {
               </Pie>
               <Tooltip content={<CustomPieTooltip />} />
               <Legend 
-                layout="vertical"
-                align="right"
-                verticalAlign="middle"
+                layout={isMobileView ? "horizontal" : "vertical"}
+                align={isMobileView ? "center" : "right"}
+                verticalAlign={isMobileView ? "bottom" : "middle"}
                 iconType="circle"
-                iconSize={10}
+                iconSize={isMobileView ? 8 : 10}
                 formatter={(value, entry) => (
-                  <span style={{ color: 'var(--text-color)', fontSize: '12px', fontWeight: entry.payload.name === categoriesData[0]?.name ? 'bold' : 'normal' }}>
-                    {value} ({(entry.payload.percent * 100).toFixed(1)}%)
+                  <span style={{ 
+                    color: 'var(--text-color)', 
+                    fontSize: isMobileView ? '10px' : '12px', 
+                    fontWeight: entry.payload.name === categoriesData[0]?.name ? 'bold' : 'normal',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: isMobileView ? '60px' : '110px',
+                    display: 'inline-block'
+                  }}>
+                    {isMobileView ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
+                    {!isMobileView && ` (${(entry.payload.percent * 100).toFixed(1)}%)`}
                   </span>
                 )}
-                wrapperStyle={{ paddingLeft: '10px', fontSize: '12px', overflowY: 'auto', maxHeight: '180px' }}
+                wrapperStyle={{ 
+                  paddingLeft: isMobileView ? '0px' : '10px', 
+                  fontSize: isMobileView ? '10px' : '12px',
+                  overflowY: 'auto', 
+                  maxHeight: isMobileView ? '80px' : '180px',
+                  width: '100%',
+                  marginTop: isMobileView ? '10px' : '0',
+                  justifyContent: isMobileView ? 'center' : 'flex-start',
+                  flexWrap: isMobileView ? 'wrap' : 'nowrap',
+                  gap: isMobileView ? '5px' : '0'
+                }}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -2905,13 +2614,11 @@ const Dashboard = () => {
     );
   };
 
-  // Improved renderIncomeCategoriesChart with better visualization
+  // Improved renderIncomeCategoriesChart with better visualization and mobile optimization
   const renderIncomeCategoriesChart = () => {
     const handlePeriodChange = (period) => {
       setSelectedPeriod(period);
     };
-    
-    console.log("Rendering income category chart, data:", incomeCategoryData);
     
     if (incomeLoading) {
       return (
@@ -2960,12 +2667,33 @@ const Dashboard = () => {
       );
     }
     
-    // Guarantee that we have color information for each category
-    const totalIncome = incomeCategoryData.reduce((sum, category) => sum + category.amount, 0);
+    // Limit the number of categories shown for mobile view
+    const maxCategoriesToShow = isMobile ? 5 : incomeCategoryData.length;
     
-    const incomeCategoriesWithColors = incomeCategoryData.map((category, index) => ({
+    // Sort categories by amount and take the top categories
+    const sortedCategories = [...incomeCategoryData].sort((a, b) => b.amount - a.amount);
+    
+    // Create "Outros" category if we're limiting the display
+    let processedCategories = sortedCategories.slice(0, maxCategoriesToShow);
+    let othersTotal = 0;
+    
+    if (isMobile && sortedCategories.length > maxCategoriesToShow) {
+      othersTotal = sortedCategories.slice(maxCategoriesToShow).reduce((sum, cat) => sum + cat.amount, 0);
+      
+      if (othersTotal > 0) {
+        processedCategories.push({
+          category: "Outros",
+          amount: othersTotal
+        });
+      }
+    }
+    
+    // Calculate total income and percentages
+    const totalIncome = processedCategories.reduce((sum, category) => sum + category.amount, 0);
+    
+    const incomeCategoriesWithColors = processedCategories.map((category, index) => ({
       ...category,
-      color: COLORS[index % COLORS.length],
+      color: category.category === "Outros" ? "#999999" : COLORS[index % COLORS.length],
       percent: category.amount / totalIncome
     }));
     
@@ -2998,7 +2726,7 @@ const Dashboard = () => {
         </div>
         
         <div className={styles.categoriesPieContainer}>
-          <ResponsiveContainer width="100%" height={280}>
+          <ResponsiveContainer width="100%" height={isMobile ? 220 : 280}>
             <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
               <defs>
                 {incomeCategoriesWithColors.map((entry, index) => (
@@ -3012,13 +2740,13 @@ const Dashboard = () => {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                outerRadius={100}
-                innerRadius={50}
+                outerRadius={isMobile ? 70 : 100}
+                innerRadius={isMobile ? 30 : 50}
                 paddingAngle={2}
                 fill="#8884d8"
                 dataKey="amount"
                 nameKey="category"
-                label={renderCustomizedLabel}
+                label={getCustomizedPieLabel}
                 animationDuration={800}
                 animationBegin={200}
                 animationEasing="ease-out"
@@ -3035,17 +2763,37 @@ const Dashboard = () => {
               </Pie>
               <Tooltip content={<CustomPieTooltip />} />
               <Legend 
-                layout="vertical"
-                align="right"
-                verticalAlign="middle"
+                layout={isMobile ? "horizontal" : "vertical"}
+                align={isMobile ? "center" : "right"}
+                verticalAlign={isMobile ? "bottom" : "middle"}
                 iconType="circle"
-                iconSize={10}
+                iconSize={isMobile ? 8 : 10}
                 formatter={(value, entry) => (
-                  <span style={{ color: 'var(--text-color)', fontSize: '12px', fontWeight: entry.payload.category === incomeCategoriesWithColors[0]?.category ? 'bold' : 'normal' }}>
-                    {value} ({(entry.payload.percent * 100).toFixed(1)}%)
+                  <span style={{ 
+                    color: 'var(--text-color)', 
+                    fontSize: isMobile ? '10px' : '12px', 
+                    fontWeight: entry.payload.category === incomeCategoriesWithColors[0]?.category ? 'bold' : 'normal',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: isMobile ? '60px' : '110px',
+                    display: 'inline-block'
+                  }}>
+                    {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
+                    {!isMobile && ` (${(entry.payload.percent * 100).toFixed(1)}%)`}
                   </span>
                 )}
-                wrapperStyle={{ paddingLeft: '10px', fontSize: '12px', overflowY: 'auto', maxHeight: '180px' }}
+                wrapperStyle={{ 
+                  paddingLeft: isMobile ? '0px' : '10px', 
+                  fontSize: isMobile ? '10px' : '12px',
+                  overflowY: 'auto', 
+                  maxHeight: isMobile ? '80px' : '180px',
+                  width: '100%',
+                  marginTop: isMobile ? '10px' : '0',
+                  justifyContent: isMobile ? 'center' : 'flex-start',
+                  flexWrap: isMobile ? 'wrap' : 'nowrap',
+                  gap: isMobile ? '5px' : '0'
+                }}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -3065,7 +2813,7 @@ const Dashboard = () => {
     );
   };
 
-  // Improved renderBanksChart with better visualization
+  // Improved renderBanksChart with better visualization and mobile optimization
   const renderBanksChart = () => {
     if (!data || !data.expenses_by_bank || data.expenses_by_bank.length === 0) {
       return (
@@ -3124,6 +2872,9 @@ const Dashboard = () => {
     const primaryBank = bankData.reduce((prev, current) => 
       prev.value > current.value ? prev : current, { value: 0, name: '' });
 
+    // Detect if we're on mobile
+    const isMobileView = window.innerWidth <= 768;
+
     return (
       <div className={styles.chartContainer}>
         <div className={styles.chartHeader}>
@@ -3135,7 +2886,7 @@ const Dashboard = () => {
           </div>
         </div>
         <div className={styles.bankPieContainer}>
-          <ResponsiveContainer width="100%" height={280}>
+          <ResponsiveContainer width="100%" height={isMobileView ? 220 : 280}>
             <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
               <defs>
                 {bankData.map((entry, index) => (
@@ -3149,13 +2900,13 @@ const Dashboard = () => {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                outerRadius={100}
-                innerRadius={50}
+                outerRadius={isMobileView ? 70 : 100}
+                innerRadius={isMobileView ? 30 : 50}
                 paddingAngle={2}
                 fill="#8884d8"
                 dataKey="value"
                 nameKey="name"
-                label={renderCustomizedLabel}
+                label={isMobileView ? null : renderCustomizedPieLabel}
                 animationDuration={800}
                 animationBegin={200}
                 animationEasing="ease-out"
@@ -3172,17 +2923,37 @@ const Dashboard = () => {
               </Pie>
               <Tooltip content={<CustomPieTooltip />} />
               <Legend 
-                layout="vertical"
-                align="right"
-                verticalAlign="middle"
+                layout={isMobileView ? "horizontal" : "vertical"}
+                align={isMobileView ? "center" : "right"}
+                verticalAlign={isMobileView ? "bottom" : "middle"}
                 iconType="circle"
-                iconSize={10}
+                iconSize={isMobileView ? 8 : 10}
                 formatter={(value, entry) => (
-                  <span style={{ color: 'var(--text-color)', fontSize: '12px', fontWeight: entry.payload.name === primaryBank.name ? 'bold' : 'normal' }}>
-                    {value} ({(entry.payload.percent * 100).toFixed(1)}%)
+                  <span style={{ 
+                    color: 'var(--text-color)', 
+                    fontSize: isMobileView ? '10px' : '12px', 
+                    fontWeight: entry.payload.name === primaryBank.name ? 'bold' : 'normal',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: isMobileView ? '60px' : '110px',
+                    display: 'inline-block'
+                  }}>
+                    {isMobileView ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
+                    {!isMobileView && ` (${(entry.payload.percent * 100).toFixed(1)}%)`}
                   </span>
                 )}
-                wrapperStyle={{ paddingLeft: '10px', fontSize: '12px', overflowY: 'auto', maxHeight: '180px' }}
+                wrapperStyle={{ 
+                  paddingLeft: isMobileView ? '0px' : '10px', 
+                  fontSize: isMobileView ? '10px' : '12px',
+                  overflowY: 'auto', 
+                  maxHeight: isMobileView ? '80px' : '180px',
+                  width: '100%',
+                  marginTop: isMobileView ? '10px' : '0',
+                  justifyContent: isMobileView ? 'center' : 'flex-start',
+                  flexWrap: isMobileView ? 'wrap' : 'nowrap',
+                  gap: isMobileView ? '5px' : '0'
+                }}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -3823,6 +3594,39 @@ const Dashboard = () => {
     if (selectedPeriod === 'next') return 'Mês que vem';
     if (selectedPeriod === 'year') return 'Ano Atual';
     return 'Selecione um período';
+  };
+
+  // Custom tooltip component for all charts
+  const CustomPieTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div style={{ 
+          backgroundColor: 'var(--card-background)', 
+          border: '1px solid var(--border-color)',
+          borderRadius: '6px',
+          padding: isMobile ? '6px 8px' : '10px',
+          boxShadow: '0 4px 8px rgba(0,0,0,0.15)',
+          maxWidth: isMobile ? '150px' : '180px'
+        }}>
+          <p style={{ 
+            margin: '0 0 5px 0', 
+            fontWeight: 'bold', 
+            color: 'var(--text-color)',
+            fontSize: isMobile ? '10px' : '12px' 
+          }}>
+            {payload[0].name}
+          </p>
+          <p style={{ 
+            margin: '0', 
+            color: payload[0].color,
+            fontSize: isMobile ? '10px' : '12px'
+          }}>
+            {formatCurrency(payload[0].value)} ({(payload[0].payload.percent * 100).toFixed(1)}%)
+          </p>
+        </div>
+      );
+    }
+    return null;
   };
 
   return (

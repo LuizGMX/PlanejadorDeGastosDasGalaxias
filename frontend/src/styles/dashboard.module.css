@@ -3496,3 +3496,149 @@ input:checked + .toggleSlider:before {
     height: 220px !important;
   }
 }
+
+/* Estilos aprimorados para visualização mobile dos gráficos */
+@media (max-width: 768px) {
+  .chartContainer {
+    min-height: 350px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+  }
+  
+  .chartHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+  }
+  
+  .chartHeader h3 {
+    margin-bottom: 0.25rem;
+    font-size: 1.1rem;
+  }
+  
+  .chartSubtitle {
+    width: 100%;
+  }
+  
+  .categoriesPieContainer,
+  .bankPieContainer,
+  .incomeVsExpensesContainer {
+    height: 220px;
+    margin-bottom: 0.5rem;
+  }
+  
+  .recharts-legend-wrapper {
+    padding: 0 !important;
+    display: flex;
+    justify-content: center !important;
+  }
+  
+  .recharts-default-legend {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    width: 100% !important;
+    padding: 0 4px !important;
+  }
+  
+  .recharts-legend-item {
+    margin-right: 8px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 80px !important;
+  }
+  
+  .recharts-pie {
+    transform: scale(0.9);
+  }
+  
+  .incomeVsExpensesSummary {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    padding-top: 0.5rem;
+  }
+  
+  .incomeVsExpensesSummary .infoItem:last-child {
+    grid-column: 1 / -1;
+  }
+  
+  .categoriesInsights {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+  }
+  
+  .categoriesInsights h4 {
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+  }
+  
+  .categoriesInsights p {
+    font-size: 0.8rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .infoItem span {
+    font-size: 0.8rem;
+  }
+  
+  .infoItem strong {
+    font-size: 1rem;
+  }
+  
+  .dateFilterBadge {
+    font-size: 0.7rem;
+    padding: 3px 8px;
+  }
+  
+  /* Otimização para tooltip nos dispositivos móveis */
+  .chartContainer .recharts-tooltip-wrapper {
+    max-width: 200px !important;
+  }
+  
+  /* Ajustes para a exibição das legendas nos gráficos */
+  .chartContainer .recharts-legend-item-text {
+    font-size: 10px !important;
+    display: inline-block !important;
+    max-width: 80px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+}
+
+/* Melhorias específicas para gráficos de pizza em mobile */
+@media (max-width: 768px) {
+  .recharts-pie-label-text {
+    font-size: 9px !important;
+    font-weight: bold !important;
+  }
+  
+  .bankPieContainer .recharts-sector,
+  .categoriesPieContainer .recharts-sector,
+  .incomeVsExpensesContainer .recharts-sector {
+    transition: transform 0.2s;
+  }
+  
+  .bankPieContainer .recharts-sector:hover,
+  .categoriesPieContainer .recharts-sector:hover,
+  .incomeVsExpensesContainer .recharts-sector:hover {
+    transform: translateX(3px) translateY(3px);
+    filter: brightness(1.1);
+  }
+  
+  /* Melhorar a aparência do tooltip em mobile */
+  .chartContainer .recharts-tooltip-wrapper .recharts-default-tooltip {
+    padding: 8px !important;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2) !important;
+  }
+  
+  .chartContainer .recharts-tooltip-wrapper .recharts-tooltip-item {
+    padding: 2px 0 !important;
+    font-size: 10px !important;
+  }
+}
