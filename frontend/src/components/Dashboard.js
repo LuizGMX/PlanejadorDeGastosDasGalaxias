@@ -868,13 +868,13 @@ const Dashboard = () => {
       <text 
         x={x} 
         y={y} 
-        fill="#ffffff" 
+        fill="#000000" 
         textAnchor="middle" 
         dominantBaseline="central"
         fontWeight="bold"
         fontSize={isMobile ? "10px" : "12px"}
         strokeWidth="0.5px"
-        stroke="#000000"
+        stroke="#ffffff"
       >
         {`${(percent * 100).toFixed(0)}%`}
       </text>
@@ -2774,27 +2774,77 @@ const Dashboard = () => {
         </div>
         
         <div className={styles.categoriesPieContainer}>
-          <ResponsiveContainer width="100%" height={250}>
-            <PieChart>
+          <ResponsiveContainer width="100%" height={isMobile ? 220 : 280}>
+            <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
+              <defs>
+                {categoryData.map((entry, index) => (
+                  <filter key={`shadow-${index}`} id={`shadow-cat-${index}`} x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="0" stdDeviation="3" floodOpacity="0.3" />
+                  </filter>
+                ))}
+              </defs>
               <Pie
                 data={categoryData}
-                      cx="50%"
-                      cy="50%"
+                cx="50%"
+                cy="50%"
                 labelLine={false}
-                      outerRadius={80}
-                innerRadius={40}
+                outerRadius={isMobile ? 70 : 100}
+                innerRadius={isMobile ? 30 : 50}
+                paddingAngle={2}
                 fill="#8884d8"
                 dataKey="amount"
                 nameKey="category"
-                label={({name, percent}) => name && percent ? `${name}: ${(percent * 100).toFixed(1)}%` : ''}
+                label={getCustomizedPieLabel}
+                filter="url(#shadow)"
+                animationDuration={800}
+                animationBegin={200}
+                animationEasing="ease-out"
               >
                 {categoryData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-              <Tooltip formatter={(value) => formatCurrency(value)} />
-              <Legend />
-                  </PieChart>
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={COLORS[index % COLORS.length]} 
+                    stroke="#ffffff" 
+                    strokeWidth={1} 
+                    filter={`url(#shadow-cat-${index})`} 
+                  />
+                ))}
+              </Pie>
+              <Tooltip content={<CustomPieTooltip />} />
+              <Legend 
+                layout={isMobile ? "horizontal" : "vertical"}
+                align={isMobile ? "center" : "right"}
+                verticalAlign={isMobile ? "bottom" : "middle"}
+                iconType="circle"
+                iconSize={isMobile ? 8 : 10}
+                formatter={(value, entry) => (
+                  <span style={{ 
+                    color: 'var(--text-color)', 
+                    fontSize: isMobile ? '10px' : '12px', 
+                    fontWeight: entry.payload.category === categoryData[0]?.category ? 'bold' : 'normal',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: isMobile ? '60px' : '110px',
+                    display: 'inline-block'
+                  }}>
+                    {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
+                    {!isMobile && ` (${entry.payload.percentage.toFixed(1)}%)`}
+                  </span>
+                )}
+                wrapperStyle={{ 
+                  paddingLeft: isMobile ? '0px' : '10px', 
+                  fontSize: isMobile ? '10px' : '12px',
+                  overflowY: 'auto', 
+                  maxHeight: isMobile ? '80px' : '180px',
+                  width: '100%',
+                  marginTop: isMobile ? '10px' : '0',
+                  justifyContent: isMobile ? 'center' : 'flex-start',
+                  flexWrap: isMobile ? 'wrap' : 'nowrap',
+                  gap: isMobile ? '5px' : '0'
+                }}
+              />
+            </PieChart>
           </ResponsiveContainer>
         </div>
         
@@ -2863,76 +2913,32 @@ const Dashboard = () => {
       );
     }
     
-    // Limit the number of categories shown for mobile view
-    const maxCategoriesToShow = isMobile ? 5 : incomeCategoryData.length;
-    
-    // Sort categories by amount and take the top categories
-    const sortedCategories = [...incomeCategoryData].sort((a, b) => b.amount - a.amount);
-    
-    // Create "Outros" category if we're limiting the display
-    let processedCategories = sortedCategories.slice(0, maxCategoriesToShow);
-    let othersTotal = 0;
-    
-    if (isMobile && sortedCategories.length > maxCategoriesToShow) {
-      othersTotal = sortedCategories.slice(maxCategoriesToShow).reduce((sum, cat) => sum + cat.amount, 0);
-      
-      if (othersTotal > 0) {
-        processedCategories.push({
-          category: "Outros",
-          amount: othersTotal
-        });
-      }
-    }
-    
-    // Calculate total income and percentages
-    const totalIncome = processedCategories.reduce((sum, category) => sum + category.amount, 0);
-    
-    const incomeCategoriesWithColors = processedCategories.map((category, index) => ({
-      ...category,
-      color: category.category === "Outros" ? "#999999" : COLORS[index % COLORS.length],
-      percent: category.amount / totalIncome
-    }));
-    
+    // Calculate total income for this period to find percentages
+    const totalIncome = incomeCategoryData.reduce((sum, item) => sum + item.amount, 0);
+
     return (
       <div className={styles.chartContainer}>
         <div className={styles.chartHeader}>
           <h3>Receitas por Categoria</h3>
           <div className={styles.chartSubtitle}>
-          <div className={styles.periodButtons}>
-            <button 
-              className={`${styles.periodButton} ${selectedPeriod === 'month' ? styles.activePeriod : ''}`}
-              onClick={() => handlePeriodChange('month')}
-            >
-              Mês
-            </button>
-            <button 
-              className={`${styles.periodButton} ${selectedPeriod === 'year' ? styles.activePeriod : ''}`}
-              onClick={() => handlePeriodChange('year')}
-            >
-              Ano
-            </button>
-            <button 
-              className={`${styles.periodButton} ${selectedPeriod === 'all' ? styles.activePeriod : ''}`}
-              onClick={() => handlePeriodChange('all')}
-            >
-              Todos
-            </button>
-            </div>
+            <span className={styles.dateFilterBadge}>
+              <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
+            </span>
           </div>
         </div>
-
+        
         <div className={styles.categoriesPieContainer}>
           <ResponsiveContainer width="100%" height={isMobile ? 220 : 280}>
             <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
               <defs>
-                {incomeCategoriesWithColors.map((entry, index) => (
-                  <filter key={`shadow-${index}`} id={`income-shadow-${index}`} x="-20%" y="-20%" width="140%" height="140%">
+                {incomeCategoryData.map((entry, index) => (
+                  <filter key={`shadow-${index}`} id={`shadow-income-${index}`} x="-20%" y="-20%" width="140%" height="140%">
                     <feDropShadow dx="0" dy="0" stdDeviation="3" floodOpacity="0.3" />
                   </filter>
                 ))}
               </defs>
               <Pie
-                data={incomeCategoriesWithColors}
+                data={incomeCategoryData}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
@@ -2943,17 +2949,18 @@ const Dashboard = () => {
                 dataKey="amount"
                 nameKey="category"
                 label={getCustomizedPieLabel}
+                filter="url(#shadow)"
                 animationDuration={800}
                 animationBegin={200}
                 animationEasing="ease-out"
               >
-                {incomeCategoriesWithColors.map((entry, index) => (
+                {incomeCategoryData.map((entry, index) => (
                   <Cell 
                     key={`cell-${index}`} 
-                    fill={entry.color} 
+                    fill={entry.color || COLORS[index % COLORS.length]} 
                     stroke="#ffffff" 
-                    strokeWidth={1}
-                    filter={`url(#income-shadow-${index})`} 
+                    strokeWidth={1} 
+                    filter={`url(#shadow-income-${index})`} 
                   />
                 ))}
               </Pie>
@@ -2966,9 +2973,9 @@ const Dashboard = () => {
                 iconSize={isMobile ? 8 : 10}
                 formatter={(value, entry) => (
                   <span style={{ 
-                  color: 'var(--text-color)',
+                    color: 'var(--text-color)', 
                     fontSize: isMobile ? '10px' : '12px', 
-                    fontWeight: entry.payload.category === incomeCategoriesWithColors[0]?.category ? 'bold' : 'normal',
+                    fontWeight: entry.payload.category === incomeCategoryData[0]?.category ? 'bold' : 'normal',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -2976,7 +2983,7 @@ const Dashboard = () => {
                     display: 'inline-block'
                   }}>
                     {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
-                    {!isMobile && ` (${(entry.payload.percent * 100).toFixed(1)}%)`}
+                    {!isMobile && ` (${entry.payload.percentage.toFixed(1)}%)`}
                   </span>
                 )}
                 wrapperStyle={{ 
@@ -2996,12 +3003,12 @@ const Dashboard = () => {
         </div>
         
         <div className={styles.categoriesInsights}>
-          <h4>Principal fonte de renda: {incomeCategoriesWithColors[0]?.category || 'Nenhuma'}</h4>
+          <h4>Principal fonte de renda: {incomeCategoryData[0]?.category || 'Nenhuma'}</h4>
           <p>
-            Representa {incomeCategoriesWithColors[0]?.percent ? (incomeCategoriesWithColors[0].percent * 100).toFixed(1) : 0}% da sua renda.
+            Representa {incomeCategoryData[0]?.percentage ? incomeCategoryData[0].percentage.toFixed(1) : 0}% da sua renda no período.
           </p>
           <div className={styles.infoItem}>
-            <span>Total de Receitas:</span>
+            <span>Receita total:</span>
             <strong className={styles.positive}>{formatCurrency(totalIncome)}</strong>
           </div>
         </div>
