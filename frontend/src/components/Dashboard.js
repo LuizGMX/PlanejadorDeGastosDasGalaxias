@@ -856,7 +856,8 @@ const Dashboard = () => {
 
   // Shared function for customizing label rendering based on device
   const getCustomizedPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }) => {
-    if (isMobile || percent < 0.05) return null;
+    // Removi a verificação de dispositivos móveis para sempre mostrar as porcentagens
+    if (percent < 0.05) return null; // Apenas não mostrar para fatias muito pequenas
     
     const RADIAN = Math.PI / 180;
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
@@ -871,7 +872,7 @@ const Dashboard = () => {
         textAnchor="middle" 
         dominantBaseline="central"
         fontWeight="bold"
-        fontSize="12px"
+        fontSize={isMobile ? "10px" : "12px"}
         strokeWidth="0.5px"
         stroke="#000000"
       >
@@ -1497,9 +1498,6 @@ const Dashboard = () => {
     const totalSpent = data.budget_info.total_spent;
     const total = available + totalSpent;
     
-    // Detect if we're on mobile
-    const isMobileView = window.innerWidth <= 768;
-    
     const chartData = [
       {
         name: 'Disponível',
@@ -1515,6 +1513,31 @@ const Dashboard = () => {
       }
     ];
 
+    // Função personalizada para rótulos do gráfico Receitas vs Despesas
+    const incomePieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+      // Este é um gráfico especial de apenas 2 partes, podemos sempre mostrar os rótulos
+      const RADIAN = Math.PI / 180;
+      const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+      const x = cx + radius * Math.cos(-midAngle * RADIAN);
+      const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+      return (
+        <text 
+          x={x} 
+          y={y} 
+          fill="#ffffff" 
+          textAnchor="middle" 
+          dominantBaseline="central"
+          fontWeight="bold"
+          fontSize={isMobile ? "12px" : "14px"}
+          strokeWidth="0.5px"
+          stroke="#000000"
+        >
+          {`${(percent * 100).toFixed(0)}%`}
+        </text>
+      );
+    };
+
     return (
       <div className={styles.chartContainer}>
         <div className={styles.chartHeader}>
@@ -1526,7 +1549,7 @@ const Dashboard = () => {
           </div>
         </div>
         <div className={styles.incomeVsExpensesContainer}>
-          <ResponsiveContainer width="100%" height={isMobileView ? 220 : 280}>
+          <ResponsiveContainer width="100%" height={isMobile ? 220 : 280}>
             <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
               <defs>
                 <filter id="income-vs-expense-shadow" x="-20%" y="-20%" width="140%" height="140%">
@@ -1539,7 +1562,7 @@ const Dashboard = () => {
                 nameKey="name"
                 cx="50%"
                 cy="50%"
-                outerRadius={isMobileView ? 70 : 100}
+                outerRadius={isMobile ? 80 : 100}
                 innerRadius={0}
                 startAngle={90}
                 endAngle={-270}
@@ -1547,10 +1570,7 @@ const Dashboard = () => {
                 animationDuration={800}
                 animationBegin={200}
                 animationEasing="ease-out"
-                label={isMobileView ? null : ({ name, percent }) => {
-                  if (percent < 0.05) return null;
-                  return `${(percent * 100).toFixed(0)}%`;
-                }}
+                label={incomePieLabel}
                 labelLine={false}
               >
                 {chartData.map((entry, index) => (
@@ -1574,23 +1594,23 @@ const Dashboard = () => {
                 }}
               />
               <Legend
-                layout={isMobileView ? "horizontal" : "vertical"}
+                layout={isMobile ? "horizontal" : "vertical"}
                 align="center"
                 verticalAlign="bottom"
                 iconType="circle"
-                iconSize={isMobileView ? 8 : 10}
+                iconSize={isMobile ? 8 : 10}
                 formatter={(value, entry) => (
                   <span style={{ 
                     color: 'var(--text-color)', 
-                    fontSize: isMobileView ? '10px' : '12px', 
+                    fontSize: isMobile ? '10px' : '12px', 
                     fontWeight: 'bold'
                   }}>
-                    {value}{isMobileView ? '' : `: ${formatCurrency(entry.payload.value)}`} ({(entry.payload.percent * 100).toFixed(0)}%)
+                    {value}{isMobile ? '' : `: ${formatCurrency(entry.payload.value)}`} ({(entry.payload.percent * 100).toFixed(0)}%)
                   </span>
                 )}
                 wrapperStyle={{
-                  paddingTop: isMobileView ? '8px' : '10px',
-                  fontSize: isMobileView ? '10px' : '12px'
+                  paddingTop: isMobile ? '8px' : '10px',
+                  fontSize: isMobile ? '10px' : '12px'
                 }}
               />
             </PieChart>
@@ -1640,7 +1660,7 @@ const Dashboard = () => {
     const isMobileView = window.innerWidth <= 768;
 
     // Limit the number of categories shown for mobile view
-    const maxCategoriesToShow = isMobileView ? 5 : data.expenses_by_category.length;
+    const maxCategoriesToShow = isMobile ? 5 : data.expenses_by_category.length;
     
     // Sort categories by amount and take the top categories
     const sortedCategories = [...data.expenses_by_category].sort((a, b) => b.total - a.total);
@@ -1649,7 +1669,7 @@ const Dashboard = () => {
     let processedCategories = sortedCategories.slice(0, maxCategoriesToShow);
     let othersTotal = 0;
     
-    if (isMobileView && sortedCategories.length > maxCategoriesToShow) {
+    if (isMobile && sortedCategories.length > maxCategoriesToShow) {
       othersTotal = sortedCategories.slice(maxCategoriesToShow).reduce((sum, cat) => sum + cat.total, 0);
       
       if (othersTotal > 0) {
@@ -1688,7 +1708,7 @@ const Dashboard = () => {
           </div>
         </div>
         <div className={styles.categoriesPieContainer}>
-          <ResponsiveContainer width="100%" height={isMobileView ? 220 : 280}>
+          <ResponsiveContainer width="100%" height={isMobile ? 220 : 280}>
             <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
               <defs>
                 {categoriesData.map((entry, index) => (
@@ -1702,13 +1722,13 @@ const Dashboard = () => {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                outerRadius={isMobileView ? 70 : 100}
-                innerRadius={isMobileView ? 30 : 50}
+                outerRadius={isMobile ? 70 : 100}
+                innerRadius={isMobile ? 30 : 50}
                 paddingAngle={2}
                 fill="#8884d8"
                 dataKey="value"
                 nameKey="name"
-                label={isMobileView ? null : renderCustomizedPieLabel}
+                label={getCustomizedPieLabel}
                 filter="url(#shadow)"
                 animationDuration={800}
                 animationBegin={200}
@@ -1726,36 +1746,36 @@ const Dashboard = () => {
               </Pie>
               <Tooltip content={<CustomPieTooltip />} />
               <Legend 
-                layout={isMobileView ? "horizontal" : "vertical"}
-                align={isMobileView ? "center" : "right"}
-                verticalAlign={isMobileView ? "bottom" : "middle"}
+                layout={isMobile ? "horizontal" : "vertical"}
+                align={isMobile ? "center" : "right"}
+                verticalAlign={isMobile ? "bottom" : "middle"}
                 iconType="circle"
-                iconSize={isMobileView ? 8 : 10}
+                iconSize={isMobile ? 8 : 10}
                 formatter={(value, entry) => (
                   <span style={{ 
                     color: 'var(--text-color)', 
-                    fontSize: isMobileView ? '10px' : '12px', 
+                    fontSize: isMobile ? '10px' : '12px', 
                     fontWeight: entry.payload.name === categoriesData[0]?.name ? 'bold' : 'normal',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    maxWidth: isMobileView ? '60px' : '110px',
+                    maxWidth: isMobile ? '60px' : '110px',
                     display: 'inline-block'
                   }}>
-                    {isMobileView ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
-                    {!isMobileView && ` (${(entry.payload.percent * 100).toFixed(1)}%)`}
+                    {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
+                    {!isMobile && ` (${(entry.payload.percent * 100).toFixed(1)}%)`}
                   </span>
                 )}
                 wrapperStyle={{ 
-                  paddingLeft: isMobileView ? '0px' : '10px', 
-                  fontSize: isMobileView ? '10px' : '12px',
+                  paddingLeft: isMobile ? '0px' : '10px', 
+                  fontSize: isMobile ? '10px' : '12px',
                   overflowY: 'auto', 
-                  maxHeight: isMobileView ? '80px' : '180px',
+                  maxHeight: isMobile ? '80px' : '180px',
                   width: '100%',
-                  marginTop: isMobileView ? '10px' : '0',
-                  justifyContent: isMobileView ? 'center' : 'flex-start',
-                  flexWrap: isMobileView ? 'wrap' : 'nowrap',
-                  gap: isMobileView ? '5px' : '0'
+                  marginTop: isMobile ? '10px' : '0',
+                  justifyContent: isMobile ? 'center' : 'flex-start',
+                  flexWrap: isMobile ? 'wrap' : 'nowrap',
+                  gap: isMobile ? '5px' : '0'
                 }}
               />
             </PieChart>
@@ -2857,9 +2877,33 @@ const Dashboard = () => {
     // Total expenses by bank
     const totalExpensesByBank = data.expenses_by_bank.reduce((total, bank) => total + bank.total, 0);
 
+    // Limit the number of banks shown for mobile view
+    const maxBanksToShow = isMobile ? 5 : data.expenses_by_bank.length;
+    
+    // Sort banks by amount and take the top banks
+    const sortedBanks = [...data.expenses_by_bank].sort((a, b) => b.total - a.total);
+    
+    // Create "Outros" category if we're limiting the display
+    let processedBanks = sortedBanks.slice(0, maxBanksToShow);
+    let othersTotal = 0;
+    
+    if (isMobile && sortedBanks.length > maxBanksToShow) {
+      othersTotal = sortedBanks.slice(maxBanksToShow).reduce((sum, bank) => sum + bank.total, 0);
+      
+      if (othersTotal > 0) {
+        processedBanks.push({
+          bank_name: "Outros bancos",
+          total: othersTotal
+        });
+      }
+    }
+
     // Format data for pie chart
-    const bankData = data.expenses_by_bank.map((bank, index) => {
-      const customColor = getBankColor(bank.bank_name);
+    const bankData = processedBanks.map((bank, index) => {
+      const customColor = bank.bank_name === "Outros bancos" 
+        ? "#999999" 
+        : getBankColor(bank.bank_name);
+      
       return {
         name: bank.bank_name,
         value: bank.total,
@@ -2872,9 +2916,6 @@ const Dashboard = () => {
     const primaryBank = bankData.reduce((prev, current) => 
       prev.value > current.value ? prev : current, { value: 0, name: '' });
 
-    // Detect if we're on mobile
-    const isMobileView = window.innerWidth <= 768;
-
     return (
       <div className={styles.chartContainer}>
         <div className={styles.chartHeader}>
@@ -2886,7 +2927,7 @@ const Dashboard = () => {
           </div>
         </div>
         <div className={styles.bankPieContainer}>
-          <ResponsiveContainer width="100%" height={isMobileView ? 220 : 280}>
+          <ResponsiveContainer width="100%" height={isMobile ? 220 : 280}>
             <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
               <defs>
                 {bankData.map((entry, index) => (
@@ -2900,13 +2941,13 @@ const Dashboard = () => {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                outerRadius={isMobileView ? 70 : 100}
-                innerRadius={isMobileView ? 30 : 50}
+                outerRadius={isMobile ? 70 : 100}
+                innerRadius={isMobile ? 30 : 50}
                 paddingAngle={2}
                 fill="#8884d8"
                 dataKey="value"
                 nameKey="name"
-                label={isMobileView ? null : renderCustomizedPieLabel}
+                label={getCustomizedPieLabel}
                 animationDuration={800}
                 animationBegin={200}
                 animationEasing="ease-out"
@@ -2923,36 +2964,36 @@ const Dashboard = () => {
               </Pie>
               <Tooltip content={<CustomPieTooltip />} />
               <Legend 
-                layout={isMobileView ? "horizontal" : "vertical"}
-                align={isMobileView ? "center" : "right"}
-                verticalAlign={isMobileView ? "bottom" : "middle"}
+                layout={isMobile ? "horizontal" : "vertical"}
+                align={isMobile ? "center" : "right"}
+                verticalAlign={isMobile ? "bottom" : "middle"}
                 iconType="circle"
-                iconSize={isMobileView ? 8 : 10}
+                iconSize={isMobile ? 8 : 10}
                 formatter={(value, entry) => (
                   <span style={{ 
                     color: 'var(--text-color)', 
-                    fontSize: isMobileView ? '10px' : '12px', 
+                    fontSize: isMobile ? '10px' : '12px', 
                     fontWeight: entry.payload.name === primaryBank.name ? 'bold' : 'normal',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    maxWidth: isMobileView ? '60px' : '110px',
+                    maxWidth: isMobile ? '60px' : '110px',
                     display: 'inline-block'
                   }}>
-                    {isMobileView ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
-                    {!isMobileView && ` (${(entry.payload.percent * 100).toFixed(1)}%)`}
+                    {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
+                    {!isMobile && ` (${(entry.payload.percent * 100).toFixed(1)}%)`}
                   </span>
                 )}
                 wrapperStyle={{ 
-                  paddingLeft: isMobileView ? '0px' : '10px', 
-                  fontSize: isMobileView ? '10px' : '12px',
+                  paddingLeft: isMobile ? '0px' : '10px', 
+                  fontSize: isMobile ? '10px' : '12px',
                   overflowY: 'auto', 
-                  maxHeight: isMobileView ? '80px' : '180px',
+                  maxHeight: isMobile ? '80px' : '180px',
                   width: '100%',
-                  marginTop: isMobileView ? '10px' : '0',
-                  justifyContent: isMobileView ? 'center' : 'flex-start',
-                  flexWrap: isMobileView ? 'wrap' : 'nowrap',
-                  gap: isMobileView ? '5px' : '0'
+                  marginTop: isMobile ? '10px' : '0',
+                  justifyContent: isMobile ? 'center' : 'flex-start',
+                  flexWrap: isMobile ? 'wrap' : 'nowrap',
+                  gap: isMobile ? '5px' : '0'
                 }}
               />
             </PieChart>
