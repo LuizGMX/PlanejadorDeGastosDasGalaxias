@@ -1706,4 +1706,25 @@
   font-size: 13px;
   font-weight: 500;
   white-space: nowrap;
+}
+
+/* Custom Radio Styles */
+input[type="radio"].hiddenCheckbox ~ .customCheckbox {
+  border-radius: 50%;
+}
+
+input[type="radio"].hiddenCheckbox:checked ~ .customCheckbox {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+input[type="radio"].hiddenCheckbox:checked ~ .customCheckbox:after {
+  transform: none;
+  border: none;
+  width: 8px;
+  height: 8px;
+  background-color: white;
+  border-radius: 50%;
+  left: 4px;
+  top: 4px;
 } 

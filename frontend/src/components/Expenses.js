@@ -217,8 +217,28 @@ const Expenses = () => {
       return;
     }
 
-    if (type === 'category_id') {
-      setFilters(prev => ({ ...prev, category_id: value }));
+    if (type === 'category') {
+      // Immediately update the filter state for category
+      setFilters(prev => ({ ...prev, category: value }));
+      // If running on mobile, close the filter after selection
+      if (isMobile) {
+        setOpenFilter(null);
+      }
+      return;
+    }
+
+    if (type === 'paymentMethod') {
+      // Immediately update the filter state for payment method
+      setFilters(prev => ({ ...prev, paymentMethod: value }));
+      // If running on mobile, close the filter after selection
+      if (isMobile) {
+        setOpenFilter(null);
+      }
+      return;
+    }
+
+    if (type === 'hasInstallments') {
+      setFilters(prev => ({ ...prev, hasInstallments: value }));
       return;
     }
 
@@ -254,13 +274,13 @@ const Expenses = () => {
       filters.years.forEach(year => queryParams.append('years[]', year));
       
       // Adiciona outros filtros
-      if (filters.category !== 'all') {
+      if (filters.category && filters.category !== 'all') {
         queryParams.append('category_id', filters.category);
       }
-      if (filters.paymentMethod !== 'all') {
+      if (filters.paymentMethod && filters.paymentMethod !== 'all') {
         queryParams.append('payment_method', filters.paymentMethod);
       }
-      if (filters.hasInstallments !== 'all') {
+      if (filters.hasInstallments && filters.hasInstallments !== 'all') {
         queryParams.append('has_installments', filters.hasInstallments === 'yes');
       }
       if (filters.description) {
@@ -782,7 +802,7 @@ const Expenses = () => {
             <span>
               {filters.category === 'all' 
                 ? 'Todas as categorias' 
-                : categories.find(c => c.id === Number(filters.category))?.category_name || 'Selecione uma categoria'}
+                : categories.find(c => c.id.toString() === filters.category)?.category_name || 'Selecione uma categoria'}
             </span>
             <span className={dataTableStyles.arrow}>▼</span>
           </div>
@@ -791,8 +811,9 @@ const Expenses = () => {
               <label 
                 className={dataTableStyles.modernCheckboxLabel}
                 onClick={(e) => {
-                  handleCheckboxClick(e);
+                  e.preventDefault(); // Prevent default to ensure proper handling
                   handleFilterChange('category', 'all');
+                  setOpenFilter(null); // Close dropdown after selection
                 }}
               >
                 <div className={dataTableStyles.modernCheckbox}>
@@ -800,7 +821,8 @@ const Expenses = () => {
                     type="radio"
                     checked={filters.category === 'all'}
                     className={dataTableStyles.hiddenCheckbox}
-                    readOnly
+                    onChange={() => handleFilterChange('category', 'all')}
+                    name="category"
                   />
                   <div className={dataTableStyles.customCheckbox}></div>
                 </div>
@@ -811,8 +833,9 @@ const Expenses = () => {
                   key={category.id} 
                   className={dataTableStyles.modernCheckboxLabel}
                   onClick={(e) => {
-                    handleCheckboxClick(e);
+                    e.preventDefault(); // Prevent default to ensure proper handling
                     handleFilterChange('category', category.id.toString());
+                    setOpenFilter(null); // Close dropdown after selection
                   }}
                 >
                   <div className={dataTableStyles.modernCheckbox}>
@@ -820,7 +843,8 @@ const Expenses = () => {
                       type="radio"
                       checked={filters.category === category.id.toString()}
                       className={dataTableStyles.hiddenCheckbox}
-                      readOnly
+                      onChange={() => handleFilterChange('category', category.id.toString())}
+                      name="category"
                     />
                     <div className={dataTableStyles.customCheckbox}></div>
                   </div>
@@ -853,8 +877,9 @@ const Expenses = () => {
                   key={method.value} 
                   className={dataTableStyles.modernCheckboxLabel}
                   onClick={(e) => {
-                    handleCheckboxClick(e);
+                    e.preventDefault(); // Prevent default to ensure proper handling
                     handleFilterChange('paymentMethod', method.value);
+                    setOpenFilter(null); // Close dropdown after selection
                   }}
                 >
                   <div className={dataTableStyles.modernCheckbox}>
@@ -862,7 +887,8 @@ const Expenses = () => {
                       type="radio"
                       checked={filters.paymentMethod === method.value}
                       className={dataTableStyles.hiddenCheckbox}
-                      readOnly
+                      onChange={() => handleFilterChange('paymentMethod', method.value)}
+                      name="paymentMethod"
                     />
                     <div className={dataTableStyles.customCheckbox}></div>
                   </div>
