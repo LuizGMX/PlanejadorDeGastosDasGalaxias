@@ -199,41 +199,43 @@ const AddIncome = () => {
         )}
 
         <form onSubmit={handleSubmit} className={dataTableStyles.formGrid}>
-          <div className={dataTableStyles.formGroup}>
-            <label className={dataTableStyles.formLabel}>
-              Descrição
-            </label>
-            <input
-              type="text"
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              className={dataTableStyles.formInput}
-              required
-            />
-          </div>
-
-          <div className={dataTableStyles.formGroup}>
-            <label className={dataTableStyles.formLabel}>
-              Valor
-            </label>
-            <div className={dataTableStyles.inputWithIcon}>
-              <BsCurrencyDollar className={dataTableStyles.inputIcon} />
-              <CurrencyInput
-                name="amount"
-                placeholder="R$ 0,00"
-                decimalsLimit={2}
-                prefix="R$ "
-                decimalSeparator=","
-                groupSeparator="."
-                value={formData.amount}
-                onValueChange={(value) => {
-                  const numericValue = value ? parseFloat(value.replace(/\./g, '').replace(',', '.')) : '';
-                  setFormData(prev => ({ ...prev, amount: numericValue }));
-                }}
+          <div className={dataTableStyles.inlineFieldsContainer}>
+            <div className={dataTableStyles.formGroup}>
+              <label className={dataTableStyles.formLabel}>
+                Descrição
+              </label>
+              <input
+                type="text"
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
                 className={dataTableStyles.formInput}
                 required
               />
+            </div>
+
+            <div className={dataTableStyles.formGroup}>
+              <label className={dataTableStyles.formLabel}>
+                Valor
+              </label>
+              <div className={dataTableStyles.input}>
+                
+                <CurrencyInput
+                  name="amount"
+                  placeholder="R$ 0,00"
+                  decimalsLimit={2}
+                  prefix="R$ "
+                  decimalSeparator=","
+                  groupSeparator="."
+                  value={formData.amount}
+                  onValueChange={(value) => {
+                    const numericValue = value ? parseFloat(value.replace(/\./g, '').replace(',', '.')) : '';
+                    setFormData(prev => ({ ...prev, amount: numericValue }));
+                  }}
+                  className={dataTableStyles.formInput}
+                  required
+                />
+              </div>
             </div>
           </div>
 
@@ -285,7 +287,7 @@ const AddIncome = () => {
                   <BsRepeat /> Ganho Fixo
                 </div>
               </label>
-              <div className={dataTableStyles.formGroupRow}>
+              <div className={dataTableStyles.inlineFieldsContainer}>
                 <div className={dataTableStyles.formGroupHalf}>
                   <label className={dataTableStyles.formLabel}>Data de Início</label>
                   <input
