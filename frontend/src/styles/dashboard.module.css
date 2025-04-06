@@ -451,23 +451,215 @@
 
 .chartContainer {
   background-color: var(--card-background);
-  border-radius: 12px;
-  
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  min-height: 380px;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-height: 400px;
   display: flex;
   flex-direction: column;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: 1px solid var(--border-color);
+  position: relative;
+  overflow: hidden;
 }
 
 .chartContainer:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  transform: translateY(-4px);
 }
 
 .chartContainer h3 {
   color: var(--text-color);
-  margin: 0 0 20px 0;
-  font-size: 1.2em;
+  margin: 0 0 15px 0;
+  font-size: 1.25em;
+  font-weight: 600;
+}
+
+.chartHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.chartSubtitle {
+  display: flex;
+  align-items: center;
+  color: var(--text-secondary);
+}
+
+.dateFilterBadge {
+  background-color: rgba(0, 0, 0, 0.1);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+}
+
+.dateFilterBadge i {
+  margin-right: 5px;
+}
+
+.categoriesPieContainer,
+.bankPieContainer,
+.incomeVsExpensesContainer {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 1rem;
+  position: relative;
+}
+
+.categoriesInsights {
+  margin-top: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.categoriesInsights h4 {
+  color: var(--text-color);
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1em;
+  font-weight: 600;
+}
+
+.categoriesInsights p {
+  color: var(--text-secondary);
+  margin: 0 0 1rem 0;
+  font-size: 0.9em;
+}
+
+.infoItem {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0.5rem;
+}
+
+.infoItem span {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.25rem;
+}
+
+.infoItem strong {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.positive {
+  color: var(--success-color) !important;
+}
+
+.negative {
+  color: var(--error-color) !important;
+}
+
+.emptyChartContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 2rem;
+  text-align: center;
+}
+
+.emptyChartIcon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.6;
+}
+
+.emptyChartContent p {
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.periodButtons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.periodButton {
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.periodButton:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.periodButton.activePeriod {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+.incomeVsExpensesSummary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-top: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+@media (max-width: 768px) {
+  .chartContainer {
+    min-height: 350px;
+    padding: 1rem;
+  }
+  
+  .incomeVsExpensesSummary {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  
+  .chartHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .chartHeader h3 {
+    margin-bottom: 0.5rem;
+  }
+}
+
+/* Additional enhancements for the recharts components */
+.chartContainer .recharts-wrapper .recharts-cartesian-axis-tick-value {
+  fill: var(--text-secondary);
+  font-size: 0.7rem;
+}
+
+.chartContainer .recharts-wrapper .recharts-label {
+  fill: var(--text-color);
+}
+
+.chartContainer .recharts-legend-item-text {
+  color: var(--text-color) !important;
+}
+
+.chartContainer .recharts-tooltip-cursor {
+  fill-opacity: 0.2;
+}
+
+.chartContainer .recharts-pie-label-text {
+  font-weight: bold;
+  font-size: 12px;
+  fill: #ffffff;
+  text-shadow: 0px 0px 2px rgba(0, 0, 0, 0.75);
 }
 
 .chartContainer.expanded {
@@ -513,14 +705,6 @@
 .infoItem strong {
   color: var(--text-color);
   font-size: 1.1rem;
-}
-
-.positive {
-  color: var(--success-color) !important;
-}
-
-.negative {
-  color: var(--error-color) !important;
 }
 
 .warning {

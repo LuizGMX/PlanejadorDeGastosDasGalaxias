@@ -816,27 +816,73 @@ const Dashboard = () => {
     { value: 12, label: 'Dezembro', shortLabel: 'Dez' }
   ];
 
-  // Cores para os gráficos
+  // Improved color palette with better contrasting colors
   const COLORS = [
-    '#FF5252', // Red
-    '#4CAF50', // Green
-    '#2196F3', // Blue
-    '#FF9800', // Orange
+    '#00C49F', // Teal
+    '#FF6B6B', // Coral red
+    '#2196F3', // Bright blue
+    '#FFBB28', // Gold
     '#9C27B0', // Purple
-    '#00BCD4', // Cyan
-    '#FFEB3B', // Yellow
-    '#795548', // Brown
-    '#607D8B', // Blue Grey
+    '#FF9800', // Orange
+    '#4CAF50', // Green
     '#E91E63', // Pink
     '#3F51B5', // Indigo
+    '#607D8B', // Blue gray
+    '#8BC34A', // Light green
     '#009688', // Teal
     '#FFC107', // Amber
-    '#8BC34A', // Light Green
-    '#673AB7', // Deep Purple
-    '#03A9F4', // Light Blue
-    '#FF5722', // Deep Orange
-    '#CDDC39', // Lime
+    '#03A9F4', // Light blue
+    '#673AB7', // Deep purple
   ];
+
+  // Shared label renderer for better pie chart labels
+  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }) => {
+    const RADIAN = Math.PI / 180;
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    if (percent < 0.05) return null; // Don't show labels for tiny slices
+
+    return (
+      <text 
+        x={x} 
+        y={y} 
+        fill="#ffffff" 
+        textAnchor="middle" 
+        dominantBaseline="central"
+        fontWeight="bold"
+        fontSize="12px"
+        strokeWidth="0.5px"
+        stroke="#000000"
+      >
+        {`${(percent * 100).toFixed(0)}%`}
+      </text>
+    );
+  };
+
+  // Custom tooltip component for all charts
+  const CustomPieTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div style={{ 
+          backgroundColor: 'var(--card-background)', 
+          border: '1px solid var(--border-color)',
+          borderRadius: '6px',
+          padding: '10px',
+          boxShadow: '0 4px 8px rgba(0,0,0,0.15)'
+        }}>
+          <p style={{ margin: '0 0 5px 0', fontWeight: 'bold', color: 'var(--text-color)' }}>
+            {payload[0].name}
+          </p>
+          <p style={{ margin: '0', color: payload[0].color }}>
+            {formatCurrency(payload[0].value)} ({(payload[0].payload.percent * 100).toFixed(1)}%)
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
   
   // Definição das funções fetchData e fetchAllTransactions fora do useEffect
   // para que possam ser acessadas de qualquer lugar no componente
@@ -1802,59 +1848,112 @@ const Dashboard = () => {
     );
   };
 
-  // Ajustar renderIncomeVsExpensesChart para melhorar margens e posicionamento da legenda
+  // Improved renderIncomeVsExpensesChart
   const renderIncomeVsExpensesChart = () => {
     if (!data?.budget_info) return null;
 
-    return renderChart('income-vs-expenses', 'Receitas vs Despesas',
-                  <PieChart margin={{ top: 20, right: 40, left: 30, bottom: 30 }}>
-                    <Pie
-                      data={[
-                        {
-                          name: 'Disponível',
-                          value: Math.max(0, data.budget_info.total_budget - data.budget_info.total_spent)
-                        },
-                        {
-                          name: 'Total Despesa',
-                          value: data.budget_info.total_spent
-                        }
-                      ]}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      startAngle={90}
-                      endAngle={-270}
-                      label={({ name, percent }) =>
-                        name && percent ? `${name} (${(percent * 100).toFixed(0)}%)` : ''
-                      }
-                    >
-                      <Cell fill="var(--primary-color)" />
-                      <Cell fill="var(--error-color)" />
-                    </Pie>
-                    <Tooltip
-                      formatter={formatCurrency}
-                      contentStyle={{
-                        backgroundColor: 'var(--card-background)',
-                        border: '1px solid var(--border-color)',
-                        color: 'var(--text-color)',
-                        padding: '10px',
-                        borderRadius: '8px'
-                      }}
-                      labelStyle={{ color: 'var(--text-color)' }}
-                      itemStyle={{ color: 'var(--text-color)' }}
-                    />
-                    <Legend
-                      formatter={(value) => <span style={{ color: 'var(--text-color)' }}>{value}</span>}
-                      verticalAlign="bottom"
-                      align="center"
-                      height={36}
-                    />
-                  </PieChart>
+    const available = Math.max(0, data.budget_info.total_budget - data.budget_info.total_spent);
+    const totalSpent = data.budget_info.total_spent;
+    const total = available + totalSpent;
+    
+    const chartData = [
+      {
+        name: 'Disponível',
+        value: available,
+        percent: available / total,
+        color: 'var(--primary-color)'
+      },
+      {
+        name: 'Total Despesa',
+        value: totalSpent,
+        percent: totalSpent / total,
+        color: 'var(--error-color)'
+      }
+    ];
+
+    return (
+      <div className={styles.chartContainer}>
+        <div className={styles.chartHeader}>
+          <h3>Receitas vs Despesas</h3>
+          <div className={styles.chartSubtitle}>
+            <span className={styles.dateFilterBadge}>
+              <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
+            </span>
+          </div>
+        </div>
+        <div className={styles.incomeVsExpensesContainer}>
+          <ResponsiveContainer width="100%" height={280}>
+            <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
+              <defs>
+                <filter id="income-vs-expense-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feDropShadow dx="0" dy="0" stdDeviation="3" floodOpacity="0.3" />
+                </filter>
+              </defs>
+              <Pie
+                data={chartData}
+                dataKey="value"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                outerRadius={100}
+                innerRadius={0}
+                startAngle={90}
+                endAngle={-270}
+                filter="url(#income-vs-expense-shadow)"
+                animationDuration={800}
+                animationBegin={200}
+                animationEasing="ease-out"
+              >
+                {chartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} stroke="#ffffff" strokeWidth={2} />
+                ))}
+              </Pie>
+              <Tooltip 
+                formatter={(value) => formatCurrency(value)}
+                contentStyle={{
+                  backgroundColor: 'var(--card-background)',
+                  border: '1px solid var(--border-color)',
+                  color: 'var(--text-color)',
+                  padding: '10px',
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 8px rgba(0,0,0,0.15)'
+                }}
+              />
+              <Legend
+                layout="vertical"
+                align="center"
+                verticalAlign="bottom"
+                iconType="circle"
+                iconSize={10}
+                formatter={(value, entry) => (
+                  <span style={{ color: 'var(--text-color)', fontSize: '12px', fontWeight: 'bold' }}>
+                    {value}: {formatCurrency(entry.payload.value)} ({(entry.payload.percent * 100).toFixed(0)}%)
+                  </span>
+                )}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+        
+        <div className={styles.incomeVsExpensesSummary}>
+          <div className={styles.infoItem}>
+            <span>Receitas totais:</span>
+            <strong className={styles.positive}>{formatCurrency(total)}</strong>
+          </div>
+          <div className={styles.infoItem}>
+            <span>Despesas totais:</span>
+            <strong className={styles.negative}>{formatCurrency(totalSpent)}</strong>
+          </div>
+          <div className={styles.infoItem}>
+            <span>Saldo disponível:</span>
+            <strong className={styles.positive}>{formatCurrency(available)}</strong>
+          </div>
+        </div>
+      </div>
     );
   };
 
+  // Improved renderExpensesByCategoryChart with better visualization
   const renderExpensesByCategoryChart = () => {
     if (!data || !data.expenses_by_category || data.expenses_by_category.length === 0) {
       return (
@@ -1879,11 +1978,15 @@ const Dashboard = () => {
       id: index,
       name: category.category_name,
       value: category.total,
-      color: COLORS[index % COLORS.length]
+      color: COLORS[index % COLORS.length],
+      percent: 0 // Will be calculated below
     }));
 
-    // Calcular total de despesas
+    // Calcular total de despesas e percentages
     const totalExpenses = categoriesData.reduce((sum, cat) => sum + cat.value, 0);
+    categoriesData.forEach(cat => {
+      cat.percent = cat.value / totalExpenses;
+    });
 
     return (
       <div className={styles.chartContainer}>
@@ -1896,31 +1999,55 @@ const Dashboard = () => {
           </div>
         </div>
         <div className={styles.categoriesPieContainer}>
-          <ResponsiveContainer width="100%" height={250}>
-            <PieChart margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
+          <ResponsiveContainer width="100%" height={280}>
+            <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
+              <defs>
+                {categoriesData.map((entry, index) => (
+                  <filter key={`shadow-${index}`} id={`shadow-${index}`} x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="0" stdDeviation="3" floodOpacity="0.3" />
+                  </filter>
+                ))}
+              </defs>
               <Pie
                 data={categoriesData}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                outerRadius={80}
-                innerRadius={40}
+                outerRadius={100}
+                innerRadius={50}
+                paddingAngle={2}
                 fill="#8884d8"
                 dataKey="value"
                 nameKey="name"
-                label={({name, percent}) => name && percent ? `${name}: ${(percent * 100).toFixed(1)}%` : ''}
+                label={renderCustomizedLabel}
+                filter="url(#shadow)"
+                animationDuration={800}
+                animationBegin={200}
+                animationEasing="ease-out"
               >
                 {categoriesData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} stroke="#ffffff" strokeWidth={1} />
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={entry.color} 
+                    stroke="#ffffff" 
+                    strokeWidth={1} 
+                    filter={`url(#shadow-${index})`} 
+                  />
                 ))}
               </Pie>
-              <Tooltip formatter={(value) => formatCurrency(value)} />
+              <Tooltip content={<CustomPieTooltip />} />
               <Legend 
                 layout="vertical"
                 align="right"
                 verticalAlign="middle"
                 iconType="circle"
-                wrapperStyle={{ paddingLeft: '10px', fontSize: '12px' }}
+                iconSize={10}
+                formatter={(value, entry) => (
+                  <span style={{ color: 'var(--text-color)', fontSize: '12px', fontWeight: entry.payload.name === categoriesData[0]?.name ? 'bold' : 'normal' }}>
+                    {value} ({(entry.payload.percent * 100).toFixed(1)}%)
+                  </span>
+                )}
+                wrapperStyle={{ paddingLeft: '10px', fontSize: '12px', overflowY: 'auto', maxHeight: '180px' }}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -1929,7 +2056,7 @@ const Dashboard = () => {
         <div className={styles.categoriesInsights}>
           <h4>Categoria principal: {categoriesData[0]?.name || 'Nenhuma'}</h4>
           <p>
-            Representa {categoriesData[0]?.value ? ((categoriesData[0].value / totalExpenses) * 100).toFixed(1) : 0}% dos seus despesas.
+            Representa {categoriesData[0]?.percent ? (categoriesData[0].percent * 100).toFixed(1) : 0}% dos seus despesas.
           </p>
           <div className={styles.infoItem}>
             <span>Total de Despesas:</span>
@@ -2778,6 +2905,7 @@ const Dashboard = () => {
     );
   };
 
+  // Improved renderIncomeCategoriesChart with better visualization
   const renderIncomeCategoriesChart = () => {
     const handlePeriodChange = (period) => {
       setSelectedPeriod(period);
@@ -2811,176 +2939,145 @@ const Dashboard = () => {
         </div>
       );
     }
-    
-    if (!incomeCategoryData?.length) {
-      console.log("No income category data to display");
+
+    // Avoid rendering with empty or invalid data
+    if (!incomeCategoryData || incomeCategoryData.length === 0) {
       return (
         <div className={styles.chartContainer}>
           <div className={styles.chartHeader}>
             <h3>Receitas por Categoria</h3>
-            <div className={styles.periodButtons}>
-              <button 
-                className={`${styles.periodButton} ${selectedPeriod === 'month' ? styles.activePeriod : ''}`}
-                onClick={() => handlePeriodChange('month')}
-              >
-                <span className={styles.periodIcon}>📅</span>
-                Mês
-              </button>
-              <button 
-                className={`${styles.periodButton} ${selectedPeriod === 'year' ? styles.activePeriod : ''}`}
-                onClick={() => handlePeriodChange('year')}
-              >
-                <span className={styles.periodIcon}>📆</span>
-                Ano
-              </button>
-              <button 
-                className={`${styles.periodButton} ${selectedPeriod === 'all' ? styles.activePeriod : ''}`}
-                onClick={() => handlePeriodChange('all')}
-              >
-                <span className={styles.periodIcon}>🔍</span>
-                Todos
-              </button>
+            <div className={styles.chartSubtitle}>
+              <span className={styles.dateFilterBadge}>
+                <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
+              </span>
             </div>
           </div>
-          <div className={styles.emptyState}>
-            Nenhuma receita encontrada{selectedPeriod === 'month' ? ' neste mês' : 
-            selectedPeriod === 'year' ? ' neste ano' : ''}.
+          <div className={styles.emptyChartContent}>
+            <span className={styles.emptyChartIcon}>📊</span>
+            <p>Não há receitas no período selecionado.</p>
           </div>
         </div>
       );
     }
     
-    // Calculate diversification score
-    const diversificationScore = Math.min(100, incomeCategoryData.length * 15);
-    const primaryIncomePercentage = incomeCategoryData[0].percentage;
-    const isDiversified = primaryIncomePercentage < 70;
-    const totalIncome = incomeCategoryData.reduce((sum, item) => sum + item.amount, 0);
+    // Guarantee that we have color information for each category
+    const totalIncome = incomeCategoryData.reduce((sum, category) => sum + category.amount, 0);
     
-    // Make sure each income category has a unique color
-    const INCOME_COLORS = [
-      '#4CAF50', // Green
-      '#2196F3', // Blue
-      '#00BCD4', // Cyan
-      '#3F51B5', // Indigo
-      '#8BC34A', // Light Green
-      '#009688', // Teal
-      '#03A9F4', // Light Blue
-      '#FFEB3B', // Yellow
-      '#FFC107', // Amber
-      '#673AB7', // Deep Purple
-      '#9C27B0', // Purple
-      '#607D8B', // Blue Grey
-      '#CDDC39', // Lime
-      '#795548'  // Brown
-    ];
-    
-    const incomeCategoriesWithColors = incomeCategoryData.map((item, index) => ({
-      ...item,
-      color: INCOME_COLORS[index % INCOME_COLORS.length]
+    const incomeCategoriesWithColors = incomeCategoryData.map((category, index) => ({
+      ...category,
+      color: COLORS[index % COLORS.length],
+      percent: category.amount / totalIncome
     }));
     
     return (
       <div className={styles.chartContainer}>
         <div className={styles.chartHeader}>
           <h3>Receitas por Categoria</h3>
-          <div className={styles.periodButtons}>
-            <button 
-              className={`${styles.periodButton} ${selectedPeriod === 'month' ? styles.activePeriod : ''}`}
-              onClick={() => handlePeriodChange('month')}
-            >
-              <span className={styles.periodIcon}>📅</span>
-              Mês
-            </button>
-            <button 
-              className={`${styles.periodButton} ${selectedPeriod === 'year' ? styles.activePeriod : ''}`}
-              onClick={() => handlePeriodChange('year')}
-            >
-              <span className={styles.periodIcon}>📆</span>
-              Ano
-            </button>
-            <button 
-              className={`${styles.periodButton} ${selectedPeriod === 'all' ? styles.activePeriod : ''}`}
-              onClick={() => handlePeriodChange('all')}
-            >
-              <span className={styles.periodIcon}>🔍</span>
-              Todos
-            </button>
+          <div className={styles.chartSubtitle}>
+            <div className={styles.periodButtons}>
+              <button 
+                className={`${styles.periodButton} ${selectedPeriod === 'month' ? styles.activePeriod : ''}`} 
+                onClick={() => handlePeriodChange('month')}
+              >
+                Mês
+              </button>
+              <button 
+                className={`${styles.periodButton} ${selectedPeriod === 'year' ? styles.activePeriod : ''}`} 
+                onClick={() => handlePeriodChange('year')}
+              >
+                Ano
+              </button>
+              <button 
+                className={`${styles.periodButton} ${selectedPeriod === 'all' ? styles.activePeriod : ''}`} 
+                onClick={() => handlePeriodChange('all')}
+              >
+                Todos
+              </button>
+            </div>
           </div>
         </div>
-
+        
         <div className={styles.categoriesPieContainer}>
-          <ResponsiveContainer width="100%" height={250}>
-            <PieChart margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
+          <ResponsiveContainer width="100%" height={280}>
+            <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
+              <defs>
+                {incomeCategoriesWithColors.map((entry, index) => (
+                  <filter key={`shadow-${index}`} id={`income-shadow-${index}`} x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="0" stdDeviation="3" floodOpacity="0.3" />
+                  </filter>
+                ))}
+              </defs>
               <Pie
                 data={incomeCategoriesWithColors}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                outerRadius={80}
-                innerRadius={40}
+                outerRadius={100}
+                innerRadius={50}
+                paddingAngle={2}
                 fill="#8884d8"
                 dataKey="amount"
                 nameKey="category"
-                paddingAngle={2}
-                label={({category, percent}) => category && percent ? `${category}: ${(percent * 100).toFixed(1)}%` : ''}
+                label={renderCustomizedLabel}
+                animationDuration={800}
+                animationBegin={200}
+                animationEasing="ease-out"
               >
                 {incomeCategoriesWithColors.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} stroke="#ffffff" strokeWidth={1} />
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={entry.color} 
+                    stroke="#ffffff" 
+                    strokeWidth={1}
+                    filter={`url(#income-shadow-${index})`} 
+                  />
                 ))}
               </Pie>
-              <Tooltip 
-                formatter={(value) => formatCurrency(value)}
-                contentStyle={{
-                  backgroundColor: 'var(--card-background)',
-                  border: '1px solid var(--border-color)',
-                  color: 'var(--text-color)',
-                  padding: '10px',
-                  borderRadius: '8px'
-                }}
-              />
+              <Tooltip content={<CustomPieTooltip />} />
               <Legend 
                 layout="vertical"
                 align="right"
                 verticalAlign="middle"
                 iconType="circle"
-                wrapperStyle={{ paddingLeft: '10px', fontSize: '12px' }}
+                iconSize={10}
+                formatter={(value, entry) => (
+                  <span style={{ color: 'var(--text-color)', fontSize: '12px', fontWeight: entry.payload.category === incomeCategoriesWithColors[0]?.category ? 'bold' : 'normal' }}>
+                    {value} ({(entry.payload.percent * 100).toFixed(1)}%)
+                  </span>
+                )}
+                wrapperStyle={{ paddingLeft: '10px', fontSize: '12px', overflowY: 'auto', maxHeight: '180px' }}
               />
             </PieChart>
           </ResponsiveContainer>
         </div>
         
         <div className={styles.categoriesInsights}>
-          <h4>Diversificação de Renda</h4>
+          <h4>Principal fonte de renda: {incomeCategoriesWithColors[0]?.category || 'Nenhuma'}</h4>
+          <p>
+            Representa {incomeCategoriesWithColors[0]?.percent ? (incomeCategoriesWithColors[0].percent * 100).toFixed(1) : 0}% da sua renda.
+          </p>
           <div className={styles.infoItem}>
             <span>Total de Receitas:</span>
-            <strong>{formatCurrency(totalIncome)}</strong>
-          </div>
-          <div className={styles.diversificationScore}>
-            <div className={styles.diversificationBar}>
-              <div 
-                className={styles.diversificationFill} 
-                style={{ 
-                  width: `${diversificationScore}%`,
-                  backgroundColor: isDiversified ? '#4caf50' : '#ff9800'
-                }}
-              />
-            </div>
-            <div className={styles.diversificationLabel}>
-              {isDiversified 
-                ? 'Sua renda está bem diversificada' 
-                : `${incomeCategoryData[0]?.category || 'Categoria principal'} representa ${primaryIncomePercentage ? primaryIncomePercentage.toFixed(1) : 0}% da sua renda`}
-            </div>
+            <strong className={styles.positive}>{formatCurrency(totalIncome)}</strong>
           </div>
         </div>
       </div>
     );
   };
 
+  // Improved renderBanksChart with better visualization
   const renderBanksChart = () => {
-    if (!data?.expenses_by_bank?.length) {
+    if (!data || !data.expenses_by_bank || data.expenses_by_bank.length === 0) {
       return (
-        <div className={`${styles.chartContainer} ${styles.emptyChartCard}`}>
-          <h3>Distribuição por Banco</h3>
+        <div className={styles.chartContainer}>
+          <div className={styles.chartHeader}>
+            <h3>Distribuição por Banco</h3>
+            <div className={styles.chartSubtitle}>
+              <span className={styles.dateFilterBadge}>
+                <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
+              </span>
+            </div>
+          </div>
           <div className={styles.emptyChartContent}>
             <span className={styles.emptyChartIcon}>🏦</span>
             <p>Não há despesas por banco no período selecionado.</p>
@@ -2989,12 +3086,43 @@ const Dashboard = () => {
       );
     }
 
-    // Preparar dados para o gráfico de pizza
-    const bankData = data.expenses_by_bank.map((bank, index) => ({
-      name: bank.bank_name,
-      value: bank.total,
-      color: COLORS[index % COLORS.length]
-    }));
+    // Determine bank colors with institution-specific colors when possible
+    const getBankColor = (bankName) => {
+      const bankColors = {
+        'Nubank': '#8a05be',
+        'Itaú': '#ec7000',
+        'Banco do Brasil': '#f9dd16',
+        'Caixa': '#1a5ca7',
+        'Santander': '#ec0000',
+        'Bradesco': '#cc092f',
+        'Inter': '#ff7a00',
+        'PicPay': '#11c76f',
+        'C6 Bank': '#242424',
+        'Next': '#00ff5f',
+        'PagBank': '#1f9d55',
+        'BTG Pactual': '#0d2d40',
+      };
+
+      return bankColors[bankName] || null;
+    };
+
+    // Total expenses by bank
+    const totalExpensesByBank = data.expenses_by_bank.reduce((total, bank) => total + bank.total, 0);
+
+    // Format data for pie chart
+    const bankData = data.expenses_by_bank.map((bank, index) => {
+      const customColor = getBankColor(bank.bank_name);
+      return {
+        name: bank.bank_name,
+        value: bank.total,
+        color: customColor || COLORS[index % COLORS.length],
+        percent: bank.total / totalExpensesByBank,
+      };
+    });
+
+    // Find the primary bank (highest expenses)
+    const primaryBank = bankData.reduce((prev, current) => 
+      prev.value > current.value ? prev : current, { value: 0, name: '' });
 
     return (
       <div className={styles.chartContainer}>
@@ -3007,53 +3135,68 @@ const Dashboard = () => {
           </div>
         </div>
         <div className={styles.bankPieContainer}>
-          <ResponsiveContainer width="100%" height={250}>
-            <PieChart margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
+          <ResponsiveContainer width="100%" height={280}>
+            <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
+              <defs>
+                {bankData.map((entry, index) => (
+                  <filter key={`shadow-${index}`} id={`bank-shadow-${index}`} x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="0" stdDeviation="3" floodOpacity="0.3" />
+                  </filter>
+                ))}
+              </defs>
               <Pie
                 data={bankData}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                outerRadius={80}
-                innerRadius={40}
+                outerRadius={100}
+                innerRadius={50}
+                paddingAngle={2}
                 fill="#8884d8"
                 dataKey="value"
                 nameKey="name"
-                paddingAngle={2}
-                label={({name, percent}) => name && percent ? `${name}: ${(percent * 100).toFixed(1)}%` : ''}
+                label={renderCustomizedLabel}
+                animationDuration={800}
+                animationBegin={200}
+                animationEasing="ease-out"
               >
                 {bankData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} stroke="#ffffff" strokeWidth={1} />
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={entry.color} 
+                    stroke="#ffffff" 
+                    strokeWidth={1}
+                    filter={`url(#bank-shadow-${index})`} 
+                  />
                 ))}
               </Pie>
-              <Tooltip 
-                formatter={(value) => formatCurrency(value)} 
-                contentStyle={{
-                  backgroundColor: 'var(--card-background)',
-                  border: '1px solid var(--border-color)',
-                  color: 'var(--text-color)',
-                  padding: '10px',
-                  borderRadius: '8px'
-                }}
-              />
+              <Tooltip content={<CustomPieTooltip />} />
               <Legend 
                 layout="vertical"
                 align="right"
                 verticalAlign="middle"
                 iconType="circle"
-                wrapperStyle={{ paddingLeft: '10px', fontSize: '12px' }}
+                iconSize={10}
+                formatter={(value, entry) => (
+                  <span style={{ color: 'var(--text-color)', fontSize: '12px', fontWeight: entry.payload.name === primaryBank.name ? 'bold' : 'normal' }}>
+                    {value} ({(entry.payload.percent * 100).toFixed(1)}%)
+                  </span>
+                )}
+                wrapperStyle={{ paddingLeft: '10px', fontSize: '12px', overflowY: 'auto', maxHeight: '180px' }}
               />
             </PieChart>
           </ResponsiveContainer>
         </div>
         
-        <div className={styles.bankInsights}>
-          <h4>Banco principal: {bankData[0]?.name}</h4>
-          <p className={styles.bankChartDesc}>
-            {bankData[0] && 
-              `${bankData[0].name} é seu banco mais utilizado. ${((bankData[0].value / bankData.reduce((sum, item) => sum + item.value, 0)) * 100).toFixed(1)}% das despesas estão neste banco.`
-            }
+        <div className={styles.categoriesInsights}>
+          <h4>Banco principal: {primaryBank.name || 'Nenhum'}</h4>
+          <p>
+            {primaryBank.name} é seu banco mais utilizado. {(primaryBank.percent * 100).toFixed(1)}% das despesas estão neste banco.
           </p>
+          <div className={styles.infoItem}>
+            <span>Total gasto via bancos:</span>
+            <strong>{formatCurrency(totalExpensesByBank)}</strong>
+          </div>
         </div>
       </div>
     );
