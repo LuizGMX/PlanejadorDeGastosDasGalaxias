@@ -1,10 +1,11 @@
 /* dataTable.module.css - Estilos compartilhados para telas de listagem */
+/* Estilos gerais do código 1 */
 :root {
   --primary-color: #00ff85;
   --primary-rgb: 0, 255, 133;
   --secondary-color: #1A1B23;
   --background: #121212;
-  --card-background: #1A1B23;
+  --card-background: #1e1e1e;
   --input-bg: #2a2a2a;
   --hover-bg: #333333;
   --text-color: #ffffff;
@@ -304,8 +305,7 @@
 
 /* Tabela de dados */
 .tableContainer {
-  display: block; /* Ensure it's visible on desktop */
-  width: 100%;
+  padding: 0;
   overflow-x: auto;
 }
 
@@ -516,7 +516,6 @@
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   animation: slideUp 0.3s ease;
   border: 1px solid var(--border-color);
-  margin-bottom: 15%;
 }
 
 @keyframes slideUp {
@@ -538,7 +537,6 @@
   font-size: 24px;
 }
 
-/* Manter a cor vermelha apenas para ícones de erro/alerta */
 .modalHeader svg.warning-icon {
   color: var(--error-color);
 }
@@ -564,8 +562,7 @@
 .modalActions {
   display: flex;
   justify-content: flex-end;
-  gap: 16px;
-  margin-top: 24px;
+  gap: 12px;
 }
 
 .cancelButton {
@@ -609,7 +606,7 @@
   color: var(--secondary-color);
 }
 
-/* Adicionando estilos para badges de valor para despesas e receitas */
+/* Adicionando estilos para badges de valor */
 .amountBadge {
   padding: 4px 8px;
   border-radius: 4px;
@@ -639,7 +636,576 @@
   font-weight: 500;
 }
 
-/* Responsividade para dispositivos móveis */
+/* Form Styles for EditIncomeForm and similar forms */
+.formModal {
+  max-width: 700px;
+  width: 100%;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  width: 100%;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.formGroupRow {
+  display: flex;
+  gap: 16px;
+}
+
+.formGroupHalf {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.formLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.formInput {
+  padding: 10px 14px;
+  border-radius: 6px;
+  background-color: var(--input-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  width: 100%;
+  height: 48px;
+  font-size: 15px;
+  transition: all 0.2s ease;
+}
+
+.formInput:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(0, 255, 133, 0.1);
+}
+
+.inputWithIcon {
+  position: relative;
+}
+
+.inputIcon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--primary-color);
+  font-size: 16px;
+}
+
+.inputWithIcon .formInput {
+  padding-left: 40px;
+}
+
+.errorMessage {
+  color: var(--error-color);
+  background-color: rgba(255, 107, 107, 0.1);
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  border-left: 4px solid var(--error-color);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.errorMessage::before {
+  content: "!";
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  background-color: var(--error-color);
+  color: var(--secondary-color);
+  border-radius: 50%;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.warningMessage {
+  background-color: rgba(255, 193, 7, 0.1);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.warningMessage p {
+  margin: 0;
+  color: var(--text-color);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+/* Loading and Error containers */
+.loadingContainer,
+.errorContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--card-background);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  padding: 48px;
+  margin-top: 48px;
+}
+
+.loadingText {
+  font-size: 18px;
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.loadingText::before {
+  content: "";
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid var(--primary-color);
+  border-radius: 50%;
+  border-top-color: transparent;
+  animation: spin 1s linear infinite;
+}
+
+.errorText {
+  font-size: 18px;
+  color: var(--error-color);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.errorText::before {
+  content: "!";
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background-color: var(--error-color);
+  color: white;
+  border-radius: 50%;
+  font-weight: bold;
+}
+
+/* Estilos de botões */
+.primaryButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background-color: var(--secondary-color);
+  border: 2px solid var(--primary-color);
+  color: var(--primary-color);
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 150px;
+}
+
+.primaryButton:hover {
+  background-color: var(--primary-color);
+  color: var(--secondary-color);
+}
+
+.secondaryButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 150px;
+}
+
+.secondaryButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: var(--text-color);
+}
+
+/* Botões para formulários e modais */
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.formButton {
+  padding: 14px 16px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 120px;
+}
+
+.formSubmit {
+  background-color: var(--secondary-color);
+  border: 2px solid var(--primary-color);
+  color: var(--primary-color);
+}
+
+.formSubmit:hover {
+  background-color: var(--primary-color);
+  color: var(--secondary-color);
+}
+
+.formCancel {
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+}
+
+.formCancel:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: var(--text-color);
+}
+
+/* Botões de alternância para seleção de tipo */
+.toggleGroup {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.toggleButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background-color: var(--input-bg);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-color);
+  border-radius: 6px;
+}
+
+.toggleButton svg {
+  color: var(--primary-color);
+  font-size: 16px;
+}
+
+.toggleButton:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: var(--primary-color);
+  color: var(--text-color);
+}
+
+.toggleButton.active {
+  background-color: var(--secondary-color);
+  border: 2px solid var(--primary-color);
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.deleteModal {
+  max-width: 550px;
+  border-left: 4px solid var(--error-color);
+}
+
+.confirmModal {
+  border-left: 4px solid var(--success-color);
+}
+
+.confirmModal .modalHeader {
+  background-color: rgba(var(--success-rgb), 0.1);
+}
+
+.confirmModal .modalHeader svg {
+  color: var(--success-color);
+}
+
+.warningIcon {
+  color: var(--error-color);
+  margin-right: 12px;
+}
+
+.confirmMessage {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.confirmMessage p {
+  margin-bottom: 8px;
+  color: var(--text-color);
+  font-size: 16px;
+}
+
+.warningText {
+  color: var(--error-color);
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+/* Opções de exclusão */
+.optionsContainer {
+  background-color: var(--secondary-color);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  border: 1px solid var(--border-color);
+}
+
+.optionHeader {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.optionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.optionItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 14px;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  background-color: var(--input-bg);
+  border: 1px solid transparent;
+}
+
+.optionItem:hover {
+  background-color: var(--hover-bg);
+  border-color: var(--border-color);
+}
+
+.optionSelected {
+  background-color: rgba(0, 255, 133, 0.1);
+  border-color: var(--primary-color);
+}
+
+.optionRadio {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+}
+
+.optionRadio input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.customRadio {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 18px;
+  width: 18px;
+  background-color: var(--input-bg);
+  border-radius: 50%;
+  border: 1px solid var(--border-color);
+}
+
+.optionRadio input[type="radio"]:checked ~ .customRadio {
+  border-color: var(--primary-color);
+}
+
+.optionRadio input[type="radio"]:checked ~ .customRadio:after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--primary-color);
+}
+
+.optionContent {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.optionTitle {
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 6px;
+  font-size: 15px;
+}
+
+.optionDescription {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* Botões do modal */
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.deleteButton {
+  border-color: var(--error-color) !important;
+  color: var(--error-color) !important;
+}
+
+.deleteButton:hover {
+  background-color: var(--error-color) !important;
+  color: var(--secondary-color) !important;
+}
+
+.deleteButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: var(--secondary-color) !important;
+  color: var(--error-color) !important;
+}
+
+/* Estilos para detalhes do modal */
+.modalDetails {
+  background-color: var(--input-bg);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.detailRow {
+  display: flex;
+  margin-bottom: 8px;
+  align-items: baseline;
+}
+
+.detailRow:last-child {
+  margin-bottom: 0;
+}
+
+.detailLabel {
+  font-weight: 600;
+  color: var(--text-secondary);
+  min-width: 100px;
+  margin-right: 8px;
+}
+
+.detailValue {
+  color: var(--text-color);
+}
+
+/* Botão de exclusão em massa */
+.bulkActions {
+  display: flex;
+  justify-content: flex-end;
+  margin: 12px 0;
+  padding: 0 12px;
+}
+
+.deleteButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background-color: rgba(var(--error-rgb), 0.1);
+  border: 1px solid var(--error-color);
+  color: var(--error-color);
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.deleteButton svg {
+  font-size: 16px;
+}
+
+.deleteButton:hover {
+  background-color: var(--error-color);
+  color: white;
+}
+
+/* Estilos base para componentes mobile do código 2 */
+.mobileCardView {
+  display: none !important; /* Oculto em desktop */
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  margin-bottom: 24px;
+  padding: 0 8px;
+}
+
+.filterToggleButton {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px;
+  background-color: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-color);
+  font-size: 15px;
+  margin-bottom: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.filterToggleButton:hover {
+  background-color: var(--hover-bg);
+}
+
+.filterToggleButton svg {
+  color: var(--primary-color);
+  font-size: 16px;
+}
+
+/* Estilos mobile do código 2 */
 @media (max-width: 768px) {
   .pageContainer {
     padding: 12px;
@@ -687,7 +1253,6 @@
     padding: 10px 12px;
   }
   
-  /* Improved table responsiveness */
   .tableContainer {
     overflow-x: auto;
     margin: 0 -12px;
@@ -696,7 +1261,7 @@
   }
   
   .table {
-    min-width: 700px; /* Ensures table won't shrink too much */
+    min-width: 700px;
   }
   
   .table th, 
@@ -727,7 +1292,6 @@
     overflow-y: auto;
   }
   
-  /* Collapsible filter section */
   .filtersToggle {
     display: flex;
     align-items: center;
@@ -761,7 +1325,6 @@
     transition: max-height 0.5s ease;
   }
   
-  /* Improved mobile layout for delete confirmation modal */
   .optionsContainer {
     padding: 12px;
   }
@@ -772,6 +1335,107 @@
   
   .optionItem {
     padding: 10px;
+  }
+  
+  .mobileCardView {
+    display: flex !important; /* Exibir em mobile */
+  }
+  
+  .tableContainer {
+    display: none !important; /* Ocultar tabela em mobile */
+  }
+  
+  .filterToggleButton {
+    display: flex;
+    position: sticky;
+    top: 0;
+    margin-top: -8px;
+    margin-bottom: 16px;
+  }
+  
+  .dataContainer {
+    padding-top: 8px;
+  }
+  
+  .filtersCollapsed {
+    display: none;
+    max-height: 0;
+    overflow: hidden;
+  }
+  
+  .filtersExpanded {
+    display: flex;
+    flex-direction: column;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  
+  .formModal {
+    padding: 16px;
+    max-width: 100%;
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    overflow-y: auto;
+  }
+  
+  .formGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .toggleGroup {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 8px;
+    width: 100%;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .toggleGroup::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .toggleButton {
+    min-width: auto;
+    flex: 1 0 auto;
+    white-space: nowrap;
+    padding: 0 12px;
+  }
+  
+  .formGroup:nth-child(3) .toggleButton,
+  .formGroup:nth-child(7) .toggleButton {
+    flex: 1;
+    text-align: center;
+    justify-content: center;
+  }
+  
+  .formButton {
+    min-width: 0;
+    flex: 1;
+    padding: 12px 16px;
+  }
+  
+  .modalActions {
+    flex-direction: row;
+    gap: 12px;
+    justify-content: space-between;
+    margin-top: 24px;
+  }
+  
+  .formGroupRow {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .formGroupHalf {
+    width: 100%;
   }
 }
 
@@ -798,7 +1462,7 @@
   .table td:nth-child(5),
   .table th:nth-child(6),
   .table td:nth-child(6) {
-    display: none; /* Hide less important columns on very small screens */
+    display: none;
   }
   
   .typeStatus {
@@ -824,185 +1488,11 @@
     gap: 8px;
   }
   
-  /* Improved display of the filter dropdowns */
   .modernSelectDropdown {
     max-height: 250px;
     width: 100%;
   }
-}
-
-/* Additional style for mobile-friendly filter toggle button */
-.filterToggleButton {
-  display: none;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  padding: 12px;
-  background-color: var(--card-background);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  color: var(--text-color);
-  font-size: 15px;
-  margin-bottom: 16px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-}
-
-.filterToggleButton:hover {
-  background-color: var(--hover-bg);
-}
-
-.filterToggleButton svg {
-  color: var(--primary-color);
-  font-size: 16px;
-}
-
-@media (max-width: 768px) {
-  .filterToggleButton {
-    display: flex;
-    position: sticky;
-    top: 0;
-    margin-top: -8px;
-    margin-bottom: 16px;
-  }
   
-  .dataContainer {
-    padding-top: 8px;
-  }
-  
-  .filtersCollapsed {
-    display: none;
-    max-height: 0;
-    overflow: hidden;
-  }
-  
-  .filtersExpanded {
-    display: flex;
-    flex-direction: column;
-    max-height: 80vh;
-    overflow-y: auto;
-  }
-}
-
-/* Adicionando estilos para melhorar a visualização desktop dos formulários */
-.formModal {
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-@media (min-width: 768px) {
-  .formGrid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-  }
-  
-  .formGroup {
-    margin-bottom: 20px;
-  }
-  
-  .formInput, 
-  .formSelect {
-    margin-top: 6px;
-  }
-  
-  .modalActions {
-    grid-column: span 2;
-    display: flex;
-    justify-content: flex-end;
-    gap: 15px;
-    margin-top: 15px;
-  }
-  
-  .formButton {
-    padding: 10px 20px;
-  }
-  
-  .formWideField {
-    grid-column: span 2;
-  }
-}
-
-/* Additional mobile optimizations for form elements */
-@media (max-width: 768px) {
-  .formModal {
-    padding: 16px;
-    max-width: 100%;
-    width: 100%;
-    height: 100%;
-    border-radius: 0;
-    overflow-y: auto;
-  }
-
-  .formGrid {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  /* Make toggle groups horizontally scrollable on mobile */
-  .toggleGroup {
-    display: flex;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    gap: 8px;
-    padding-bottom: 8px;
-    width: 100%;
-    scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE and Edge */
-  }
-  
-  .toggleGroup::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
-  }
-
-  .toggleButton {
-    min-width: auto;
-    flex: 1 0 auto;
-    white-space: nowrap;
-    padding: 0 12px;
-  }
-  
-  /* Make buttons inside toggleGroup have equal width */
-  .formGroup:nth-child(3) .toggleButton,  /* Expense Type */
-  .formGroup:nth-child(7) .toggleButton { /* Payment Method */
-    flex: 1;
-    text-align: center;
-    justify-content: center;
-  }
-
-  .formButton {
-    min-width: 0;
-    flex: 1;
-    padding: 12px 16px;
-  }
-
-  .modalActions {
-    flex-direction: row;
-    gap: 12px;
-    justify-content: space-between;
-    margin-top: 24px;
-  }
-  
-  .formGroupRow {
-    flex-direction: column;
-    gap: 16px;
-  }
-  
-  .formGroupHalf {
-    width: 100%;
-  }
-}
-
-@media (max-width: 480px) {
-  /* Description and value in same line */
   .formGrid .formGroup:nth-child(1),
   .formGrid .formGroup:nth-child(2) {
     display: inline-block;
@@ -1022,8 +1512,7 @@
     clear: both;
     width: 100%;
   }
-
-  /* Even more specific toggle styling for small mobile */
+  
   .toggleGroup {
     display: flex;
     flex-direction: row;
@@ -1049,7 +1538,6 @@
     margin-right: 4px;
   }
   
-  /* Specific positioning for expense type buttons - MAKE IT MATCH PAYMENT METHOD */
   .formGroup:nth-child(3) .toggleGroup {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -1069,26 +1557,12 @@
     margin-right: 3px;
   }
   
-  /* Specific positioning for payment method buttons */
   .formGroup:nth-child(7) .toggleGroup {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 6px 6px;
   }
-}
-
-.toggleButton.active {
-  background-color: var(--secondary-color);
-  border: 2px solid var(--primary-color);
-  color: var(--primary-color);
-  font-weight: 600;
-}
-
-.inlineFieldsContainer {
-  width: 100%;
-}
-
-@media (max-width: 480px) {
+  
   .inlineFieldsContainer {
     display: flex;
     justify-content: space-between;
@@ -1097,7 +1571,7 @@
   
   .inlineFieldsContainer .formGroup {
     flex: 1;
-    min-width: 0; /* Allows flex items to shrink below content size */
+    min-width: 0;
   }
   
   .inlineFieldsContainer .formInput {
@@ -1109,37 +1583,6 @@
   }
 }
 
-.mobileCardType .typeStatus {
-  margin: 0;
-  font-size: 13px;
-  padding: 6px 10px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.mobileCardType .typeStatus svg {
-  font-size: 14px;
-}
-
-.fixedType {
-  background-color: rgba(79, 70, 229, 0.1);
-  color: #6366f1;
-  border: 1px solid #6366f1;
-}
-
-.oneTimeType {
-  background-color: rgba(16, 185, 129, 0.1);
-  color: #10b981;
-  border: 1px solid #10b981;
-}
-
-.installmentsType {
-  background-color: rgba(245, 158, 11, 0.1);
-  color: #f59e0b;
-  border: 1px solid #f59e0b;
-}
-
 /* Multiple cards arrangement for tablets */
 @media (min-width: 600px) and (max-width: 768px) {
   .mobileCardView {
@@ -1147,166 +1590,4 @@
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 16px;
   }
-  
-  .mobileCard {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .mobileCardActions {
-    margin-top: auto;
-  }
 }
-
-/* Mobile card view container */
-.mobileCardView {
-  display: none !important; /* Ensure it's hidden on desktop */
-  flex-direction: column;
-  gap: 16px;
-  width: 100%;
-  margin-bottom: 24px;
-  padding: 0 8px;
-}
-
-@media (max-width: 768px) {
-  .mobileCardView {
-    display: flex !important; /* Force display on mobile */
-  }
-  
-  .tableContainer {
-    display: none !important; /* Force hide on mobile */
-  }
-}
-
-/* Improved mobile card header with gradient bar */
-.mobileCardHeader::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, var(--primary-color) 0%, var(--gradient-end) 100%);
-  border-radius: 16px 16px 0 0;
-}
-
-/* Enhanced expense amount styling */
-.expenseAmount.mobileCardAmount {
-  font-size: 15px;
-  font-weight: 600;
-  padding: 6px 10px;
-  border-radius: 8px;
-  margin-left: 10px;
-  background-color: rgba(255, 107, 107, 0.15);
-  color: var(--error-color);
-  border: 1px solid var(--error-color);
-}
-
-/* Badge styling in mobile view */
-.typeStatus {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-/* Custom Radio Styles */
-input[type="radio"].hiddenCheckbox ~ .customCheckbox {
-  border-radius: 50%;
-}
-
-input[type="radio"].hiddenCheckbox:checked ~ .customCheckbox {
-  background-color: var(--primary-color);
-  border-color: var(--primary-color);
-}
-
-input[type="radio"].hiddenCheckbox:checked ~ .customCheckbox:after {
-  transform: none;
-  border: none;
-  width: 8px;
-  height: 8px;
-  background-color: white;
-  border-radius: 50%;
-  left: 4px;
-  top: 4px;
-}
-
-.formGrid {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.inlineFieldsContainer {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.formGroup {
-  margin-bottom: 15px;
-}
-
-.formGroupHalf {
-  flex: 1;
-  min-width: 150px;
-  margin-bottom: 15px;
-}
-
-.formGrid {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.inlineFieldsContainer {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
-}
-
-.formGroup {
-  margin-bottom: 15px;
-  width: 100%;
-}
-
-.formGroupHalf {
-  flex: 1;
-  min-width: 150px;
-  margin-bottom: 15px;
-}
-
-/* Botões tipo toggle com melhor distribuição */
-.toggleGroup {
-  display: flex;
-  gap: 10px;
-  margin-top: 8px;
-  justify-content: stretch;
-  flex-wrap: wrap;
-}
-
-.toggleButton {
-  flex: 1;
-  min-width: 120px;
-  height: 42px;
-}
-
-/* Container da modal com melhor visualização */
-.formModal {
-  max-width: 680px !important;
-  width: 90% !important;
-  padding: 20px !important;
-}
-
-/* Ajustar botões de ação */
-.modalActions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 25px;
-} 
