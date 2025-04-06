@@ -1075,12 +1075,12 @@
   }
   
   /* Melhorar o espaçamento interior dos cartões */
-  .chartContainer,
+  /* .chartContainer,
   .timelineContainer,
   .budgetInfoContainer,
   .goalCard {
     padding: 0.75rem;
-  }
+  } */
 }
 
 /* Animações */
@@ -3226,4 +3226,89 @@ input:checked + .toggleSlider:before {
   font-size: 0.95rem;
   line-height: 1.5;
   margin-bottom: 0.8rem;
+}
+
+/* Melhores ajustes para visualização em dispositivos móveis */
+@media (max-width: 768px) {
+  /* Melhorar exibição de rótulos em dispositivos móveis */
+  .chartContainer .recharts-wrapper .recharts-cartesian-axis-tick-value {
+    font-size: 9px !important;
+    font-weight: 500 !important;
+  }
+  
+  /* Ajustar rotação dos rótulos no eixo X para economizar espaço */
+  .chartContainer .recharts-wrapper .recharts-xAxis .recharts-cartesian-axis-tick-value {
+    transform: rotate(-45deg);
+    text-anchor: end;
+    transform-origin: bottom right;
+    dy: -0.5em;
+    dx: -0.5em;
+  }
+  
+  /* Reduzir tamanho das legendas */
+  .chartContainer .recharts-default-legend {
+    font-size: 9px !important;
+    text-align: center !important;
+    width: 100% !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    margin: 5px auto !important;
+  }
+  
+  /* Ajustar posição do tooltip para não ficar cortado */
+  .chartContainer .recharts-tooltip-wrapper {
+    max-width: 80vw !important;
+  }
+  
+  /* Reduzir tamanho do texto dentro do tooltip */
+  .chartContainer .recharts-tooltip-item-name,
+  .chartContainer .recharts-tooltip-item-value {
+    font-size: 10px !important;
+  }
+  
+  /* Ajustar espaçamento para gráficos de pizza */
+  .chartContainer .recharts-pie {
+    transform: scale(0.9);
+  }
+  
+  /* Melhorar visualização de labels nos gráficos de pizza */
+  .chartContainer .recharts-pie-label-text {
+    font-size: 8px !important;
+  }
+  
+  /* Ajustes para cabeçalhos de gráficos */
+  .chartHeader {
+    padding: 0.75rem 0.5rem !important;
+  }
+  
+  .chartHeader h3 {
+    font-size: 0.95rem !important;
+  }
+  
+  .chartSubtitle {
+    font-size: 0.75rem !important;
+  }
+  
+  /* Ajustes para gráficos individuais */
+  .chartBody {
+    margin-bottom: 20px;
+    padding: 0 0.5rem 0.5rem 0;
+  }
+  
+  /* Reduzir margens para maximizar espaço do gráfico */
+  .chartContainer .recharts-wrapper {
+    margin: 0 auto !important;
+  }
+  
+  /* Ajustar escalas dos gráficos */
+  .chartContainer .recharts-surface {
+    overflow: visible;
+  }
+  
+  /* Ajustes específicos para gráficos de área */
+  .bankPieContainer,
+  .categoriesPieContainer {
+    height: 220px !important;
+  }
 }
