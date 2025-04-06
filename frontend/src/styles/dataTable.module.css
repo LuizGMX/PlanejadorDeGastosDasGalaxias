@@ -1167,7 +1167,7 @@
 
 /* Estilos base para componentes mobile do código 2 */
 .mobileCardView {
-  display: none !important; /* Oculto em desktop */
+  display: none; /* Hidden on desktop */
   flex-direction: column;
   gap: 16px;
   width: 100%;
@@ -1430,7 +1430,7 @@
   }
   
   .mobileCardView {
-    display: flex !important;
+    display: flex;
     flex-direction: column;
     gap: 16px;
     width: 100%;
@@ -1439,7 +1439,7 @@
   }
   
   .tableContainer {
-    display: none !important;
+    display: none;
   }
 }
 
@@ -1621,5 +1621,5 @@
 
 /* Ensure mobile card view is hidden on desktop */
 .mobileCardView {
-  display: none !important;
+  display: none;
 }

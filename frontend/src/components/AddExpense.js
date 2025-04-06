@@ -291,6 +291,9 @@ const AddExpense = () => {
         }
       }
 
+       // Informe o usuário que o valor inserido é o valor da parcela e não o total
+       let amount = formData.amount;
+
       // Validações específicas para pagamento parcelado
       if (formData.has_installments) {
         // Validação do número de parcelas
@@ -321,8 +324,7 @@ const AddExpense = () => {
           throw new Error('A data da parcela atual é obrigatória');
         }
         
-        // Informe o usuário que o valor inserido é o valor da parcela e não o total
-        let amount = formData.amount;
+       
         
         // Verifica se o amount é uma string e converte para número se necessário
         if (typeof amount === 'string' && amount) {
