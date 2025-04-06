@@ -22,14 +22,11 @@ import telegramRoutes from './routes/telegramRoutes.js';
 import { sequelize } from './models/index.js';
 import seedDatabase from './database/seeds/index.js';
 import { telegramService } from './services/telegramService.js';
-import { Sequelize } from 'sequelize';
+
 import healthRoutes from './routes/healthRoutes.js';
 import { configureRateLimit, authLimiter } from './middleware/rateLimit.js';
 
 dotenv.config();
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 const app = express();
 
