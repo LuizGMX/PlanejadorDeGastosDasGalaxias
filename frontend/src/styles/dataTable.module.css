@@ -1205,8 +1205,100 @@
   font-size: 16px;
 }
 
-/* Estilos mobile do código 2 */
 @media (max-width: 768px) {
+  .filterToggleButton {
+    display: flex;
+    position: sticky;
+    top: 0;
+    margin-top: -8px;
+    margin-bottom: 16px;
+  }
+  
+  .dataContainer {
+    padding-top: 8px;
+  }
+  
+  .filtersCollapsed {
+    display: none;
+    max-height: 0;
+    overflow: hidden;
+  }
+  
+  .filtersExpanded {
+    display: flex;
+    flex-direction: column;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  
+  .formModal {
+    padding: 16px;
+    max-width: 100%;
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    overflow-y: auto;
+  }
+
+  .formGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .toggleGroup {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 8px;
+    width: 100%;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .toggleGroup::-webkit-scrollbar {
+    display: none;
+  }
+
+  .toggleButton {
+    min-width: auto;
+    flex: 1 0 auto;
+    white-space: nowrap;
+    padding: 0 12px;
+  }
+  
+  .formGroup:nth-child(3) .toggleButton,
+  .formGroup:nth-child(7) .toggleButton {
+    flex: 1;
+    text-align: center;
+    justify-content: center;
+  }
+  
+  .formButton {
+    min-width: 0;
+    flex: 1;
+    padding: 12px 16px;
+  }
+  
+  .modalActions {
+    flex-direction: row;
+    gap: 12px;
+    justify-content: space-between;
+    margin-top: 24px;
+  }
+  
+  .formGroupRow {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .formGroupHalf {
+    width: 100%;
+  }
+  
   .pageContainer {
     padding: 12px;
   }
@@ -1264,7 +1356,7 @@
     min-width: 700px;
   }
   
-  .table th, 
+  .table th,
   .table td {
     padding: 12px 8px;
     font-size: 14px;
@@ -1338,161 +1430,53 @@
   }
   
   .mobileCardView {
-    display: flex !important; /* Exibir em mobile */
+    display: flex !important;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    margin-bottom: 24px;
+    padding: 0 8px;
   }
   
   .tableContainer {
-    display: none !important; /* Ocultar tabela em mobile */
+    display: none !important;
   }
-  
-  .filterToggleButton {
-    display: flex;
-    position: sticky;
-    top: 0;
-    margin-top: -8px;
-    margin-bottom: 16px;
-  }
-  
-  .dataContainer {
-    padding-top: 8px;
-  }
-  
-  .filtersCollapsed {
-    display: none;
-    max-height: 0;
-    overflow: hidden;
-  }
-  
-  .filtersExpanded {
-    display: flex;
-    flex-direction: column;
-    max-height: 80vh;
-    overflow-y: auto;
-  }
-  
-  .formModal {
-    padding: 16px;
-    max-width: 100%;
-    width: 100%;
-    height: 100%;
-    border-radius: 0;
-    overflow-y: auto;
-  }
-  
+}
+
+@media (min-width: 768px) {
   .formGrid {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
   }
   
-  .toggleGroup {
-    display: flex;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    gap: 8px;
-    padding-bottom: 8px;
-    width: 100%;
-    scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+  .formGroup {
+    margin-bottom: 20px;
   }
   
-  .toggleGroup::-webkit-scrollbar {
-    display: none;
-  }
-  
-  .toggleButton {
-    min-width: auto;
-    flex: 1 0 auto;
-    white-space: nowrap;
-    padding: 0 12px;
-  }
-  
-  .formGroup:nth-child(3) .toggleButton,
-  .formGroup:nth-child(7) .toggleButton {
-    flex: 1;
-    text-align: center;
-    justify-content: center;
-  }
-  
-  .formButton {
-    min-width: 0;
-    flex: 1;
-    padding: 12px 16px;
+  .formInput,
+  .formSelect {
+    margin-top: 6px;
   }
   
   .modalActions {
-    flex-direction: row;
-    gap: 12px;
-    justify-content: space-between;
-    margin-top: 24px;
+    grid-column: span 2;
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 15px;
   }
   
-  .formGroupRow {
-    flex-direction: column;
-    gap: 16px;
+  .formButton {
+    padding: 10px 20px;
   }
   
-  .formGroupHalf {
-    width: 100%;
+  .formWideField {
+    grid-column: span 2;
   }
 }
 
 @media (max-width: 480px) {
-  .pageContainer {
-    padding: 10px;
-  }
-  
-  .pageTitle {
-    font-size: 22px;
-  }
-  
-  .dataContainer {
-    padding: 16px 12px;
-  }
-  
-  .table th, 
-  .table td {
-    padding: 10px 4px;
-    font-size: 13px;
-  }
-  
-  .table th:nth-child(5),
-  .table td:nth-child(5),
-  .table th:nth-child(6),
-  .table td:nth-child(6) {
-    display: none;
-  }
-  
-  .typeStatus {
-    padding: 3px 6px;
-    font-size: 12px;
-  }
-  
-  .amountBadge {
-    padding: 3px 6px;
-    font-size: 12px;
-  }
-  
-  .modalHeader h3 {
-    font-size: 18px;
-  }
-  
-  .modalMessage {
-    font-size: 14px;
-  }
-  
-  .modalActions {
-    flex-direction: column;
-    gap: 8px;
-  }
-  
-  .modernSelectDropdown {
-    max-height: 250px;
-    width: 100%;
-  }
-  
   .formGrid .formGroup:nth-child(1),
   .formGrid .formGroup:nth-child(2) {
     display: inline-block;
@@ -1541,7 +1525,7 @@
   .formGroup:nth-child(3) .toggleGroup {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 6px 6px;
+    gap: 6px;
   }
   
   .formGroup:nth-child(3) .toggleButton {
@@ -1560,34 +1544,82 @@
   .formGroup:nth-child(7) .toggleGroup {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 6px 6px;
+    gap: 6px;
   }
   
-  .inlineFieldsContainer {
-    display: flex;
-    justify-content: space-between;
-    gap: 16px;
+  .pageContainer {
+    padding: 10px;
   }
   
-  .inlineFieldsContainer .formGroup {
-    flex: 1;
-    min-width: 0;
+  .pageTitle {
+    font-size: 22px;
   }
   
-  .inlineFieldsContainer .formInput {
+  .dataContainer {
+    padding: 16px 12px;
+  }
+  
+  .table th,
+  .table td {
+    padding: 10px 4px;
+    font-size: 13px;
+  }
+  
+  .table th:nth-child(5),
+  .table td:nth-child(5),
+  .table th:nth-child(6),
+  .table td:nth-child(6) {
+    display: none;
+  }
+  
+  .typeStatus {
+    padding: 3px 6px;
+    font-size: 12px;
+  }
+  
+  .amountBadge {
+    padding: 3px 6px;
+    font-size: 12px;
+  }
+  
+  .modalHeader h3 {
+    font-size: 18px;
+  }
+  
+  .modalMessage {
     font-size: 14px;
   }
   
-  .inlineFieldsContainer .inputIcon {
-    font-size: 14px;
+  .modalActions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .modernSelectDropdown {
+    max-height: 250px;
+    width: 100%;
   }
 }
 
-/* Multiple cards arrangement for tablets */
 @media (min-width: 600px) and (max-width: 768px) {
   .mobileCardView {
     display: grid !important;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 16px;
   }
+  
+  .mobileCard {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .mobileCardActions {
+    margin-top: auto;
+  }
+}
+
+/* Ensure mobile card view is hidden on desktop */
+.mobileCardView {
+  display: none !important;
 }
