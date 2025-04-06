@@ -8,8 +8,12 @@
  * @returns {boolean} true if the device is iOS
  */
 export const isIOS = () => {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ||
+    (navigator.userAgent.includes('Mac') && 'ontouchend' in document);
+  
+  console.log('iOS detection:', isIOSDevice, 'UserAgent:', navigator.userAgent);
+  return isIOSDevice;
 };
 
 /**
@@ -17,6 +21,7 @@ export const isIOS = () => {
  */
 export const addIOSClasses = () => {
   if (isIOS()) {
+    console.log('Adding iOS classes to body');
     document.body.classList.add('ios-device');
     
     // Add specific classes for different iOS versions if needed
@@ -28,6 +33,7 @@ export const addIOSClasses = () => {
       if ((iosVersion.major >= 11 && /iPhone/.test(navigator.userAgent)) ||
           (iosVersion.major >= 12)) {
         document.body.classList.add('ios-notched');
+        console.log('Notched iOS device detected');
       }
     }
   }
@@ -152,9 +158,21 @@ export const fixIOSVh = () => {
  * Call this function in your app's entry point
  */
 export const initIOSFixes = () => {
+  console.log('Initializing iOS fixes');
   addIOSClasses();
   fixIOSInputs();
   fixIOSVh();
+  
+  // Force mobile navbar to be visible on iOS regardless of width media query
+  setTimeout(() => {
+    if (isIOS()) {
+      const mobileNavbar = document.querySelector('.mobileNavbar');
+      if (mobileNavbar) {
+        console.log('Forcing mobile navbar display on iOS');
+        mobileNavbar.style.display = 'block';
+      }
+    }
+  }, 500); // Short delay to ensure DOM is fully loaded
 };
 
 export default initIOSFixes; 

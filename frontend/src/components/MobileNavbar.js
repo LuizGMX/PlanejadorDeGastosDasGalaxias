@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../App';
 import '../styles/navbar.mobile.css';
@@ -13,12 +13,28 @@ import {
   BsCashCoin
 } from 'react-icons/bs';
 import { GiPayMoney, GiReceiveMoney } from "react-icons/gi";
+import { isIOS } from '../utils/ios-fixes';
 
 const MobileNavbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { auth } = useContext(AuthContext);
   const [openSubmenu, setOpenSubmenu] = useState(null);
+  const [isIOSDevice, setIsIOSDevice] = useState(false);
+  
+  useEffect(() => {
+    // Check if running on iOS
+    setIsIOSDevice(isIOS());
+    
+    // Force the mobile navbar to be visible on iOS devices
+    if (isIOS()) {
+      const navbarElement = document.querySelector('.mobileNavbar');
+      if (navbarElement) {
+        navbarElement.style.display = 'block';
+        console.log('MobileNavbar: Forcing display for iOS device');
+      }
+    }
+  }, []);
   
   // Se o usuário não estiver logado, não exibe a navbar
   if (!auth.token) return null;
@@ -84,8 +100,10 @@ const MobileNavbar = () => {
     setOpenSubmenu(null);
   };
   
+  const navbarClassName = `mobileNavbar ${isIOSDevice ? 'ios-navbar' : ''}`;
+  
   return (
-    <nav className="mobileNavbar">
+    <nav className={navbarClassName}>
       <div className="mobileNavLinks">
         {menuItems.map((item, index) => (
           <div key={index} className="mobileNavItem">

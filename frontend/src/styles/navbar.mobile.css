@@ -268,6 +268,19 @@ main.withMobileNav {
   }
 }
 
+/* iOS-specific styles to ensure mobile navbar visibility */
+.ios-device .mobileNavbar,
+.ios-notched .mobileNavbar,
+.ios-navbar {
+  display: block !important;
+  height: calc(70px + env(safe-area-inset-bottom, 0)) !important;
+  max-height: calc(70px + env(safe-area-inset-bottom, 0)) !important;
+  padding-bottom: env(safe-area-inset-bottom, 0) !important;
+  /* Use hardware acceleration to avoid flickering */
+  -webkit-transform: translate3d(0,0,0);
+  transform: translate3d(0,0,0);
+}
+
 /* iOS specific adjustments for notched devices */
 @supports (padding: max(0px)) {
   .mobileNavbar {
