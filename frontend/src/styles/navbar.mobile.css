@@ -10,12 +10,14 @@
   z-index: 999; /* Valor menor que os modais (10000) mas ainda alto */
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.15);
   display: none; /* Inicialmente escondida */
+  height: 70px; /* Altura fixa para calcular corretamente o padding necessário */
 }
 
 .mobileNavLinks {
   display: flex;
   justify-content: space-around;
   padding: 10px 0;
+  height: 100%;
 }
 
 .mobileNavItem {
@@ -162,6 +164,11 @@ main.withMobileNav {
   
   .mobileNavbar {
     display: block !important; /* Mostrar apenas em telas pequenas */
+  }
+  
+  /* Ajustes para o conteúdo com a navbar móvel */
+  body {
+    padding-bottom: 70px; /* Altura da navbar */
   }
   
   /* Ajustes para o logout button quando em navbar mobile */

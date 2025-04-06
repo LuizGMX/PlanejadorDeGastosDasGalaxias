@@ -365,6 +365,8 @@
   
   .mainContainer {
     padding: 1rem;
+    padding-bottom: 100px !important; /* Espaço aumentado para a navbar mobile */
+    overflow-x: hidden; /* Prevenir scroll horizontal */
   }
 
   .container {
@@ -372,11 +374,14 @@
   }
 
   .card {
-    padding: 24px;
+    padding: 1.5rem;
+    margin-bottom: 100px; /* Espaço aumentado para a navbar mobile */
+    overflow-x: hidden; /* Prevenir scroll horizontal */
   }
 
   .title {
-    font-size: 24px;
+    font-size: 1.25rem;
+    margin-bottom: 1rem !important;
   }
 
   .button {
@@ -420,15 +425,36 @@
     gap: 6px;
   }
   
-  .input {
-    padding: 12px;
+  .input, 
+  .modalContent,
+  .select,
+  .textarea {
+    max-width: 100%;
+    min-width: 0;
+    width: 100%;
     font-size: 14px;
+    padding: 0.75rem;
+  }
+  
+  .label {
+    font-size: 13px;
   }
   
   .buttonGroup {
     flex-direction: column;
-    gap: 8px;
-    margin-top: 20px;
+    width: 100%;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+  
+  .submitButton,
+  .cancelButton,
+  .button {
+    width: 100%;
+    padding: 0.75rem;
+    height: auto;
+    border-radius: 8px;
+    font-size: 1rem;
   }
   
   /* Adaptações para os componentes do perfil */
@@ -2547,24 +2573,26 @@
 /* Melhorias para formulários em dispositivos móveis */
 @media (max-width: 768px) {
   .formContainer {
-    padding-bottom: 80px !important; /* Espaço para a navbar mobile */
+    padding-bottom: 100px !important; /* Espaço aumentado para a navbar mobile */
   }
   
   .mainContainer {
     padding: 1rem;
-    padding-bottom: 80px !important; /* Espaço para a navbar mobile */
+    padding-bottom: 100px !important; /* Espaço aumentado para a navbar mobile */
+    overflow-x: hidden; /* Prevenir scroll horizontal */
   }
   
   .card {
     max-width: 100%;
     padding: 1.5rem;
-    margin-bottom: 80px; /* Espaço para a navbar mobile */
-    overflow-x: hidden;
+    margin-bottom: 100px; /* Espaço aumentado para a navbar mobile */
+    overflow-x: hidden; /* Prevenir scroll horizontal */
   }
   
   .form {
     width: 100%;
     max-width: 100%;
+    overflow-x: hidden; /* Prevenir scroll horizontal */
   }
   
   .inputGroup {
@@ -2610,7 +2638,7 @@
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 0.5rem;
-    overflow-x: visible;
+    overflow-x: hidden; /* Prevenir scroll horizontal */
     width: 100%;
   }
   
@@ -2637,7 +2665,7 @@
   .container, 
   .modalContainer {
     z-index: 10000;
-    padding-bottom: 80px;
+    padding-bottom: 100px; /* Espaço aumentado para a navbar mobile */
   }
   
   /* Reduzir o tamanho do texto em geral */
@@ -2657,6 +2685,16 @@
     max-height: none;
     overflow: visible;
   }
+  
+  /* Prevenir scroll horizontal em todos componentes principais */
+  .content, 
+  .pageHeader,
+  .dashboardCard, 
+  .cardBody,
+  .formSection {
+    overflow-x: hidden;
+    max-width: 100%;
+  }
 }
 
 /* Ajustes específicos para telas muito pequenas */
@@ -2669,6 +2707,7 @@
   
   .card {
     padding: 1rem;
+    margin-bottom: 120px; /* Mais espaço em telas pequenas */
   }
   
   .input, 
@@ -2676,5 +2715,12 @@
   .textarea {
     padding: 0.6rem;
     font-size: 13px;
+  }
+  
+  .mainContainer,
+  .formContainer,
+  .container, 
+  .modalContainer {
+    padding-bottom: 120px !important; /* Mais espaço em telas pequenas */
   }
 }
