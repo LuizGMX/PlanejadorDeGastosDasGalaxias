@@ -170,7 +170,11 @@ const AddIncome = () => {
 
   return (
     <div className={dataTableStyles.modalOverlay}>
-      <div className={`${dataTableStyles.modalContent} ${dataTableStyles.formModal}`}>
+      <div className={`${dataTableStyles.modalContent} ${dataTableStyles.formModal}`} style={{
+        maxWidth: '700px',  // Aumentar a largura máxima no desktop
+        width: '90%',       // Garantir responsividade
+        padding: '25px'     // Mais padding interno
+      }}>
         <div className={dataTableStyles.modalHeader}>
           <BsPlusCircle size={20} style={{ color: 'var(--primary-color)' }} />
           <h3>Adicionar Ganho</h3>
@@ -198,8 +202,9 @@ const AddIncome = () => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className={dataTableStyles.formGrid}>
-          <div className={dataTableStyles.inlineFieldsContainer}>
+        <form onSubmit={handleSubmit} style={{display: 'flex', flexDirection: 'column', gap: '20px'}}>
+          {/* Descrição e Valor */}
+          <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px'}}>
             <div className={dataTableStyles.formGroup}>
               <label className={dataTableStyles.formLabel}>
                 Descrição
@@ -216,38 +221,37 @@ const AddIncome = () => {
 
             <div className={dataTableStyles.formGroup}>
               <label className={dataTableStyles.formLabel}>
-                Valor
+                <BsCurrencyDollar size={16} /> Valor
               </label>
-              <div className={dataTableStyles.input}>
-                
-                <CurrencyInput
-                  name="amount"
-                  placeholder="R$ 0,00"
-                  decimalsLimit={2}
-                  prefix="R$ "
-                  decimalSeparator=","
-                  groupSeparator="."
-                  value={formData.amount}
-                  onValueChange={(value) => {
-                    const numericValue = value ? parseFloat(value.replace(/\./g, '').replace(',', '.')) : '';
-                    setFormData(prev => ({ ...prev, amount: numericValue }));
-                  }}
-                  className={dataTableStyles.formInput}
-                  required
-                />
-              </div>
+              <CurrencyInput
+                name="amount"
+                placeholder="R$ 0,00"
+                decimalsLimit={2}
+                value={formData.amount}
+                onValueChange={(value) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    amount: value
+                  }));
+                }}
+                intlConfig={{ locale: 'pt-BR', currency: 'BRL' }}
+                className={dataTableStyles.formInput}
+                required
+              />
             </div>
           </div>
 
+          {/* Tipo de Ganho */}
           <div className={dataTableStyles.formGroup}>
             <label className={dataTableStyles.formLabel}>
               Tipo de Ganho
             </label>
-            <div className={dataTableStyles.toggleGroup}>
+            <div style={{display: 'flex', justifyContent: 'space-between', gap: '15px', marginTop: '10px'}}>
               <button
                 type="button"
                 className={`${dataTableStyles.toggleButton} ${!formData.is_recurring ? dataTableStyles.active : ''}`}
                 onClick={() => handleToggleChange('is_recurring', false)}
+                style={{flex: '1', height: '50px'}}
               >
                 <BsCurrencyDollar size={16} /> Único
               </button>
@@ -255,12 +259,14 @@ const AddIncome = () => {
                 type="button"
                 className={`${dataTableStyles.toggleButton} ${formData.is_recurring ? dataTableStyles.active : ''}`}
                 onClick={() => handleToggleChange('is_recurring', true)}
+                style={{flex: '1', height: '50px'}}
               >
                 <BsRepeat size={16} /> Fixo
               </button>
             </div>
           </div>
 
+          {/* Data para Ganho Único */}
           {!formData.is_recurring && (
             <div className={dataTableStyles.formGroup}>
               <label className={dataTableStyles.formLabel}>
@@ -280,15 +286,16 @@ const AddIncome = () => {
             </div>
           )}
 
+          {/* Configurações de Ganho Fixo */}
           {formData.is_recurring && (
-            <div className={dataTableStyles.formGroup}>
+            <div style={{marginBottom: '20px'}}>
               <label className={dataTableStyles.formLabel}>
                 <div className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
                   <BsRepeat /> Ganho Fixo
                 </div>
               </label>
-              <div className={dataTableStyles.inlineFieldsContainer}>
-                <div className={dataTableStyles.formGroupHalf}>
+              <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginTop: '10px'}}>
+                <div className={dataTableStyles.formGroup}>
                   <label className={dataTableStyles.formLabel}>Data de Início</label>
                   <input
                     type="date"
@@ -300,7 +307,7 @@ const AddIncome = () => {
                   />
                 </div>
                 
-                <div className={dataTableStyles.formGroupHalf}>
+                <div className={dataTableStyles.formGroup}>
                   <label className={dataTableStyles.formLabel}>Tipo de Recorrência</label>
                   <select
                     name="recurrence_type"
@@ -321,66 +328,74 @@ const AddIncome = () => {
             </div>
           )}
 
-          <div className={dataTableStyles.formGroup}>
-            <label className={dataTableStyles.formLabel}>
-              <BsFolderSymlink size={16} /> Categoria
-            </label>
-            <select
-              name="category_id"
-              value={formData.category_id}
-              onChange={handleChange}
-              className={dataTableStyles.formInput}
-              required
-            >
-              <option value="">Selecione uma categoria</option>
-              {categories.map(category => (
-                <option key={category.id} value={category.id}>
-                  {category.category_name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className={dataTableStyles.formGroup}>
-            <label className={dataTableStyles.formLabel}>
-              <BsBank2 size={16} /> Banco/Carteira
-            </label>
-            {banks.length > 0 ? (
+          {/* Categoria e Banco/Carteira em duas colunas */}
+          <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px'}}>
+            <div className={dataTableStyles.formGroup}>
+              <label className={dataTableStyles.formLabel}>
+                <BsFolderSymlink size={16} /> Categoria
+              </label>
               <select
-                name="bank_id"
-                value={formData.bank_id}
+                name="category_id"
+                value={formData.category_id}
                 onChange={handleChange}
                 className={dataTableStyles.formInput}
                 required
+                style={{height: '48px'}}
               >
-                <option value="">Selecione um banco</option>
-                {banks.map(bank => (
-                  <option key={bank.id} value={bank.id}>
-                    {bank.name}
+                <option value="">Selecione uma categoria</option>
+                {categories.map(category => (
+                  <option key={category.id} value={category.id}>
+                    {category.category_name}
                   </option>
                 ))}
               </select>
-            ) : (
-              <div className={dataTableStyles.emptySelectError}>
-                Erro ao carregar bancos. Por favor, tente novamente.
-              </div>
-            )}
+            </div>
+
+            <div className={dataTableStyles.formGroup}>
+              <label className={dataTableStyles.formLabel}>
+                <BsBank2 size={16} /> Banco/Carteira
+              </label>
+              {banks.length > 0 ? (
+                <select
+                  name="bank_id"
+                  value={formData.bank_id}
+                  onChange={handleChange}
+                  className={dataTableStyles.formInput}
+                  required
+                  style={{height: '48px'}}
+                >
+                  <option value="">Selecione um banco</option>
+                  {banks.map(bank => (
+                    <option key={bank.id} value={bank.id}>
+                      {bank.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div className={dataTableStyles.emptySelectError}>
+                  Erro ao carregar bancos. Por favor, tente novamente.
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className={dataTableStyles.modalActions}>
+          {/* Botões de Ação */}
+          <div style={{display: 'flex', justifyContent: 'flex-end', gap: '15px', marginTop: '30px'}}>
             <button 
               type="button" 
-              onClick={() => navigate('/income')} 
+              onClick={() => navigate('/incomes')} 
               className={`${dataTableStyles.formButton} ${dataTableStyles.formCancel}`}
+              style={{minWidth: '120px', height: '45px'}}
             >
-              <BsXLg /> Cancelar
+              <BsXLg style={{marginRight: '5px'}} /> Cancelar
             </button>
             <button 
               type="submit" 
               className={`${dataTableStyles.formButton} ${dataTableStyles.formSubmit}`}
               disabled={loading}
+              style={{minWidth: '180px', height: '45px'}}
             >
-              <BsCheck2 /> {loading ? 'Salvando...' : 'Salvar Ganho'}
+              <BsCheck2 style={{marginRight: '5px'}} /> {loading ? 'Salvando...' : 'Salvar Ganho'}
             </button>
           </div>
         </form>

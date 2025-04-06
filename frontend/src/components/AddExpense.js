@@ -322,6 +322,18 @@ const AddExpense = () => {
         }
         
         // Informe o usuário que o valor inserido é o valor da parcela e não o total
+        let amount;
+        // Garante que o amount seja um número e não uma string
+        let cleanAmount = formData.amount;
+        if (typeof cleanAmount === 'string') {
+          // Remove caracteres não numéricos exceto pontos e vírgulas
+          cleanAmount = cleanAmount.replace(/[^\d,.]/g, '');
+          // Substitui vírgula por ponto
+          cleanAmount = cleanAmount.replace(',', '.');
+        }
+        
+        amount = parseFloat(cleanAmount) || 0;
+        
         if (amount <= 0) {
           throw new Error('O valor da parcela deve ser maior que zero');
         }
@@ -336,21 +348,6 @@ const AddExpense = () => {
         }
       }
 
-      // Garante que o amount seja um número e não uma string
-      let cleanAmount = formData.amount;
-      if (typeof cleanAmount === 'string') {
-        // Remove caracteres não numéricos exceto pontos e vírgulas
-        cleanAmount = cleanAmount.replace(/[^\d,.]/g, '');
-        // Substitui vírgula por ponto
-        cleanAmount = cleanAmount.replace(',', '.');
-      }
-      
-      const amount = parseFloat(cleanAmount) || 0;
-      
-      if (amount <= 0) {
-        throw new Error('O valor da despesa deve ser maior que zero');
-      }
-      
       // Não calculamos mais o valor da parcela - usamos diretamente o valor informado
       // Para parcelas, o amount já é o valor de cada parcela
 
@@ -457,7 +454,11 @@ const AddExpense = () => {
 
   return (
     <div className={dataTableStyles.modalOverlay}>
-      <div className={`${dataTableStyles.modalContent} ${dataTableStyles.formModal}`}>
+      <div className={`${dataTableStyles.modalContent} ${dataTableStyles.formModal}`} style={{
+        maxWidth: '700px',  // Aumentar a largura máxima no desktop
+        width: '90%',       // Garantir responsividade
+        padding: '25px'     // Mais padding interno
+      }}>
         <div className={dataTableStyles.modalHeader}>
           <BsPlusCircle size={20} style={{ color: 'var(--primary-color)' }} />
           <h3>Adicionar Despesa</h3>
@@ -485,8 +486,9 @@ const AddExpense = () => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className={dataTableStyles.formGrid}>
-          <div className={dataTableStyles.inlineFieldsContainer}>
+        <form onSubmit={handleSubmit} style={{display: 'flex', flexDirection: 'column', gap: '20px'}}>
+          {/* Descrição e Valor */}
+          <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px'}}>
             <div className={dataTableStyles.formGroup}>
               <label className={dataTableStyles.formLabel}>
                 Descrição
@@ -523,15 +525,17 @@ const AddExpense = () => {
             </div>
           </div>
 
-          <div className={dataTableStyles}>
+          {/* Tipo de Despesa */}
+          <div className={dataTableStyles.formGroup}>
             <label className={dataTableStyles.formLabel}>
               Tipo de Despesa
             </label>
-            <div className={dataTableStyles.toggleGroup}>
+            <div className={dataTableStyles.toggleGroup} style={{display: 'flex', justifyContent: 'space-between'}}>
               <button
                 type="button"
                 className={`${dataTableStyles.toggleButton} ${!formData.is_recurring && !formData.has_installments ? dataTableStyles.active : ''}`}
                 onClick={() => handleToggleChange('normal')}
+                style={{flex: '1'}}
               >
                 <BsCurrencyDollar /> Única
               </button>
@@ -539,6 +543,7 @@ const AddExpense = () => {
                 type="button"
                 className={`${dataTableStyles.toggleButton} ${formData.has_installments ? dataTableStyles.active : ''}`}
                 onClick={() => handleToggleChange('installments')}
+                style={{flex: '1'}}
               >
                 <BsListCheck /> Parcelada
               </button>
@@ -546,12 +551,14 @@ const AddExpense = () => {
                 type="button"
                 className={`${dataTableStyles.toggleButton} ${formData.is_recurring && !formData.has_installments ? dataTableStyles.active : ''}`}
                 onClick={() => handleToggleChange('recurring')}
+                style={{flex: '1'}}
               >
                 <BsRepeat /> Fixa
               </button>
             </div>
           </div>
 
+          {/* Data para Despesa Única */}
           {!formData.is_recurring && !formData.has_installments && (
             <div className={dataTableStyles.formGroup}>
               <label className={dataTableStyles.formLabel}>
@@ -571,15 +578,16 @@ const AddExpense = () => {
             </div>
           )}
 
+          {/* Configurações de Parcelas */}
           {formData.has_installments && (
-            <div className={dataTableStyles.formGroup}>
+            <div style={{marginBottom: '20px'}}>
               <label className={dataTableStyles.formLabel}>
                 <div className={`${dataTableStyles.typeStatus} ${dataTableStyles.installmentType}`}>
                   <BsListCheck /> Despesa Parcelada
                 </div>
               </label>
-              <div className={dataTableStyles.inlineFieldsContainer}>
-                <div className={dataTableStyles.formGroupHalf}>
+              <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginTop: '10px'}}>
+                <div className={dataTableStyles.formGroup}>
                   <label className={dataTableStyles.formLabel}>Data da Parcela Atual</label>
                   <input
                     type="date"
@@ -591,9 +599,9 @@ const AddExpense = () => {
                   />
                 </div>
                 
-                <div className={dataTableStyles.formGroupHalf}>
+                <div className={dataTableStyles.formGroup}>
                   <label className={dataTableStyles.formLabel}>Parcela Atual / Total</label>
-                  <div className={dataTableStyles.inlineFields}>
+                  <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
                     <input
                       type="number"
                       min="1"
@@ -620,22 +628,23 @@ const AddExpense = () => {
                   </div>
                 </div>
               </div>
-              <div className={dataTableStyles.formHelpText} style={{marginTop: '8px', fontSize: '0.85em', color: 'var(--text-muted)'}}>
-                <p>* O valor informado acima é o valor de cada parcela individualmente.</p>
-                <p>* Apenas as parcelas restantes a partir da atual serão registradas.</p>
+              <div style={{marginTop: '10px', fontSize: '0.85em', color: 'var(--text-muted)', backgroundColor: 'rgba(255,255,255,0.05)', padding: '10px', borderRadius: '5px'}}>
+                <p style={{margin: '0 0 5px 0'}}>* O valor informado acima é o valor de cada parcela individualmente.</p>
+                <p style={{margin: '0'}}>* Apenas as parcelas restantes a partir da atual serão registradas.</p>
               </div>
             </div>
           )}
 
+          {/* Configurações de Despesa Fixa */}
           {formData.is_recurring && !formData.has_installments && (
-            <div className={dataTableStyles.formGroup}>
+            <div style={{marginBottom: '20px'}}>
               <label className={dataTableStyles.formLabel}>
                 <div className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
                   <BsRepeat /> Despesa Fixa
                 </div>
               </label>
-              <div className={dataTableStyles.inlineFieldsContainer}>
-                <div className={dataTableStyles.formGroupHalf}>
+              <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginTop: '10px'}}>
+                <div className={dataTableStyles.formGroup}>
                   <label className={dataTableStyles.formLabel}>Data de Início</label>
                   <input
                     type="date"
@@ -647,7 +656,7 @@ const AddExpense = () => {
                   />
                 </div>
                 
-                <div className={dataTableStyles.formGroupHalf}>
+                <div className={dataTableStyles.formGroup}>
                   <label className={dataTableStyles.formLabel}>Tipo de Recorrência</label>
                   <select
                     name="recurrence_type"
@@ -668,61 +677,66 @@ const AddExpense = () => {
             </div>
           )}
 
-          <div className={dataTableStyles.formGroup}>
-            <label className={dataTableStyles.formLabel}>
-              <BsFolderSymlink size={16} /> Categoria
-            </label>
-            <select
-              name="category_id"
-              value={formData.category_id}
-              onChange={handleChange}
-              className={dataTableStyles.formInput}
-              required
-            >
-              <option value="">Selecione uma categoria</option>
-              {categories.map(category => (
-                <option key={category.id} value={category.id}>
-                  {category.category_name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className={dataTableStyles.formGroup}>
-            <label className={dataTableStyles.formLabel}>
-              <BsBank2 size={16} /> Banco/Carteira
-            </label>
-            {banks.length > 0 ? (
+          {/* Categoria e Banco/Carteira em duas colunas */}
+          <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px'}}>
+            <div className={dataTableStyles.formGroup}>
+              <label className={dataTableStyles.formLabel}>
+                <BsFolderSymlink size={16} /> Categoria
+              </label>
               <select
-                name="bank_id"
-                value={formData.bank_id}
+                name="category_id"
+                value={formData.category_id}
                 onChange={handleChange}
                 className={dataTableStyles.formInput}
                 required
               >
-                <option value="">Selecione um banco</option>
-                {banks.map(bank => (
-                  <option key={bank.id} value={bank.id}>
-                    {bank.name}
+                <option value="">Selecione uma categoria</option>
+                {categories.map(category => (
+                  <option key={category.id} value={category.id}>
+                    {category.category_name}
                   </option>
                 ))}
               </select>
-            ) : (
-              <div className={dataTableStyles.emptySelectError}>
-                Erro ao carregar bancos. Por favor, tente novamente.
-              </div>
-            )}
+            </div>
+
+            <div className={dataTableStyles.formGroup}>
+              <label className={dataTableStyles.formLabel}>
+                <BsBank2 size={16} /> Banco/Carteira
+              </label>
+              {banks.length > 0 ? (
+                <select
+                  name="bank_id"
+                  value={formData.bank_id}
+                  onChange={handleChange}
+                  className={dataTableStyles.formInput}
+                  required
+                >
+                  <option value="">Selecione um banco</option>
+                  {banks.map(bank => (
+                    <option key={bank.id} value={bank.id}>
+                      {bank.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div className={dataTableStyles.emptySelectError}>
+                  Erro ao carregar bancos. Por favor, tente novamente.
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className={dataTableStyles.formGroup}>
+          {/* Forma de Pagamento */}
+          <div className={dataTableStyles.formGroup} style={{marginTop: '10px'}}>
             <label className={dataTableStyles.formLabel}>
               Forma de Pagamento
             </label>
-            <div className={dataTableStyles.toggleGroup}>
+            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '15px', marginTop: '10px'}}>
               <button
                 type="button"
                 className={`${dataTableStyles.toggleButton} ${formData.payment_method === 'credit_card' ? dataTableStyles.active : ''}`}
                 onClick={() => handlePaymentMethodChange('credit_card')}
+                style={{height: '50px'}}
               >
                 <BsCreditCard2Front /> Crédito
               </button>
@@ -730,6 +744,7 @@ const AddExpense = () => {
                 type="button"
                 className={`${dataTableStyles.toggleButton} ${formData.payment_method === 'debit_card' ? dataTableStyles.active : ''}`}
                 onClick={() => handlePaymentMethodChange('debit_card')}
+                style={{height: '50px'}}
               >
                 <BsCreditCard2Front /> Débito
               </button>
@@ -737,6 +752,7 @@ const AddExpense = () => {
                 type="button"
                 className={`${dataTableStyles.toggleButton} ${formData.payment_method === 'cash' ? dataTableStyles.active : ''}`}
                 onClick={() => handlePaymentMethodChange('cash')}
+                style={{height: '50px'}}
               >
                 <BsCashCoin /> Dinheiro
               </button>
@@ -744,26 +760,30 @@ const AddExpense = () => {
                 type="button"
                 className={`${dataTableStyles.toggleButton} ${formData.payment_method === 'pix' ? dataTableStyles.active : ''}`}
                 onClick={() => handlePaymentMethodChange('pix')}
+                style={{height: '50px'}}
               >
                 <BsWallet2 /> Pix
               </button>
             </div>
           </div>
 
-          <div className={dataTableStyles.modalActions}>
+          {/* Botões de Ação */}
+          <div style={{display: 'flex', justifyContent: 'flex-end', gap: '15px', marginTop: '30px'}}>
             <button 
               type="button" 
               onClick={() => navigate('/expenses')} 
               className={`${dataTableStyles.formButton} ${dataTableStyles.formCancel}`}
+              style={{minWidth: '120px', height: '45px'}}
             >
-              <BsXLg /> Cancelar
+              <BsXLg style={{marginRight: '5px'}} /> Cancelar
             </button>
             <button 
               type="submit" 
               className={`${dataTableStyles.formButton} ${dataTableStyles.formSubmit}`}
               disabled={loading}
+              style={{minWidth: '180px', height: '45px'}}
             >
-              <BsCheck2 /> {loading ? 'Salvando...' : 'Salvar Despesa'}
+              <BsCheck2 style={{marginRight: '5px'}} /> {loading ? 'Salvando...' : 'Salvar Despesa'}
             </button>
           </div>
         </form>

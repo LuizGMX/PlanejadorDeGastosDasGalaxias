@@ -2785,8 +2785,8 @@ const Dashboard = () => {
               </defs>
               <Pie
                 data={categoryData}
-                cx="50%"
-                cy="50%"
+                      cx="50%"
+                      cy="50%"
                 labelLine={false}
                 outerRadius={isMobile ? 70 : 130}
                 innerRadius={isMobile ? 30 : 60}
