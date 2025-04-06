@@ -1268,4 +1268,114 @@
   border: 2px solid var(--primary-color);
   color: var(--primary-color);
   font-weight: 600;
+}
+
+.formButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 150px;
+  border: none;
+}
+
+.formCancel {
+  background-color: var(--card-background);
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+}
+
+.formCancel:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: var(--error-color);
+  color: var(--error-color);
+}
+
+.formSubmit {
+  background-color: var(--primary-color);
+  color: var(--secondary-color);
+}
+
+.formSubmit:hover {
+  background-color: var(--hover-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.formSubmit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Additional mobile optimizations for form elements */
+@media (max-width: 768px) {
+  .formModal {
+    padding: 16px;
+    max-width: 100%;
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    overflow-y: auto;
+  }
+
+  .formGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .toggleGroup {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .formButton {
+    min-width: 0;
+    flex: 1;
+    padding: 12px 16px;
+  }
+
+  .modalActions {
+    flex-direction: row;
+    gap: 12px;
+    justify-content: space-between;
+    margin-top: 24px;
+  }
+  
+  .formGroupRow {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .formGroupHalf {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .toggleGroup {
+    grid-template-columns: 1fr;
+  }
+  
+  .toggleButton {
+    width: 100%;
+    justify-content: flex-start;
+    padding: 12px 16px;
+  }
+}
+
+.toggleButton.active {
+  background-color: var(--secondary-color);
+  border: 2px solid var(--primary-color);
+  color: var(--primary-color);
+  font-weight: 600;
 } 

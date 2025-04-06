@@ -43,6 +43,7 @@ const AddExpense = () => {
   const [banks, setBanks] = useState([]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -270,6 +271,7 @@ const AddExpense = () => {
     e.preventDefault();
     setError('');
     setSuccess('');
+    setLoading(true);
 
     try {
       // Verificar se os campos obrigatórios estão preenchidos
@@ -444,6 +446,8 @@ const AddExpense = () => {
     } catch (err) {
       console.error('Erro completo:', err);
       setError(err.message || 'Erro ao adicionar despesa. Por favor, tente novamente.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -474,7 +478,22 @@ const AddExpense = () => {
           <h3>Adicionar Despesa</h3>
         </div>
 
-        {error && <p className={dataTableStyles.errorMessage}>{error}</p>}
+        {error && (
+          <div className={dataTableStyles.errorCard}>
+            <div>
+              <div className={dataTableStyles.errorIcon}>!</div>
+              <p className={dataTableStyles.errorMessage}>{error}</p>
+            </div>
+            <button 
+              type="button" 
+              className={dataTableStyles.errorRetryButton}
+              onClick={() => window.location.reload()}
+            >
+              Tentar novamente
+            </button>
+          </div>
+        )}
+        
         {success && (
           <div className={sharedStyles.successMessage}>
             {success}
@@ -505,14 +524,15 @@ const AddExpense = () => {
               <CurrencyInput
                 name="amount"
                 placeholder="R$ 0,00"
+                decimalsLimit={2}
+                prefix="R$ "
+                decimalSeparator=","
+                groupSeparator="."
                 value={formData.amount}
                 onValueChange={(value) => {
-                  setFormData(prev => ({
-                    ...prev,
-                    amount: value || ''
-                  }));
+                  const numericValue = value ? parseFloat(value.replace(/\./g, '').replace(',', '.')) : '';
+                  setFormData(prev => ({ ...prev, amount: numericValue }));
                 }}
-                intlConfig={{ locale: 'pt-BR', currency: 'BRL' }}
                 className={dataTableStyles.formInput}
                 required
               />
@@ -625,7 +645,7 @@ const AddExpense = () => {
                 </div>
                 
                 <div className={dataTableStyles.formGroupHalf}>
-                  <label className={dataTableStyles.formLabel}>Periodicidade</label>
+                  <label className={dataTableStyles.formLabel}>Tipo de Recorrência</label>
                   <select
                     name="recurrence_type"
                     value={formData.recurrence_type || 'monthly'}
@@ -647,7 +667,7 @@ const AddExpense = () => {
 
           <div className={dataTableStyles.formGroup}>
             <label className={dataTableStyles.formLabel}>
-              <BsFolderSymlink /> Categoria
+              <BsFolderSymlink size={16} /> Categoria
             </label>
             <select
               name="category_id"
@@ -667,22 +687,28 @@ const AddExpense = () => {
 
           <div className={dataTableStyles.formGroup}>
             <label className={dataTableStyles.formLabel}>
-              <BsBank2 /> Banco/Carteira
+              <BsBank2 size={16} /> Banco/Carteira
             </label>
-            <select
-              name="bank_id"
-              value={formData.bank_id}
-              onChange={handleChange}
-              className={dataTableStyles.formInput}
-              required
-            >
-              <option value="">Selecione um banco</option>
-              {banks.map(bank => (
-                <option key={bank.id} value={bank.id}>
-                  {bank.name}
-                </option>
-              ))}
-            </select>
+            {banks.length > 0 ? (
+              <select
+                name="bank_id"
+                value={formData.bank_id}
+                onChange={handleChange}
+                className={dataTableStyles.formInput}
+                required
+              >
+                <option value="">Selecione um banco</option>
+                {banks.map(bank => (
+                  <option key={bank.id} value={bank.id}>
+                    {bank.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className={dataTableStyles.emptySelectError}>
+                Erro ao carregar bancos. Por favor, tente novamente.
+              </div>
+            )}
           </div>
 
           <div className={dataTableStyles.formGroup}>
@@ -724,7 +750,7 @@ const AddExpense = () => {
           <div className={dataTableStyles.modalActions}>
             <button 
               type="button" 
-              onClick={() => navigate(-1)} 
+              onClick={() => navigate('/expenses')} 
               className={`${dataTableStyles.formButton} ${dataTableStyles.formCancel}`}
             >
               <BsXLg /> Cancelar
@@ -732,8 +758,9 @@ const AddExpense = () => {
             <button 
               type="submit" 
               className={`${dataTableStyles.formButton} ${dataTableStyles.formSubmit}`}
+              disabled={loading}
             >
-              <BsCheck2 /> Salvar Despesa
+              <BsCheck2 /> {loading ? 'Salvando...' : 'Salvar Despesa'}
             </button>
           </div>
         </form>
