@@ -155,62 +155,22 @@ const gracefulShutdown = (server) => {
   }, 10000);
 };
 
-
-
 const startServer = async () => {
   try {
     await sequelize.authenticate();
     console.log('Conexão com banco estabelecida com sucesso.');
 
-    async function executeManualMigration() {
-      const transaction = await sequelize.transaction();
-      try {
-        console.log('Executando migração manual para remover subcategorias');
-        const tables = ['expenses', 'incomes', 'recurrence_rules'];
-        for (const table of tables) {
-          try {
-            const hasColumn = await sequelize.query(
-              `SHOW COLUMNS FROM ${table} LIKE 'subcategory_id'`,
-              { type: Sequelize.QueryTypes.SELECT, transaction }
-            );
-            if (hasColumn.length > 0) {
-              console.log(`Removendo coluna subcategory_id da tabela ${table}`);
-              await sequelize.query(`ALTER TABLE ${table} DROP COLUMN subcategory_id`, {
-                transaction
-              });
-              console.log(`Coluna subcategory_id removida da tabela ${table}`);
-            } else {
-              console.log(`Tabela ${table} não possui coluna subcategory_id`);
-            }
-          } catch (error) {
-            console.log(`Erro ao remover coluna de ${table}:`, error.message);
-          }
-        }
-        try {
-          const hasTable = await sequelize.query(
-            `SHOW TABLES LIKE 'subcategories'`,
-            { type: Sequelize.QueryTypes.SELECT, transaction }
-          );
-          if (hasTable.length > 0) {
-            console.log('Removendo tabela subcategories');
-            await sequelize.query(`DROP TABLE subcategories`, { transaction });
-            console.log('Tabela subcategories removida com sucesso');
-          } else {
-            console.log('Tabela subcategories não existe');
-          }
-        } catch (error) {
-          console.log('Erro ao remover tabela subcategories:', error.message);
-        }
-        await transaction.commit();
-        console.log('Migração manual concluída');
-      } catch (error) {
-        await transaction.rollback();
-        console.error('Erro na migração manual:', error);
-      }
-    }
-
-    await sequelize.sync({ force: false, alter: true });
-    console.log('Modelos sincronizados com banco de dados.');
+    // Verificar variável de ambiente para decidir se deve alterar o banco de dados
+    const shouldAlterDatabase = process.env.ALTER_DATABASE === 'true';
+    
+    // Sincronizar modelos com o banco de dados, sem alter por padrão
+    await sequelize.sync({ 
+      force: false, 
+      alter: shouldAlterDatabase, 
+      hooks: true
+    });
+    
+    console.log(`Modelos sincronizados com banco de dados. Modo alter: ${shouldAlterDatabase ? 'ativado' : 'desativado'}`);
 
     if (process.env.RUN_SEEDERS === 'true') {
       await seedDatabase();

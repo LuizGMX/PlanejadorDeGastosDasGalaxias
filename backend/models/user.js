@@ -18,7 +18,6 @@ export default (sequelize) => {
     email: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: true,
       validate: {
         isEmail: true
       }
@@ -90,6 +89,12 @@ export default (sequelize) => {
     createdAt: 'created_at',
     updatedAt: 'updated_at',
     tableName: 'users',
+    indexes: [
+      {
+        unique: true,
+        fields: ['email']
+      }
+    ],
     hooks: {
       beforeSave: async (user) => {
         if (user.changed('financial_goal_amount') && user.financial_goal_amount && !user.financial_goal_created_at) {
