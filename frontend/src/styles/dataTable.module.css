@@ -1234,4 +1234,79 @@ input[type="radio"].hiddenCheckbox:checked ~ .customCheckbox:after {
   border-radius: 50%;
   left: 4px;
   top: 4px;
+}
+
+.formGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.inlineFieldsContainer {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.formGroup {
+  margin-bottom: 15px;
+}
+
+.formGroupHalf {
+  flex: 1;
+  min-width: 150px;
+  margin-bottom: 15px;
+}
+
+.formGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.inlineFieldsContainer {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.formGroup {
+  margin-bottom: 15px;
+  width: 100%;
+}
+
+.formGroupHalf {
+  flex: 1;
+  min-width: 150px;
+  margin-bottom: 15px;
+}
+
+/* Botões tipo toggle com melhor distribuição */
+.toggleGroup {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+  justify-content: stretch;
+  flex-wrap: wrap;
+}
+
+.toggleButton {
+  flex: 1;
+  min-width: 120px;
+  height: 42px;
+}
+
+/* Container da modal com melhor visualização */
+.formModal {
+  max-width: 680px !important;
+  width: 90% !important;
+  padding: 20px !important;
+}
+
+/* Ajustar botões de ação */
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 25px;
 } 

@@ -454,11 +454,7 @@ const AddExpense = () => {
 
   return (
     <div className={dataTableStyles.modalOverlay}>
-      <div className={`${dataTableStyles.modalContent} ${dataTableStyles.formModal}`} style={{
-        maxWidth: '700px',  // Aumentar a largura máxima no desktop
-        width: '90%',       // Garantir responsividade
-        padding: '25px'     // Mais padding interno
-      }}>
+      <div className={`${dataTableStyles.modalContent} ${dataTableStyles.formModal}`}>
         <div className={dataTableStyles.modalHeader}>
           <BsPlusCircle size={20} style={{ color: 'var(--primary-color)' }} />
           <h3>Adicionar Despesa</h3>
@@ -486,9 +482,8 @@ const AddExpense = () => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} style={{display: 'flex', flexDirection: 'column', gap: '20px'}}>
-          {/* Descrição e Valor */}
-          <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px'}}>
+        <form onSubmit={handleSubmit} className={dataTableStyles.formGrid}>
+          <div className={dataTableStyles.inlineFieldsContainer}>
             <div className={dataTableStyles.formGroup}>
               <label className={dataTableStyles.formLabel}>
                 Descrição
@@ -505,7 +500,7 @@ const AddExpense = () => {
 
             <div className={dataTableStyles.formGroup}>
               <label className={dataTableStyles.formLabel}>
-                <BsCurrencyDollar size={16} /> {formData.has_installments ? 'Valor da Parcela' : 'Valor'}
+                {formData.has_installments ? 'Valor da Parcela' : 'Valor'}
               </label>
               <CurrencyInput
                 name="amount"
@@ -530,12 +525,11 @@ const AddExpense = () => {
             <label className={dataTableStyles.formLabel}>
               Tipo de Despesa
             </label>
-            <div className={dataTableStyles.toggleGroup} style={{display: 'flex', justifyContent: 'space-between'}}>
+            <div className={dataTableStyles.toggleGroup}>
               <button
                 type="button"
                 className={`${dataTableStyles.toggleButton} ${!formData.is_recurring && !formData.has_installments ? dataTableStyles.active : ''}`}
                 onClick={() => handleToggleChange('normal')}
-                style={{flex: '1'}}
               >
                 <BsCurrencyDollar /> Única
               </button>
@@ -543,15 +537,13 @@ const AddExpense = () => {
                 type="button"
                 className={`${dataTableStyles.toggleButton} ${formData.has_installments ? dataTableStyles.active : ''}`}
                 onClick={() => handleToggleChange('installments')}
-                style={{flex: '1'}}
               >
                 <BsListCheck /> Parcelada
               </button>
               <button
                 type="button"
-                className={`${dataTableStyles.toggleButton} ${formData.is_recurring && !formData.has_installments ? dataTableStyles.active : ''}`}
+                className={`${dataTableStyles.toggleButton} ${formData.is_recurring ? dataTableStyles.active : ''}`}
                 onClick={() => handleToggleChange('recurring')}
-                style={{flex: '1'}}
               >
                 <BsRepeat /> Fixa
               </button>
@@ -727,16 +719,15 @@ const AddExpense = () => {
           </div>
 
           {/* Forma de Pagamento */}
-          <div className={dataTableStyles.formGroup} style={{marginTop: '10px'}}>
+          <div className={dataTableStyles.formGroup}>
             <label className={dataTableStyles.formLabel}>
               Forma de Pagamento
             </label>
-            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '15px', marginTop: '10px'}}>
+            <div className={dataTableStyles.toggleGroup}>
               <button
                 type="button"
                 className={`${dataTableStyles.toggleButton} ${formData.payment_method === 'credit_card' ? dataTableStyles.active : ''}`}
                 onClick={() => handlePaymentMethodChange('credit_card')}
-                style={{height: '50px'}}
               >
                 <BsCreditCard2Front /> Crédito
               </button>
@@ -744,7 +735,6 @@ const AddExpense = () => {
                 type="button"
                 className={`${dataTableStyles.toggleButton} ${formData.payment_method === 'debit_card' ? dataTableStyles.active : ''}`}
                 onClick={() => handlePaymentMethodChange('debit_card')}
-                style={{height: '50px'}}
               >
                 <BsCreditCard2Front /> Débito
               </button>
@@ -752,7 +742,6 @@ const AddExpense = () => {
                 type="button"
                 className={`${dataTableStyles.toggleButton} ${formData.payment_method === 'cash' ? dataTableStyles.active : ''}`}
                 onClick={() => handlePaymentMethodChange('cash')}
-                style={{height: '50px'}}
               >
                 <BsCashCoin /> Dinheiro
               </button>
@@ -760,7 +749,6 @@ const AddExpense = () => {
                 type="button"
                 className={`${dataTableStyles.toggleButton} ${formData.payment_method === 'pix' ? dataTableStyles.active : ''}`}
                 onClick={() => handlePaymentMethodChange('pix')}
-                style={{height: '50px'}}
               >
                 <BsWallet2 /> Pix
               </button>
@@ -768,22 +756,20 @@ const AddExpense = () => {
           </div>
 
           {/* Botões de Ação */}
-          <div style={{display: 'flex', justifyContent: 'flex-end', gap: '15px', marginTop: '30px'}}>
+          <div className={dataTableStyles.modalActions}>
             <button 
               type="button" 
               onClick={() => navigate('/expenses')} 
               className={`${dataTableStyles.formButton} ${dataTableStyles.formCancel}`}
-              style={{minWidth: '120px', height: '45px'}}
             >
-              <BsXLg style={{marginRight: '5px'}} /> Cancelar
+              <BsXLg /> Cancelar
             </button>
             <button 
               type="submit" 
               className={`${dataTableStyles.formButton} ${dataTableStyles.formSubmit}`}
               disabled={loading}
-              style={{minWidth: '180px', height: '45px'}}
             >
-              <BsCheck2 style={{marginRight: '5px'}} /> {loading ? 'Salvando...' : 'Salvar Despesa'}
+              <BsCheck2 /> {loading ? 'Salvando...' : 'Salvar Despesa'}
             </button>
           </div>
         </form>

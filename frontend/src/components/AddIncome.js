@@ -118,6 +118,11 @@ const AddIncome = () => {
     setLoading(true);
 
     try {
+      // Verificar se os campos obrigatórios estão preenchidos
+      if (!formData.description || !formData.amount || !formData.category_id || !formData.bank_id || !formData.date) {
+        throw new Error('Preencha todos os campos obrigatórios: descrição, valor, data, categoria e banco');
+      }
+
       // Define as datas para receitas fixos
       let start_date = null;
       let end_date = null;
@@ -130,8 +135,10 @@ const AddIncome = () => {
         end_date = endDateObj.toISOString().split('T')[0];
       }
 
+      // Usar o amount do formData
       const dataToSend = {
         ...formData,
+        amount: formData.amount,
         start_date,
         end_date
       };
@@ -170,11 +177,7 @@ const AddIncome = () => {
 
   return (
     <div className={dataTableStyles.modalOverlay}>
-      <div className={`${dataTableStyles.modalContent} ${dataTableStyles.formModal}`} style={{
-        maxWidth: '700px',  // Aumentar a largura máxima no desktop
-        width: '90%',       // Garantir responsividade
-        padding: '25px'     // Mais padding interno
-      }}>
+      <div className={`${dataTableStyles.modalContent} ${dataTableStyles.formModal}`}>
         <div className={dataTableStyles.modalHeader}>
           <BsPlusCircle size={20} style={{ color: 'var(--primary-color)' }} />
           <h3>Adicionar Ganho</h3>
@@ -202,9 +205,8 @@ const AddIncome = () => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} style={{display: 'flex', flexDirection: 'column', gap: '20px'}}>
-          {/* Descrição e Valor */}
-          <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px'}}>
+        <form onSubmit={handleSubmit} className={dataTableStyles.formGrid}>
+          <div className={dataTableStyles.inlineFieldsContainer}>
             <div className={dataTableStyles.formGroup}>
               <label className={dataTableStyles.formLabel}>
                 Descrição
@@ -221,7 +223,7 @@ const AddIncome = () => {
 
             <div className={dataTableStyles.formGroup}>
               <label className={dataTableStyles.formLabel}>
-                <BsCurrencyDollar size={16} /> Valor
+                Valor
               </label>
               <CurrencyInput
                 name="amount"
@@ -246,22 +248,20 @@ const AddIncome = () => {
             <label className={dataTableStyles.formLabel}>
               Tipo de Ganho
             </label>
-            <div style={{display: 'flex', justifyContent: 'space-between', gap: '15px', marginTop: '10px'}}>
+            <div className={dataTableStyles.toggleGroup}>
               <button
                 type="button"
                 className={`${dataTableStyles.toggleButton} ${!formData.is_recurring ? dataTableStyles.active : ''}`}
                 onClick={() => handleToggleChange('is_recurring', false)}
-                style={{flex: '1', height: '50px'}}
               >
-                <BsCurrencyDollar size={16} /> Único
+                <BsCurrencyDollar /> Único
               </button>
               <button
                 type="button"
                 className={`${dataTableStyles.toggleButton} ${formData.is_recurring ? dataTableStyles.active : ''}`}
                 onClick={() => handleToggleChange('is_recurring', true)}
-                style={{flex: '1', height: '50px'}}
               >
-                <BsRepeat size={16} /> Fixo
+                <BsRepeat /> Fixo
               </button>
             </div>
           </div>
@@ -288,14 +288,14 @@ const AddIncome = () => {
 
           {/* Configurações de Ganho Fixo */}
           {formData.is_recurring && (
-            <div style={{marginBottom: '20px'}}>
+            <div className={dataTableStyles.formGroup}>
               <label className={dataTableStyles.formLabel}>
                 <div className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
                   <BsRepeat /> Ganho Fixo
                 </div>
               </label>
-              <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginTop: '10px'}}>
-                <div className={dataTableStyles.formGroup}>
+              <div className={dataTableStyles.inlineFieldsContainer}>
+                <div className={dataTableStyles.formGroupHalf}>
                   <label className={dataTableStyles.formLabel}>Data de Início</label>
                   <input
                     type="date"
@@ -307,7 +307,7 @@ const AddIncome = () => {
                   />
                 </div>
                 
-                <div className={dataTableStyles.formGroup}>
+                <div className={dataTableStyles.formGroupHalf}>
                   <label className={dataTableStyles.formLabel}>Tipo de Recorrência</label>
                   <select
                     name="recurrence_type"
@@ -332,7 +332,7 @@ const AddIncome = () => {
           <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px'}}>
             <div className={dataTableStyles.formGroup}>
               <label className={dataTableStyles.formLabel}>
-                <BsFolderSymlink size={16} /> Categoria
+                <BsFolderSymlink /> Categoria
               </label>
               <select
                 name="category_id"
@@ -340,7 +340,6 @@ const AddIncome = () => {
                 onChange={handleChange}
                 className={dataTableStyles.formInput}
                 required
-                style={{height: '48px'}}
               >
                 <option value="">Selecione uma categoria</option>
                 {categories.map(category => (
@@ -353,7 +352,7 @@ const AddIncome = () => {
 
             <div className={dataTableStyles.formGroup}>
               <label className={dataTableStyles.formLabel}>
-                <BsBank2 size={16} /> Banco/Carteira
+                <BsBank2 /> Banco/Carteira
               </label>
               {banks.length > 0 ? (
                 <select
@@ -362,7 +361,6 @@ const AddIncome = () => {
                   onChange={handleChange}
                   className={dataTableStyles.formInput}
                   required
-                  style={{height: '48px'}}
                 >
                   <option value="">Selecione um banco</option>
                   {banks.map(bank => (
@@ -380,22 +378,20 @@ const AddIncome = () => {
           </div>
 
           {/* Botões de Ação */}
-          <div style={{display: 'flex', justifyContent: 'flex-end', gap: '15px', marginTop: '30px'}}>
+          <div className={dataTableStyles.modalActions}>
             <button 
               type="button" 
               onClick={() => navigate('/incomes')} 
               className={`${dataTableStyles.formButton} ${dataTableStyles.formCancel}`}
-              style={{minWidth: '120px', height: '45px'}}
             >
-              <BsXLg style={{marginRight: '5px'}} /> Cancelar
+              <BsXLg /> Cancelar
             </button>
             <button 
               type="submit" 
               className={`${dataTableStyles.formButton} ${dataTableStyles.formSubmit}`}
               disabled={loading}
-              style={{minWidth: '180px', height: '45px'}}
             >
-              <BsCheck2 style={{marginRight: '5px'}} /> {loading ? 'Salvando...' : 'Salvar Ganho'}
+              <BsCheck2 /> {loading ? 'Salvando...' : 'Salvar Ganho'}
             </button>
           </div>
         </form>
