@@ -503,7 +503,7 @@ const AddExpense = () => {
 
             <div className={dataTableStyles.formGroup}>
               <label className={dataTableStyles.formLabel}>
-                {formData.has_installments ? 'Valor da Parcela' : 'Valor'}
+                {formData.has_installments ? 'Valor Total da Compra (calcularemos o valor de cada parcela automaticamente)' : 'Valor'}
               </label>
               <CurrencyInput
                 name="amount"
@@ -622,11 +622,7 @@ const AddExpense = () => {
                     />
                   </div>
                 </div>
-              </div>
-              <div style={{marginTop: '10px', fontSize: '0.85em', color: 'var(--text-muted)', backgroundColor: 'rgba(255,255,255,0.05)', padding: '10px', borderRadius: '5px'}}>
-                <p style={{margin: '0 0 5px 0'}}>* O valor informado acima é o valor de cada parcela individualmente.</p>
-                <p style={{margin: '0'}}>* Apenas as parcelas restantes a partir da atual serão registradas.</p>
-              </div>
+              </div>             
             </div>
           )}
 
