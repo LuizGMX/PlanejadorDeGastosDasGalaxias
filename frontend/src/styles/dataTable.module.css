@@ -304,7 +304,8 @@
 
 /* Tabela de dados */
 .tableContainer {
-  padding: 0;
+  display: block; /* Ensure it's visible on desktop */
+  width: 100%;
   overflow-x: auto;
 }
 
@@ -1063,6 +1064,33 @@
   }
 }
 
+/* Mobile card view container */
+.mobileCardView {
+  display: none !important; /* Ensure it's hidden on desktop */
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+/* Table container for desktop view */
+.tableContainer {
+  display: block; /* Ensure it's visible on desktop */
+  width: 100%;
+  overflow-x: auto;
+}
+
+/* Media query for mobile devices */
+@media (max-width: 768px) {
+  .mobileCardView {
+    display: flex !important; /* Force display on mobile */
+  }
+  
+  .tableContainer {
+    display: none !important; /* Force hide on mobile */
+  }
+}
+
 /* Estilos para gestos touch nos cards mobile */
 .mobileCard {
   position: relative;
@@ -1072,6 +1100,10 @@
   touch-action: pan-y;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+  background-color: var(--card-background);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  padding: 16px;
 }
 
 .mobileCard:active {
