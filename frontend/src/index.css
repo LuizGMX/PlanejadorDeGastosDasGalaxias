@@ -16,20 +16,31 @@
   --button-background-color: #00FF85;
 }
 
+/* iOS-specific viewport fix */
+@supports (-webkit-touch-callout: none) {
+  html, body {
+    height: -webkit-fill-available;
+  }
+}
+
 html {
   overflow-x: hidden;
   width: 100%;
   height: 100%;
   position: fixed; /* Impede scroll da página inteira */
+  /* iOS height fix */
+  min-height: -webkit-fill-available;
 }
 
 body {
-  font-family: 'Roboto', sans-serif;
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif; /* Added Apple system fonts */
   background-color: var(--background-color);
   color: var(--text-color);
   margin: 0;
   padding: 0;
   min-height: 100vh;
+  /* iOS height fix */
+  min-height: -webkit-fill-available;
   box-sizing: border-box;
   width: 100%;
   position: fixed; /* Impede scroll do body */
@@ -37,6 +48,10 @@ body {
   overflow-x: hidden; /* Esconde scroll horizontal */
   -webkit-overflow-scrolling: touch; /* Smooth scroll em dispositivos iOS */
   height: 100%;
+  /* Disable iOS text size adjustment */
+  -webkit-text-size-adjust: 100%;
+  /* Disable iOS tap highlight */
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
 }
 
 #root {
@@ -49,6 +64,8 @@ body {
 
 *, *:before, *:after {
   box-sizing: inherit;
+  /* Disable iOS tap highlight */
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
 }
 
 button {
@@ -59,6 +76,10 @@ button {
   border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.3s;
+  /* iOS button fixes */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
 }
 
 button:hover {
@@ -74,6 +95,25 @@ input, select {
   box-sizing: border-box;
   background-color: var(--input-background);
   color: var(--text-color);
+  /* iOS input fixes */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+/* iOS specific form element fixes */
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
+  min-height: 44px; /* Better touch target for iOS */
+}
+
+/* Fix for iOS momentum scrolling on modals */
+.modal-open {
+  position: fixed;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
 }
 
 /* Garantindo que a navbar mobile seja exibida em telas pequenas */
@@ -85,6 +125,8 @@ input, select {
     bottom: 0 !important;
     left: 0 !important;
     width: 100% !important;
+    /* iOS safe area padding for iPhone X and newer */
+    padding-bottom: env(safe-area-inset-bottom, 0);
   }
   
   body {
@@ -92,7 +134,7 @@ input, select {
   }
   
   #root {
-    padding-bottom: 70px; /* Espaço para a navbar */
+    padding-bottom: calc(70px + env(safe-area-inset-bottom, 0)); /* Espaço para a navbar com safe area */
   }
   
   /* Estilo para fixar a posição durante a exibição de modais */
@@ -102,6 +144,8 @@ input, select {
     position: fixed;
     width: 100%;
     height: 100%;
+    /* iOS scrolling fix */
+    overscroll-behavior: none;
   }
   
   /* Classes para controlar melhor o comportamento móvel */
@@ -110,7 +154,7 @@ input, select {
   }
   
   .mobile-scroll-container {
-    height: calc(100vh - 70px);
+    height: calc(100vh - 70px - env(safe-area-inset-bottom, 0));
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
@@ -128,5 +172,20 @@ input, select {
     overflow: visible !important;
     overflow-x: hidden !important;
     border-radius: 10px !important;
+  }
+}
+
+/* iOS specific media query for notched devices */
+@supports (padding: max(0px)) {
+  .mobileNavbar {
+    padding-bottom: max(env(safe-area-inset-bottom), 0px) !important;
+  }
+  
+  #root {
+    padding-bottom: max(calc(70px + env(safe-area-inset-bottom)), 70px) !important;
+  }
+  
+  .mobile-scroll-container {
+    height: calc(100vh - 70px - max(env(safe-area-inset-bottom), 0px));
   }
 }

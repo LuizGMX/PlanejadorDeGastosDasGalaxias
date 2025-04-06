@@ -1,6 +1,8 @@
 /* Garantindo que todos os elementos respeitem as bordas */
 * {
   box-sizing: border-box;
+  /* Disable iOS tap highlight */
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
 }
 
 /* Variáveis de cores */
@@ -2808,5 +2810,173 @@
     width: 95%;
     padding: 1rem;
     max-height: calc(100vh - 80px);
+  }
+}
+
+/* iOS specific input improvements */
+@supports (-webkit-touch-callout: none) {
+  .input, select, textarea, .modernSelect, button, .button, .submitButton {
+    /* Fix iOS form styling */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    border-radius: 12px;
+  }
+  
+  /* Improve form control touch targets */
+  .input, select, button, .button, .submitButton, .modernSelect, .paymentButton, 
+  .mobileNavLink, .card button, .telegramButton, .verifiedButton {
+    min-height: 44px;
+  }
+  
+  /* Fix iOS form zoom issues */
+  input, select, textarea {
+    font-size: 16px !important; /* Prevents iOS from zooming on focus */
+  }
+  
+  /* Fix iOS scrolling */
+  .mainContainer, .content, .modal, .formModal, .card {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Fix iOS momentum scrolling in modals and cards */
+  .modalContent, .card {
+    max-height: 85vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Fix position:fixed for iOS Safari */
+  .mobileNavbar, .modal, .formModal {
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+}
+
+/* Adjust media queries for iOS devices */
+@media (max-width: 768px) {
+  .paymentOptions {
+    flex-direction: column;
+  }
+  
+  .logo {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+  }
+  
+  img {
+    height: 60px;
+  }
+  
+  .mainContainer {
+    padding: 1rem;
+    /* Fix iOS positioning */
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0));
+  }
+  
+  .container {
+    padding: 1rem;
+  }
+  
+  .card {
+    padding: 24px;
+    border-radius: 12px;
+  }
+  
+  .title {
+    font-size: 24px;
+  }
+  
+  .button {
+    padding: 14px 20px;
+  }
+  
+  .cardsGrid.twoColumns {
+    grid-template-columns: 1fr;
+  }
+  
+  .cardColumn {
+    margin-bottom: 1rem;
+  }
+  
+  .pageHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .pageHeader h1 {
+    font-size: 1.5rem;
+  }
+  
+  .content {
+    padding: 0;
+  }
+  
+  .formSection {
+    margin-bottom: 2rem;
+  }
+  
+  .formSection h2 {
+    font-size: 1.25rem;
+  }
+  
+  .inputGroup {
+    margin-bottom: 1rem;
+  }
+  
+  .input, 
+  select, 
+  textarea, 
+  .modernSelect {
+    padding: 14px;
+    font-size: 16px !important; /* Prevents iOS zoom on input focus */
+    border-radius: 10px;
+  }
+  
+  .label {
+    font-size: 14px;
+  }
+  
+  .buttonGroup {
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 24px;
+  }
+  
+  .submitButton,
+  .button,
+  .paymentButton {
+    width: 100%;
+    padding: 16px;
+    height: auto;
+    min-height: 54px; /* Better touch target for iOS */
+    border-radius: 10px;
+  }
+  
+  /* ... existing code ... */
+}
+
+/* iOS notched device safe area support */
+@supports (padding: max(0px)) {
+  @media (max-width: 768px) {
+    .mainContainer {
+      padding-bottom: max(1rem, env(safe-area-inset-bottom)) !important;
+    }
+    
+    .modal, .formModal {
+      padding-bottom: max(env(safe-area-inset-bottom), 0) !important;
+    }
+    
+    .buttonGroup {
+      margin-bottom: max(env(safe-area-inset-bottom), 0) !important;
+    }
+    
+    /* Safe area for fixed position elements */
+    .mobileNavbar, .formModal, .actionButtons {
+      padding-bottom: max(env(safe-area-inset-bottom), 0) !important;
+    }
   }
 }
