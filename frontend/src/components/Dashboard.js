@@ -908,6 +908,182 @@ const Dashboard = () => {
     };
   }, []);
 
+  // Effect para carregar os dados do dashboard quando o componente monta
+  // ou quando os filtros mudam
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        console.log("Buscando dados do dashboard...");
+        setLoading(true);
+        
+        // Construir os parâmetros de consulta com base no período selecionado
+        let queryParams = '';
+        
+        if (selectedPeriod === 'current' || selectedPeriod === 'month') {
+          // Mês atual
+          const now = new Date();
+          const startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+          queryParams = `?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`;
+        } else if (selectedPeriod === 'year') {
+          // Ano atual
+          const now = new Date();
+          const startDate = new Date(now.getFullYear(), 0, 1);
+          const endDate = new Date(now.getFullYear(), 11, 31);
+          queryParams = `?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`;
+        } else if (selectedPeriod === 'last') {
+          // Mês anterior
+          const now = new Date();
+          const startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          const endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+          queryParams = `?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`;
+        } else if (selectedPeriod === 'custom' && customDateRange) {
+          // Período personalizado
+          queryParams = `?startDate=${customDateRange.startNormalized || customDateRange.start}&endDate=${customDateRange.endNormalized || customDateRange.end}`;
+        }
+        
+        // Adicionar filtros para categorias e bancos se selecionados
+        if (selectedCategories.length > 0) {
+          queryParams += `&categories=${selectedCategories.join(',')}`;
+        }
+        
+        if (selectedBanks.length > 0) {
+          queryParams += `&banks=${selectedBanks.join(',')}`;
+        }
+        
+        const response = await fetch(
+          `${process.env.REACT_APP_API_URL}/${process.env.REACT_APP_API_PREFIX}/dashboard${queryParams}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${auth.token}`
+            },
+            credentials: 'include'
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`Falha ao carregar dados (${response.status})`);
+        }
+
+        const result = await response.json();
+        console.log("Dados do dashboard carregados com sucesso:", result);
+        setData(result);
+        
+        if (result.expenses && result.expenses.length > 0) {
+          setHasExpenses(true);
+        }
+        
+        if (result.incomes && result.incomes.length > 0) {
+          setHasIncome(true);
+        }
+      } catch (err) {
+        console.error("Erro ao buscar dados do dashboard:", err);
+        setError(err.message || "Falha ao carregar os dados do dashboard. Por favor, tente novamente.");
+      }
+    };
+    
+    const fetchAllTransactions = async () => {
+      try {
+        console.log("Buscando todas as transações...");
+        
+        const response = await fetch(
+          `${process.env.REACT_APP_API_URL}/${process.env.REACT_APP_API_PREFIX}/dashboard/all-transactions`,
+          {
+            headers: {
+              'Authorization': `Bearer ${auth.token}`
+            },
+            credentials: 'include'
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`Falha ao carregar transações (${response.status})`);
+        }
+
+        const result = await response.json();
+        console.log("Todas as transações carregadas com sucesso:", result);
+        
+        // Processar despesas
+        if (result.expenses && Array.isArray(result.expenses)) {
+          const processedExpenses = result.expenses.map(expense => ({
+            id: expense.id,
+            description: expense.description || 'Sem descrição',
+            amount: parseFloat(expense.amount),
+            date: new Date(expense.expense_date),
+            category: expense.Category ? expense.Category.name : 'Sem categoria',
+            categoryId: expense.category_id,
+            bank: expense.bank ? expense.bank.name : 'Sem banco',
+            type: 'expense',
+            is_recurring: expense.recurrence !== null,
+            payment_method: expense.payment_method || 'Não especificado'
+          }));
+          
+          setAllExpenses(processedExpenses);
+        }
+        
+        // Processar receitas
+        if (result.incomes && Array.isArray(result.incomes)) {
+          const processedIncomes = result.incomes.map(income => ({
+            id: income.id,
+            description: income.description || 'Sem descrição',
+            amount: parseFloat(income.amount),
+            date: new Date(income.date),
+            category: income.Category ? income.Category.name : 'Sem categoria',
+            categoryId: income.category_id,
+            bank: income.bank ? income.bank.name : 'Sem banco',
+            type: 'income',
+            is_recurring: false
+          }));
+          
+          setAllIncomes(processedIncomes);
+        }
+        
+        // Combinar todas as transações para a timeline
+        const allTransactions = [
+          ...(result.expenses || []).map(expense => ({
+            id: `expense-${expense.id}`,
+            description: expense.description || 'Sem descrição',
+            amount: parseFloat(expense.amount),
+            date: new Date(expense.expense_date),
+            category: expense.Category ? expense.Category.name : 'Sem categoria',
+            bank: expense.bank ? expense.bank.name : 'Sem banco',
+            type: 'expense',
+            is_recurring: expense.recurrence !== null,
+            payment_method: expense.payment_method || 'Não especificado'
+          })),
+          ...(result.incomes || []).map(income => ({
+            id: `income-${income.id}`,
+            description: income.description || 'Sem descrição',
+            amount: parseFloat(income.amount),
+            date: new Date(income.date),
+            category: income.Category ? income.Category.name : 'Sem categoria',
+            bank: income.bank ? income.bank.name : 'Sem banco',
+            type: 'income',
+            is_recurring: false
+          }))
+        ];
+        
+        // Ordenar por data (mais recente primeiro)
+        allTransactions.sort((a, b) => b.date - a.date);
+        
+        setTransactions(allTransactions);
+      } catch (err) {
+        console.error("Erro ao buscar transações:", err);
+        setError(err.message || "Falha ao carregar as transações. Por favor, tente novamente.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    // Execute as duas chamadas quando o componente montar ou os filtros mudarem
+    Promise.all([fetchData(), fetchAllTransactions()])
+      .catch(err => {
+        console.error("Erro ao carregar dados:", err);
+        setError("Falha ao carregar os dados. Por favor, tente novamente.");
+        setLoading(false);
+      });
+  }, [auth.token, selectedPeriod, selectedCategories, selectedBanks, customDateRange]);
+
   const handleFilterChange = (type, value) => {
     if (value === 'all') {
       // Se "Todos" foi selecionado
@@ -1499,14 +1675,14 @@ const Dashboard = () => {
     const total = available + totalSpent;
     
     const chartData = [
-      {
-        name: 'Disponível',
+                        {
+                          name: 'Disponível',
         value: available,
         percent: available / total,
         color: 'var(--primary-color)'
-      },
-      {
-        name: 'Total Despesa',
+                        },
+                        {
+                          name: 'Total Despesa',
         value: totalSpent,
         percent: totalSpent / total,
         color: 'var(--error-color)'
@@ -1558,14 +1734,14 @@ const Dashboard = () => {
               </defs>
               <Pie
                 data={chartData}
-                dataKey="value"
-                nameKey="name"
-                cx="50%"
-                cy="50%"
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
                 outerRadius={isMobile ? 80 : 100}
                 innerRadius={0}
-                startAngle={90}
-                endAngle={-270}
+                      startAngle={90}
+                      endAngle={-270}
                 filter="url(#income-vs-expense-shadow)"
                 animationDuration={800}
                 animationBegin={200}
@@ -1581,21 +1757,21 @@ const Dashboard = () => {
                     strokeWidth={2} 
                   />
                 ))}
-              </Pie>
-              <Tooltip 
+                    </Pie>
+                    <Tooltip
                 formatter={(value) => formatCurrency(value)}
-                contentStyle={{
-                  backgroundColor: 'var(--card-background)',
-                  border: '1px solid var(--border-color)',
-                  color: 'var(--text-color)',
-                  padding: '10px',
+                      contentStyle={{
+                        backgroundColor: 'var(--card-background)',
+                        border: '1px solid var(--border-color)',
+                        color: 'var(--text-color)',
+                        padding: '10px',
                   borderRadius: '8px',
                   boxShadow: '0 4px 8px rgba(0,0,0,0.15)'
-                }}
-              />
-              <Legend
+                      }}
+                    />
+                    <Legend
                 layout={isMobile ? "horizontal" : "vertical"}
-                align="center"
+                      align="center"
                 verticalAlign="bottom"
                 iconType="circle"
                 iconSize={isMobile ? 8 : 10}
@@ -1612,8 +1788,8 @@ const Dashboard = () => {
                   paddingTop: isMobile ? '8px' : '10px',
                   fontSize: isMobile ? '10px' : '12px'
                 }}
-              />
-            </PieChart>
+                    />
+                  </PieChart>
           </ResponsiveContainer>
         </div>
         
@@ -2666,7 +2842,7 @@ const Dashboard = () => {
         </div>
       );
     }
-
+    
     // Avoid rendering with empty or invalid data
     if (!incomeCategoryData || incomeCategoryData.length === 0) {
       return (
@@ -2722,29 +2898,29 @@ const Dashboard = () => {
         <div className={styles.chartHeader}>
           <h3>Receitas por Categoria</h3>
           <div className={styles.chartSubtitle}>
-            <div className={styles.periodButtons}>
-              <button 
-                className={`${styles.periodButton} ${selectedPeriod === 'month' ? styles.activePeriod : ''}`} 
-                onClick={() => handlePeriodChange('month')}
-              >
-                Mês
-              </button>
-              <button 
-                className={`${styles.periodButton} ${selectedPeriod === 'year' ? styles.activePeriod : ''}`} 
-                onClick={() => handlePeriodChange('year')}
-              >
-                Ano
-              </button>
-              <button 
-                className={`${styles.periodButton} ${selectedPeriod === 'all' ? styles.activePeriod : ''}`} 
-                onClick={() => handlePeriodChange('all')}
-              >
-                Todos
-              </button>
+          <div className={styles.periodButtons}>
+            <button 
+              className={`${styles.periodButton} ${selectedPeriod === 'month' ? styles.activePeriod : ''}`}
+              onClick={() => handlePeriodChange('month')}
+            >
+              Mês
+            </button>
+            <button 
+              className={`${styles.periodButton} ${selectedPeriod === 'year' ? styles.activePeriod : ''}`}
+              onClick={() => handlePeriodChange('year')}
+            >
+              Ano
+            </button>
+            <button 
+              className={`${styles.periodButton} ${selectedPeriod === 'all' ? styles.activePeriod : ''}`}
+              onClick={() => handlePeriodChange('all')}
+            >
+              Todos
+            </button>
             </div>
           </div>
         </div>
-        
+
         <div className={styles.categoriesPieContainer}>
           <ResponsiveContainer width="100%" height={isMobile ? 220 : 280}>
             <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
@@ -2790,7 +2966,7 @@ const Dashboard = () => {
                 iconSize={isMobile ? 8 : 10}
                 formatter={(value, entry) => (
                   <span style={{ 
-                    color: 'var(--text-color)', 
+                  color: 'var(--text-color)',
                     fontSize: isMobile ? '10px' : '12px', 
                     fontWeight: entry.payload.category === incomeCategoriesWithColors[0]?.category ? 'bold' : 'normal',
                     whiteSpace: 'nowrap',
@@ -2839,7 +3015,7 @@ const Dashboard = () => {
       return (
         <div className={styles.chartContainer}>
           <div className={styles.chartHeader}>
-            <h3>Distribuição por Banco</h3>
+          <h3>Distribuição por Banco</h3>
             <div className={styles.chartSubtitle}>
               <span className={styles.dateFilterBadge}>
                 <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
@@ -2905,8 +3081,8 @@ const Dashboard = () => {
         : getBankColor(bank.bank_name);
       
       return {
-        name: bank.bank_name,
-        value: bank.total,
+      name: bank.bank_name,
+      value: bank.total,
         color: customColor || COLORS[index % COLORS.length],
         percent: bank.total / totalExpensesByBank,
       };
@@ -2971,7 +3147,7 @@ const Dashboard = () => {
                 iconSize={isMobile ? 8 : 10}
                 formatter={(value, entry) => (
                   <span style={{ 
-                    color: 'var(--text-color)', 
+                  color: 'var(--text-color)',
                     fontSize: isMobile ? '10px' : '12px', 
                     fontWeight: entry.payload.name === primaryBank.name ? 'bold' : 'normal',
                     whiteSpace: 'nowrap',
@@ -3586,11 +3762,177 @@ const Dashboard = () => {
           
           // Usando try/catch para tratar possíveis erros na chamada das funções
           try {
-            const fetchDataPromise = fetchData();
-            const fetchAllTransactionsPromise = fetchAllTransactions();
+            // Definir as funções inline para não depender de referências externas
+            const fetchData = async () => {
+              try {
+                console.log("Buscando dados do dashboard...");
+                
+                // Construir os parâmetros de consulta com base no período selecionado
+                let queryParams = '';
+                
+                if (selectedPeriod === 'current' || selectedPeriod === 'month') {
+                  // Mês atual
+                  const now = new Date();
+                  const startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                  const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                  queryParams = `?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`;
+                } else if (selectedPeriod === 'year') {
+                  // Ano atual
+                  const now = new Date();
+                  const startDate = new Date(now.getFullYear(), 0, 1);
+                  const endDate = new Date(now.getFullYear(), 11, 31);
+                  queryParams = `?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`;
+                } else if (selectedPeriod === 'last') {
+                  // Mês anterior
+                  const now = new Date();
+                  const startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                  const endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+                  queryParams = `?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`;
+                } else if (selectedPeriod === 'custom' && customDateRange) {
+                  // Período personalizado
+                  queryParams = `?startDate=${customDateRange.startNormalized || customDateRange.start}&endDate=${customDateRange.endNormalized || customDateRange.end}`;
+                }
+                
+                // Adicionar filtros para categorias e bancos se selecionados
+                if (selectedCategories.length > 0) {
+                  queryParams += `&categories=${selectedCategories.join(',')}`;
+                }
+                
+                if (selectedBanks.length > 0) {
+                  queryParams += `&banks=${selectedBanks.join(',')}`;
+                }
+                
+                const response = await fetch(
+                  `${process.env.REACT_APP_API_URL}/${process.env.REACT_APP_API_PREFIX}/dashboard${queryParams}`,
+                  {
+                    headers: {
+                      'Authorization': `Bearer ${auth.token}`
+                    },
+                    credentials: 'include'
+                  }
+                );
+
+                if (!response.ok) {
+                  throw new Error(`Falha ao carregar dados (${response.status})`);
+                }
+
+                const result = await response.json();
+                console.log("Dados do dashboard carregados com sucesso:", result);
+                setData(result);
+                
+                if (result.expenses && result.expenses.length > 0) {
+                  setHasExpenses(true);
+                }
+                
+                if (result.incomes && result.incomes.length > 0) {
+                  setHasIncome(true);
+                }
+                
+                return result;
+              } catch (err) {
+                console.error("Erro ao buscar dados do dashboard:", err);
+                throw err;
+              }
+            };
+            
+            const fetchAllTransactions = async () => {
+              try {
+                console.log("Buscando todas as transações...");
+                
+                const response = await fetch(
+                  `${process.env.REACT_APP_API_URL}/${process.env.REACT_APP_API_PREFIX}/dashboard/all-transactions`,
+                  {
+                    headers: {
+                      'Authorization': `Bearer ${auth.token}`
+                    },
+                    credentials: 'include'
+                  }
+                );
+
+                if (!response.ok) {
+                  throw new Error(`Falha ao carregar transações (${response.status})`);
+                }
+
+                const result = await response.json();
+                console.log("Todas as transações carregadas com sucesso:", result);
+                
+                // Processar despesas
+                if (result.expenses && Array.isArray(result.expenses)) {
+                  const processedExpenses = result.expenses.map(expense => ({
+                    id: expense.id,
+                    description: expense.description || 'Sem descrição',
+                    amount: parseFloat(expense.amount),
+                    date: new Date(expense.expense_date),
+                    category: expense.Category ? expense.Category.name : 'Sem categoria',
+                    categoryId: expense.category_id,
+                    bank: expense.bank ? expense.bank.name : 'Sem banco',
+                    type: 'expense',
+                    is_recurring: expense.recurrence !== null,
+                    payment_method: expense.payment_method || 'Não especificado'
+                  }));
+                  
+                  setAllExpenses(processedExpenses);
+                }
+                
+                // Processar receitas
+                if (result.incomes && Array.isArray(result.incomes)) {
+                  const processedIncomes = result.incomes.map(income => ({
+                    id: income.id,
+                    description: income.description || 'Sem descrição',
+                    amount: parseFloat(income.amount),
+                    date: new Date(income.date),
+                    category: income.Category ? income.Category.name : 'Sem categoria',
+                    categoryId: income.category_id,
+                    bank: income.bank ? income.bank.name : 'Sem banco',
+                    type: 'income',
+                    is_recurring: false
+                  }));
+                  
+                  setAllIncomes(processedIncomes);
+                }
+                
+                // Combinar todas as transações para a timeline
+                const allTransactions = [
+                  ...(result.expenses || []).map(expense => ({
+                    id: `expense-${expense.id}`,
+                    description: expense.description || 'Sem descrição',
+                    amount: parseFloat(expense.amount),
+                    date: new Date(expense.expense_date),
+                    category: expense.Category ? expense.Category.name : 'Sem categoria',
+                    bank: expense.bank ? expense.bank.name : 'Sem banco',
+                    type: 'expense',
+                    is_recurring: expense.recurrence !== null,
+                    payment_method: expense.payment_method || 'Não especificado'
+                  })),
+                  ...(result.incomes || []).map(income => ({
+                    id: `income-${income.id}`,
+                    description: income.description || 'Sem descrição',
+                    amount: parseFloat(income.amount),
+                    date: new Date(income.date),
+                    category: income.Category ? income.Category.name : 'Sem categoria',
+                    bank: income.bank ? income.bank.name : 'Sem banco',
+                    type: 'income',
+                    is_recurring: false
+                  }))
+                ];
+                
+                // Ordenar por data (mais recente primeiro)
+                allTransactions.sort((a, b) => b.date - a.date);
+                
+                setTransactions(allTransactions);
+                
+                return result;
+              } catch (err) {
+                console.error("Erro ao buscar transações:", err);
+                throw err;
+              }
+            };
             
             // Execute as duas chamadas em paralelo
-            Promise.all([fetchDataPromise, fetchAllTransactionsPromise])
+            Promise.all([fetchData(), fetchAllTransactions()])
+              .then(() => {
+                setLoading(false);
+              })
               .catch(err => {
                 console.error("Erro ao tentar novamente:", err);
                 setError("Falha ao reconectar. Verifique sua conexão e tente novamente.");
