@@ -701,23 +701,24 @@ const Income = () => {
               onTouchEnd={() => handleTouchEnd(income.id)}
             >
               <div className={dataTableStyles.mobileCardSwipeState}>
-                <div className={dataTableStyles.mobileCardSelect}>
-                  <label className={dataTableStyles.checkboxContainer}>
-                    <input
-                      type="checkbox"
-                      checked={selectedIncomes.includes(income.id)}
-                      onChange={(e) => handleSelectIncome(income.id, e)}
-                      className={dataTableStyles.checkbox}
-                      disabled={income.is_recurring}
-                    />
-                    <span className={dataTableStyles.checkmark}></span>
-                  </label>
-                </div>
+                {!income.is_recurring && (
+                  <div className={dataTableStyles.mobileCardSelect}>
+                    <label className={dataTableStyles.checkboxContainer}>
+                      <input
+                        type="checkbox"
+                        checked={selectedIncomes.includes(income.id)}
+                        onChange={(e) => handleSelectIncome(income.id, e)}
+                        className={dataTableStyles.checkbox}
+                      />
+                      <span className={dataTableStyles.checkmark}></span>
+                    </label>
+                  </div>
+                )}
                 
                 <div className={dataTableStyles.mobileCardHeader}>
                   <h3 className={dataTableStyles.mobileCardTitle}>{income.description}</h3>
                   <span className={`${dataTableStyles.amountBadge} ${dataTableStyles.incomeAmount} ${dataTableStyles.mobileCardAmount}`}>
-                    R$ {Number(income.amount).toFixed(2)}
+                    {formatCurrency(income.amount)}
                   </span>
                 </div>
                 
@@ -729,34 +730,31 @@ const Income = () => {
                   
                   <div className={dataTableStyles.mobileCardDetail}>
                     <span className={dataTableStyles.mobileCardLabel}>Categoria</span>
-                    <span className={dataTableStyles.mobileCardValue}>{income.Category?.category_name || '-'}</span>
+                    <span className={dataTableStyles.mobileCardValue}>
+                      <BsFolderSymlink style={{color: 'var(--primary-color)'}} />
+                      {income.Category?.category_name || '-'}
+                    </span>
                   </div>
                   
-                  {(!isExpanded) ? (
-                    <>
-                      <div className={dataTableStyles.mobileCardDetail}>
-                        <span className={dataTableStyles.mobileCardLabel}>Banco</span>
-                        <span className={dataTableStyles.mobileCardValue}>
-                          {income.Bank?.name || '-'}
-                        </span>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className={dataTableStyles.mobileCardDetail}>
-                        <span className={dataTableStyles.mobileCardLabel}>Banco</span>
-                        <span className={dataTableStyles.mobileCardValue}>
-                          {income.Bank?.name || '-'}
-                        </span>
-                      </div>
-                      
-                      <div className={dataTableStyles.mobileCardDetail}>
-                        <span className={dataTableStyles.mobileCardLabel}>Tipo</span>
-                        <span className={dataTableStyles.mobileCardValue}>
-                          {income.is_recurring ? 'Receita fixa' : 'Receita única'}
-                        </span>
-                      </div>
-                    </>
+                  <div className={dataTableStyles.mobileCardDetail}>
+                    <span className={dataTableStyles.mobileCardLabel}>Banco</span>
+                    <span className={dataTableStyles.mobileCardValue}>
+                      <BsBank2 style={{color: 'var(--primary-color)'}} />
+                      {income.Bank?.name || '-'}
+                    </span>
+                  </div>
+                  
+                  {isExpanded && (
+                    <div className={dataTableStyles.mobileCardDetail}>
+                      <span className={dataTableStyles.mobileCardLabel}>Tipo</span>
+                      <span className={dataTableStyles.mobileCardValue}>
+                        {income.is_recurring ? (
+                          <><BsRepeat style={{color: 'var(--primary-color)'}} /> Receita fixa</>
+                        ) : (
+                          <><BsCurrencyDollar style={{color: 'var(--text-color)'}} /> Receita única</>
+                        )}
+                      </span>
+                    </div>
                   )}
                 </div>
                 
@@ -796,9 +794,9 @@ const Income = () => {
                   onClick={() => toggleCardDetails(income.id)}
                 >
                   {isExpanded ? (
-                    <>Mostrar Menos <BsChevronUp /></>
+                    <>Menos detalhes <BsChevronUp /></>
                   ) : (
-                    <>Mostrar Mais <BsChevronDown /></>
+                    <>Mais detalhes <BsChevronDown /></>
                   )}
                 </button>
               </div>
