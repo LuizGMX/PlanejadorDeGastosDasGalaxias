@@ -78,10 +78,13 @@ const IncomesWrapper = () => {
   };
 
   const handleSelectAll = () => {
-    if (selectedIncomes.length === incomes.length) {
+    // Garantir que incomes seja um array
+    const safeIncomes = Array.isArray(incomes) ? incomes : [];
+    
+    if (selectedIncomes.length === safeIncomes.length) {
       setSelectedIncomes([]);
     } else {
-      setSelectedIncomes(incomes.map(inc => inc.id));
+      setSelectedIncomes(safeIncomes.map(inc => inc.id));
     }
   };
 
@@ -102,7 +105,8 @@ const IncomesWrapper = () => {
         }
         
         const incomesData = await incomesResponse.json();
-        setIncomes(incomesData);
+        // Garantir que incomes seja sempre um array
+        setIncomes(Array.isArray(incomesData) ? incomesData : []);
 
         // Buscar categorias
         const categoriesResponse = await fetch('/api/categories', {
@@ -116,7 +120,7 @@ const IncomesWrapper = () => {
         }
         
         const categoriesData = await categoriesResponse.json();
-        setCategories(categoriesData);
+        setCategories(Array.isArray(categoriesData) ? categoriesData : []);
 
         // Buscar bancos
         const banksResponse = await fetch('/api/banks', {
@@ -130,11 +134,13 @@ const IncomesWrapper = () => {
         }
         
         const banksData = await banksResponse.json();
-        setBanks(banksData);
+        setBanks(Array.isArray(banksData) ? banksData : []);
 
       } catch (error) {
         console.error('Erro ao carregar dados:', error);
         setError(error.message);
+        // Garantir que incomes seja um array vazio em caso de erro
+        setIncomes([]);
       } finally {
         setLoading(false);
       }

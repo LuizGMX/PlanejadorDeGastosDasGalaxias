@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiEdit2, FiTrash2, FiFilter, FiSearch, FiPlus } from 'react-icons/fi';
 import { formatCurrency, formatDate } from '../../utils/formatters';
-import styles from '../../styles/mobile/dataTable.mobile.css';
+import styles from '../../styles/mobile/dataTable.mobile.module.css';
 
 const MobileIncomes = ({ 
   incomes, 
@@ -18,6 +18,14 @@ const MobileIncomes = ({
 }) => {
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+
+  console.log('MobileIncomes render:', { 
+    incomesType: typeof incomes, 
+    isArray: Array.isArray(incomes), 
+    incomesLength: incomes?.length,
+    loading,
+    error
+  });
 
   const handleSearch = (e) => {
     const value = e.target.value;
@@ -45,7 +53,9 @@ const MobileIncomes = ({
     );
   }
 
-  if (!incomes || !Array.isArray(incomes) || incomes.length === 0) {
+  const safeIncomes = Array.isArray(incomes) ? incomes : [];
+  
+  if (safeIncomes.length === 0) {
     return (
       <div className={styles.noDataContainer}>
         <div className={styles.noDataIcon}>💰</div>
@@ -91,12 +101,11 @@ const MobileIncomes = ({
                 />
               </div>
             </div>
-            {/* Adicione mais filtros aqui conforme necessário */}
           </div>
         </div>
 
         <div className={styles.mobileCardView}>
-          {incomes.map((income) => (
+          {safeIncomes.map((income) => (
             <div key={income.id} className={styles.mobileCard}>
               <div className={styles.mobileCardHeader}>
                 <h3 className={styles.mobileCardTitle}>{income.description}</h3>
@@ -116,22 +125,22 @@ const MobileIncomes = ({
                 <div className={styles.mobileCardDetail}>
                   <span className={styles.mobileCardLabel}>Categoria:</span>
                   <span className={styles.mobileCardValue}>
-                    {income.category}
+                    {income.Category?.category_name || '-'}
                   </span>
                 </div>
 
                 <div className={styles.mobileCardDetail}>
-                  <span className={styles.mobileCardLabel}>Método:</span>
+                  <span className={styles.mobileCardLabel}>Banco:</span>
                   <span className={styles.mobileCardValue}>
-                    {income.paymentMethod}
+                    {income.Bank?.name || '-'}
                   </span>
                 </div>
 
-                {income.installments > 1 && (
+                {income.is_recurring && (
                   <div className={styles.mobileCardDetail}>
-                    <span className={styles.mobileCardLabel}>Parcelas:</span>
+                    <span className={styles.mobileCardLabel}>Tipo:</span>
                     <span className={styles.mobileCardValue}>
-                      {income.installments}x
+                      Receita Fixa
                     </span>
                   </div>
                 )}
@@ -140,7 +149,7 @@ const MobileIncomes = ({
               <div className={styles.mobileCardActions}>
                 <div className={styles.mobileCardType}>
                   <span className={styles.typeStatus}>
-                    {income.type === 'fixed' ? 'Fixa' : 'Única'}
+                    {income.is_recurring ? 'Fixa' : 'Única'}
                   </span>
                 </div>
                 <div className={styles.mobileCardActionButtons}>

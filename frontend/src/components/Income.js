@@ -78,6 +78,18 @@ const Income = ({
   const [touchStartX, setTouchStartX] = useState(0);
   const [touchCurrentX, setTouchCurrentX] = useState(0);
 
+  // Adicionar log para depuração
+  console.log('Income render:', { 
+    incomesType: typeof incomes, 
+    isArray: Array.isArray(incomes), 
+    incomesLength: incomes?.length,
+    loading,
+    error
+  });
+  
+  // Garantir que incomes seja um array
+  const safeIncomes = Array.isArray(incomes) ? incomes : [];
+
   // Lista de anos para o filtro
   const years = Array.from(
     { length: 20 },
@@ -256,11 +268,11 @@ const Income = ({
   const renderMobileCards = () => {
     console.log("Rendering mobile cards:", { 
       isMobile, 
-      incomesLength: incomes.length,
+      incomesLength: safeIncomes.length,
       noIncomesMessage 
     });
     
-    if (incomes.length === 0) {
+    if (safeIncomes.length === 0) {
       return (
         <div className={dataTableStyles.noDataContainer}>
           <BsCash className={dataTableStyles.noDataIcon} />
@@ -276,8 +288,8 @@ const Income = ({
     
     return (
       <div className={dataTableStyles.mobileCardView}>
-        {console.log("Rendering mobile card view with", incomes.length, "incomes")}
-        {incomes.map((income) => {
+        {console.log("Rendering mobile card view with", safeIncomes.length, "incomes")}
+        {safeIncomes.map((income) => {
           const isSwipeActive = activeSwipeCard === income.id;
 
           return (
@@ -402,7 +414,7 @@ const Income = ({
       {console.log("Rendering Income component:", {
         isMobile,
         showFilters,
-        incomesCount: incomes.length,
+        incomesCount: safeIncomes.length,
         loading,
         hasError: !!error,
         showNoIncomesMessage: !!noIncomesMessage
