@@ -1204,10 +1204,13 @@ const Expenses = () => {
           </div>
         ) : (
           <>
-            {/* Mobile View */}
-            {isMobile && (
+            {/* Renderização condicional baseada no dispositivo */}
+            {isMobile ? (
               <>
+                {/* Visualização em cards para mobile */}
                 {renderMobileCards()}
+                
+                {/* Tabela mobile */}
                 <div className={dataTableStyles.tableContainer}>
                   <table className={dataTableStyles.mobileTable}>
                     <thead>
@@ -1266,10 +1269,8 @@ const Expenses = () => {
                   </table>
                 </div>
               </>
-            )}
-
-            {/* Desktop View */}
-            {!isMobile && (
+            ) : (
+              /* Visualização desktop */
               <div className={dataTableStyles.tableContainer}>
                 <table className={dataTableStyles.table}>
                   <thead>

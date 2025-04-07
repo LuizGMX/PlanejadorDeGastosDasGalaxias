@@ -54,50 +54,12 @@
     overflow-y: auto;
   }
   
-  .tableContainer {
-    display: block !important;
-    overflow-x: visible;
-    width: 100%;
-    -webkit-overflow-scrolling: touch;
-    margin-bottom: 16px;
-    position: relative;
-    border-radius: 8px;
-    box-shadow: none;
-    border: none;
-  }
-  
-  .tableContainer::before {
-    display: none;
-  }
-  
+  /* Esconder a tabela desktop em dispositivos móveis */
   .table {
-    width: 100%;
-    min-width: 650px;
-    font-size: 14px;
-    border-collapse: collapse;
+    display: none !important;
   }
   
-  .table th, .table td {
-    padding: 8px 6px;
-    white-space: nowrap;
-    border-bottom: 1px solid var(--border-color);
-  }
-  
-  .table th {
-    background-color: var(--secondary-color);
-    position: sticky;
-    top: 0;
-    font-weight: 600;
-    text-align: left;
-    z-index: 10;
-    border-bottom: 2px solid var(--border-color);
-  }
-  
-  .table tr:nth-child(even) {
-    background-color: rgba(var(--border-color), 0.05);
-  }
-  
-  /* Modificações para exibição de tabela em modo mobile */
+  /* Estilos para a tabela mobile */
   .mobileTable {
     width: 100%;
     border-collapse: collapse;
