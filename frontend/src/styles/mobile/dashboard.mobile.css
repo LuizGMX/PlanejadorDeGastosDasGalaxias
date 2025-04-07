@@ -154,6 +154,7 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
+    align-items: center;
   }
   
   .budgetInfoContainer,
@@ -161,6 +162,10 @@
     padding: 1rem;
     margin-bottom: 1rem;
     border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
   }
   
   .infoItem,

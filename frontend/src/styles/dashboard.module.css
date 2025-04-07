@@ -396,60 +396,12 @@
 
 .chartsGrid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 24px;
-  margin: 24px auto;
+  grid-template-columns: repeat(auto-fill, minmax(32%, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
   width: 100%;
-  max-width: 1400px;
-}
-
-.chartContainer {
-  background: linear-gradient(145deg, var(--card-background), rgba(26, 27, 35, 0.9));
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-  border: 1px solid var(--border-color);
-  height: 450px;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.chartWrapper {
-  flex: 1;
-  width: 100%;
-  height: 100%;
-  display: flex;
+  justify-items: center;
   align-items: center;
-  justify-content: center;
-  position: relative;
-}
-
-.chartWrapper > div {
-  width: 100% !important;
-  height: 100% !important;
-}
-
-/* Specific styles for pie charts */
-.categoriesPieContainer,
-.bankPieContainer {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  width: 100%;
-}
-
-/* Ensure Recharts components are centered */
-.recharts-wrapper {
-  margin: 0 auto;
-}
-
-@media (max-width: 1200px) {
-  .chartsGrid {
-    grid-template-columns: 1fr;
-    max-width: 800px;
-  }
 }
 
 /* Estilo especial para a primeira grid - orçamento e objetivo lado a lado */
@@ -470,6 +422,20 @@
 
 /* Mobile styles moved to mobile/dashboard.mobile.css */
 
+.chartContainer {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
+  height: 400px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
 .chartContainer h3 {
   margin: 0 0 16px 0;
   color: var(--text-primary);
@@ -482,6 +448,9 @@
   width: 100%;
   min-height: 300px;
   position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 /* Responsive adjustments for desktop */
@@ -489,10 +458,17 @@
   .chartContainer {
     height: 450px;
     margin-bottom: 32px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
   }
 
   .chartWrapper {
     min-height: 350px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 
   .chartContainer h3 {
@@ -507,6 +483,8 @@
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 24px;
+    justify-items: center;
+    align-items: center;
   }
 
   .chartContainer {
@@ -604,6 +582,8 @@
   align-items: center;
   margin-bottom: 1rem;
   position: relative;
+  width: 100%;
+  height: 100%;
 }
 
 .categoriesInsights {
@@ -3011,12 +2991,19 @@ input:checked + .toggleSlider:before {
 }
 
 .chartContainer .recharts-responsive-container {
-  margin-bottom: 10px !important;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
 }
 
 .chartBody {
-  margin-bottom: 30px;
-  padding-bottom: 10px;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 /* Botões dentro dos cartões de visão geral */
