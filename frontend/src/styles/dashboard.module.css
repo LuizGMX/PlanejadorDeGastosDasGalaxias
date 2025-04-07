@@ -3167,3 +3167,86 @@ input:checked + .toggleSlider:before {
 
 /* Melhorias específicas para gráficos de pizza em mobile */
 /* Mobile styles moved to mobile/dashboard.mobile.css */
+
+/* Estilos responsivos para o filter container */
+@media (max-width: 768px) {
+  .filterRow {
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+  }
+
+  .filtersContainer {
+    flex-direction: column;
+    width: 100%;
+    gap: 1rem;
+  }
+
+  .filterButtons {
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+    gap: 0.5rem;
+  }
+
+  .filterButton {
+    width: calc(50% - 0.5rem);
+    min-width: 120px;
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    white-space: nowrap;
+  }
+
+  .searchBox {
+    width: 100%;
+  }
+
+  .searchInput {
+    width: 100%;
+  }
+
+  .dateFilterContainer {
+    width: 100%;
+  }
+
+  .dateFilterContainer .filterButton {
+    width: 100%;
+  }
+
+  .groupingToggle {
+    width: 100%;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+  }
+}
+
+/* Para telas muito pequenas */
+@media (max-width: 480px) {
+  .filterButton {
+    width: 100%;
+  }
+
+  .filterButtons {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .dateRangePickerContainer {
+    width: 90%;
+    max-width: 350px;
+  }
+
+  .dateRangePicker {
+    padding: 1rem;
+  }
+
+  .dateRangeButtons {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .applyDateRange,
+  .cancelDateRange {
+    width: 100%;
+  }
+}
