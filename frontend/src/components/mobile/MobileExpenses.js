@@ -281,7 +281,11 @@ const MobileExpenses = ({
                 <div className={styles.cardDetail}>
                   <span className={styles.cardLabel}>Banco</span>
                   <span className={styles.cardValue}>
-                    {expense.Bank ? expense.Bank.name : '-'}
+                    {expense.Bank 
+                      ? expense.Bank.name 
+                      : (expense.bank 
+                        ? expense.bank.name 
+                        : '-')}
                   </span>
                 </div>
 

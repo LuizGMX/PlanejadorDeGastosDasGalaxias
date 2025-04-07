@@ -281,7 +281,11 @@ const MobileIncomes = ({
                 <div className={styles.cardDetail}>
                   <span className={styles.cardLabel}>Banco</span>
                   <span className={styles.cardValue}>
-                    {income.Bank ? income.Bank.name : '-'}
+                    {income.Bank 
+                      ? income.Bank.name 
+                      : (income.bank 
+                        ? income.bank.name 
+                        : '-')}
                   </span>
                 </div>
 
