@@ -246,11 +246,7 @@
   }
 }
 
-@media (max-width: 768px) {
-  .filterSelector {
-    width: 100%;
-  }
-}
+/* Mobile styles moved to mobile/dashboard.mobile.css */
 
 .filtersContainer {
   background: var(--card-background);
@@ -396,24 +392,7 @@
   background: var(--hover-color);
 }
 
-@media (max-width: 768px) {
-  .filtersContainer {
-    padding: 1.5rem;
-  }
-
-  .filterRow {
-    flex-direction: column;
-    gap: 1.5rem;
-  }
-
-  .filterSelect {
-    padding: 0.875rem 1rem;
-  }
-
-  .checkboxGroup {
-    grid-template-columns: 1fr;
-  }
-}
+/* Mobile styles moved to mobile/dashboard.mobile.css */
 
 .chartsGrid {
   display: grid;
@@ -439,28 +418,20 @@
   }
 }
 
-@media (max-width: 768px) {
-  .chartsGrid {
-    grid-template-columns: 1fr;
-  }
-  
-  .chartsGrid:first-of-type {
-    grid-template-columns: 1fr;
-  }
-}
+/* Mobile styles moved to mobile/dashboard.mobile.css */
 
 .chartContainer {
-  background-color: var(--card-background);
-  border-radius: 16px;
+  background: linear-gradient(145deg, #1d1e26, #19191f);
+  border-radius: 20px;
   padding: 1.5rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1.5rem;
+  border: 1px solid rgba(42, 43, 51, 0.5);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
   min-height: 400px;
   display: flex;
   flex-direction: column;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  border: 1px solid var(--border-color);
-  position: relative;
-  overflow: hidden;
 }
 
 .chartContainer:hover {
@@ -615,27 +586,7 @@
   border-top: 1px solid var(--border-color);
 }
 
-@media (max-width: 768px) {
-  .chartContainer {
-    min-height: 350px;
-    padding: 1rem;
-  }
-  
-  .incomeVsExpensesSummary {
-    grid-template-columns: 1fr;
-    gap: 0.5rem;
-  }
-  
-  .chartHeader {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-  
-  .chartHeader h3 {
-    margin-bottom: 0.5rem;
-  }
-}
+/* Mobile styles moved to mobile/dashboard.mobile.css */
 
 /* Additional enhancements for the recharts components */
 .chartContainer .recharts-wrapper .recharts-cartesian-axis-tick-value {
@@ -1037,27 +988,7 @@
   content: '📋';
 }
 
-@media (max-width: 768px) {
-  .budgetStats,
-  .dailySpendingInfo {
-    grid-template-columns: 1fr;
-  }
-
-  .budgetHeader {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-
-  .budgetDate {
-    align-self: flex-start;
-  }
-
-  .adviceContent {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-}
+/* Mobile styles moved to mobile/dashboard.mobile.css */
 
 /* Quando o orçamento estiver destacado */
 .highlightedChart .budgetInfoContainer {
@@ -1123,153 +1054,7 @@
 }
 
 /* Responsividade */
-@media (max-width: 768px) {
-  .dashboardContainer {
-    padding: 1rem;
-    width: 100%;
-    max-width: 100%;
-    margin: 0 auto;
-  }
-
-  .chartsGrid {
-    grid-template-columns: 1fr;
-    margin: 0 auto;
-    width: 100%;
-  }
-
-  .chartContainer {
-    margin: 0 auto;
-    width: 100%;
-  }
-
-  .chartContainer.expanded {
-    width: 100%;
-  }
-
-  .filtersContainer {
-    flex-direction: column;
-    width: 100%;
-  }
-
-  .filterSelector {
-    width: 100%;
-  }
-
-  .filterSelect {
-    width: 100%;
-  }
-
-  .buttonGroup {
-    flex-direction: column;
-  }
-
-  .addFirstExpenseButton,
-  .backButton {
-    width: 100%;
-  }
-
-  .budgetStats {
-    flex-direction: column;
-    padding: 1rem;
-  }
-  
-  .filterRow {
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-  }
-  
-  .filtersContainer {
-    width: 100%;
-    justify-content: center;
-  }
-  
-  .emptyStateContainer {
-    width: 100%;
-    text-align: center;
-    padding: 1rem;
-  }
-  
-  .emptyStateButtons {
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-  }
-  
-  .addExpenseButton,
-  .addIncomeButton {
-    width: 100%;
-    max-width: 300px;
-    margin: 0.5rem 0;
-  }
-  
-  .navigationTabs {
-    width: 100%;
-    justify-content: center;
-  }
-  
-  .navTab {
-    flex: 1;
-    text-align: center;
-  }
-  
-  .greeting {
-    text-align: center;
-    width: 100%;
-  }
-  
-  .dashboardHeader {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-  }
-  
-  .chartHeader {
-    text-align: center;
-  }
-  
-  .chartSubtitle {
-    justify-content: center;
-  }
-
-  /* Ajustes específicos para centralizar certos componentes */
-  .bankPieContainer, 
-  .bankInsights,
-  .chartBody,
-  .chartHeader {
-    margin: 0 auto;
-    width: 100%;
-    text-align: center;
-  }
-  
-  .budgetInfoContainer,
-  .goalCard,
-  .timelineContainer {
-    margin: 0 auto;
-    width: 100%;
-  }
-  
-  /* Centralizar informações e estatísticas */
-  .infoItem,
-  .statCard,
-  .budgetStat {
-    margin: 0 auto;
-    text-align: center;
-  }
-
-  /* Manter os gráficos centralizados */
-  .recharts-responsive-container {
-    margin: 0 auto !important;
-  }
-  
-  /* Melhorar o espaçamento interior dos cartões */
-  /* .chartContainer,
-  .timelineContainer,
-  .budgetInfoContainer,
-  .goalCard {
-    padding: 0.75rem;
-  } */
-}
+/* Mobile styles moved to mobile/dashboard.mobile.css */
 
 /* Animações */
 @keyframes fadeIn {
@@ -1676,38 +1461,7 @@
 }
 
 /* Responsive */
-@media (max-width: 768px) {
-  .timelineItem {
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .timelineDate {
-    text-align: left;
-    flex-direction: row;
-    justify-content: flex-start;
-    min-width: auto;
-  }
-
-  .timelineContent {
-    margin-left: 0;
-  }
-
-  .timelineDetails {
-    flex-direction: column;
-    gap: 5px;
-  }
-
-  .categoryHeader {
-    flex-wrap: wrap;
-  }
-
-  .categoryValue {
-    width: 100%;
-    margin-top: 5px;
-    text-align: right;
-  }
-}
+/* Mobile styles moved to mobile/dashboard.mobile.css */
 
 /* Bank Balance Trend */
 .trendChartContainer {
@@ -1946,30 +1700,7 @@
 }
 
 /* Responsive */
-@media (max-width: 768px) {
-  .chartsGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .chartContainer {
-    min-height: 300px;
-  }
-
-  .trendChartControls {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .trendChartSelect {
-    width: 100%;
-  }
-
-  .financialGoalInfo,
-  .budgetStats,
-  .incomeVsExpensesSummary {
-    grid-template-columns: 1fr;
-  }
-}
+/* Mobile styles moved to mobile/dashboard.mobile.css */
 
 /* Enhanced Dashboard Layout */
 .enhancedDashboard {
@@ -2203,34 +1934,7 @@
   font-size: 1rem !important;
 }
 
-@media (max-width: 768px) {
-  .filterRow {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 1.5rem;
-  }
-
-  .filtersContainer {
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .emptyStateContainer {
-    max-width: 100%;
-    padding: 1.5rem 1rem;
-    flex-direction: column;
-  }
-  
-  .emptyStateButtons {
-    flex-direction: column;
-    width: 100%;
-  }
-  
-  .addExpenseButton,
-  .addIncomeButton {
-    width: 100%;
-  }
-}
+/* Mobile styles moved to mobile/dashboard.mobile.css */
 
 .dateRangePickerContainer {
   position: fixed;
@@ -2562,30 +2266,7 @@ input:checked + .toggleSlider:before {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-@media (max-width: 768px) {
-  .timelineControls {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-    width: 100%;
-  }
-  
-  .searchBox {
-    width: 100%;
-  }
-  
-  .filterButtons {
-    width: 100%;
-    justify-content: space-between;
-  }
-  
-  .filterButton {
-    flex: 1;
-    text-align: center;
-    margin: 0;
-    padding: 0.6rem 0.8rem;
-  }
-}
+/* Mobile styles moved to mobile/dashboard.mobile.css */
 
 .timelineControls {
   display: flex;
@@ -2749,28 +2430,7 @@ input:checked + .toggleSlider:before {
 }
 
 /* Media query for mobile */
-@media (max-width: 768px) {
-  .detailActions {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .detailActionButton {
-    width: 100%;
-  }
-  
-  .dailyTotal {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-  
-  .timelineGroupHeader {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-}
+/* Mobile styles moved to mobile/dashboard.mobile.css */
 
 /* Estilos para o Objetivo Financeiro */
 .goalCard {
@@ -3138,38 +2798,7 @@ input:checked + .toggleSlider:before {
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
 
-@media (max-width: 768px) {
-  .goalCardHeader {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .goalProgressSection {
-    flex-direction: column;
-    align-items: center;
-  }
-  
-  .goalStatsContainer {
-    width: 100%;
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .projectionTimeline {
-    flex-direction: column;
-    gap: 20px;
-  }
-  
-  .timelineBar {
-    width: 100%;
-    height: 12px;
-  }
-  
-  .timelineStart, .timelineEnd {
-    width: 100%;
-    flex-direction: row;
-    justify-content: space-between;
-  }
-}
+/* Mobile styles moved to mobile/dashboard.mobile.css */
 
 /* Timeline date range picker */
 .timelineDateRangePicker {
@@ -3417,232 +3046,10 @@ input:checked + .toggleSlider:before {
 }
 
 /* Melhores ajustes para visualização em dispositivos móveis */
-@media (max-width: 768px) {
-  /* Melhorar exibição de rótulos em dispositivos móveis */
-  .chartContainer .recharts-wrapper .recharts-cartesian-axis-tick-value {
-    font-size: 9px !important;
-    font-weight: 500 !important;
-  }
-  
-  /* Ajustar rotação dos rótulos no eixo X para economizar espaço */
-  .chartContainer .recharts-wrapper .recharts-xAxis .recharts-cartesian-axis-tick-value {
-    transform: rotate(-45deg);
-    text-anchor: end;
-    transform-origin: bottom right;
-    dy: -0.5em;
-    dx: -0.5em;
-  }
-  
-  /* Reduzir tamanho das legendas */
-  .chartContainer .recharts-default-legend {
-    font-size: 9px !important;
-    text-align: center !important;
-    width: 100% !important;
-    display: flex !important;
-    flex-wrap: wrap !important;
-    justify-content: center !important;
-    margin: 5px auto !important;
-  }
-  
-  /* Ajustar posição do tooltip para não ficar cortado */
-  .chartContainer .recharts-tooltip-wrapper {
-    max-width: 80vw !important;
-  }
-  
-  /* Reduzir tamanho do texto dentro do tooltip */
-  .chartContainer .recharts-tooltip-item-name,
-  .chartContainer .recharts-tooltip-item-value {
-    font-size: 10px !important;
-  }
-  
-  /* Ajustar espaçamento para gráficos de pizza */
-  .chartContainer .recharts-pie {
-    transform: scale(0.9);
-  }
-  
-  /* Melhorar visualização de labels nos gráficos de pizza */
-  .chartContainer .recharts-pie-label-text {
-    font-size: 8px !important;
-  }
-  
-  /* Ajustes para cabeçalhos de gráficos */
-  .chartHeader {
-    padding: 0.75rem 0.5rem !important;
-  }
-  
-  .chartHeader h3 {
-    font-size: 0.95rem !important;
-  }
-  
-  .chartSubtitle {
-    font-size: 0.75rem !important;
-  }
-  
-  /* Ajustes para gráficos individuais */
-  .chartBody {
-    margin-bottom: 20px;
-    padding: 0 0.5rem 0.5rem 0;
-  }
-  
-  /* Reduzir margens para maximizar espaço do gráfico */
-  .chartContainer .recharts-wrapper {
-    margin: 0 auto !important;
-  }
-  
-  /* Ajustar escalas dos gráficos */
-  .chartContainer .recharts-surface {
-    overflow: visible;
-  }
-  
-  /* Ajustes específicos para gráficos de área */
-  .bankPieContainer,
-  .categoriesPieContainer {
-    height: 220px !important;
-  }
-}
+/* Mobile styles moved to mobile/dashboard.mobile.css */
 
 /* Estilos aprimorados para visualização mobile dos gráficos */
-@media (max-width: 768px) {
-  .chartContainer {
-    min-height: 350px;
-    padding: 1rem;
-    margin-bottom: 1.5rem;
-    overflow: hidden;
-  }
-  
-  .chartHeader {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-    padding-bottom: 0.5rem;
-  }
-  
-  .chartHeader h3 {
-    margin-bottom: 0.25rem;
-    font-size: 1.1rem;
-  }
-  
-  .chartSubtitle {
-    width: 100%;
-  }
-  
-  .categoriesPieContainer,
-  .bankPieContainer,
-  .incomeVsExpensesContainer {
-    height: 220px;
-    margin-bottom: 0.5rem;
-  }
-  
-  .recharts-legend-wrapper {
-    padding: 0 !important;
-    display: flex;
-    justify-content: center !important;
-  }
-  
-  .recharts-default-legend {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    justify-content: center !important;
-    gap: 8px !important;
-    width: 100% !important;
-    padding: 0 4px !important;
-  }
-  
-  .recharts-legend-item {
-    margin-right: 8px !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    max-width: 80px !important;
-  }
-  
-  .recharts-pie {
-    transform: scale(0.9);
-  }
-  
-  .incomeVsExpensesSummary {
-    grid-template-columns: 1fr 1fr;
-    gap: 0.5rem;
-    padding-top: 0.5rem;
-  }
-  
-  .incomeVsExpensesSummary .infoItem:last-child {
-    grid-column: 1 / -1;
-  }
-  
-  .categoriesInsights {
-    margin-top: 0.5rem;
-    padding-top: 0.5rem;
-  }
-  
-  .categoriesInsights h4 {
-    font-size: 1rem;
-    margin-bottom: 0.25rem;
-  }
-  
-  .categoriesInsights p {
-    font-size: 0.8rem;
-    margin-bottom: 0.5rem;
-  }
-  
-  .infoItem span {
-    font-size: 0.8rem;
-  }
-  
-  .infoItem strong {
-    font-size: 1rem;
-  }
-  
-  .dateFilterBadge {
-    font-size: 0.7rem;
-    padding: 3px 8px;
-  }
-  
-  /* Otimização para tooltip nos dispositivos móveis */
-  .chartContainer .recharts-tooltip-wrapper {
-    max-width: 200px !important;
-  }
-  
-  /* Ajustes para a exibição das legendas nos gráficos */
-  .chartContainer .recharts-legend-item-text {
-    font-size: 10px !important;
-    display: inline-block !important;
-    max-width: 80px !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-  }
-}
+/* Mobile styles moved to mobile/dashboard.mobile.css */
 
 /* Melhorias específicas para gráficos de pizza em mobile */
-@media (max-width: 768px) {
-  .recharts-pie-label-text {
-    font-size: 9px !important;
-    font-weight: bold !important;
-  }
-  
-  .bankPieContainer .recharts-sector,
-  .categoriesPieContainer .recharts-sector,
-  .incomeVsExpensesContainer .recharts-sector {
-    transition: transform 0.2s;
-  }
-  
-  .bankPieContainer .recharts-sector:hover,
-  .categoriesPieContainer .recharts-sector:hover,
-  .incomeVsExpensesContainer .recharts-sector:hover {
-    transform: translateX(3px) translateY(3px);
-    filter: brightness(1.1);
-  }
-  
-  /* Melhorar a aparência do tooltip em mobile */
-  .chartContainer .recharts-tooltip-wrapper .recharts-default-tooltip {
-    padding: 8px !important;
-    border-radius: 8px !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2) !important;
-  }
-  
-  .chartContainer .recharts-tooltip-wrapper .recharts-tooltip-item {
-    padding: 2px 0 !important;
-    font-size: 10px !important;
-  }
-}
+/* Mobile styles moved to mobile/dashboard.mobile.css */

@@ -22,6 +22,7 @@ import {
   LabelList,
 } from 'recharts';
 import styles from '../styles/dashboard.module.css';
+import '../styles/mobile/dashboard.mobile.css';
 import { FaCalendarAlt, FaChartLine, FaPlus, FaChevronDown, FaChevronRight, FaSearch, FaFilter } from 'react-icons/fa';
 import DateRangePicker from './DateRangePicker';
 import {  
