@@ -254,8 +254,10 @@ const MobileExpenses = ({
         {renderFilters()}
 
         <div className={styles.cardsContainer}>
-          {expenses.map((expense) => (
-            <div key={expense.id} className={styles.card} style={{ borderLeftColor: '#f44336' }}>
+          {expenses.map((expense) => {
+            console.log('Renderizando expense:', expense);
+            return (
+            <div key={expense.id} className={styles.card} style={{ borderLeftColor: '#ff6b6b' }}>
               <div className={styles.cardHeader}>
                 <h3 className={styles.cardTitle}>{expense.description}</h3>
                 <span className={`${styles.amountBadge} ${styles.expenseAmount}`}>
@@ -266,20 +268,20 @@ const MobileExpenses = ({
               <div className={styles.cardDetails}>
                 <div className={styles.cardDetail}>
                   <span className={styles.cardLabel}>Data</span>
-                  <span className={styles.cardValue}>{formatDate(expense.date)}</span>
+                  <span className={styles.cardValue}>{expense.date ? formatDate(expense.date) : (expense.expense_date ? formatDate(expense.expense_date) : '-')}</span>
                 </div>
 
                 <div className={styles.cardDetail}>
                   <span className={styles.cardLabel}>Categoria</span>
                   <span className={styles.cardValue}>
-                    {expense.Category?.category_name || '-'}
+                    {expense.Category ? expense.Category.category_name : '-'}
                   </span>
                 </div>
 
                 <div className={styles.cardDetail}>
                   <span className={styles.cardLabel}>Banco</span>
                   <span className={styles.cardValue}>
-                    {expense.Bank?.name || '-'}
+                    {expense.Bank ? expense.Bank.name : '-'}
                   </span>
                 </div>
 
@@ -308,7 +310,7 @@ const MobileExpenses = ({
                 </button>
               </div>
             </div>
-          ))}
+          )})}
         </div>
       </div>
     </div>

@@ -254,8 +254,10 @@ const MobileIncomes = ({
         {renderFilters()}
 
         <div className={styles.cardsContainer}>
-          {incomes.map((income) => (
-            <div key={income.id} className={styles.card} style={{ borderLeftColor: '#4caf50' }}>
+          {incomes.map((income) => {
+            console.log('Renderizando income:', income);
+            return (
+            <div key={income.id} className={styles.card} style={{ borderLeftColor: '#00ff85' }}>
               <div className={styles.cardHeader}>
                 <h3 className={styles.cardTitle}>{income.description}</h3>
                 <span className={`${styles.amountBadge} ${styles.incomeAmount}`}>
@@ -272,14 +274,14 @@ const MobileIncomes = ({
                 <div className={styles.cardDetail}>
                   <span className={styles.cardLabel}>Categoria</span>
                   <span className={styles.cardValue}>
-                    {income.Category?.category_name || '-'}
+                    {income.Category ? income.Category.category_name : '-'}
                   </span>
                 </div>
 
                 <div className={styles.cardDetail}>
                   <span className={styles.cardLabel}>Banco</span>
                   <span className={styles.cardValue}>
-                    {income.Bank?.name || '-'}
+                    {income.Bank ? income.Bank.name : '-'}
                   </span>
                 </div>
 
@@ -308,7 +310,7 @@ const MobileIncomes = ({
                 </button>
               </div>
             </div>
-          ))}
+          )})}
         </div>
       </div>
     </div>
