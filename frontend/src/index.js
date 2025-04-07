@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client'; // Importa createRoot
 import './index.css';
 import './styles/ios.css';
-import './styles/mobile/dataTable.mobile.css';
+import './styles/mobile/dataTable.mobile.module.css';
 import './styles/mobile/forms.mobile.css';
 import './styles/mobile/navbar.mobile.css';
 import './styles/mobile/dashboard.mobile.css';
@@ -10,6 +10,7 @@ import './styles/mobile/expenses.mobile.css';
 import './styles/mobile/incomes.mobile.css';
 import App from './App';
 import { initIOSSupport, isIOS } from './utils/iosSupport';
+import reportWebVitals from './reportWebVitals';
 
 // Initialize iOS support
 console.log('Initializing application, checking for iOS...');

@@ -250,243 +250,246 @@
     position: absolute;
     top: 16px;
     left: 16px;
-    z-index: 10;
-  }
-
-  /* Swipe actions on mobile cards */
-  .mobileCardSwipeState {
-    position: relative;
-    width: 100%;
-    z-index: 1;
-    background-color: var(--secondary-color);
-    transition: transform 0.3s ease;
   }
   
-  .mobileCardSwipeActions {
-    position: absolute;
-    top: 0;
-    right: 0;
-    height: 100%;
-    display: flex;
-    z-index: 0;
+  .actionButton {
+    background: none;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    color: var(--text-color);
+    border-radius: 8px;
+    transition: all 0.2s ease;
   }
   
-  .mobileCardSwipeEdit,
-  .mobileCardSwipeDelete {
+  .actionButton:hover {
+    background-color: var(--hover-bg);
+  }
+  
+  .actionButton.delete:hover {
+    background-color: var(--error-bg);
+    color: var(--error-color);
+  }
+  
+  .editButton {
+    background: none;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    color: var(--text-color);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+  }
+  
+  .editButton:hover {
+    background-color: var(--hover-bg);
+  }
+  
+  .deleteButton {
+    background: none;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    color: var(--text-color);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+  }
+  
+  .deleteButton:hover {
+    background-color: var(--error-bg);
+    color: var(--error-color);
+  }
+  
+  .typeStatus {
     display: flex;
     align-items: center;
-    justify-content: center;
-    width: 70px;
-    height: 100%;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
   }
   
-  .mobileCardSwipeEdit {
-    background-color: rgba(var(--primary-rgb), 0.8);
-    color: var(--secondary-color);
+  .fixedType {
+    background-color: var(--primary-bg);
+    color: var(--primary-color);
   }
   
-  .mobileCardSwipeDelete {
-    background-color: rgba(var(--error-rgb), 0.8);
+  .oneTimeType {
+    background-color: var(--secondary-bg);
     color: var(--text-color);
   }
   
-  .mobileCardSwipeActive .mobileCardSwipeState {
-    transform: translateX(-140px);
-  }
-  
-  .mobileCardSwipeActive .mobileCardSwipeActions {
+  .noDataContainer {
     display: flex;
-  }
-  
-  /* Form and filter adaptations for mobile */
-  .filtersContainer {
-    padding: 16px 12px;
-  }
-  
-  .filterRow {
     flex-direction: column;
-    gap: 12px;
-    width: 100%;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    text-align: center;
+    background-color: var(--card-background);
+    border-radius: 16px;
+    margin: 16px 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
   
-  .filterGroup {
-    width: 100%;
-    min-width: 100%;
+  .noDataIcon {
+    font-size: 48px;
+    margin-bottom: 16px;
   }
   
-  .searchField {
-    min-width: auto;
-    width: 100%;
+  .noDataMessage {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text-color);
   }
   
-  .modernSelectHeader {
-    padding: 10px 12px;
+  .noDataSuggestion {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+  }
+  
+  .noDataActions {
+    display: flex;
+    gap: 16px;
+  }
+  
+  .primaryButton {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background-color: var(--primary-color);
+    color: var(--secondary-color);
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .primaryButton:hover {
+    background-color: var(--primary-hover);
+  }
+  
+  .loadingContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 32px;
+    background-color: var(--card-background);
+    border-radius: 16px;
+    margin: 16px 8px;
+  }
+  
+  .loadingText {
+    font-size: 16px;
+    color: var(--text-secondary);
+  }
+  
+  .errorContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 32px;
+    background-color: var(--error-bg);
+    border-radius: 16px;
+    margin: 16px 8px;
+  }
+  
+  .errorText {
+    font-size: 16px;
+    color: var(--error-color);
   }
   
   .pageContainer {
-    padding: 12px;
+    padding: 16px;
   }
   
   .pageHeader {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 24px;
   }
   
   .pageTitle {
     font-size: 24px;
-    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0;
   }
   
   .addButton {
-    width: 100%;
-    justify-content: center;
-    padding: 12px;
-  }
-  
-  /* No data state on mobile */
-  .noDataContainer {
-    padding: 30px 16px;
-  }
-  
-  .noDataIcon {
-    font-size: 40px;
-  }
-  
-  .noDataMessage {
-    font-size: 18px;
-  }
-  
-  .noDataSuggestion {
-    max-width: 100%;
-    font-size: 14px;
-  }
-  
-  .noDataActions {
-    flex-direction: column;
-    width: 100%;
-    gap: 10px;
-  }
-  
-  .noDataActions button {
-    width: 100%;
-  }
-  
-  /* Modal adaptations */
-  .modalContent {
-    width: 95%;
-    padding: 16px;
-    max-height: 90vh;
-    overflow-y: auto;
-  }
-  
-  .modalActions {
-    flex-direction: row;
-    gap: 12px;
-    justify-content: space-between;
-    margin-top: 24px;
-  }
-  
-  .typeStatus {
-    padding: 4px 8px;
-    font-size: 12px;
-  }
-  
-  .actionButtons {
-    flex-direction: row;
-    gap: 4px;
-  }
-  
-  .actionButton {
-    padding: 6px;
-    font-size: 14px;
-  }
-}
-
-/* Tablet layout optimizations */
-@media (min-width: 600px) and (max-width: 768px) {
-  .mobileCardView {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 16px;
-  }
-  
-  .mobileCard {
-    height: 100%;
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background-color: var(--primary-color);
+    color: var(--secondary-color);
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
   }
   
-  .mobileCardActions {
-    margin-top: auto;
+  .addButton:hover {
+    background-color: var(--primary-hover);
+  }
+  
+  .filtersContainer {
+    margin-bottom: 24px;
+  }
+  
+  .filterRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  
+  .searchField {
+    position: relative;
+    flex: 1;
+    min-width: 200px;
+  }
+  
+  .searchIcon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+  }
+  
+  .searchInput {
+    width: 100%;
+    padding: 12px 12px 12px 40px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--text-color);
+    background-color: var(--card-background);
+    transition: all 0.2s ease;
+  }
+  
+  .searchInput:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px var(--primary-bg);
+  }
+  
+  .searchInput::placeholder {
+    color: var(--text-secondary);
   }
 }
 
-/* Small screen optimizations */
-@media (max-width: 480px) {
-  .formGrid .formGroup:nth-child(1),
-  .formGrid .formGroup:nth-child(2) {
-    display: inline-block;
-    vertical-align: top;
-    width: calc(50% - 8px);
-  }
-  
-  .formGrid .formGroup:nth-child(1) {
-    margin-right: 16px;
-  }
-  
-  .formGrid .formGroup:nth-child(2) {
-    margin-right: 0;
-  }
-  
-  .formGrid .formGroup:nth-child(3) {
-    clear: both;
-    width: 100%;
-  }
-  
-  .table th:nth-child(5),
-  .table td:nth-child(5),
-  .table th:nth-child(6),
-  .table td:nth-child(6) {
-    display: none;
-  }
-  
-  .amountBadge {
-    padding: 3px 6px;
-    font-size: 12px;
-  }
-  
-  .modalHeader h3 {
-    font-size: 18px;
-  }
-  
-  .modalMessage {
-    font-size: 14px;
-  }
-  
-  .modalActions {
-    flex-direction: column;
-    gap: 8px;
-  }
-  
-  .modernSelectDropdown {
-    max-height: 250px;
-    width: 100%;
-  }
-  
-  .mobileTable td:before {
-    position: relative;
-    display: block;
-    width: 100%;
-    text-align: left;
-    margin-bottom: 5px;
-    font-weight: 600;
-    color: var(--text-color);
-  }
-  
-  .mobileTable td {
-    text-align: left;
-    padding-left: 10px;
+/* Esconder a visualização mobile em desktop */
+@media (min-width: 769px) {
+  .mobileCardView {
+    display: none !important;
   }
 } 
