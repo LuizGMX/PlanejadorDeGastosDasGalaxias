@@ -45,7 +45,7 @@ const MobileIncomes = ({
     );
   }
 
-  if (!incomes || incomes.length === 0) {
+  if (!incomes || !Array.isArray(incomes) || incomes.length === 0) {
     return (
       <div className={styles.noDataContainer}>
         <div className={styles.noDataIcon}>💰</div>
