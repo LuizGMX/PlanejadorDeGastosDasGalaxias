@@ -2,22 +2,25 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --primary-color: #00FF85;
-  --secondary-color: #1A1B23;
-  --background-color: #13141B;
-  --card-background: #1A1B23;
-  --text-color: #FFFFFF;
-  --text-secondary: #8B8D97;
-  --error-color: #FF6B6B;
-  --success-color: #51CF66;
-  --border-color: #2A2B33;
-  --hover-color: #00E676;
-  --input-background: #2A2B33;
-  --gradient-start: #00FF85;
-  --gradient-end: #80FFB9;
-  --button-text-color: #000000;
-  --button-background-color: #00FF85;
+  --primary-green: #00ff85;
+  --primary-green-dark: #00E676;
+  --primary-red: #ff6b6b;
+  --primary-red-dark: #ff5252;
+  --text-dark: #ffffff;
+  --text-medium: #aaaaaa;
+  --text-light: #888888;
+  --background-light: #121212;
+  --background-system: transparent;
+  --card-bg: #1e1e1e;
+  --border-light: #444444;
+  --shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.2);
+  --shadow-medium: 0 6px 16px rgba(0, 0, 0, 0.3);
+  --input-bg: #2a2a2a;
+  --hover-bg: #333333;
+  --success-color: #00ff85;
+  --warning-color: #ffb946;
 }
+
 
 /* Mobile styles for data tables */
 @media (max-width: 768px) {
@@ -487,7 +490,8 @@
     border: 1px solid var(--border-light);
     border-radius: 8px;
     font-size: 15px;
-    background-color: #ffffff;
+    background-color: var(--input-bg);
+    color: var(--text-dark);
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
   }
   
@@ -498,7 +502,7 @@
   }
   
   .searchInput::placeholder {
-    color: var(--text-secondary);
+    color: var(--text-medium);
   }
   
   .filterOptions {
@@ -527,11 +531,11 @@
     padding: 10px 12px;
     border: 1px solid var(--border-light);
     border-radius: 8px;
-    background-color: #ffffff;
-    color: var(--text-medium);
+    background-color: var(--input-bg);
+    color: var(--text-dark);
     font-size: 14px;
     appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23aaaaaa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 10px center;
     background-size: 16px;
@@ -556,6 +560,7 @@
   background-color: var(--background-system);
   min-height: 100vh;
   font-family: 'Poppins', 'Roboto', sans-serif;
+  color: var(--text-dark);
 }
 
 /* Estilos para o cabeçalho */
@@ -616,13 +621,13 @@
   display: flex;
   align-items: center;
   padding: 12px 16px;
-  background-color: #f1f3f4;
+  background-color: #252525;
   border-radius: 8px;
   font-weight: 500;
   color: var(--text-medium);
   cursor: pointer;
   margin-bottom: 10px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .filterToggleButton svg {
@@ -631,13 +636,13 @@
 }
 
 .filtersExpanded {
-  background-color: #f8f9fa;
+  background-color: #232323;
   border-radius: 10px;
   padding: 16px;
   transition: max-height 0.3s ease, opacity 0.3s ease;
   max-height: 1000px;
   opacity: 1;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
   margin-bottom: 16px;
 }
 
@@ -680,7 +685,8 @@
   border: 1px solid var(--border-light);
   border-radius: 8px;
   font-size: 15px;
-  background-color: #ffffff;
+  background-color: var(--input-bg);
+  color: var(--text-dark);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -713,11 +719,11 @@
   padding: 10px 12px;
   border: 1px solid var(--border-light);
   border-radius: 8px;
-  background-color: #ffffff;
+  background-color: var(--input-bg);
   font-size: 14px;
-  color: var(--text-medium);
+  color: var(--text-dark);
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23aaaaaa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 10px center;
   background-size: 16px;
@@ -785,13 +791,13 @@
 }
 
 .incomeAmount {
-  background-color: rgba(76, 175, 80, 0.12);
-  color: var(--primary-green-dark);
+  background-color: rgba(0, 255, 133, 0.15);
+  color: var(--primary-green);
 }
 
 .expenseAmount {
-  background-color: rgba(244, 67, 54, 0.12);
-  color: var(--primary-red-dark);
+  background-color: rgba(255, 107, 107, 0.15);
+  color: var(--primary-red);
 }
 
 .cardDetails {
@@ -827,13 +833,13 @@
 }
 
 .fixedType {
-  background-color: rgba(25, 118, 210, 0.12);
-  color: #1976d2;
+  background-color: rgba(0, 255, 133, 0.15);
+  color: var(--primary-green);
 }
 
 .oneTimeType {
-  background-color: rgba(156, 39, 176, 0.12);
-  color: #9c27b0;
+  background-color: rgba(255, 185, 70, 0.15);
+  color: var(--warning-color);
 }
 
 .cardActions {
@@ -855,7 +861,7 @@
 }
 
 .editButton {
-  color: #2196f3;
+  color: #42a5f5;
 }
 
 .deleteButton {
@@ -867,11 +873,11 @@
 }
 
 .editButton:active {
-  background-color: rgba(33, 150, 243, 0.1);
+  background-color: rgba(66, 165, 245, 0.15);
 }
 
 .deleteButton:active {
-  background-color: rgba(244, 67, 54, 0.1);
+  background-color: rgba(255, 107, 107, 0.15);
 }
 
 /* Estilos para tela vazia */
@@ -882,6 +888,9 @@
   justify-content: center;
   padding: 40px 20px;
   text-align: center;
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  border: 1px dashed var(--border-light);
 }
 
 .noDataIcon {
