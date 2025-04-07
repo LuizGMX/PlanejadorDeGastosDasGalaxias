@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FiEdit2, FiTrash2, FiFilter, FiSearch, FiPlus } from 'react-icons/fi';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import styles from '../../styles/mobile/dataTable.mobile.module.css';
@@ -24,18 +24,20 @@ const MobileIncomes = ({
   const [searchTerm, setSearchTerm] = useState('');
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
+  const initialFilterApplied = useRef(false);
 
   // Inicializa os filtros com o mês atual se ainda não estiver definido
   useEffect(() => {
-    // Verifica se o filtro de mês já está definido
-    if (!filters.months || filters.months === 'all' || filters.months.length === 0) {
-      onFilter('months', [currentMonth]);
-    }
+    if (initialFilterApplied.current) return;
     
-    // Verifica se o filtro de ano já está definido
-    if (!filters.years || filters.years === 'all' || filters.years.length === 0) {
-      onFilter('years', [currentYear]);
-    }
+    console.log('Inicializando filtros');
+    // Aplicar filtro de mês atual como padrão
+    onFilter('months', [currentMonth]);
+    
+    // Aplicar filtro de ano atual como padrão
+    onFilter('years', [currentYear]);
+    
+    initialFilterApplied.current = true;
   }, []);
 
   const handleSearch = (e) => {
@@ -116,10 +118,14 @@ const MobileIncomes = ({
                 className={styles.filterSelect}
                 onChange={(e) => {
                   const value = e.target.value;
+                  console.log('Filtro mês selecionado:', value);
                   if (value === 'all') {
+                    console.log('Enviando "all" para o filtro de meses');
                     onFilter('months', 'all');
                   } else {
-                    onFilter('months', [parseInt(value, 10)]);
+                    const parsedValue = parseInt(value, 10);
+                    console.log('Enviando array para o filtro de meses:', [parsedValue]);
+                    onFilter('months', [parsedValue]);
                   }
                 }}
                 defaultValue={filters.months?.[0] || currentMonth}
@@ -227,6 +233,23 @@ const MobileIncomes = ({
       <div className={styles.dataContainer}>
         {renderFilters()}
 
+        <button 
+          className={styles.clearFiltersButton}
+          onClick={() => {
+            console.log('Limpando todos os filtros');
+            // Limpar filtros
+            onFilter('category_id', 'all');
+            onFilter('bank_id', 'all');
+            onFilter('is_recurring', '');
+            onFilter('months', 'all');
+            onFilter('years', 'all');
+            setSearchTerm('');
+            onSearch('');
+          }}
+        >
+          Limpar Filtros
+        </button>
+
         <div className={styles.cardsContainer}>
           {incomes.map((income) => (
             <div key={income.id} className={styles.card}>
@@ -282,22 +305,6 @@ const MobileIncomes = ({
             </div>
           ))}
         </div>
-        
-        <button 
-          className={styles.clearFiltersButton}
-          onClick={() => {
-            // Limpar filtros
-            onFilter('category_id', 'all');
-            onFilter('bank_id', 'all');
-            onFilter('is_recurring', '');
-            onFilter('months', 'all');
-            onFilter('years', 'all');
-            setSearchTerm('');
-            onSearch('');
-          }}
-        >
-          Limpar Filtros
-        </button>
       </div>
     </div>
   );

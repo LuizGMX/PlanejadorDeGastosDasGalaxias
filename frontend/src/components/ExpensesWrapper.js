@@ -72,16 +72,18 @@ const ExpensesWrapper = () => {
   };
 
   const handleFilter = (type, value) => {
-    console.log('Applying filter:', type, value);
+    console.log('Applying filter:', type, value, typeof value);
     
     // Atualizar o estado do filtro
-    setFilters(prev => ({
-      ...prev,
-      [type]: value
-    }));
+    setFilters(prev => {
+      const newFilters = { ...prev, [type]: value };
+      console.log('New filters state:', newFilters);
+      return newFilters;
+    });
     
     // Aplicar filtros aos dados
     let filtered = [...originalExpenses];
+    console.log('Starting filtering with', filtered.length, 'expenses');
     
     // Filtrar por termo de busca, se existir
     if (searchTerm) {
@@ -90,43 +92,97 @@ const ExpensesWrapper = () => {
         expense.Category?.category_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         expense.Bank?.name?.toLowerCase().includes(searchTerm.toLowerCase())
       );
+      console.log('After search term filter:', filtered.length, 'expenses');
     }
     
     // Aplicar filtros adicionais
     if (type === 'category' && value !== 'all') {
       filtered = filtered.filter(expense => expense.category_id === parseInt(value, 10));
+      console.log('After category filter:', filtered.length, 'expenses');
     }
     
     if (type === 'paymentMethod' && value !== 'all') {
       filtered = filtered.filter(expense => expense.bank_id === parseInt(value, 10));
+      console.log('After payment method filter:', filtered.length, 'expenses');
     }
     
     if (type === 'is_recurring' && value !== '') {
       const isRecurring = value === 'true';
       filtered = filtered.filter(expense => expense.is_recurring === isRecurring);
+      console.log('After recurring filter:', filtered.length, 'expenses');
     }
     
     // Filtros de data (mês e ano)
-    if (type === 'months' && value !== 'all') {
-      // Se o valor for um array, filtrar por qualquer um dos meses do array
-      const months = Array.isArray(value) ? value : [value];
-      filtered = filtered.filter(expense => {
-        const expenseDate = new Date(expense.date);
-        return months.includes(expenseDate.getMonth() + 1);
-      });
+    if (type === 'months') {
+      if (value === 'all') {
+        console.log('Filter by all months');
+        // Não filtrar por mês - mostrar todos
+      } else {
+        // Se o valor for um array, filtrar por qualquer um dos meses do array
+        const months = Array.isArray(value) ? value : [value];
+        console.log('Filtering by months:', months);
+        const beforeFilter = filtered.length;
+        
+        filtered = filtered.filter(expense => {
+          if (!expense.date) return false;
+          
+          // Garantir que a data seja interpretada corretamente
+          let expenseDate;
+          try {
+            // Formatar a data para garantir a interpretação correta
+            const [year, month, day] = expense.date.split('T')[0].split('-').map(Number);
+            expenseDate = new Date(year, month - 1, day);
+            
+            const expenseMonth = expenseDate.getMonth() + 1;
+            const result = months.includes(expenseMonth);
+            console.log(`Expense: ${expense.description}, Date: ${expense.date}, Parsed: ${expenseDate.toISOString()}, Month: ${expenseMonth}, Result: ${result}`);
+            return result;
+          } catch (error) {
+            console.error('Erro ao interpretar data:', expense.date, error);
+            return false;
+          }
+        });
+        
+        console.log(`After month filter: ${filtered.length} expenses (removed ${beforeFilter - filtered.length})`);
+      }
     }
     
-    if (type === 'years' && value !== 'all') {
-      // Se o valor for um array, filtrar por qualquer um dos anos do array
-      const years = Array.isArray(value) ? value : [value];
-      filtered = filtered.filter(expense => {
-        const expenseDate = new Date(expense.date);
-        return years.includes(expenseDate.getFullYear());
-      });
+    if (type === 'years') {
+      if (value === 'all') {
+        console.log('Filter by all years');
+        // Não filtrar por ano - mostrar todos
+      } else {
+        // Se o valor for um array, filtrar por qualquer um dos anos do array
+        const years = Array.isArray(value) ? value : [value];
+        console.log('Filtering by years:', years);
+        const beforeFilter = filtered.length;
+        
+        filtered = filtered.filter(expense => {
+          if (!expense.date) return false;
+          
+          // Garantir que a data seja interpretada corretamente
+          try {
+            // Formatar a data para garantir a interpretação correta
+            const [year, month, day] = expense.date.split('T')[0].split('-').map(Number);
+            const expenseDate = new Date(year, month - 1, day);
+            
+            const expenseYear = expenseDate.getFullYear();
+            const result = years.includes(expenseYear);
+            console.log(`Expense: ${expense.description}, Date: ${expense.date}, Parsed: ${expenseDate.toISOString()}, Year: ${expenseYear}, Result: ${result}`);
+            return result;
+          } catch (error) {
+            console.error('Erro ao interpretar data:', expense.date, error);
+            return false;
+          }
+        });
+        
+        console.log(`After year filter: ${filtered.length} expenses (removed ${beforeFilter - filtered.length})`);
+      }
     }
     
     setFilteredExpenses(filtered);
     setExpenses(filtered);
+    console.log('Final filtered expenses:', filtered.length);
   };
 
   const handleSelectExpense = (id) => {
