@@ -3,11 +3,11 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from 'react-hot-toast';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
-import Expenses from './components/Expenses';
+import ExpensesWrapper from './components/ExpensesWrapper';
 import AddExpense from './components/AddExpense';
 import EditExpense from './components/EditExpense';
 import Profile from './components/Profile';
-import Income from './components/Income';
+import IncomesWrapper from './components/IncomesWrapper';
 import AddIncome from './components/AddIncome';
 import EditIncome from './components/EditIncome';
 import SpreadsheetUpload from './components/SpreadsheetUpload';
@@ -187,7 +187,7 @@ function App() {
           } />
           <Route path="/expenses" element={
             <PrivateRoute>
-              <Expenses />
+              <ExpensesWrapper />
             </PrivateRoute>
           } />
           <Route path="/expenses/edit/:id" element={
@@ -207,7 +207,7 @@ function App() {
           } />
           <Route path="/income" element={
             <PrivateRoute>
-              <Income />
+              <IncomesWrapper />
             </PrivateRoute>
           } />
           <Route path="/add-income" element={
