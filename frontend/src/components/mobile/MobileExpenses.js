@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { FiEdit2, FiTrash2, FiFilter, FiSearch, FiPlus } from 'react-icons/fi';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import styles from '../../styles/mobile/dataTable.mobile.module.css';
-import dataTableStyles from '../../styles/dataTable.module.css';
+
 
 const MobileExpenses = ({ 
   expenses, 
