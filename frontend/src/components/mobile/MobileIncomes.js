@@ -19,15 +19,31 @@ const MobileIncomes = ({
 }) => {
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filteredIncomes, setFilteredIncomes] = useState([]);
 
-  console.log('MobileIncomes render:', { 
-    incomesType: typeof incomes, 
-    isArray: Array.isArray(incomes), 
-    incomesLength: incomes?.length,
-    loading,
-    error,
-    incomesData: incomes // Log dos dados completos
-  });
+  useEffect(() => {
+    // Atualizar os dados filtrados quando os incomes mudarem
+    filterData();
+  }, [incomes, searchTerm]);
+
+  const filterData = () => {
+    // Garantir que incomes seja um array
+    const safeIncomes = Array.isArray(incomes) ? incomes : [];
+    
+    // Aplicar filtros
+    let filtered = safeIncomes;
+    
+    // Filtrar por termo de busca
+    if (searchTerm) {
+      filtered = filtered.filter(income => 
+        income.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (income.Category?.category_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (income.Bank?.name || '').toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    setFilteredIncomes(filtered);
+  };
 
   const handleSearch = (e) => {
     const value = e.target.value;
@@ -55,36 +71,64 @@ const MobileIncomes = ({
     );
   }
 
-  const safeIncomes = Array.isArray(incomes) ? incomes : [];
-  
-  // Log após o tratamento dos dados
-  console.log('MobileIncomes safeIncomes:', {
-    length: safeIncomes.length,
-    data: safeIncomes
-  });
-  
-  if (safeIncomes.length === 0) {
+  if (filteredIncomes.length === 0) {
     return (
-      <div className={styles.noDataContainer}>
-        <div className={styles.noDataIcon}>💰</div>
-        <h3 className={styles.noDataMessage}>Nenhuma receita encontrada - MOBILE!</h3>
-        <p className={styles.noDataSuggestion}>
-          Comece adicionando sua primeira receita clicando no botão abaixo
-        </p>
-        <div className={styles.noDataActions}>
-          <button className={styles.primaryButton} onClick={onAdd}>
-            <FiPlus /> Adicionar Receita
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <h1 className={styles.title}>Receitas</h1>
+          <button onClick={onAdd} className={styles.addButton}>
+            <FiPlus /> Adicionar
           </button>
+        </div>
+
+        <div className={styles.dataContainer}>
+          <div className={styles.filtersContainer}>
+            <div className={styles.filterToggleButton} onClick={toggleFilters}>
+              <FiFilter />
+              <span>Filtros</span>
+            </div>
+
+            <div className={showFilters ? styles.filtersExpanded : styles.filtersCollapsed}>
+              <div className={styles.filterRow}>
+                <div className={styles.searchField}>
+                  <FiSearch className={styles.searchIcon} />
+                  <input
+                    type="text"
+                    className={styles.searchInput}
+                    placeholder="Buscar receitas..."
+                    value={searchTerm}
+                    onChange={handleSearch}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.noDataContainer}>
+            <div className={styles.noDataIcon}>💰</div>
+            <h3 className={styles.noDataMessage}>
+              {searchTerm ? "Nenhuma receita encontrada para os filtros selecionados." : "Nenhuma receita encontrada"}
+            </h3>
+            <p className={styles.noDataSuggestion}>
+              {searchTerm ? "Tente ajustar os filtros ou " : "Comece "}
+              adicionando sua primeira receita
+            </p>
+            <div className={styles.noDataActions}>
+              <button className={styles.primaryButton} onClick={onAdd}>
+                <FiPlus /> Adicionar Receita
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={styles.pageContainer}>
-      <div className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>Receitas</h1>
-        <button className={styles.addButton} onClick={onAdd}>
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <h1 className={styles.title}>Receitas</h1>
+        <button onClick={onAdd} className={styles.addButton}>
           <FiPlus /> Adicionar
         </button>
       </div>
@@ -112,68 +156,57 @@ const MobileIncomes = ({
           </div>
         </div>
 
-        <div className={styles.mobileCardView}>
-          {safeIncomes.map((income) => (
-            <div key={income.id} className={styles.mobileCard}>
-              <div className={styles.mobileCardHeader}>
-                <h3 className={styles.mobileCardTitle}>{income.description}</h3>
-                <span className={styles.mobileCardAmount}>
+        <div className={styles.cardsContainer}>
+          {filteredIncomes.map((income) => (
+            <div key={income.id} className={styles.card}>
+              <div className={styles.cardHeader}>
+                <h3 className={styles.cardTitle}>{income.description}</h3>
+                <span className={`${styles.amountBadge} ${styles.incomeAmount}`}>
                   {formatCurrency(income.amount)}
                 </span>
               </div>
 
-              <div className={styles.mobileCardDetails}>
-                <div className={styles.mobileCardDetail}>
-                  <span className={styles.mobileCardLabel}>Data:</span>
-                  <span className={styles.mobileCardValue}>
-                    {formatDate(income.date)}
-                  </span>
+              <div className={styles.cardDetails}>
+                <div className={styles.cardDetail}>
+                  <span className={styles.cardLabel}>Data</span>
+                  <span className={styles.cardValue}>{formatDate(income.date)}</span>
                 </div>
 
-                <div className={styles.mobileCardDetail}>
-                  <span className={styles.mobileCardLabel}>Categoria:</span>
-                  <span className={styles.mobileCardValue}>
+                <div className={styles.cardDetail}>
+                  <span className={styles.cardLabel}>Categoria</span>
+                  <span className={styles.cardValue}>
                     {income.Category?.category_name || '-'}
                   </span>
                 </div>
 
-                <div className={styles.mobileCardDetail}>
-                  <span className={styles.mobileCardLabel}>Banco:</span>
-                  <span className={styles.mobileCardValue}>
+                <div className={styles.cardDetail}>
+                  <span className={styles.cardLabel}>Banco</span>
+                  <span className={styles.cardValue}>
                     {income.Bank?.name || '-'}
                   </span>
                 </div>
 
-                {income.is_recurring && (
-                  <div className={styles.mobileCardDetail}>
-                    <span className={styles.mobileCardLabel}>Tipo:</span>
-                    <span className={styles.mobileCardValue}>
-                      Receita Fixa
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <div className={styles.mobileCardActions}>
-                <div className={styles.mobileCardType}>
-                  <span className={styles.typeStatus}>
+                <div className={styles.cardDetail}>
+                  <span className={styles.cardLabel}>Tipo</span>
+                  <span className={`${styles.typeStatus} ${income.is_recurring ? styles.fixedType : styles.oneTimeType}`}>
                     {income.is_recurring ? 'Fixa' : 'Única'}
                   </span>
                 </div>
-                <div className={styles.mobileCardActionButtons}>
-                  <button
-                    className={styles.editButton}
-                    onClick={() => onEdit(income)}
-                  >
-                    <FiEdit2 />
-                  </button>
-                  <button
-                    className={styles.deleteButton}
-                    onClick={() => onDelete(income)}
-                  >
-                    <FiTrash2 />
-                  </button>
-                </div>
+              </div>
+
+              <div className={styles.cardActions}>
+                <button
+                  className={styles.editButton}
+                  onClick={() => onEdit(income)}
+                >
+                  <FiEdit2 />
+                </button>
+                <button
+                  className={styles.deleteButton}
+                  onClick={() => onDelete(income)}
+                >
+                  <FiTrash2 />
+                </button>
               </div>
             </div>
           ))}

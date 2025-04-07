@@ -263,6 +263,7 @@ const Income = ({
     const handleResize = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
+      // Em desktop, sempre mostrar filtros. Em mobile, esconder por padrão
       setShowFilters(!mobile);
     };
     
