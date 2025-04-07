@@ -1181,20 +1181,10 @@ const Expenses = () => {
                   ))}
                 </div>
                 <div className={dataTableStyles.tableContainer}>
-                  <table className={dataTableStyles.table}>
+                  <table className={`${dataTableStyles.table} ${dataTableStyles.mobileTable}`}>
                     <thead>
                       <tr>
-                        <th width="40">
-                          <label className={dataTableStyles.checkboxContainer}>
-                            <input
-                              type="checkbox"
-                              checked={selectedExpenses.length === expenses.filter(e => !e.has_installments).length && expenses.length > 0}
-                              onChange={handleSelectAll}
-                              className={dataTableStyles.checkbox}
-                            />
-                            <span className={dataTableStyles.checkmark}></span>
-                          </label>
-                        </th>
+                        <th>Seleção</th>
                         <th>Descrição</th>
                         <th>Valor</th>
                         <th>Data</th>
@@ -1202,13 +1192,13 @@ const Expenses = () => {
                         <th>Pagamento</th>
                         <th>Tipo</th>
                         <th>Parcelas</th>
-                        <th width="100">Ações</th>
+                        <th>Ações</th>
                       </tr>
                     </thead>
                     <tbody>
                       {expenses.map((expense) => (
                         <tr key={expense.id} className={dataTableStyles.tableRow}>
-                          <td>
+                          <td data-label="Seleção">
                             <label className={dataTableStyles.checkboxContainer}>
                               <input
                                 type="checkbox"
@@ -1220,15 +1210,15 @@ const Expenses = () => {
                               <span className={dataTableStyles.checkmark}></span>
                             </label>
                           </td>
-                          <td>{expense.description}</td>
-                          <td>
+                          <td data-label="Descrição">{expense.description}</td>
+                          <td data-label="Valor">
                             <span className={`${dataTableStyles.amountBadge} ${dataTableStyles.expenseAmount}`}>
                               R$ {Number(expense.amount).toFixed(2)}
                             </span>
                           </td>
-                          <td>{formatDate(expense.expense_date)}</td>
-                          <td>{expense.Category?.category_name}</td>
-                          <td>
+                          <td data-label="Data">{formatDate(expense.expense_date)}</td>
+                          <td data-label="Categoria">{expense.Category?.category_name}</td>
+                          <td data-label="Pagamento">
                             {expense.payment_method === 'credit_card' ? (
                               <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
                                 <BsCreditCard2Front /> Crédito
@@ -1247,7 +1237,7 @@ const Expenses = () => {
                               </span>
                             )}
                           </td>
-                          <td>
+                          <td data-label="Tipo">
                             {expense.is_recurring ? (
                               <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
                                 <BsRepeat /> Fixo
@@ -1262,13 +1252,13 @@ const Expenses = () => {
                               </span>
                             )}
                           </td>
-                          <td>
+                          <td data-label="Parcelas">
                             {expense.has_installments 
                               ? `${expense.current_installment}/${expense.total_installments}`
                               : '-'
                             }
                           </td>
-                          <td>
+                          <td data-label="Ações">
                             <div className={dataTableStyles.actionButtons}>
                               <button 
                                 onClick={() => handleEditClick(expense)} 

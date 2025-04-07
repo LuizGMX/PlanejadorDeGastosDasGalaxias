@@ -1132,33 +1132,23 @@ const Income = () => {
               <>
                 {renderMobileCards()}
                 <div className={dataTableStyles.tableContainer} style={{ marginTop: '1rem' }}>
-                  <table className={dataTableStyles.table}>
+                  <table className={`${dataTableStyles.table} ${dataTableStyles.mobileTable}`}>
                     <thead>
                       <tr>
-                        <th width="40">
-                          <label className={dataTableStyles.checkboxContainer}>
-                            <input
-                              type="checkbox"
-                              checked={selectedIncomes.length === incomes.filter(i => !i.is_recurring).length && incomes.length > 0}
-                              onChange={handleSelectAll}
-                              className={dataTableStyles.checkbox}
-                            />
-                            <span className={dataTableStyles.checkmark}></span>
-                          </label>
-                        </th>
+                        <th>Seleção</th>
                         <th>Descrição</th>
                         <th>Valor</th>
                         <th>Data</th>
                         <th>Categoria</th>
                         <th>Banco</th>
                         <th>Tipo</th>
-                        <th width="100">Ações</th>
+                        <th>Ações</th>
                       </tr>
                     </thead>
                     <tbody>
                       {incomes.map((income) => (
                         <tr key={income.id} className={`${dataTableStyles.tableRow} ${selectedIncomes.includes(income.id) ? dataTableStyles.selected : ''}`}>
-                          <td>
+                          <td data-label="Seleção">
                             <label className={dataTableStyles.checkboxContainer}>
                               <input
                                 type="checkbox"
@@ -1170,26 +1160,26 @@ const Income = () => {
                               <span className={dataTableStyles.checkmark}></span>
                             </label>
                           </td>
-                          <td>{income.description}</td>
-                          <td>
+                          <td data-label="Descrição">{income.description}</td>
+                          <td data-label="Valor">
                             <span className={`${dataTableStyles.amountBadge} ${dataTableStyles.incomeAmount}`}>
                               R$ {Number(income.amount).toFixed(2)}
                             </span>
                           </td>
-                          <td>{formatDate(income.date)}</td>
-                          <td>
+                          <td data-label="Data">{formatDate(income.date)}</td>
+                          <td data-label="Categoria">
                             <div className={dataTableStyles.cellWithIcon}>
                               <BsFolderSymlink />
                               {income.Category?.category_name || '-'}
                             </div>
                           </td>
-                          <td>
+                          <td data-label="Banco">
                             <div className={dataTableStyles.cellWithIcon}>
                               <BsBank2 />
                               {income.Bank?.name || '-'}
                             </div>
                           </td>
-                          <td>
+                          <td data-label="Tipo">
                             {income.is_recurring ? (
                               <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
                                 <BsRepeat /> Fixo
@@ -1200,7 +1190,7 @@ const Income = () => {
                               </span>
                             )}
                           </td>
-                          <td>
+                          <td data-label="Ações">
                             <div className={dataTableStyles.actionButtons}>
                               <button 
                                 onClick={() => handleEditClick(income)} 
