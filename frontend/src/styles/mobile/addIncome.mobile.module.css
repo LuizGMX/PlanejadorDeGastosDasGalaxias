@@ -1,0 +1,930 @@
+/* addIncome.module.css */
+:root {
+  --primary-color: #2196f3;
+  --secondary-color: #607d8b;
+  --background-color: #f5f5f5;
+  --card-background: #1A1B23;
+  --text-color: #333;
+  --text-secondary: #8B8D97;
+  --error-color: #f44336;
+  --success-color: #4caf50;
+  --border-color: #ddd;
+  --hover-color: #00E676;
+  --input-background: #fff;
+  --input-border: #ddd;
+  --input-focus-border: #2196f3;
+  --gradient-start: #00FF85;
+  --gradient-end: #80FFB9;
+  --error-background: rgba(255, 107, 107, 0.1);
+  --success-background: rgba(81, 207, 102, 0.1);
+  --surface-color: #2A2B33;
+  --primary-color-dark: #00E676;
+  --modal-background: rgba(0, 0, 0, 0.5);
+  --modal-content-background: #fff;
+  --button-hover: #1976d2;
+  --button-disabled: #ccc;
+  --toggle-active: #e3f2fd;
+  --toggle-hover: #f5f5f5;
+  --type-status-background: #f5f5f5;
+  --installment-type-color: #2196f3;
+  --fixed-type-color: #4caf50;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 16px;
+  background-color: var(--background-color);
+  padding-bottom: calc(env(safe-area-inset-bottom) + 80px);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin: 0;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  color: var(--text-color);
+  font-size: 24px;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.errorMessage {
+  background-color: var(--error-background);
+  color: var(--error-color);
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.successMessage {
+  background-color: var(--success-background);
+  color: var(--success-color);
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.formGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.inlineFieldsContainer {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.formLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.formInput {
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--surface-color);
+  color: var(--text-color);
+  font-size: 16px;
+  width: 100%;
+}
+
+.formInput:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.typeStatus {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.fixedType {
+  color: var(--primary-color);
+}
+
+.buttonContainer {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  flex: 1;
+  transition: all 0.2s ease;
+}
+
+.cancelButton {
+  background-color: var(--surface-color);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+
+.cancelButton:hover:not(:disabled) {
+  background-color: var(--hover-color);
+}
+
+.submitButton {
+  background-color: var(--primary-color);
+  color: var(--background-color);
+  border: none;
+}
+
+.submitButton:hover:not(:disabled) {
+  background-color: var(--primary-color-dark);
+}
+
+.button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (min-width: 768px) {
+  .inlineFieldsContainer {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.card {
+  background: #1A1B23;
+  border-radius: 12px;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 600px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  position: relative;
+  margin: auto;
+  max-height: none;
+  overflow: visible;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 8px;
+  text-align: left;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.input {
+  padding: 16px;
+  background-color: var(--input-background);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  font-size: 16px;
+  color: var(--text-color);
+  transition: all 0.2s;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(0, 255, 133, 0.1);
+}
+
+.input::placeholder {
+  color: var(--text-secondary);
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.error {
+  color: var(--error-color);
+  font-size: 14px;
+  text-align: center;
+  margin-bottom: 16px;
+  padding: 12px;
+  background-color: rgba(255, 107, 107, 0.1);
+  border-radius: 8px;
+}
+
+.helperText {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.paymentOptions {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.paymentOption {
+  flex: 1;
+  background-color: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.paymentOption.active {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 1px var(--primary-color);
+}
+
+.optionHeader {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.optionHeader:hover {
+  background-color: var(--hover-color);
+}
+
+.checkboxWrapper {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  margin-right: 12px;
+}
+
+.checkboxWrapper input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.checkmark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 20px;
+  width: 20px;
+  background-color: var(--input-background);
+  border: 2px solid var(--border-color);
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.checkboxWrapper input[type="checkbox"]:checked ~ .checkmark {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+  left: 6px;
+  top: 2px;
+  width: 4px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.checkboxWrapper input[type="checkbox"]:checked ~ .checkmark:after {
+  display: block;
+}
+
+.optionLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-color);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.optionLabel .material-icons {
+  color: var(--primary-color);
+  font-size: 1.2rem;
+}
+
+.optionContent {
+  padding: 1rem;
+  border-top: 1px solid var(--border-color);
+  background-color: var(--input-background);
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0;
+    align-items: center;
+    height: 100%;
+    overflow: hidden;
+    padding-bottom: 0;
+  }
+  
+  .card {
+    margin: 0 auto;
+    max-width: 90%;
+    border-radius: 10px;
+    padding: 16px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    overflow: visible;
+    max-height: none;
+    height: auto;
+  }
+  
+  .title {
+    font-size: 20px;
+    margin-bottom: 15px;
+  }
+  
+  .form {
+    gap: 15px;
+    overflow-x: hidden;
+  }
+  
+  .inputGroup {
+    gap: 6px;
+  }
+  
+  .input {
+    padding: 12px;
+    font-size: 14px;
+  }
+  
+  .buttonGroup {
+    margin-top: 20px;
+    flex-direction: column;
+    padding-bottom: 0;
+    margin-bottom: 16px;
+  }
+  
+  .submitButton {
+    padding: 12px;
+    font-size: 16px;
+    margin-top: 15px;
+    margin-bottom: 0;
+  }
+  
+  .paymentOptions {
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    overflow-x: hidden;
+  }
+  
+  .optionContent {
+    padding-bottom: 16px;
+  }
+}
+
+@media (max-width: 375px) {
+  .card {
+    max-width: 95%;
+    padding: 12px;
+    margin: 0 auto;
+    max-height: none;
+  }
+  
+  .container {
+    padding: 0;
+  }
+  
+  .buttonGroup {
+    margin-bottom: 12px;
+  }
+  
+  .paymentOptions, 
+  .paymentOption,
+  .input, 
+  .form,
+  .inputGroup {
+    max-width: 100%;
+    width: 100%;
+    overflow-x: hidden;
+  }
+}
+
+.optionHeader.disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.optionHeader.disabled:hover {
+  background-color: transparent;
+}
+
+.optionHeader.disabled .checkboxWrapper input[type="checkbox"] {
+  cursor: not-allowed;
+}
+
+.optionHeader.disabled .optionLabel {
+  cursor: not-allowed;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modalHeader h3 {
+  margin: 0;
+  color: var(--text-color);
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.modalBody {
+  margin-bottom: 24px;
+}
+
+.modalBody p {
+  margin: 0 0 16px 0;
+  color: var(--text-color);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.changesList {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px 0;
+}
+
+.changesList li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  background-color: var(--input-background);
+  border-radius: 8px;
+  color: var(--text-color);
+}
+
+.changesList li .material-icons {
+  color: var(--primary-color);
+  font-size: 18px;
+}
+
+.changesList li strong {
+  color: var(--primary-color);
+}
+
+.warningBox {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  background-color: rgba(255, 193, 7, 0.1);
+  border-radius: 8px;
+  margin-top: 16px;
+}
+
+.warningBox .material-icons {
+  color: #FFC107;
+  font-size: 20px;
+}
+
+.warningBox p {
+  margin: 0;
+  color: var(--text-color);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+}
+
+.modalFooter button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.modalFooter button .material-icons {
+  font-size: 18px;
+}
+
+.fadeIn {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Mobile styles have been moved to forms.mobile.css */
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--modal-background);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.modalContent {
+  background-color: var(--modal-content-background);
+  border-radius: 8px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  animation: modalFadeIn 0.3s ease-out;
+}
+
+.formModal {
+  padding: 20px;
+}
+
+.modalHeader {
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modalHeader h2 {
+  margin: 0;
+  color: var(--text-color);
+  font-size: 1.5rem;
+}
+
+.errorCard {
+  background-color: #ffebee;
+  border: 1px solid var(--error-color);
+  border-radius: 4px;
+  padding: 15px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.errorIcon {
+  background-color: var(--error-color);
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.errorMessage {
+  color: var(--error-color);
+  text-align: center;
+  margin: 0;
+}
+
+.errorRetryButton {
+  background-color: var(--error-color);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+
+.errorRetryButton:hover {
+  background-color: #d32f2f;
+}
+
+.successMessage {
+  background-color: #e8f5e9;
+  color: var(--success-color);
+  padding: 15px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  text-align: center;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.formGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.inlineFieldsContainer {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.formLabel {
+  color: var(--text-color);
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.formInput {
+  padding: 10px;
+  border: 1px solid var(--input-border);
+  border-radius: 4px;
+  font-size: 1rem;
+  background-color: var(--input-background);
+  transition: border-color 0.2s;
+}
+
+.formInput:focus {
+  outline: none;
+  border-color: var(--input-focus-border);
+}
+
+.inputWithIcon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.inputIcon {
+  position: absolute;
+  left: 10px;
+  color: var(--secondary-color);
+}
+
+.inputWithIcon .formInput {
+  padding-left: 35px;
+}
+
+.toggleGroup {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.toggleButton {
+  flex: 1;
+  min-width: 120px;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  background-color: var(--input-background);
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.toggleButton:hover {
+  background-color: var(--toggle-hover);
+}
+
+.toggleButton.active {
+  background-color: var(--toggle-active);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.typeStatus {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  background-color: var(--type-status-background);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.installmentType {
+  color: var(--installment-type-color);
+}
+
+.fixedType {
+  color: var(--fixed-type-color);
+}
+
+.emptySelectError {
+  padding: 10px;
+  background-color: #ffebee;
+  color: var(--error-color);
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.modalActions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.formButton {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background-color 0.2s;
+}
+
+.formCancel {
+  background-color: var(--secondary-color);
+  color: white;
+}
+
+.formCancel:hover {
+  background-color: #455a64;
+}
+
+.formSubmit {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.formSubmit:hover {
+  background-color: var(--button-hover);
+}
+
+.formButton:disabled {
+  background-color: var(--button-disabled);
+  cursor: not-allowed;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (min-width: 768px) {
+  .modalContent {
+    max-width: 800px;
+  }
+
+  .inlineFieldsContainer {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .toggleGroup {
+    flex-wrap: nowrap;
+  }
+
+  .toggleButton {
+    min-width: 150px;
+  }
+}
+

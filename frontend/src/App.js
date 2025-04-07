@@ -8,7 +8,7 @@ import AddExpenseWrapper from './components/AddExpenseWrapper';
 import EditExpense from './components/EditExpense';
 import Profile from './components/Profile';
 import IncomesWrapper from './components/IncomesWrapper';
-import AddIncome from './components/AddIncome';
+import AddIncomeWrapper from './components/AddIncomeWrapper';
 import EditIncome from './components/EditIncome';
 import SpreadsheetUpload from './components/SpreadsheetUpload';
 import Layout from './components/Layout';
@@ -211,7 +211,7 @@ function App() {
           } />
           <Route path="/add-income" element={
             <PrivateRoute>
-              <AddIncome />
+              <AddIncomeWrapper />
             </PrivateRoute>
           } />
           <Route path="/incomes/edit/:id" element={
