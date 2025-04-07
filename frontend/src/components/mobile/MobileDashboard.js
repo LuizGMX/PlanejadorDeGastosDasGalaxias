@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../App';
 import styles from '../../styles/mobile/dashboard.mobile.css';
+import { formatCurrency, formatDate, formatDateStringWithTimezone } from '../../utils/formatters';
 import { FaCalendarAlt, FaChartLine, FaPlus, FaChevronDown, FaChevronRight, FaSearch, FaFilter } from 'react-icons/fa';
 import { 
   BsPencil,
@@ -32,19 +33,6 @@ const MobileDashboard = () => {
   const [customDateRange, setCustomDateRange] = useState(null);
   const [activeSection, setActiveSection] = useState('overview');
   const [expandedCards, setExpandedCards] = useState({});
-
-  // Função para formatar moeda
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
-
-  // Função para formatar data
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
-  };
 
   // Função para formatar porcentagem
   const formatPercentage = (value) => {
@@ -114,7 +102,9 @@ const MobileDashboard = () => {
         <div className={styles.summaryHeader}>
           <h3>Resumo Financeiro</h3>
           <span className={styles.periodBadge}>
-            {selectedPeriod === 'current' ? 'Mês Atual' : 'Período Personalizado'}
+            {selectedPeriod === 'custom' && customDateRange
+              ? `${formatDateStringWithTimezone(customDateRange.start)} - ${formatDateStringWithTimezone(customDateRange.end)}`
+              : selectedPeriod === 'current' ? 'Mês Atual' : 'Período Personalizado'}
           </span>
         </div>
 
@@ -303,9 +293,8 @@ const MobileDashboard = () => {
             <FaCalendarAlt />
             <span>
               {selectedPeriod === 'custom' && customDateRange
-                ? `${formatDate(customDateRange.start)} - ${formatDate(customDateRange.end)}`
-                : 'Mês Atual'
-              }
+                ? `${formatDateStringWithTimezone(customDateRange.start)} - ${formatDateStringWithTimezone(customDateRange.end)}`
+                : selectedPeriod === 'current' ? 'Mês Atual' : 'Período Personalizado'}
             </span>
             <FaChevronDown />
           </button>
