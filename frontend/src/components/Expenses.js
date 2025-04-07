@@ -1056,129 +1056,242 @@ const Expenses = () => {
           <>
             {/* Mobile View - Only render when isMobile is true */}
             {isMobile ? (
-              <div className={dataTableStyles.mobileCardView}>
-                {expenses.map((expense) => (
-                  <div 
-                    key={expense.id} 
-                    className={dataTableStyles.mobileCard}
-                  >
-                    {!expense.has_installments && (
-                      <div className={dataTableStyles.mobileCardSelect}>
-                        <label className={dataTableStyles.checkboxContainer}>
-                          <input
-                            type="checkbox"
-                            checked={selectedExpenses.includes(expense.id)}
-                            onChange={(e) => handleSelectExpense(expense.id, e)}
-                            className={dataTableStyles.checkbox}
-                          />
-                          <span className={dataTableStyles.checkmark}></span>
-                        </label>
-                      </div>
-                    )}
-                    
-                    <div className={dataTableStyles.mobileCardHeader}>
-                      <h3 className={dataTableStyles.mobileCardTitle}>{expense.description}</h3>
-                      <span className={`${dataTableStyles.amountBadge} ${dataTableStyles.expenseAmount} ${dataTableStyles.mobileCardAmount}`}>
-                        {formatCurrency(expense.amount)}
-                      </span>
-                    </div>
-                    
-                    <div className={dataTableStyles.mobileCardDetails}>
-                      <div className={dataTableStyles.mobileCardDetail}>
-                        <span className={dataTableStyles.mobileCardLabel}>Data</span>
-                        <span className={dataTableStyles.mobileCardValue}>{formatDate(expense.expense_date)}</span>
-                      </div>
+              <>
+                <div className={dataTableStyles.mobileCardView}>
+                  {expenses.map((expense) => (
+                    <div 
+                      key={expense.id} 
+                      className={dataTableStyles.mobileCard}
+                    >
+                      {!expense.has_installments && (
+                        <div className={dataTableStyles.mobileCardSelect}>
+                          <label className={dataTableStyles.checkboxContainer}>
+                            <input
+                              type="checkbox"
+                              checked={selectedExpenses.includes(expense.id)}
+                              onChange={(e) => handleSelectExpense(expense.id, e)}
+                              className={dataTableStyles.checkbox}
+                            />
+                            <span className={dataTableStyles.checkmark}></span>
+                          </label>
+                        </div>
+                      )}
                       
-                      <div className={dataTableStyles.mobileCardDetail}>
-                        <span className={dataTableStyles.mobileCardLabel}>Categoria</span>
-                        <span className={dataTableStyles.mobileCardValue}>
-                          <BsFolderSymlink style={{color: 'var(--primary-color)'}} />
-                          {expense.Category?.category_name}
+                      <div className={dataTableStyles.mobileCardHeader}>
+                        <h3 className={dataTableStyles.mobileCardTitle}>{expense.description}</h3>
+                        <span className={`${dataTableStyles.amountBadge} ${dataTableStyles.expenseAmount} ${dataTableStyles.mobileCardAmount}`}>
+                          {formatCurrency(expense.amount)}
                         </span>
                       </div>
                       
-                      <div className={dataTableStyles.mobileCardDetail}>
-                        <span className={dataTableStyles.mobileCardLabel}>Método</span>
-                        <span className={dataTableStyles.mobileCardValue}>
-                          {expense.payment_method === 'credit_card' ? (
-                            <><BsCreditCard2Front style={{color: '#598FFF'}} /> Cartão de Crédito</>
-                          ) : expense.payment_method === 'debit_card' ? (
-                            <><BsCreditCard2Front style={{color: 'var(--primary-color)'}} /> Cartão de Débito</>
-                          ) : expense.payment_method === 'pix' ? (
-                            <><BsCurrencyDollar style={{color: '#ffb946'}} /> PIX</>
-                          ) : (
-                            <><BsCashCoin style={{color: 'var(--primary-color)'}} /> Dinheiro</>
-                          )}
-                        </span>
-                      </div>
-                      
-                      {expense.has_installments && (
+                      <div className={dataTableStyles.mobileCardDetails}>
                         <div className={dataTableStyles.mobileCardDetail}>
-                          <span className={dataTableStyles.mobileCardLabel}>Parcelas</span>
+                          <span className={dataTableStyles.mobileCardLabel}>Data</span>
+                          <span className={dataTableStyles.mobileCardValue}>{formatDate(expense.expense_date)}</span>
+                        </div>
+                        
+                        <div className={dataTableStyles.mobileCardDetail}>
+                          <span className={dataTableStyles.mobileCardLabel}>Categoria</span>
                           <span className={dataTableStyles.mobileCardValue}>
-                            <BsCreditCard2Front style={{color: '#598FFF'}} /> {expense.current_installment}/{expense.total_installments}
+                            <BsFolderSymlink style={{color: 'var(--primary-color)'}} />
+                            {expense.Category?.category_name}
                           </span>
                         </div>
-                      )}
-                      
-                      <div className={dataTableStyles.mobileCardDetail}>
-                        <span className={dataTableStyles.mobileCardLabel}>Tipo</span>
-                        <span className={dataTableStyles.mobileCardValue}>
-                          {expense.is_recurring ? (
-                            <><BsRepeat style={{color: 'var(--primary-color)'}} /> Despesa fixa</> 
-                          ) : expense.has_installments ? (
-                            <><BsCreditCard2Front style={{color: '#598FFF'}} /> Parcelado</>
-                          ) : (
-                            <><BsCurrencyDollar style={{color: 'var(--text-color)'}} /> Pagamento único</>
-                          )}
-                        </span>
-                      </div>
-                      
-                      {expense.note && (
+                        
                         <div className={dataTableStyles.mobileCardDetail}>
-                          <span className={dataTableStyles.mobileCardLabel}>Observação</span>
-                          <span className={dataTableStyles.mobileCardValue}>{expense.note}</span>
+                          <span className={dataTableStyles.mobileCardLabel}>Método</span>
+                          <span className={dataTableStyles.mobileCardValue}>
+                            {expense.payment_method === 'credit_card' ? (
+                              <><BsCreditCard2Front style={{color: '#598FFF'}} /> Cartão de Crédito</>
+                            ) : expense.payment_method === 'debit_card' ? (
+                              <><BsCreditCard2Front style={{color: 'var(--primary-color)'}} /> Cartão de Débito</>
+                            ) : expense.payment_method === 'pix' ? (
+                              <><BsCurrencyDollar style={{color: '#ffb946'}} /> PIX</>
+                            ) : (
+                              <><BsCashCoin style={{color: 'var(--primary-color)'}} /> Dinheiro</>
+                            )}
+                          </span>
                         </div>
-                      )}
-                    </div>
-                    
-                    <div className={dataTableStyles.mobileCardActions}>
-                      <div className={dataTableStyles.mobileCardType}>
-                        {expense.is_recurring ? (
-                          <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
-                            <BsRepeat /> Fixo
+                        
+                        {expense.has_installments && (
+                          <div className={dataTableStyles.mobileCardDetail}>
+                            <span className={dataTableStyles.mobileCardLabel}>Parcelas</span>
+                            <span className={dataTableStyles.mobileCardValue}>
+                              <BsCreditCard2Front style={{color: '#598FFF'}} /> {expense.current_installment}/{expense.total_installments}
+                            </span>
+                          </div>
+                        )}
+                        
+                        <div className={dataTableStyles.mobileCardDetail}>
+                          <span className={dataTableStyles.mobileCardLabel}>Tipo</span>
+                          <span className={dataTableStyles.mobileCardValue}>
+                            {expense.is_recurring ? (
+                              <><BsRepeat style={{color: 'var(--primary-color)'}} /> Despesa fixa</> 
+                            ) : expense.has_installments ? (
+                              <><BsCreditCard2Front style={{color: '#598FFF'}} /> Parcelado</>
+                            ) : (
+                              <><BsCurrencyDollar style={{color: 'var(--text-color)'}} /> Pagamento único</>
+                            )}
                           </span>
-                        ) : expense.has_installments ? (
-                          <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.installmentsType}`}>
-                            <BsCreditCard2Front /> Parcelado
-                          </span>
-                        ) : (
-                          <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
-                            <BsCurrencyDollar /> Único
-                          </span>
+                        </div>
+                        
+                        {expense.note && (
+                          <div className={dataTableStyles.mobileCardDetail}>
+                            <span className={dataTableStyles.mobileCardLabel}>Observação</span>
+                            <span className={dataTableStyles.mobileCardValue}>{expense.note}</span>
+                          </div>
                         )}
                       </div>
                       
-                      <div className={dataTableStyles.mobileCardActionButtons}>
-                        <button 
-                          onClick={() => handleEditClick(expense)} 
-                          className={dataTableStyles.actionButton}
-                          title="Editar"
-                        >
-                          <BsPencil />
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteClick(expense)} 
-                          className={`${dataTableStyles.actionButton} ${dataTableStyles.delete}`}
-                          title="Excluir"
-                        >
-                          <BsTrash />
-                        </button>
+                      <div className={dataTableStyles.mobileCardActions}>
+                        <div className={dataTableStyles.mobileCardType}>
+                          {expense.is_recurring ? (
+                            <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
+                              <BsRepeat /> Fixo
+                            </span>
+                          ) : expense.has_installments ? (
+                            <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.installmentsType}`}>
+                              <BsCreditCard2Front /> Parcelado
+                            </span>
+                          ) : (
+                            <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
+                              <BsCurrencyDollar /> Único
+                            </span>
+                          )}
+                        </div>
+                        
+                        <div className={dataTableStyles.mobileCardActionButtons}>
+                          <button 
+                            onClick={() => handleEditClick(expense)} 
+                            className={dataTableStyles.actionButton}
+                            title="Editar"
+                          >
+                            <BsPencil />
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteClick(expense)} 
+                            className={`${dataTableStyles.actionButton} ${dataTableStyles.delete}`}
+                            title="Excluir"
+                          >
+                            <BsTrash />
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+                <div className={dataTableStyles.tableContainer}>
+                  <table className={dataTableStyles.table}>
+                    <thead>
+                      <tr>
+                        <th width="40">
+                          <label className={dataTableStyles.checkboxContainer}>
+                            <input
+                              type="checkbox"
+                              checked={selectedExpenses.length === expenses.filter(e => !e.has_installments).length && expenses.length > 0}
+                              onChange={handleSelectAll}
+                              className={dataTableStyles.checkbox}
+                            />
+                            <span className={dataTableStyles.checkmark}></span>
+                          </label>
+                        </th>
+                        <th>Descrição</th>
+                        <th>Valor</th>
+                        <th>Data</th>
+                        <th>Categoria</th>
+                        <th>Pagamento</th>
+                        <th>Tipo</th>
+                        <th>Parcelas</th>
+                        <th width="100">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {expenses.map((expense) => (
+                        <tr key={expense.id} className={dataTableStyles.tableRow}>
+                          <td>
+                            <label className={dataTableStyles.checkboxContainer}>
+                              <input
+                                type="checkbox"
+                                checked={selectedExpenses.includes(expense.id)}
+                                onChange={(e) => handleSelectExpense(expense.id, e)}
+                                className={dataTableStyles.checkbox}
+                                disabled={expense.has_installments}
+                              />
+                              <span className={dataTableStyles.checkmark}></span>
+                            </label>
+                          </td>
+                          <td>{expense.description}</td>
+                          <td>
+                            <span className={`${dataTableStyles.amountBadge} ${dataTableStyles.expenseAmount}`}>
+                              R$ {Number(expense.amount).toFixed(2)}
+                            </span>
+                          </td>
+                          <td>{formatDate(expense.expense_date)}</td>
+                          <td>{expense.Category?.category_name}</td>
+                          <td>
+                            {expense.payment_method === 'credit_card' ? (
+                              <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
+                                <BsCreditCard2Front /> Crédito
+                              </span>
+                            ) : expense.payment_method === 'debit_card' ? (
+                              <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
+                                <BsCreditCard2Front /> Débito
+                              </span>
+                            ) : expense.payment_method === 'pix' ? (
+                              <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
+                                <BsCurrencyDollar /> Pix
+                              </span>
+                            ) : (
+                              <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
+                                <BsCashCoin /> Dinheiro
+                              </span>
+                            )}
+                          </td>
+                          <td>
+                            {expense.is_recurring ? (
+                              <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
+                                <BsRepeat /> Fixo
+                              </span>
+                            ) : expense.has_installments ? (
+                              <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.installmentsType}`}>
+                                <BsCreditCard2Front /> Parcelado
+                              </span>
+                            ) : (
+                              <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
+                                <BsCurrencyDollar /> Único
+                              </span>
+                            )}
+                          </td>
+                          <td>
+                            {expense.has_installments 
+                              ? `${expense.current_installment}/${expense.total_installments}`
+                              : '-'
+                            }
+                          </td>
+                          <td>
+                            <div className={dataTableStyles.actionButtons}>
+                              <button 
+                                onClick={() => handleEditClick(expense)} 
+                                className={dataTableStyles.actionButton}
+                                title="Editar"
+                              >
+                                <BsPencil />
+                              </button>
+                              <button 
+                                onClick={() => handleDeleteClick(expense)} 
+                                className={`${dataTableStyles.actionButton} ${dataTableStyles.delete}`}
+                                title="Excluir"
+                              >
+                                <BsTrash />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             ) : (
               <div className={dataTableStyles.tableContainer}>
                 <table className={dataTableStyles.table}>

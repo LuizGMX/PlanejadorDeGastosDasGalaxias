@@ -1129,7 +1129,101 @@ const Income = () => {
             {console.log("Rendering table view or mobile cards:", { isMobile, incomes: incomes.length })}
             {isMobile ? (
               // Visualização mobile
-              renderMobileCards()
+              <>
+                {renderMobileCards()}
+                <div className={dataTableStyles.tableContainer} style={{ marginTop: '1rem' }}>
+                  <table className={dataTableStyles.table}>
+                    <thead>
+                      <tr>
+                        <th width="40">
+                          <label className={dataTableStyles.checkboxContainer}>
+                            <input
+                              type="checkbox"
+                              checked={selectedIncomes.length === incomes.filter(i => !i.is_recurring).length && incomes.length > 0}
+                              onChange={handleSelectAll}
+                              className={dataTableStyles.checkbox}
+                            />
+                            <span className={dataTableStyles.checkmark}></span>
+                          </label>
+                        </th>
+                        <th>Descrição</th>
+                        <th>Valor</th>
+                        <th>Data</th>
+                        <th>Categoria</th>
+                        <th>Banco</th>
+                        <th>Tipo</th>
+                        <th width="100">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {incomes.map((income) => (
+                        <tr key={income.id} className={`${dataTableStyles.tableRow} ${selectedIncomes.includes(income.id) ? dataTableStyles.selected : ''}`}>
+                          <td>
+                            <label className={dataTableStyles.checkboxContainer}>
+                              <input
+                                type="checkbox"
+                                checked={selectedIncomes.includes(income.id)}
+                                onChange={(e) => handleSelectIncome(income.id, e)}
+                                className={dataTableStyles.checkbox}
+                                disabled={income.is_recurring}
+                              />
+                              <span className={dataTableStyles.checkmark}></span>
+                            </label>
+                          </td>
+                          <td>{income.description}</td>
+                          <td>
+                            <span className={`${dataTableStyles.amountBadge} ${dataTableStyles.incomeAmount}`}>
+                              R$ {Number(income.amount).toFixed(2)}
+                            </span>
+                          </td>
+                          <td>{formatDate(income.date)}</td>
+                          <td>
+                            <div className={dataTableStyles.cellWithIcon}>
+                              <BsFolderSymlink />
+                              {income.Category?.category_name || '-'}
+                            </div>
+                          </td>
+                          <td>
+                            <div className={dataTableStyles.cellWithIcon}>
+                              <BsBank2 />
+                              {income.Bank?.name || '-'}
+                            </div>
+                          </td>
+                          <td>
+                            {income.is_recurring ? (
+                              <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
+                                <BsRepeat /> Fixo
+                              </span>
+                            ) : (
+                              <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
+                                <BsCurrencyDollar /> Único
+                              </span>
+                            )}
+                          </td>
+                          <td>
+                            <div className={dataTableStyles.actionButtons}>
+                              <button 
+                                onClick={() => handleEditClick(income)} 
+                                className={dataTableStyles.actionButton}
+                                title="Editar"
+                              >
+                                <BsPencil />
+                              </button>
+                              <button 
+                                onClick={() => handleDeleteClick(income)} 
+                                className={`${dataTableStyles.actionButton} ${dataTableStyles.delete}`}
+                                title="Excluir"
+                              >
+                                <BsTrash />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             ) : (
               // Visualização desktop
               <div className={dataTableStyles.tableContainer} style={{ marginTop: '1rem' }}>
