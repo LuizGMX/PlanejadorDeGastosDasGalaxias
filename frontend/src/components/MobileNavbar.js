@@ -1,11 +1,9 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../App';
 import '../styles/mobile/navbar.mobile.css';
 import { 
   BsHouseDoor, 
-  BsArrowDownUp, 
-  BsCreditCard, 
   BsPerson,
   BsChevronUp,
   BsListUl,
