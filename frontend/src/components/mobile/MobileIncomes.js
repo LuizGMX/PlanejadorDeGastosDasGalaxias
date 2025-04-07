@@ -31,13 +31,22 @@ const MobileIncomes = ({
     if (initialFilterApplied.current) return;
     
     console.log('Inicializando filtros');
+    
+    // Forçar a aplicação do filtro com valores iniciais
+    const today = new Date();
+    const thisMonth = today.getMonth() + 1;
+    const thisYear = today.getFullYear();
+    
+    console.log(`Aplicando filtro inicial: mês=${thisMonth}, ano=${thisYear}`);
+    
     // Aplicar filtro de mês atual como padrão
-    onFilter('months', [currentMonth]);
+    onFilter('months', [thisMonth]);
     
     // Aplicar filtro de ano atual como padrão
-    onFilter('years', [currentYear]);
-    
-    initialFilterApplied.current = true;
+    setTimeout(() => {
+      onFilter('years', [thisYear]);
+      initialFilterApplied.current = true;
+    }, 100);
   }, []);
 
   const handleSearch = (e) => {

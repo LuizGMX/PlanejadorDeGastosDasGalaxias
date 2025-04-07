@@ -73,114 +73,92 @@ const IncomesWrapper = () => {
     console.log('Applying filter:', type, value, typeof value);
     
     // Atualizar o estado do filtro
-    setFilters(prev => {
-      const newFilters = { ...prev, [type]: value };
+    setFilters(prevFilters => {
+      const newFilters = { ...prevFilters, [type]: value };
       console.log('New filters state:', newFilters);
-      return newFilters;
-    });
-    
-    // Aplicar filtros aos dados
-    let filtered = [...originalIncomes];
-    console.log('Starting filtering with', filtered.length, 'incomes');
-    
-    // Filtrar por termo de busca, se existir
-    if (searchTerm) {
-      filtered = filtered.filter(income => 
-        income.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        income.Category?.category_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        income.Bank?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      console.log('After search term filter:', filtered.length, 'incomes');
-    }
-    
-    // Aplicar filtros adicionais
-    if (type === 'category_id' && value !== 'all') {
-      filtered = filtered.filter(income => income.category_id === parseInt(value, 10));
-      console.log('After category filter:', filtered.length, 'incomes');
-    }
-    
-    if (type === 'bank_id' && value !== 'all') {
-      filtered = filtered.filter(income => income.bank_id === parseInt(value, 10));
-      console.log('After bank filter:', filtered.length, 'incomes');
-    }
-    
-    if (type === 'is_recurring' && value !== '') {
-      const isRecurring = value === 'true';
-      filtered = filtered.filter(income => income.is_recurring === isRecurring);
-      console.log('After recurring filter:', filtered.length, 'incomes');
-    }
-    
-    // Filtros de data (mês e ano)
-    if (type === 'months') {
-      if (value === 'all') {
-        console.log('Filter by all months');
-        // Não filtrar por mês - mostrar todos
-      } else {
-        // Se o valor for um array, filtrar por qualquer um dos meses do array
-        const months = Array.isArray(value) ? value : [value];
-        console.log('Filtering by months:', months);
-        const beforeFilter = filtered.length;
-        
-        filtered = filtered.filter(income => {
-          if (!income.date) return false;
-          
-          // Garantir que a data seja interpretada corretamente
-          let incomeDate;
-          try {
-            // Formatar a data para garantir a interpretação correta
-            const [year, month, day] = income.date.split('T')[0].split('-').map(Number);
-            incomeDate = new Date(year, month - 1, day);
-            
-            const incomeMonth = incomeDate.getMonth() + 1;
-            const result = months.includes(incomeMonth);
-            console.log(`Income: ${income.description}, Date: ${income.date}, Parsed: ${incomeDate.toISOString()}, Month: ${incomeMonth}, Result: ${result}`);
-            return result;
-          } catch (error) {
-            console.error('Erro ao interpretar data:', income.date, error);
-            return false;
-          }
-        });
-        
-        console.log(`After month filter: ${filtered.length} incomes (removed ${beforeFilter - filtered.length})`);
+      
+      // Aplicar todos os filtros aos dados originais
+      let filtered = [...originalIncomes];
+      console.log('Starting filtering with', filtered.length, 'incomes from original list');
+      
+      // Filtrar por termo de busca, se existir
+      if (searchTerm) {
+        filtered = filtered.filter(income => 
+          income.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          income.Category?.category_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          income.Bank?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        console.log('After search term filter:', filtered.length, 'incomes');
       }
-    }
-    
-    if (type === 'years') {
-      if (value === 'all') {
-        console.log('Filter by all years');
-        // Não filtrar por ano - mostrar todos
-      } else {
-        // Se o valor for um array, filtrar por qualquer um dos anos do array
-        const years = Array.isArray(value) ? value : [value];
-        console.log('Filtering by years:', years);
-        const beforeFilter = filtered.length;
+      
+      // Filtrar por categoria
+      if (newFilters.category_id && newFilters.category_id !== 'all') {
+        filtered = filtered.filter(income => income.category_id === parseInt(newFilters.category_id, 10));
+        console.log('After category filter:', filtered.length, 'incomes');
+      }
+      
+      // Filtrar por banco
+      if (newFilters.bank_id && newFilters.bank_id !== 'all') {
+        filtered = filtered.filter(income => income.bank_id === parseInt(newFilters.bank_id, 10));
+        console.log('After bank filter:', filtered.length, 'incomes');
+      }
+      
+      // Filtrar por tipo (recorrente ou não)
+      if (newFilters.is_recurring && newFilters.is_recurring !== '') {
+        const isRecurring = newFilters.is_recurring === 'true';
+        filtered = filtered.filter(income => income.is_recurring === isRecurring);
+        console.log('After recurring filter:', filtered.length, 'incomes');
+      }
+      
+      // Filtrar por mês
+      if (newFilters.months && newFilters.months !== 'all') {
+        const months = Array.isArray(newFilters.months) ? newFilters.months : [newFilters.months];
+        console.log('Filtering by months:', months);
         
         filtered = filtered.filter(income => {
           if (!income.date) return false;
           
-          // Garantir que a data seja interpretada corretamente
           try {
-            // Formatar a data para garantir a interpretação correta
             const [year, month, day] = income.date.split('T')[0].split('-').map(Number);
             const incomeDate = new Date(year, month - 1, day);
-            
-            const incomeYear = incomeDate.getFullYear();
-            const result = years.includes(incomeYear);
-            console.log(`Income: ${income.description}, Date: ${income.date}, Parsed: ${incomeDate.toISOString()}, Year: ${incomeYear}, Result: ${result}`);
-            return result;
+            const incomeMonth = incomeDate.getMonth() + 1;
+            return months.includes(incomeMonth);
           } catch (error) {
             console.error('Erro ao interpretar data:', income.date, error);
             return false;
           }
         });
-        
-        console.log(`After year filter: ${filtered.length} incomes (removed ${beforeFilter - filtered.length})`);
+        console.log('After month filter:', filtered.length, 'incomes');
       }
-    }
-    
-    setFilteredIncomes(filtered);
-    setIncomes(filtered);
-    console.log('Final filtered incomes:', filtered.length);
+      
+      // Filtrar por ano
+      if (newFilters.years && newFilters.years !== 'all') {
+        const years = Array.isArray(newFilters.years) ? newFilters.years : [newFilters.years];
+        console.log('Filtering by years:', years);
+        
+        filtered = filtered.filter(income => {
+          if (!income.date) return false;
+          
+          try {
+            const [year, month, day] = income.date.split('T')[0].split('-').map(Number);
+            const incomeDate = new Date(year, month - 1, day);
+            const incomeYear = incomeDate.getFullYear();
+            return years.includes(incomeYear);
+          } catch (error) {
+            console.error('Erro ao interpretar data:', income.date, error);
+            return false;
+          }
+        });
+        console.log('After year filter:', filtered.length, 'incomes');
+      }
+      
+      // Atualizar os dados filtrados
+      setFilteredIncomes(filtered);
+      setIncomes(filtered);
+      console.log('Final filtered incomes after all filters:', filtered.length);
+      
+      return newFilters;
+    });
   };
 
   const handleSelectIncome = (id) => {
