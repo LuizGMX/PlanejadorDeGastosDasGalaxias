@@ -6,6 +6,8 @@ import './styles/mobile/dataTable.mobile.css';
 import './styles/mobile/forms.mobile.css';
 import './styles/mobile/navbar.mobile.css';
 import './styles/mobile/dashboard.mobile.css';
+import './styles/mobile/expenses.mobile.css';
+import './styles/mobile/incomes.mobile.css';
 import App from './App';
 import { initIOSSupport, isIOS } from './utils/iosSupport';
 

@@ -1,0 +1,455 @@
+/* Estilos para o componente MobileIncomes */
+.mobileIncomes {
+  padding: 16px;
+  background-color: var(--background-color);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mobileIncomesHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.mobileIncomesTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.mobileIncomesSubtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.mobileIncomesActions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.mobileIncomesFilter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: var(--surface-color);
+  border-radius: 8px;
+  color: var(--text-color);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.mobileIncomesFilterIcon {
+  font-size: 16px;
+}
+
+.mobileIncomesAddButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.mobileIncomesAddButton:hover {
+  background-color: var(--primary-color-dark);
+}
+
+.mobileIncomesAddIcon {
+  font-size: 16px;
+}
+
+.mobileIncomesContent {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mobileIncomesCard {
+  background-color: var(--surface-color);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.mobileIncomesCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.mobileIncomesCardTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.mobileIncomesCardContent {
+  margin-bottom: 16px;
+}
+
+.mobileIncomesCardFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.mobileIncomesTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.mobileIncomesTableHeader {
+  display: none;
+}
+
+.mobileIncomesTableRow {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.mobileIncomesTableRow:last-child {
+  border-bottom: none;
+}
+
+.mobileIncomesTableCell {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.mobileIncomesTableCell::before {
+  content: attr(data-label);
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-right: 8px;
+}
+
+.mobileIncomesTableCell.description {
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.mobileIncomesTableCell.value {
+  font-weight: 600;
+}
+
+.mobileIncomesTableCell.value.positive {
+  color: var(--success-color);
+}
+
+.mobileIncomesTableCell.value.negative {
+  color: var(--error-color);
+}
+
+.mobileIncomesTableCell.date {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.mobileIncomesTableCell.category {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.mobileIncomesTableCell.paymentMethod {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.mobileIncomesTableCell.type {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.mobileIncomesTableCell.installments {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.mobileIncomesTableCell.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.mobileIncomesActionButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 16px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.mobileIncomesActionButton.edit {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.mobileIncomesActionButton.edit:hover {
+  background-color: var(--primary-color-dark);
+}
+
+.mobileIncomesActionButton.delete {
+  background-color: var(--error-color);
+  color: white;
+}
+
+.mobileIncomesActionButton.delete:hover {
+  background-color: var(--error-color-dark);
+}
+
+.mobileIncomesActionIcon {
+  font-size: 16px;
+}
+
+.mobileIncomesEmptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  text-align: center;
+}
+
+.mobileIncomesEmptyIcon {
+  font-size: 48px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.mobileIncomesEmptyTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 8px;
+}
+
+.mobileIncomesEmptyDescription {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.mobileIncomesEmptyButton {
+  padding: 8px 16px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.mobileIncomesEmptyButton:hover {
+  background-color: var(--primary-color-dark);
+}
+
+.mobileIncomesLoading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  color: var(--text-secondary);
+}
+
+.mobileIncomesError {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  text-align: center;
+  padding: 16px;
+}
+
+.mobileIncomesErrorMessage {
+  color: var(--error-color);
+  margin-bottom: 16px;
+}
+
+.mobileIncomesRetryButton {
+  padding: 8px 16px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s ease;
+}
+
+.mobileIncomesRetryButton:hover {
+  background-color: var(--primary-color-dark);
+}
+
+.mobileIncomesFilterModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.mobileIncomesFilterContent {
+  background-color: var(--surface-color);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.mobileIncomesFilterHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.mobileIncomesFilterTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.mobileIncomesFilterClose {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+}
+
+.mobileIncomesFilterBody {
+  padding: 16px;
+}
+
+.mobileIncomesFilterGroup {
+  margin-bottom: 16px;
+}
+
+.mobileIncomesFilterLabel {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 8px;
+}
+
+.mobileIncomesFilterSelect {
+  width: 100%;
+  padding: 8px 12px;
+  background-color: var(--background-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-color);
+  font-size: 14px;
+}
+
+.mobileIncomesFilterCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.mobileIncomesFilterCheckboxInput {
+  width: 16px;
+  height: 16px;
+}
+
+.mobileIncomesFilterCheckboxLabel {
+  font-size: 14px;
+  color: var(--text-color);
+}
+
+.mobileIncomesFilterFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px;
+  border-top: 1px solid var(--border-color);
+}
+
+.mobileIncomesFilterButton {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.mobileIncomesFilterButton.primary {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+}
+
+.mobileIncomesFilterButton.secondary {
+  background-color: var(--surface-color);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+
+.mobileIncomesFabButton {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 28px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.mobileIncomesFabButton:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.mobileIncomesFabIcon {
+  font-size: 24px;
+}
+
+/* Media query para desktop */
+@media (min-width: 769px) {
+  .mobileIncomes {
+    display: none;
+  }
+} 

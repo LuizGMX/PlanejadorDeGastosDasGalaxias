@@ -1,0 +1,455 @@
+/* Estilos para o componente MobileExpenses */
+.mobileExpenses {
+  padding: 16px;
+  background-color: var(--background-color);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mobileExpensesHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.mobileExpensesTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.mobileExpensesSubtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.mobileExpensesActions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.mobileExpensesFilter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: var(--surface-color);
+  border-radius: 8px;
+  color: var(--text-color);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.mobileExpensesFilterIcon {
+  font-size: 16px;
+}
+
+.mobileExpensesAddButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.mobileExpensesAddButton:hover {
+  background-color: var(--primary-color-dark);
+}
+
+.mobileExpensesAddIcon {
+  font-size: 16px;
+}
+
+.mobileExpensesContent {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mobileExpensesCard {
+  background-color: var(--surface-color);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.mobileExpensesCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.mobileExpensesCardTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.mobileExpensesCardContent {
+  margin-bottom: 16px;
+}
+
+.mobileExpensesCardFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.mobileExpensesTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.mobileExpensesTableHeader {
+  display: none;
+}
+
+.mobileExpensesTableRow {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.mobileExpensesTableRow:last-child {
+  border-bottom: none;
+}
+
+.mobileExpensesTableCell {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.mobileExpensesTableCell::before {
+  content: attr(data-label);
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-right: 8px;
+}
+
+.mobileExpensesTableCell.description {
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.mobileExpensesTableCell.value {
+  font-weight: 600;
+}
+
+.mobileExpensesTableCell.value.positive {
+  color: var(--success-color);
+}
+
+.mobileExpensesTableCell.value.negative {
+  color: var(--error-color);
+}
+
+.mobileExpensesTableCell.date {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.mobileExpensesTableCell.category {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.mobileExpensesTableCell.paymentMethod {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.mobileExpensesTableCell.type {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.mobileExpensesTableCell.installments {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.mobileExpensesTableCell.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.mobileExpensesActionButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 16px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.mobileExpensesActionButton.edit {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.mobileExpensesActionButton.edit:hover {
+  background-color: var(--primary-color-dark);
+}
+
+.mobileExpensesActionButton.delete {
+  background-color: var(--error-color);
+  color: white;
+}
+
+.mobileExpensesActionButton.delete:hover {
+  background-color: var(--error-color-dark);
+}
+
+.mobileExpensesActionIcon {
+  font-size: 16px;
+}
+
+.mobileExpensesEmptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  text-align: center;
+}
+
+.mobileExpensesEmptyIcon {
+  font-size: 48px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.mobileExpensesEmptyTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 8px;
+}
+
+.mobileExpensesEmptyDescription {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.mobileExpensesEmptyButton {
+  padding: 8px 16px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.mobileExpensesEmptyButton:hover {
+  background-color: var(--primary-color-dark);
+}
+
+.mobileExpensesLoading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  color: var(--text-secondary);
+}
+
+.mobileExpensesError {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  text-align: center;
+  padding: 16px;
+}
+
+.mobileExpensesErrorMessage {
+  color: var(--error-color);
+  margin-bottom: 16px;
+}
+
+.mobileExpensesRetryButton {
+  padding: 8px 16px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s ease;
+}
+
+.mobileExpensesRetryButton:hover {
+  background-color: var(--primary-color-dark);
+}
+
+.mobileExpensesFilterModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.mobileExpensesFilterContent {
+  background-color: var(--surface-color);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.mobileExpensesFilterHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.mobileExpensesFilterTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.mobileExpensesFilterClose {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+}
+
+.mobileExpensesFilterBody {
+  padding: 16px;
+}
+
+.mobileExpensesFilterGroup {
+  margin-bottom: 16px;
+}
+
+.mobileExpensesFilterLabel {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 8px;
+}
+
+.mobileExpensesFilterSelect {
+  width: 100%;
+  padding: 8px 12px;
+  background-color: var(--background-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-color);
+  font-size: 14px;
+}
+
+.mobileExpensesFilterCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.mobileExpensesFilterCheckboxInput {
+  width: 16px;
+  height: 16px;
+}
+
+.mobileExpensesFilterCheckboxLabel {
+  font-size: 14px;
+  color: var(--text-color);
+}
+
+.mobileExpensesFilterFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px;
+  border-top: 1px solid var(--border-color);
+}
+
+.mobileExpensesFilterButton {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.mobileExpensesFilterButton.primary {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+}
+
+.mobileExpensesFilterButton.secondary {
+  background-color: var(--surface-color);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+
+.mobileExpensesFabButton {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 28px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.mobileExpensesFabButton:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.mobileExpensesFabIcon {
+  font-size: 24px;
+}
+
+/* Media query para desktop */
+@media (min-width: 769px) {
+  .mobileExpenses {
+    display: none;
+  }
+} 

@@ -249,240 +249,479 @@
     font-size: 10px !important;
     opacity: 0.7;
   }
-  
-  .chartContainer .recharts-wrapper .recharts-xAxis .recharts-cartesian-axis-tick-value {
-    transform: rotate(-45deg);
-    text-anchor: end;
-    dominant-baseline: central;
-    transform-origin: right;
-    font-size: 9px !important;
-  }
-  
-  .chartContainer .recharts-default-legend {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 8px;
-    margin-top: 10px !important;
-    margin-bottom: 5px !important;
-  }
-  
-  .chartContainer .recharts-tooltip-wrapper {
-    z-index: 1000 !important;
-  }
-  
-  .chartContainer .recharts-tooltip-item-name,
-  .chartContainer .recharts-tooltip-item-value {
-    font-size: 11px !important;
-  }
-  
-  .chartContainer .recharts-pie {
-    transform: scale(0.85);
-  }
-  
-  .chartContainer .recharts-pie-label-text {
-    font-size: 11px !important;
-  }
-  
-  .chartHeader {
-    margin-bottom: 10px;
-  }
-  
-  .chartHeader h3 {
-    font-size: 16px;
-  }
-  
-  .chartSubtitle {
-    font-size: 12px;
-  }
-  
-  .chartBody {
-    margin-top: 10px;
-  }
-  
-  .chartContainer .recharts-wrapper {
-    margin: 0 auto;
-  }
-  
-  .chartContainer .recharts-surface {
-    overflow: visible;
-  }
-  
-  .bankPieContainer,
-  .categoriesPieContainer,
-  .trendChartContainer {
-    height: 300px;
-  }
-
-  .chartContainer {
-    min-height: auto;
-    margin-bottom: 0.75rem;
-  }
-  
-  .chartHeader {
-    padding-bottom: 0.5rem;
-    margin-bottom: 0.5rem;
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .chartHeader h3 {
-    font-size: 16px;
-    margin-bottom: 0.25rem;
-  }
-  
-  .chartSubtitle {
-    font-size: 12px;
-  }
-  
-  .categoriesPieContainer,
-  .bankPieContainer,
-  .trendChartContainer {
-    height: 250px;
-  }
-  
-  .recharts-legend-wrapper {
-    position: relative !important;
-    margin-top: 1rem !important;
-    bottom: 0 !important;
-  }
-  
-  .recharts-default-legend {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    justify-content: center !important;
-  }
-  
-  .recharts-legend-item {
-    margin-right: 12px !important;
-    margin-bottom: 8px !important;
-    display: flex !important;
-    align-items: center !important;
-  }
-  
-  .recharts-pie {
-    transform: scale(0.9) !important;
-  }
-  
-  .incomeVsExpensesSummary {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .incomeVsExpensesSummary .infoItem:last-child {
-    margin-top: 0.5rem;
-  }
-  
-  .categoriesInsights {
-    padding: 0.5rem 0;
-  }
-  
-  .categoriesInsights h4 {
-    font-size: 14px;
-  }
-  
-  .categoriesInsights p {
-    font-size: 13px;
-  }
-  
-  .infoItem span {
-    font-size: 12px;
-  }
-  
-  .infoItem strong {
-    font-size: 14px;
-  }
-  
-  .dateFilterBadge {
-    font-size: 11px;
-    padding: 3px 7px;
-  }
-  
-  .chartContainer .recharts-tooltip-wrapper {
-    max-width: 200px;
-  }
-  
-  .chartContainer .recharts-legend-item-text {
-    font-size: 10px !important;
-  }
 }
 
-/* Small screen optimizations */
-@media (max-width: 480px) {
-  .chartContainer {
-    padding: 0.75rem;
-  }
-  
-  .chartHeader h3 {
-    font-size: 14px;
-  }
-  
-  .infoItem {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .categoriesPieContainer, 
-  .bankPieContainer {
-    height: 220px;
-  }
+/* Estilos base para o Dashboard Mobile */
+.mobileDashboard {
+  padding: 16px;
+  background-color: var(--background-color);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-/* Tablet optimizations */
-@media (min-width: 600px) and (max-width: 768px) {
-  .chartContainer {
-    padding: 1.25rem;
-  }
-  
-  .budgetStats {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-  }
-  
-  .categoriesPieContainer, 
-  .bankPieContainer {
-    height: 280px;
-  }
+.mobileHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
 }
 
-/* Mobile styles have been moved to dataTable.mobile.css */
+.mobileNavTabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
 
-@media (min-width: 768px) {
-    .formGrid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
-    
-    .formGroup {
-      margin-bottom: 20px;
-    }
-    
-    .formInput,
-    .formSelect {
-      margin-top: 6px;
-    }
-    
-    .modalActions {
-      grid-column: span 2;
-      display: flex;
-      justify-content: flex-end;
-      gap: 15px;
-      margin-top: 15px;
-    }
-    
-    .formButton {
-      padding: 10px 20px;
-    }
-    
-    .formWideField {
-      grid-column: span 2;
-    }
-  }
-  
-  /* Ensure mobile card view is hidden on desktop */
+.mobileNavTab {
+  padding: 8px 16px;
+  border-radius: 8px;
+  background-color: var(--surface-color);
+  color: var(--text-color);
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.mobileNavTab.active {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.mobileContent {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mobileCard {
+  background-color: var(--surface-color);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.mobileCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.mobileCardTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.mobileCardContent {
+  margin-bottom: 16px;
+}
+
+.mobileCardFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.summaryCard {
+  background-color: var(--surface-color);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.summaryHeader {
+  margin-bottom: 16px;
+}
+
+.summaryContent {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.summaryItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.summaryLabel {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.summaryValue {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.summaryValue.positive {
+  color: var(--success-color);
+}
+
+.summaryValue.negative {
+  color: var(--error-color);
+}
+
+.budgetCard {
+  background-color: var(--surface-color);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.budgetHeader {
+  margin-bottom: 16px;
+}
+
+.budgetContent {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.budgetItem {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.budgetLabel {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.budgetValue {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.budgetProgress {
+  width: 100%;
+  height: 8px;
+  background-color: var(--background-color);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.budgetProgressBar {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.budgetProgressBarFill {
+  height: 100%;
+  background-color: var(--primary-color);
+}
+
+.budgetProgressBarFill.over {
+  background-color: var(--error-color);
+}
+
+.budgetProgressBarFill.warning {
+  background-color: var(--warning-color);
+}
+
+.budgetProgressBarFill.good {
+  background-color: var(--success-color);
+}
+
+.categoriesCard {
+  background-color: var(--surface-color);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.categoriesHeader {
+  margin-bottom: 16px;
+}
+
+.categoriesContent {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.categoryItem {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.categoryInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.categoryName {
+  font-size: 14px;
+  color: var(--text-color);
+}
+
+.categoryAmount {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.categoryProgress {
+  width: 100%;
+  height: 8px;
+  background-color: var(--background-color);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.categoryProgressBar {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.categoryProgressBarFill {
+  height: 100%;
+  background-color: var(--primary-color);
+}
+
+.categoryProgressBarFill.over {
+  background-color: var(--error-color);
+}
+
+.categoryProgressBarFill.warning {
+  background-color: var(--warning-color);
+}
+
+.categoryProgressBarFill.good {
+  background-color: var(--success-color);
+}
+
+.transactionsCard {
+  background-color: var(--surface-color);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.transactionsHeader {
+  margin-bottom: 16px;
+}
+
+.transactionsContent {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.transactionItem {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background-color: var(--background-color);
+  border-radius: 8px;
+}
+
+.transactionInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.transactionDescription {
+  font-size: 14px;
+  color: var(--text-color);
+}
+
+.transactionMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.transactionDate {
+  color: var(--text-secondary);
+}
+
+.transactionCategory {
+  color: var(--text-secondary);
+}
+
+.transactionAmount {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.transactionAmount.positive {
+  color: var(--success-color);
+}
+
+.transactionAmount.negative {
+  color: var(--error-color);
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  color: var(--text-secondary);
+}
+
+.error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  text-align: center;
+  padding: 16px;
+}
+
+.errorMessage {
+  color: var(--error-color);
+  margin-bottom: 16px;
+}
+
+.retryButton {
+  padding: 8px 16px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s ease;
+}
+
+.retryButton:hover {
+  background-color: var(--primary-color-dark);
+}
+
+.datePickerModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.datePickerContent {
+  background-color: var(--surface-color);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.datePickerHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.datePickerTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.datePickerClose {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+}
+
+.datePickerBody {
+  padding: 16px;
+}
+
+.datePickerFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px;
+  border-top: 1px solid var(--border-color);
+}
+
+.datePickerButton {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.datePickerButton.primary {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+}
+
+.datePickerButton.secondary {
+  background-color: var(--surface-color);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+
+.fabButton {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 28px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.fabButton:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.fabIcon {
+  font-size: 24px;
+}
+
+.periodBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  background-color: var(--surface-color);
+  border-radius: 16px;
+  font-size: 14px;
+  color: var(--text-color);
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.periodBadge:hover {
+  background-color: var(--background-color);
+}
+
+/* Media query para desktop */
+@media (min-width: 769px) {
   .mobileCardView {
     display: none;
   }
-  
+} 

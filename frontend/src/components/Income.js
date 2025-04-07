@@ -2,7 +2,6 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../App';
 import dataTableStyles from '../styles/dataTable.module.css';
-import '../styles/mobile/dataTable.mobile.css';
 import sharedStyles from '../styles/shared.module.css';
 import EditIncomeForm from './EditIncomeForm';
 import { toast } from 'react-hot-toast';

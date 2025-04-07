@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import { AuthContext } from '../App';
 import { useNavigate, Link } from 'react-router-dom';
+import MobileDashboard from './mobile/MobileDashboard';
 import {
   LineChart,
   Line,
@@ -22,7 +23,6 @@ import {
   LabelList,
 } from 'recharts';
 import styles from '../styles/dashboard.module.css';
-import '../styles/mobile/dashboard.mobile.css';
 import { FaCalendarAlt, FaChartLine, FaPlus, FaChevronDown, FaChevronRight, FaSearch, FaFilter } from 'react-icons/fa';
 import DateRangePicker from './DateRangePicker';
 import {  
