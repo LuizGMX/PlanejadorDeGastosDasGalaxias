@@ -68,10 +68,11 @@ const ExpensesWrapper = () => {
   const handleSearch = (term) => {
     console.log('Searching for:', term);
     setSearchTerm(term);
+    filterExpenses(term);
   };
 
   const handleFilter = () => {
-    filterExpenses();
+    filterExpenses(searchTerm);
   };
 
   const handleSelectExpense = (id) => {
@@ -272,17 +273,17 @@ const ExpensesWrapper = () => {
 
   // Efeito para aplicar filtros quando o termo de busca mudar
   useEffect(() => {
-    filterExpenses();
+    filterExpenses(searchTerm);
   }, [searchTerm, originalExpenses]);
 
-  const filterExpenses = () => {
+  const filterExpenses = (term = searchTerm) => {
     let filtered = [...originalExpenses];
 
-    if (searchTerm) {
+    if (term) {
       filtered = filtered.filter(expense => 
-        expense.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        expense.Category?.category_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        expense.Bank?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+        expense.description?.toLowerCase().includes(term.toLowerCase()) ||
+        expense.Category?.category_name?.toLowerCase().includes(term.toLowerCase()) ||
+        expense.Bank?.name?.toLowerCase().includes(term.toLowerCase())
       );
     }
 

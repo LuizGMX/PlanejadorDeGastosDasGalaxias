@@ -66,10 +66,11 @@ const IncomesWrapper = () => {
   const handleSearch = (term) => {
     console.log('Searching for:', term);
     setSearchTerm(term);
+    filterIncomes(term);
   };
 
   const handleFilter = () => {
-    filterIncomes();
+    filterIncomes(searchTerm);
   };
 
   const handleSelectIncome = (id) => {
@@ -276,17 +277,17 @@ const IncomesWrapper = () => {
 
   // Efeito para aplicar filtros quando o termo de busca mudar
   useEffect(() => {
-    filterIncomes();
+    filterIncomes(searchTerm);
   }, [searchTerm, originalIncomes]);
 
-  const filterIncomes = () => {
+  const filterIncomes = (term = searchTerm) => {
     let filtered = [...originalIncomes];
 
-    if (searchTerm) {
+    if (term) {
       filtered = filtered.filter(income => 
-        income.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        income.Category?.category_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        income.Bank?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+        income.description?.toLowerCase().includes(term.toLowerCase()) ||
+        income.Category?.category_name?.toLowerCase().includes(term.toLowerCase()) ||
+        income.Bank?.name?.toLowerCase().includes(term.toLowerCase())
       );
     }
 

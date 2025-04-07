@@ -19,31 +19,6 @@ const MobileIncomes = ({
 }) => {
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filteredIncomes, setFilteredIncomes] = useState([]);
-
-  useEffect(() => {
-    // Atualizar os dados filtrados quando os incomes mudarem
-    filterData();
-  }, [incomes, searchTerm]);
-
-  const filterData = () => {
-    // Garantir que incomes seja um array
-    const safeIncomes = Array.isArray(incomes) ? incomes : [];
-    
-    // Aplicar filtros
-    let filtered = safeIncomes;
-    
-    // Filtrar por termo de busca
-    if (searchTerm) {
-      filtered = filtered.filter(income => 
-        income.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (income.Category?.category_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (income.Bank?.name || '').toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    
-    setFilteredIncomes(filtered);
-  };
 
   const handleSearch = (e) => {
     const value = e.target.value;
@@ -96,7 +71,7 @@ const MobileIncomes = ({
     );
   }
 
-  if (filteredIncomes.length === 0) {
+  if (incomes.length === 0) {
     return (
       <div className={styles.container}>
         <div className={styles.header}>
@@ -142,7 +117,7 @@ const MobileIncomes = ({
         {renderFilters()}
 
         <div className={styles.cardsContainer}>
-          {filteredIncomes.map((income) => (
+          {incomes.map((income) => (
             <div key={income.id} className={styles.card}>
               <div className={styles.cardHeader}>
                 <h3 className={styles.cardTitle}>{income.description}</h3>

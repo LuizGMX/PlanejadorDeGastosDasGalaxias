@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { FiEdit2, FiTrash2, FiFilter, FiSearch, FiPlus } from 'react-icons/fi';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import styles from '../../styles/mobile/dataTable.mobile.module.css';
-import '../../styles/dataTable.module.css';
+import dataTableStyles from '../../styles/dataTable.module.css';
 
 const MobileExpenses = ({ 
   expenses, 
@@ -19,31 +19,6 @@ const MobileExpenses = ({
 }) => {
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filteredExpenses, setFilteredExpenses] = useState([]);
-
-  useEffect(() => {
-    // Atualizar os dados filtrados quando os expenses mudarem
-    filterData();
-  }, [expenses, searchTerm]);
-
-  const filterData = () => {
-    // Garantir que expenses seja um array
-    const safeExpenses = Array.isArray(expenses) ? expenses : [];
-    
-    // Aplicar filtros
-    let filtered = safeExpenses;
-    
-    // Filtrar por termo de busca
-    if (searchTerm) {
-      filtered = filtered.filter(expense => 
-        expense.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (expense.Category?.category_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (expense.Bank?.name || '').toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    
-    setFilteredExpenses(filtered);
-  };
 
   const handleSearch = (e) => {
     const value = e.target.value;
@@ -96,7 +71,7 @@ const MobileExpenses = ({
     );
   }
 
-  if (filteredExpenses.length === 0) {
+  if (expenses.length === 0) {
     return (
       <div className={styles.container}>
         <div className={styles.header}>
@@ -110,7 +85,7 @@ const MobileExpenses = ({
           {renderFilters()}
 
           <div className={styles.noDataContainer}>
-            <div className={styles.noDataIcon}>📝</div>
+            <div className={styles.noDataIcon}>💰</div>
             <h3 className={styles.noDataMessage}>
               {searchTerm ? "Nenhuma despesa encontrada para os filtros selecionados." : "Nenhuma despesa encontrada"}
             </h3>
@@ -142,7 +117,7 @@ const MobileExpenses = ({
         {renderFilters()}
 
         <div className={styles.cardsContainer}>
-          {filteredExpenses.map((expense) => (
+          {expenses.map((expense) => (
             <div key={expense.id} className={styles.card}>
               <div className={styles.cardHeader}>
                 <h3 className={styles.cardTitle}>{expense.description}</h3>
@@ -154,7 +129,7 @@ const MobileExpenses = ({
               <div className={styles.cardDetails}>
                 <div className={styles.cardDetail}>
                   <span className={styles.cardLabel}>Data</span>
-                  <span className={styles.cardValue}>{formatDate(expense.expense_date)}</span>
+                  <span className={styles.cardValue}>{formatDate(expense.date)}</span>
                 </div>
 
                 <div className={styles.cardDetail}>
@@ -165,27 +140,18 @@ const MobileExpenses = ({
                 </div>
 
                 <div className={styles.cardDetail}>
-                  <span className={styles.cardLabel}>Método</span>
+                  <span className={styles.cardLabel}>Banco</span>
                   <span className={styles.cardValue}>
-                    {expense.payment_method || '-'}
+                    {expense.Bank?.name || '-'}
                   </span>
                 </div>
 
                 <div className={styles.cardDetail}>
                   <span className={styles.cardLabel}>Tipo</span>
                   <span className={`${styles.typeStatus} ${expense.is_recurring ? styles.fixedType : styles.oneTimeType}`}>
-                    {expense.is_recurring ? 'Fixa' : expense.has_installments ? 'Parcelada' : 'Única'}
+                    {expense.is_recurring ? 'Fixa' : 'Única'}
                   </span>
                 </div>
-
-                {expense.has_installments && (
-                  <div className={styles.cardDetail}>
-                    <span className={styles.cardLabel}>Parcelas</span>
-                    <span className={styles.cardValue}>
-                      {expense.current_installment}/{expense.total_installments}
-                    </span>
-                  </div>
-                )}
               </div>
 
               <div className={styles.cardActions}>
