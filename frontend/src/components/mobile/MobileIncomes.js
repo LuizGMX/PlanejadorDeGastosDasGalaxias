@@ -55,6 +55,31 @@ const MobileIncomes = ({
     setShowFilters(!showFilters);
   };
 
+  // Componente de filtros que será reutilizado
+  const renderFilters = () => (
+    <div className={styles.filtersContainer}>
+      <div className={styles.filterToggleButton} onClick={toggleFilters}>
+        <FiFilter />
+        <span>Filtros</span>
+      </div>
+
+      <div className={showFilters ? styles.filtersExpanded : styles.filtersCollapsed}>
+        <div className={styles.filterRow}>
+          <div className={styles.searchField}>
+            <FiSearch className={styles.searchIcon} />
+            <input
+              type="text"
+              className={styles.searchInput}
+              placeholder="Buscar receitas..."
+              value={searchTerm}
+              onChange={handleSearch}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   if (loading) {
     return (
       <div className={styles.loadingContainer}>
@@ -82,27 +107,7 @@ const MobileIncomes = ({
         </div>
 
         <div className={styles.dataContainer}>
-          <div className={styles.filtersContainer}>
-            <div className={styles.filterToggleButton} onClick={toggleFilters}>
-              <FiFilter />
-              <span>Filtros</span>
-            </div>
-
-            <div className={showFilters ? styles.filtersExpanded : styles.filtersCollapsed}>
-              <div className={styles.filterRow}>
-                <div className={styles.searchField}>
-                  <FiSearch className={styles.searchIcon} />
-                  <input
-                    type="text"
-                    className={styles.searchInput}
-                    placeholder="Buscar receitas..."
-                    value={searchTerm}
-                    onChange={handleSearch}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+          {renderFilters()}
 
           <div className={styles.noDataContainer}>
             <div className={styles.noDataIcon}>💰</div>
@@ -134,27 +139,7 @@ const MobileIncomes = ({
       </div>
 
       <div className={styles.dataContainer}>
-        <div className={styles.filtersContainer}>
-          <div className={styles.filterToggleButton} onClick={toggleFilters}>
-            <FiFilter />
-            <span>Filtros</span>
-          </div>
-
-          <div className={showFilters ? styles.filtersExpanded : styles.filtersCollapsed}>
-            <div className={styles.filterRow}>
-              <div className={styles.searchField}>
-                <FiSearch className={styles.searchIcon} />
-                <input
-                  type="text"
-                  className={styles.searchInput}
-                  placeholder="Buscar receitas..."
-                  value={searchTerm}
-                  onChange={handleSearch}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
+        {renderFilters()}
 
         <div className={styles.cardsContainer}>
           {filteredIncomes.map((income) => (

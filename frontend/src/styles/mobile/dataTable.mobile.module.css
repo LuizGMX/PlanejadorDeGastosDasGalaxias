@@ -11,7 +11,7 @@
   }
   
   .filterToggleButton {
-    display: flex;
+    display: flex !important;
     position: sticky;
     top: 0;
     margin-top: -8px;
@@ -48,10 +48,11 @@
   }
   
   .filtersExpanded {
-    display: flex;
+    display: flex !important;
     flex-direction: column;
     max-height: 80vh;
     overflow-y: auto;
+    margin-bottom: 16px;
   }
   
   /* Esconder a tabela desktop em dispositivos móveis */
@@ -101,19 +102,17 @@
     position: absolute;
     left: 10px;
     width: 45%;
-    padding-right: 10px;
     text-align: left;
-    font-weight: 500;
-    color: var(--text-secondary);
+    font-weight: 600;
   }
   
   .mobileTable tr {
-    margin-bottom: 16px;
     display: block;
+    margin-bottom: 16px;
     border: 1px solid var(--border-color);
     border-radius: 8px;
     background-color: var(--card-background);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
   
   .mobileTable tr:last-child {
@@ -124,70 +123,63 @@
     display: flex;
     justify-content: flex-end;
     gap: 8px;
+    padding: 8px;
   }
   
   .mobileTable .amountBadge {
     display: inline-block;
-    padding: 5px 10px;
+    padding: 4px 8px;
     border-radius: 4px;
+    font-weight: 600;
   }
   
-  /* Ver ambos os modos (cards e tabela) em dispositivos móveis */
+  /* Estilos para visualização em cards */
   .mobileCardView {
-    display: flex !important;
+    display: flex;
     flex-direction: column;
     gap: 16px;
-    width: 100%;
-    margin-bottom: 32px;
-    padding: 0 8px;
+    margin-top: 20px;
   }
   
   .mobileCardView:before {
-    
+    content: "Visualização em Cards";
     display: block;
     padding: 12px;
     background-color: var(--primary-color);
     color: var(--secondary-color);
     font-weight: 600;
     text-align: center;
-    border-radius: 8px;
-    margin-bottom: 16px;
+    border-radius: 8px 8px 0 0;
+    margin-bottom: 8px;
   }
   
   .mobileCard {
-    background-color: var(--secondary-color);
-    border-radius: 16px;
-    padding: 16px;
-    margin-bottom: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    background-color: var(--card-background);
     border: 1px solid var(--border-color);
-    position: relative;
-    overflow: hidden;
-    transition: all 0.2s ease;
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
   
   .mobileCard:hover {
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
   }
   
   .mobileCardHeader {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 16px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid rgba(var(--border-color), 0.2);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
   }
   
   .mobileCardTitle {
-    font-weight: 600;
     font-size: 16px;
+    font-weight: 600;
+    color: var(--text-color);
     margin: 0;
-    max-width: 70%;
+    flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -195,50 +187,47 @@
   
   .mobileCardAmount {
     font-weight: 600;
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 14px;
+    margin-left: 8px;
   }
   
   .mobileCardDetails {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
     margin-bottom: 16px;
   }
   
   .mobileCardDetail {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
   }
   
   .mobileCardLabel {
+    font-size: 12px;
     color: var(--text-secondary);
-    font-size: 13px;
-    font-weight: 500;
+    margin-bottom: 2px;
   }
   
   .mobileCardValue {
-    color: var(--text-color);
     font-size: 14px;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: 6px;
+    color: var(--text-color);
   }
   
   .mobileCardActions {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-top: 12px;
-    border-top: 1px solid rgba(var(--border-color), 0.2);
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-color);
   }
   
   .mobileCardType {
-    display: flex;
-    align-items: center;
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
   }
   
   .mobileCardActionButtons {
@@ -247,18 +236,22 @@
   }
   
   .mobileCardSelect {
-    position: absolute;
-    top: 16px;
-    left: 16px;
+    display: flex;
+    align-items: center;
+    margin-right: auto;
   }
   
   .actionButton {
-    background: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
     border: none;
-    padding: 8px;
-    cursor: pointer;
+    background-color: var(--button-bg);
     color: var(--text-color);
-    border-radius: 8px;
+    cursor: pointer;
     transition: all 0.2s ease;
   }
   
@@ -267,57 +260,44 @@
   }
   
   .actionButton.delete:hover {
-    background-color: var(--error-bg);
-    color: var(--error-color);
+    background-color: var(--danger-color);
+    color: white;
   }
   
   .editButton {
-    background: none;
-    border: none;
-    padding: 8px;
-    cursor: pointer;
-    color: var(--text-color);
-    border-radius: 8px;
-    transition: all 0.2s ease;
+    background-color: var(--primary-color);
+    color: white;
   }
   
   .editButton:hover {
-    background-color: var(--hover-bg);
+    background-color: var(--primary-dark);
   }
   
   .deleteButton {
-    background: none;
-    border: none;
-    padding: 8px;
-    cursor: pointer;
-    color: var(--text-color);
-    border-radius: 8px;
-    transition: all 0.2s ease;
+    background-color: var(--danger-color);
+    color: white;
   }
   
   .deleteButton:hover {
-    background-color: var(--error-bg);
-    color: var(--error-color);
+    background-color: var(--danger-dark);
   }
   
   .typeStatus {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 8px;
+    display: inline-block;
+    padding: 2px 6px;
     border-radius: 4px;
     font-size: 12px;
     font-weight: 500;
   }
   
   .fixedType {
-    background-color: var(--primary-bg);
-    color: var(--primary-color);
+    background-color: var(--success-color);
+    color: white;
   }
   
   .oneTimeType {
-    background-color: var(--secondary-bg);
-    color: var(--text-color);
+    background-color: var(--warning-color);
+    color: var(--text-dark);
   }
   
   .noDataContainer {
@@ -325,12 +305,12 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 32px;
+    padding: 32px 16px;
     text-align: center;
     background-color: var(--card-background);
-    border-radius: 16px;
-    margin: 16px 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    border: 1px dashed var(--border-color);
+    margin-top: 16px;
   }
   
   .noDataIcon {
@@ -359,29 +339,34 @@
   .primaryButton {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
-    padding: 12px 24px;
+    padding: 10px 16px;
     background-color: var(--primary-color);
-    color: var(--secondary-color);
+    color: white;
     border: none;
-    border-radius: 8px;
-    font-weight: 600;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
   }
   
   .primaryButton:hover {
-    background-color: var(--primary-hover);
+    background-color: var(--primary-dark);
   }
   
   .loadingContainer {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
-    padding: 32px;
+    justify-content: center;
+    padding: 32px 16px;
+    text-align: center;
     background-color: var(--card-background);
-    border-radius: 16px;
-    margin: 16px 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    margin-top: 16px;
   }
   
   .loadingText {
@@ -391,17 +376,20 @@
   
   .errorContainer {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
-    padding: 32px;
-    background-color: var(--error-bg);
-    border-radius: 16px;
-    margin: 16px 8px;
+    justify-content: center;
+    padding: 32px 16px;
+    text-align: center;
+    background-color: var(--card-background);
+    border-radius: 8px;
+    border: 1px solid var(--danger-color);
+    margin-top: 16px;
   }
   
   .errorText {
     font-size: 16px;
-    color: var(--error-color);
+    color: var(--danger-color);
   }
   
   .pageContainer {
@@ -412,49 +400,48 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 24px;
+    margin-bottom: 16px;
   }
   
   .pageTitle {
     font-size: 24px;
     font-weight: 600;
     color: var(--text-color);
-    margin: 0;
   }
   
   .addButton {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 12px 24px;
+    padding: 8px 16px;
     background-color: var(--primary-color);
-    color: var(--secondary-color);
+    color: white;
     border: none;
-    border-radius: 8px;
-    font-weight: 600;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
   }
   
   .addButton:hover {
-    background-color: var(--primary-hover);
+    background-color: var(--primary-dark);
   }
   
   .filtersContainer {
-    margin-bottom: 24px;
+    margin-bottom: 16px;
   }
   
   .filterRow {
     display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
+    flex-direction: column;
+    gap: 12px;
     margin-bottom: 16px;
   }
   
   .searchField {
     position: relative;
-    flex: 1;
-    min-width: 200px;
+    width: 100%;
   }
   
   .searchIcon {
@@ -463,6 +450,7 @@
     top: 50%;
     transform: translateY(-50%);
     color: var(--text-secondary);
+    font-size: 16px;
   }
   
   .searchInput {
@@ -470,16 +458,14 @@
     padding: 12px 12px 12px 40px;
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    font-size: 14px;
+    background-color: var(--input-bg);
     color: var(--text-color);
-    background-color: var(--card-background);
-    transition: all 0.2s ease;
+    font-size: 14px;
   }
   
   .searchInput:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px var(--primary-bg);
   }
   
   .searchInput::placeholder {
@@ -487,17 +473,16 @@
   }
 }
 
-/* Esconder a visualização mobile em desktop */
 @media (min-width: 769px) {
   .mobileCardView {
-    display: none !important;
+    display: none;
   }
 }
 
 .container {
   padding: 16px;
-  background-color: var(--background-color);
-  min-height: 100vh;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .header {
@@ -510,54 +495,51 @@
 .title {
   font-size: 24px;
   font-weight: 600;
-  color: var(--primary-color);
-  margin: 0;
+  color: var(--text-color);
 }
 
 .addButton {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 16px;
-  background-color: var(--secondary-color);
-  border: 2px solid var(--primary-color);
-  color: var(--primary-color);
-  border-radius: 8px;
+  padding: 8px 16px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .dataContainer {
-  background-color: var(--card-background);
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid var(--border-color);
+  margin-top: 16px;
 }
 
 .filtersContainer {
-  padding: 16px;
-  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 16px;
 }
 
 .filterToggleButton {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  padding: 10px 16px;
-  background-color: var(--input-bg);
-  border: 1px solid var(--border-color);
-  color: var(--text-color);
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
   width: 100%;
+  padding: 12px;
+  background-color: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-color);
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .filtersExpanded {
-  margin-top: 16px;
-  animation: slideDown 0.3s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 .filtersCollapsed {
@@ -568,10 +550,12 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  margin-bottom: 16px;
 }
 
 .searchField {
   position: relative;
+  width: 100%;
 }
 
 .searchIcon {
@@ -580,14 +564,15 @@
   top: 50%;
   transform: translateY(-50%);
   color: var(--text-secondary);
+  font-size: 16px;
 }
 
 .searchInput {
   width: 100%;
-  padding: 10px 12px 10px 36px;
-  background-color: var(--input-bg);
+  padding: 12px 12px 12px 40px;
   border: 1px solid var(--border-color);
   border-radius: 8px;
+  background-color: var(--input-bg);
   color: var(--text-color);
   font-size: 14px;
 }
@@ -598,24 +583,26 @@
 }
 
 .cardsContainer {
-  padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
 .card {
-  background-color: var(--secondary-color);
-  border-radius: 12px;
-  padding: 16px;
+  background-color: var(--card-background);
   border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .cardHeader {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 16px;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .cardTitle {
@@ -623,65 +610,68 @@
   font-weight: 600;
   color: var(--text-color);
   margin: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .amountBadge {
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-weight: 500;
-  font-size: 14px;
+  font-weight: 600;
+  margin-left: 8px;
 }
 
 .incomeAmount {
-  background-color: rgba(0, 255, 133, 0.1);
-  color: var(--primary-color);
+  color: var(--success-color);
 }
 
 .cardDetails {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
 }
 
 .cardDetail {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
 }
 
 .cardLabel {
+  font-size: 12px;
   color: var(--text-secondary);
-  font-size: 14px;
+  margin-bottom: 2px;
 }
 
 .cardValue {
-  color: var(--text-color);
   font-size: 14px;
+  color: var(--text-color);
 }
 
 .typeStatus {
-  padding: 4px 8px;
+  display: inline-block;
+  padding: 2px 6px;
   border-radius: 4px;
   font-size: 12px;
   font-weight: 500;
 }
 
 .fixedType {
-  background-color: rgba(0, 255, 133, 0.1);
-  color: var(--primary-color);
+  background-color: var(--success-color);
+  color: white;
 }
 
 .oneTimeType {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: var(--text-color);
+  background-color: var(--warning-color);
+  color: var(--text-dark);
 }
 
 .cardActions {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  margin-top: 16px;
-  padding-top: 16px;
+  margin-top: 8px;
+  padding-top: 8px;
   border-top: 1px solid var(--border-color);
 }
 
@@ -692,18 +682,19 @@
   justify-content: center;
   width: 36px;
   height: 36px;
-  border-radius: 6px;
+  border-radius: 50%;
   border: none;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .editButton {
   background-color: var(--primary-color);
-  color: var(--secondary-color);
+  color: white;
 }
 
 .deleteButton {
-  background-color: var(--error-color);
+  background-color: var(--danger-color);
   color: white;
 }
 
@@ -711,8 +702,13 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   padding: 32px 16px;
   text-align: center;
+  background-color: var(--card-background);
+  border-radius: 8px;
+  border: 1px dashed var(--border-color);
+  margin-top: 16px;
 }
 
 .noDataIcon {
@@ -723,14 +719,14 @@
 .noDataMessage {
   font-size: 18px;
   font-weight: 600;
+  margin-bottom: 8px;
   color: var(--text-color);
-  margin: 0 0 8px 0;
 }
 
 .noDataSuggestion {
-  color: var(--text-secondary);
-  margin: 0 0 24px 0;
   font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 24px;
 }
 
 .noDataActions {
@@ -741,43 +737,46 @@
 .primaryButton {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  padding: 12px 20px;
-  background-color: var(--secondary-color);
-  border: 2px solid var(--primary-color);
-  color: var(--primary-color);
-  border-radius: 8px;
+  padding: 10px 16px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .loadingContainer,
 .errorContainer {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  min-height: 200px;
+  justify-content: center;
   padding: 32px 16px;
+  text-align: center;
+  background-color: var(--card-background);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  margin-top: 16px;
 }
 
 .loadingText,
 .errorText {
   font-size: 16px;
-  color: var(--text-color);
-}
-
-.errorText {
-  color: var(--error-color);
+  color: var(--text-secondary);
 }
 
 @keyframes slideDown {
   from {
+    max-height: 0;
     opacity: 0;
-    transform: translateY(-10px);
   }
   to {
+    max-height: 500px;
     opacity: 1;
-    transform: translateY(0);
   }
 } 
