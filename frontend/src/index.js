@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client'; // Importa createRoot
 import './index.css';
 import './styles/ios.css';
+import './styles/dataTable.module.css';
 import './styles/mobile/dataTable.mobile.module.css';
 import './styles/mobile/forms.mobile.css';
 import './styles/mobile/navbar.mobile.css';

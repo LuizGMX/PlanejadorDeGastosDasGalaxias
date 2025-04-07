@@ -2,6 +2,8 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../App';
 import styles from '../../styles/mobile/dashboard.mobile.css';
+import dataTableStyles from '../../styles/dataTable.module.css';
+import sharedStyles from '../../styles/shared.module.css';
 import { formatCurrency, formatDate, formatDateStringWithTimezone } from '../../utils/formatters';
 import { FaCalendarAlt, FaChartLine, FaPlus, FaChevronDown, FaChevronRight, FaSearch, FaFilter } from 'react-icons/fa';
 import { 

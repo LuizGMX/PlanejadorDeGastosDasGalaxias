@@ -30,6 +30,30 @@ import {
   BsEye,
   // ... other imports
 } from 'react-icons/bs';
+import dataTableStyles from '../styles/dataTable.module.css';
+import sharedStyles from '../styles/shared.module.css';
+import { toast } from 'react-hot-toast';
+import { 
+  BsPlusLg, 
+  BsCash, 
+  BsCalendar3, 
+  BsFilter, 
+  BsSearch, 
+  BsPencil, 
+  BsTrash, 
+  BsBank2, 
+  BsExclamationTriangle, 
+  BsRepeat, 
+  BsCurrencyDollar,
+  BsX,
+  BsCheckAll,
+  BsCheck2,
+  BsFolderSymlink,
+  BsListCheck,
+  BsChevronDown,
+  BsChevronUp,
+  BsArrowClockwise
+} from 'react-icons/bs';
 
 const motivationalPhrases = [
   "Cuide do seu dinheiro hoje para não precisar se preocupar amanhã.",
@@ -4121,13 +4145,13 @@ const Dashboard = () => {
                   className={styles.addExpenseButton}
                   onClick={() => navigate('/add-expense')}
                 >
-                  <FaPlus /> Adicionar Despesa
+                  <BsPlusLg /> Adicionar Despesa
                 </button>
                 <button 
                   className={styles.addIncomeButton}
                   onClick={() => navigate('/add-income')}
                 >
-                  <FaPlus /> Adicionar Receita
+                  <BsCash /> Adicionar Receita
                 </button>
               </div>
             </div>
@@ -4149,7 +4173,7 @@ const Dashboard = () => {
                   className={styles.addExpenseButton}
                   onClick={() => navigate('/add-expense')}
                 >
-                  <FaPlus /> Adicionar Despesa
+                  <BsPlusLg /> Adicionar Despesa
                 </button>
               </div>
             </div>
@@ -4171,7 +4195,7 @@ const Dashboard = () => {
                   className={styles.addIncomeButton}
                   onClick={() => navigate('/add-income')}
                 >
-                  <FaPlus /> Adicionar Receita
+                  <BsCash /> Adicionar Receita
                 </button>
               </div>
             </div>
@@ -4213,7 +4237,7 @@ const Dashboard = () => {
                 className={hasExpenses ? styles.addIncomeButton : styles.addExpenseButton}
                 onClick={() => navigate(hasExpenses ? '/add-income' : '/add-expense')}
               >
-                <FaPlus /> {hasExpenses ? 'Adicionar Receita' : 'Adicionar Despesa'}
+                <BsPlusLg /> {hasExpenses ? 'Adicionar Receita' : 'Adicionar Despesa'}
               </button>
             </div>
           </div>

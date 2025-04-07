@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../App';
 import Income from './Income';
 import MobileIncomes from './mobile/MobileIncomes';
+import dataTableStyles from '../styles/dataTable.module.css';
 
 const IncomesWrapper = () => {
   const navigate = useNavigate();

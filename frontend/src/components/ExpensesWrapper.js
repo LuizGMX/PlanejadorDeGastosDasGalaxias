@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../App';
 import Expenses from './Expenses';
 import MobileExpenses from './mobile/MobileExpenses';
+import '../styles/dataTable.module.css';
 
 const ExpensesWrapper = () => {
   const navigate = useNavigate();
