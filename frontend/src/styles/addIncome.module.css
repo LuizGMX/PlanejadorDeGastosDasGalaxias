@@ -1,19 +1,5 @@
 /* addIncome.module.css */
-:root {
-  --primary-color: #00FF85;
-  --secondary-color: #1A1B23;
-  --background-color: #13141B;
-  --card-background: #1A1B23;
-  --text-color: #FFFFFF;
-  --text-secondary: #8B8D97;
-  --error-color: #FF6B6B;
-  --success-color: #51CF66;
-  --border-color: #2A2B33;
-  --hover-color: #00E676;
-  --input-background: #2A2B33;
-  --gradient-start: #00FF85;
-  --gradient-end: #80FFB9;
-}
+@import './variables.css';
 
 .title {
   color: var(--primary-color) !important;
@@ -34,6 +20,10 @@
   padding: 0;
   overflow: hidden;
   box-sizing: border-box;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
 }
 
 .card {

@@ -1,0 +1,45 @@
+:root {
+  /* Cores principais */
+  --primary-color: #00FF85;
+  --primary-color-dark: #00E676;
+  --secondary-color: #1A1B23;
+  --background-color: #13141B;
+  --card-background: #1A1B23;
+  --surface-color: #2A2B33;
+  
+  /* Cores de texto */
+  --text-color: #FFFFFF;
+  --text-secondary: #8B8D97;
+  
+  /* Cores de estado */
+  --error-color: #FF6B6B;
+  --success-color: #51CF66;
+  --error-background: rgba(255, 107, 107, 0.1);
+  --success-background: rgba(81, 207, 102, 0.1);
+  
+  /* Cores de borda e hover */
+  --border-color: #2A2B33;
+  --hover-color: #00E676;
+  
+  /* Cores de input e botão */
+  --input-background: #2A2B33;
+  --button-text-color: #000000;
+  --button-background-color: #00FF85;
+  --button-hover: #1976d2;
+  --button-disabled: #ccc;
+  
+  /* Cores de gradiente */
+  --gradient-start: #00FF85;
+  --gradient-end: #80FFB9;
+  
+  /* Cores de modal */
+  --modal-background: rgba(0, 0, 0, 0.5);
+  --modal-content-background: #fff;
+  
+  /* Cores de toggle e status */
+  --toggle-active: #e3f2fd;
+  --toggle-hover: #f5f5f5;
+  --type-status-background: #f5f5f5;
+  --installment-type-color: #2196f3;
+  --fixed-type-color: #4caf50;
+} 

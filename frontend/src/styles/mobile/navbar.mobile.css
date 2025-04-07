@@ -1,4 +1,5 @@
 /* Navbar Mobile Styles */
+@import '../variables.css';
 
 .mobileNavbar {
   position: fixed;

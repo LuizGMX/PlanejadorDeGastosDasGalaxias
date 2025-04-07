@@ -3,6 +3,15 @@
  * This file contains CSS variables and fixes specifically for iOS devices
  */
 
+@import './variables.css';
+
+/* iOS-specific styles */
+@supports (-webkit-touch-callout: none) {
+  html, body {
+    height: -webkit-fill-available;
+  }
+}
+
 /* CSS variables for proper viewport height on iOS */
 :root {
   --vh: 1vh; /* Will be set dynamically via JavaScript */

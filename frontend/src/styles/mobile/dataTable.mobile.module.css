@@ -1,5 +1,6 @@
 /* Adicionar fontes e variáveis globais */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+@import '../variables.css';
 
 :root {
   --primary-green: #00ff85;
@@ -572,6 +573,12 @@
 
 /* Estilos para o container principal */
 .container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  background-color: var(--background-color);
+  border-radius: 8px;
+  margin-bottom: 20px;
   padding: 16px;
   background-color: var(--background-system);
   min-height: 100vh;

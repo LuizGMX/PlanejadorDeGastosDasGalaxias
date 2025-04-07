@@ -1,4 +1,6 @@
 /* Mobile styles for forms and modals */
+@import '../variables.css';
+
 @media (max-width: 768px) {
   .formModal {
     padding: 16px;

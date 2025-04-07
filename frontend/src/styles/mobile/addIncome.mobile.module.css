@@ -1,34 +1,5 @@
 /* addIncome.module.css */
-:root {
-  --primary-color: #2196f3;
-  --secondary-color: #607d8b;
-  --background-color: #f5f5f5;
-  --card-background: #1A1B23;
-  --text-color: #333;
-  --text-secondary: #8B8D97;
-  --error-color: #f44336;
-  --success-color: #4caf50;
-  --border-color: #ddd;
-  --hover-color: #00E676;
-  --input-background: #fff;
-  --input-border: #ddd;
-  --input-focus-border: #2196f3;
-  --gradient-start: #00FF85;
-  --gradient-end: #80FFB9;
-  --error-background: rgba(255, 107, 107, 0.1);
-  --success-background: rgba(81, 207, 102, 0.1);
-  --surface-color: #2A2B33;
-  --primary-color-dark: #00E676;
-  --modal-background: rgba(0, 0, 0, 0.5);
-  --modal-content-background: #fff;
-  --button-hover: #1976d2;
-  --button-disabled: #ccc;
-  --toggle-active: #e3f2fd;
-  --toggle-hover: #f5f5f5;
-  --type-status-background: #f5f5f5;
-  --installment-type-color: #2196f3;
-  --fixed-type-color: #4caf50;
-}
+@import '../variables.css';
 
 .container {
   display: flex;

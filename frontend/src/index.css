@@ -1,20 +1,4 @@
-:root {
-  --primary-color: #00FF85;
-  --secondary-color: #1A1B23;
-  --background-color: #13141B;
-  --card-background: #1A1B23;
-  --text-color: #FFFFFF;
-  --text-secondary: #8B8D97;
-  --error-color: #FF6B6B;
-  --success-color: #51CF66;
-  --border-color: #2A2B33;
-  --hover-color: #00E676;
-  --input-background: #2A2B33;
-  --gradient-start: #00FF85;
-  --gradient-end: #80FFB9;
-  --button-text-color: #000000;
-  --button-background-color: #00FF85;
-}
+@import './styles/variables.css';
 
 /* iOS-specific viewport fix */
 @supports (-webkit-touch-callout: none) {

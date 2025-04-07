@@ -1,27 +1,13 @@
 /* dataTable.module.css - Estilos compartilhados para telas de listagem */
 /* Estilos gerais do código 1 */
-:root {
-  --primary-color: #00ff85;
-  --primary-rgb: 0, 255, 133;
-  --secondary-color: #1A1B23;
-  --background: #121212;
-  --card-background: #1e1e1e;
-  --input-bg: #2a2a2a;
-  --hover-bg: #333333;
-  --text-color: #ffffff;
-  --text-secondary: #aaaaaa;
-  --border-color: #444444;
-  --border-hover: #666666;
-  --error-color: #ff6b6b;
-  --error-rgb: 255, 107, 107;
-  --success-color: #00ff85;
-  --success-rgb: 0, 255, 133;
-  --warning-color: #ffb946;
-  --warning-rgb: 255, 185, 70;
-  --background-color: #13141B;
-  --hover-color: #00E676;
-  --gradient-start: #00FF85;
-  --gradient-end: #80FFB9;
+@import './variables.css';
+
+.container {
+  width: 100%;
+  overflow-x: auto;
+  background-color: var(--background-color);
+  border-radius: 8px;
+  margin-bottom: 20px;
 }
 
 .successMessage {
