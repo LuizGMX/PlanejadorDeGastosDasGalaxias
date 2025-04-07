@@ -84,11 +84,18 @@ const Income = ({
     isArray: Array.isArray(incomes), 
     incomesLength: incomes?.length,
     loading,
-    error
+    error,
+    incomesData: incomes // Log dos dados completos
   });
   
   // Garantir que incomes seja um array
   const safeIncomes = Array.isArray(incomes) ? incomes : [];
+  
+  // Log após o tratamento dos dados
+  console.log('Income safeIncomes:', {
+    length: safeIncomes.length,
+    data: safeIncomes
+  });
 
   // Lista de anos para o filtro
   const years = Array.from(

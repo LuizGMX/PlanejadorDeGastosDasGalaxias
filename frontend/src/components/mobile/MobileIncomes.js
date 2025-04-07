@@ -24,7 +24,8 @@ const MobileIncomes = ({
     isArray: Array.isArray(incomes), 
     incomesLength: incomes?.length,
     loading,
-    error
+    error,
+    incomesData: incomes // Log dos dados completos
   });
 
   const handleSearch = (e) => {
@@ -55,11 +56,17 @@ const MobileIncomes = ({
 
   const safeIncomes = Array.isArray(incomes) ? incomes : [];
   
+  // Log após o tratamento dos dados
+  console.log('MobileIncomes safeIncomes:', {
+    length: safeIncomes.length,
+    data: safeIncomes
+  });
+  
   if (safeIncomes.length === 0) {
     return (
       <div className={styles.noDataContainer}>
         <div className={styles.noDataIcon}>💰</div>
-        <h3 className={styles.noDataMessage}>Nenhuma receita encontrada</h3>
+        <h3 className={styles.noDataMessage}>Nenhuma receita encontrada - MOBILE!</h3>
         <p className={styles.noDataSuggestion}>
           Comece adicionando sua primeira receita clicando no botão abaixo
         </p>

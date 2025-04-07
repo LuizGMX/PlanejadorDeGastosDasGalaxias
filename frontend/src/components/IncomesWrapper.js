@@ -93,11 +93,18 @@ const IncomesWrapper = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
+        console.log('Iniciando busca de receitas...');
         // Buscar receitas
-        const incomesResponse = await fetch('/api/incomes', {
+        const incomesResponse = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes`, {
           headers: {
             'Authorization': `Bearer ${auth.token}`
           }
+        });
+        
+        console.log('Resposta da API de receitas:', {
+          status: incomesResponse.status,
+          ok: incomesResponse.ok,
+          statusText: incomesResponse.statusText
         });
         
         if (!incomesResponse.ok) {
@@ -105,11 +112,24 @@ const IncomesWrapper = () => {
         }
         
         const incomesData = await incomesResponse.json();
+        console.log('Dados de receitas recebidos:', {
+          type: typeof incomesData,
+          isArray: Array.isArray(incomesData),
+          length: incomesData?.length,
+          data: incomesData
+        });
+        
         // Garantir que incomes seja sempre um array
-        setIncomes(Array.isArray(incomesData) ? incomesData : []);
+        const safeIncomes = Array.isArray(incomesData) ? incomesData : [];
+        console.log('Receitas após tratamento:', {
+          length: safeIncomes.length,
+          data: safeIncomes
+        });
+        
+        setIncomes(safeIncomes);
 
         // Buscar categorias
-        const categoriesResponse = await fetch('/api/categories', {
+        const categoriesResponse = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/categories`, {
           headers: {
             'Authorization': `Bearer ${auth.token}`
           }
@@ -123,7 +143,7 @@ const IncomesWrapper = () => {
         setCategories(Array.isArray(categoriesData) ? categoriesData : []);
 
         // Buscar bancos
-        const banksResponse = await fetch('/api/banks', {
+        const banksResponse = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/banks`, {
           headers: {
             'Authorization': `Bearer ${auth.token}`
           }
@@ -148,6 +168,14 @@ const IncomesWrapper = () => {
 
     fetchData();
   }, [auth.token]);
+
+  // Log do estado antes da renderização
+  console.log('IncomesWrapper render:', {
+    incomesLength: incomes.length,
+    loading,
+    error,
+    isMobile
+  });
 
   // Renderização condicional baseada no dispositivo
   return isMobile ? (
