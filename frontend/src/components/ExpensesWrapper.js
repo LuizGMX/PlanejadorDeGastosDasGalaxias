@@ -68,7 +68,20 @@ const ExpensesWrapper = () => {
   const handleSearch = (term) => {
     console.log('Searching for:', term);
     setSearchTerm(term);
-    filterExpenses(term);
+    
+    // Atualizar o termo de busca e aplicar filtros no backend
+    setTimeout(() => {
+      const backendFilters = {
+        month: filters.months !== 'all' ? filters.months : undefined,
+        year: filters.years !== 'all' ? filters.years : undefined,
+        category_id: filters.category !== 'all' ? filters.category : undefined,
+        bank_id: filters.paymentMethod !== 'all' ? filters.paymentMethod : undefined,
+        is_recurring: filters.is_recurring !== '' ? filters.is_recurring : undefined,
+        description: term || undefined
+      };
+      
+      fetchData(backendFilters);
+    }, 0);
   };
 
   const handleFilter = (type, value) => {
@@ -78,7 +91,7 @@ const ExpensesWrapper = () => {
     if (type === 'resetAllFilters' && value === true) {
       console.log('Resetting all filters - showing all data');
       
-      // Resetar o estado dos filtros para valores padrão, mas não aplicar filtragem
+      // Resetar o estado dos filtros para valores padrão
       setFilters({
         months: 'all',
         years: 'all',
@@ -89,136 +102,30 @@ const ExpensesWrapper = () => {
         is_recurring: ''
       });
       
-      // Mostrar todos os dados originais sem filtrar
-      setFilteredExpenses([...originalExpenses]);
-      setExpenses([...originalExpenses]);
-      console.log('Reset complete - showing all', originalExpenses.length, 'expenses');
+      // Buscar todos os dados sem filtros
+      fetchData();
       return;
     }
     
-    // Atualizar o estado do filtro
+    // Atualizar o estado do filtro e depois buscar os dados
     setFilters(prevFilters => {
-      // Criar uma cópia do estado atual dos filtros
       const newFilters = { ...prevFilters };
-      
-      // Atualizar apenas o filtro específico que está sendo modificado
       newFilters[type] = value;
       
-      console.log('New filters state:', newFilters);
-      
-      // Aplicar todos os filtros aos dados originais
-      let filtered = [...originalExpenses];
-      console.log('Starting filtering with', filtered.length, 'expenses from original list');
-      
-      // Agora aplicamos os filtros um por um, verificando se cada um está ativo
-      
-      // Filtrar por termo de busca, se existir
-      if (searchTerm) {
-        filtered = filtered.filter(expense => 
-          expense.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          expense.Category?.category_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          expense.Bank?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-        console.log('After search term filter:', filtered.length, 'expenses');
-      }
-      
-      // Filtrar por categoria
-      if (newFilters.category && newFilters.category !== 'all') {
-        filtered = filtered.filter(expense => expense.category_id === parseInt(newFilters.category, 10));
-        console.log('After category filter:', filtered.length, 'expenses');
-      }
-      
-      // Filtrar por método de pagamento
-      if (newFilters.paymentMethod && newFilters.paymentMethod !== 'all') {
-        filtered = filtered.filter(expense => expense.bank_id === parseInt(newFilters.paymentMethod, 10));
-        console.log('After payment method filter:', filtered.length, 'expenses');
-      }
-      
-      // Filtrar por tipo (recorrente ou não)
-      if (newFilters.is_recurring && newFilters.is_recurring !== '') {
-        const isRecurring = newFilters.is_recurring === 'true';
-        filtered = filtered.filter(expense => expense.is_recurring === isRecurring);
-        console.log('After recurring filter:', filtered.length, 'expenses');
-      }
-      
-      // Filtrar por mês somente se não for 'all'
-      if (newFilters.months && newFilters.months !== 'all') {
-        const months = Array.isArray(newFilters.months) ? newFilters.months : [newFilters.months];
-        console.log('Filtering by months:', months);
+      // Buscar dados com os novos filtros após atualizar o estado
+      setTimeout(() => {
+        // Aguardar a atualização do estado antes de aplicar os filtros
+        const backendFilters = {
+          month: newFilters.months !== 'all' ? newFilters.months : undefined,
+          year: newFilters.years !== 'all' ? newFilters.years : undefined,
+          category_id: newFilters.category !== 'all' ? newFilters.category : undefined,
+          bank_id: newFilters.paymentMethod !== 'all' ? newFilters.paymentMethod : undefined,
+          is_recurring: newFilters.is_recurring !== '' ? newFilters.is_recurring : undefined,
+          description: searchTerm || undefined
+        };
         
-        filtered = filtered.filter(expense => {
-          if (!expense.date) return false;
-          
-          try {
-            const dateStr = expense.date;
-            // Verificar se a data está em formato ISO ou outro formato
-            let expenseMonth;
-            
-            if (dateStr.includes('T') || dateStr.includes('-')) {
-              // Formato ISO ou yyyy-mm-dd
-              const parts = dateStr.split('T')[0].split('-');
-              expenseMonth = parseInt(parts[1], 10);
-            } else if (dateStr.includes('/')) {
-              // Formato dd/mm/yyyy
-              const parts = dateStr.split('/');
-              expenseMonth = parseInt(parts[1], 10);
-            } else {
-              // Tentar parse como timestamp
-              const expenseDate = new Date(dateStr);
-              expenseMonth = expenseDate.getMonth() + 1;
-            }
-            
-            console.log(`Expense date: ${dateStr}, extracted month: ${expenseMonth}`);
-            return months.includes(expenseMonth);
-          } catch (error) {
-            console.error('Erro ao interpretar data:', expense.date, error);
-            return false;
-          }
-        });
-        console.log('After month filter:', filtered.length, 'expenses');
-      }
-      
-      // Filtrar por ano somente se não for 'all'
-      if (newFilters.years && newFilters.years !== 'all') {
-        const years = Array.isArray(newFilters.years) ? newFilters.years : [newFilters.years];
-        console.log('Filtering by years:', years);
-        
-        filtered = filtered.filter(expense => {
-          if (!expense.date) return false;
-          
-          try {
-            const dateStr = expense.date;
-            // Verificar se a data está em formato ISO ou outro formato
-            let expenseYear;
-            
-            if (dateStr.includes('T') || dateStr.includes('-')) {
-              // Formato ISO ou yyyy-mm-dd
-              const parts = dateStr.split('T')[0].split('-');
-              expenseYear = parseInt(parts[0], 10);
-            } else if (dateStr.includes('/')) {
-              // Formato dd/mm/yyyy
-              const parts = dateStr.split('/');
-              expenseYear = parseInt(parts[2], 10);
-            } else {
-              // Tentar parse como timestamp
-              const expenseDate = new Date(dateStr);
-              expenseYear = expenseDate.getFullYear();
-            }
-            
-            console.log(`Expense date: ${dateStr}, extracted year: ${expenseYear}`);
-            return years.includes(expenseYear);
-          } catch (error) {
-            console.error('Erro ao interpretar data:', expense.date, error);
-            return false;
-          }
-        });
-        console.log('After year filter:', filtered.length, 'expenses');
-      }
-      
-      // Atualizar os dados filtrados
-      setFilteredExpenses(filtered);
-      setExpenses(filtered);
-      console.log('Final filtered expenses after all filters:', filtered.length);
+        fetchData(backendFilters);
+      }, 0);
       
       return newFilters;
     });
@@ -244,271 +151,235 @@ const ExpensesWrapper = () => {
 
   // Efeito para carregar dados
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        console.log('Iniciando busca de despesas...');
-        // Buscar despesas
-        const expensesResponse = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses`, {
-          headers: {
-            'Authorization': `Bearer ${auth.token}`
-          }
-        });
-        
-        console.log('Resposta da API de despesas:', {
-          status: expensesResponse.status,
-          ok: expensesResponse.ok,
-          statusText: expensesResponse.statusText
-        });
-        
-        if (!expensesResponse.ok) {
-          throw new Error('Erro ao carregar despesas');
-        }
-        
-        const expensesData = await expensesResponse.json();
-        console.log('Dados de despesas recebidos:', {
-          type: typeof expensesData,
-          isArray: Array.isArray(expensesData),
-          data: expensesData
-        });
-        
-        // Extrair os dados de despesas do objeto retornado
-        let extractedExpenses = [];
-        
-        if (typeof expensesData === 'object' && !Array.isArray(expensesData)) {
-          if (expensesData.data && Array.isArray(expensesData.data)) {
-            extractedExpenses = expensesData.data;
-          } else if (expensesData.expenses && Array.isArray(expensesData.expenses)) {
-            extractedExpenses = expensesData.expenses;
-          } else if (expensesData.items && Array.isArray(expensesData.items)) {
-            extractedExpenses = expensesData.items;
-          } else if (expensesData.records && Array.isArray(expensesData.records)) {
-            extractedExpenses = expensesData.records;
-          } else {
-            // Tentar encontrar qualquer propriedade que seja um array
-            for (const key in expensesData) {
-              if (Array.isArray(expensesData[key])) {
-                extractedExpenses = expensesData[key];
-                console.log(`Encontrado array na propriedade '${key}'`);
-                break;
-              }
-            }
-          }
-        } else if (Array.isArray(expensesData)) {
-          extractedExpenses = expensesData;
-        }
-        
-        console.log('Despesas extraídas:', {
-          length: extractedExpenses.length,
-          data: extractedExpenses
-        });
-        
-        setOriginalExpenses(extractedExpenses);
-        setFilteredExpenses(extractedExpenses);
-        setExpenses(extractedExpenses);
-        
-        // Exibe os dados antes de aplicar filtros
-        console.log("Dados carregados antes de filtros:", extractedExpenses.length);
-        
-        // Examine alguns dados para debug
-        if (extractedExpenses.length > 0) {
-          console.log("Exemplo de despesa:", extractedExpenses[0]);
-          console.log("Data da despesa:", extractedExpenses[0].date);
-          console.log("Formato da data:", typeof extractedExpenses[0].date);
-        }
-
-        // Buscar categorias
-        const categoriesResponse = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/categories`, {
-          headers: {
-            'Authorization': `Bearer ${auth.token}`
-          }
-        });
-        
-        if (!categoriesResponse.ok) {
-          throw new Error('Erro ao carregar categorias');
-        }
-        
-        const categoriesData = await categoriesResponse.json();
-        console.log('Dados de categorias recebidos:', {
-          type: typeof categoriesData,
-          isArray: Array.isArray(categoriesData),
-          data: categoriesData
-        });
-        
-        // Extrair os dados de categorias do objeto retornado
-        let extractedCategories = [];
-        
-        if (typeof categoriesData === 'object' && !Array.isArray(categoriesData)) {
-          if (categoriesData.data && Array.isArray(categoriesData.data)) {
-            extractedCategories = categoriesData.data;
-          } else if (categoriesData.categories && Array.isArray(categoriesData.categories)) {
-            extractedCategories = categoriesData.categories;
-          } else if (categoriesData.items && Array.isArray(categoriesData.items)) {
-            extractedCategories = categoriesData.items;
-          } else {
-            // Tentar encontrar qualquer propriedade que seja um array
-            for (const key in categoriesData) {
-              if (Array.isArray(categoriesData[key])) {
-                extractedCategories = categoriesData[key];
-                console.log(`Encontrado array de categorias na propriedade '${key}'`);
-                break;
-              }
-            }
-          }
-        } else if (Array.isArray(categoriesData)) {
-          extractedCategories = categoriesData;
-        }
-        
-        console.log('Categorias extraídas:', {
-          length: extractedCategories.length,
-          data: extractedCategories
-        });
-        
-        setCategories(extractedCategories);
-
-        // Buscar bancos
-        const banksResponse = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/banks`, {
-          headers: {
-            'Authorization': `Bearer ${auth.token}`
-          }
-        });
-        
-        if (!banksResponse.ok) {
-          throw new Error('Erro ao carregar bancos');
-        }
-        
-        const banksData = await banksResponse.json();
-        console.log('Dados de bancos recebidos:', {
-          type: typeof banksData,
-          isArray: Array.isArray(banksData),
-          data: banksData
-        });
-        
-        // Extrair os dados de bancos do objeto retornado
-        let extractedBanks = [];
-        
-        if (typeof banksData === 'object' && !Array.isArray(banksData)) {
-          if (banksData.data && Array.isArray(banksData.data)) {
-            extractedBanks = banksData.data;
-          } else if (banksData.banks && Array.isArray(banksData.banks)) {
-            extractedBanks = banksData.banks;
-          } else if (banksData.items && Array.isArray(banksData.items)) {
-            extractedBanks = banksData.items;
-          } else {
-            // Tentar encontrar qualquer propriedade que seja um array
-            for (const key in banksData) {
-              if (Array.isArray(banksData[key])) {
-                extractedBanks = banksData[key];
-                console.log(`Encontrado array de bancos na propriedade '${key}'`);
-                break;
-              }
-            }
-          }
-        } else if (Array.isArray(banksData)) {
-          extractedBanks = banksData;
-        }
-        
-        console.log('Bancos extraídos:', {
-          length: extractedBanks.length,
-          data: extractedBanks
-        });
-        
-        setBanks(extractedBanks);
-
-      } catch (error) {
-        console.error('Erro ao carregar dados:', error);
-        setError(error.message);
-        // Garantir que expenses seja um array vazio em caso de erro
-        setOriginalExpenses([]);
-        setFilteredExpenses([]);
-        setExpenses([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, [auth.token]);
 
-  // Efeito para aplicar filtros quando o termo de busca mudar
-  useEffect(() => {
-    filterExpenses(searchTerm);
-  }, [searchTerm, originalExpenses]);
-
-  // Efeito para aplicar filtros quando os dados originais forem carregados
-  useEffect(() => {
-    if (originalExpenses.length > 0) {
-      console.log('Dados originais carregados:', originalExpenses.length);
+  const fetchData = async (filterParams = {}) => {
+    try {
+      setLoading(true);
+      setError(null);
       
-      // TEMPORÁRIO: Mostra todos os dados sem filtrar
-      // Comentado para debugging
-      /*
-      // Reaplica o filtro de mês e ano atual
-      const currentFilters = { ...filters };
-      let filtered = [...originalExpenses];
+      // Construir os parâmetros da query
+      const queryParams = new URLSearchParams();
       
-      // Aplicar os filtros de data
-      if (currentFilters.months && currentFilters.months !== 'all') {
-        const months = Array.isArray(currentFilters.months) ? currentFilters.months : [currentFilters.months];
-        
-        filtered = filtered.filter(expense => {
-          if (!expense.date) return false;
-          
-          try {
-            const [year, month, day] = expense.date.split('T')[0].split('-').map(Number);
-            const expenseDate = new Date(year, month - 1, day);
-            const expenseMonth = expenseDate.getMonth() + 1;
-            return months.includes(expenseMonth);
-          } catch (error) {
-            console.error('Erro ao interpretar data:', expense.date, error);
-            return false;
-          }
-        });
+      // Adicionar os parâmetros de filtro à URL
+      if (filterParams.months && filterParams.months.length > 0) {
+        filterParams.months.forEach(month => queryParams.append('months[]', month));
       }
       
-      if (currentFilters.years && currentFilters.years !== 'all') {
-        const years = Array.isArray(currentFilters.years) ? currentFilters.years : [currentFilters.years];
-        
-        filtered = filtered.filter(expense => {
-          if (!expense.date) return false;
-          
-          try {
-            const [year, month, day] = expense.date.split('T')[0].split('-').map(Number);
-            const expenseDate = new Date(year, month - 1, day);
-            const expenseYear = expenseDate.getFullYear();
-            return years.includes(expenseYear);
-          } catch (error) {
-            console.error('Erro ao interpretar data:', expense.date, error);
-            return false;
-          }
-        });
+      if (filterParams.years && filterParams.years.length > 0) {
+        filterParams.years.forEach(year => queryParams.append('years[]', year));
       }
       
-      setFilteredExpenses(filtered);
-      setExpenses(filtered);
-      console.log('Filtros iniciais aplicados, resultando em', filtered.length, 'despesas');
-      */
+      if (filterParams.description) {
+        queryParams.append('description', filterParams.description);
+      }
       
-      // Por enquanto, exibindo todos os dados para depuração
-      setFilteredExpenses(originalExpenses);
-      setExpenses(originalExpenses);
-      console.log('Mostrando todos os dados sem filtrar:', originalExpenses.length);
+      if (filterParams.category && filterParams.category !== 'all') {
+        queryParams.append('category_id', filterParams.category);
+      }
+      
+      if (filterParams.bank && filterParams.bank !== 'all') {
+        queryParams.append('bank_id', filterParams.bank);
+      }
+      
+      if (filterParams.hasInstallments && filterParams.hasInstallments !== 'all') {
+        queryParams.append('has_installments', filterParams.hasInstallments === 'yes');
+      }
+      
+      if (filterParams.paymentMethod && filterParams.paymentMethod !== 'all') {
+        queryParams.append('payment_method', filterParams.paymentMethod);
+      }
+      
+      if (filterParams.is_recurring !== undefined && filterParams.is_recurring !== '') {
+        queryParams.append('is_recurring', filterParams.is_recurring);
+      }
+      
+      // Construir a URL com query params
+      const queryString = queryParams.toString();
+      const url = `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses${queryString ? `?${queryString}` : ''}`;
+      
+      console.log('URL da requisição:', url);
+      
+      // Buscar despesas com os filtros
+      const expensesResponse = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${auth.token}`
+        }
+      });
+      
+      console.log('Resposta da API de despesas:', {
+        status: expensesResponse.status,
+        ok: expensesResponse.ok,
+        statusText: expensesResponse.statusText
+      });
+      
+      if (!expensesResponse.ok) {
+        throw new Error('Erro ao carregar despesas');
+      }
+      
+      const expensesData = await expensesResponse.json();
+      console.log('Dados de despesas recebidos:', {
+        type: typeof expensesData,
+        isArray: Array.isArray(expensesData),
+        length: expensesData?.length,
+        sample: expensesData?.length > 0 ? expensesData[0] : null
+      });
+      
+      // Extração dos dados de despesas
+      let extractedExpenses = [];
+      
+      if (Array.isArray(expensesData)) {
+        extractedExpenses = expensesData;
+      } else {
+        console.error('Formato de dados inesperado:', expensesData);
+        extractedExpenses = [];
+      }
+      
+      console.log('Despesas extraídas:', {
+        length: extractedExpenses.length,
+        sample: extractedExpenses.length > 0 ? extractedExpenses[0] : null
+      });
+      
+      setOriginalExpenses(extractedExpenses);
+      setFilteredExpenses(extractedExpenses);
+      setExpenses(extractedExpenses);
+      
+      // Exibe os dados antes de aplicar filtros
+      console.log("Dados carregados antes de filtros:", extractedExpenses.length);
+      
+      // Examine alguns dados para debug
+      if (extractedExpenses.length > 0) {
+        console.log("Exemplo de despesa:", extractedExpenses[0]);
+        console.log("Data da despesa:", extractedExpenses[0].date);
+        console.log("Formato da data:", typeof extractedExpenses[0].date);
+      }
+
+      // Buscar categorias
+      const categoriesResponse = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/categories`, {
+        headers: {
+          'Authorization': `Bearer ${auth.token}`
+        }
+      });
+      
+      if (!categoriesResponse.ok) {
+        throw new Error('Erro ao carregar categorias');
+      }
+      
+      const categoriesData = await categoriesResponse.json();
+      console.log('Dados de categorias recebidos:', {
+        type: typeof categoriesData,
+        isArray: Array.isArray(categoriesData),
+        data: categoriesData
+      });
+      
+      // Extrair os dados de categorias do objeto retornado
+      let extractedCategories = [];
+      
+      if (typeof categoriesData === 'object' && !Array.isArray(categoriesData)) {
+        if (categoriesData.data && Array.isArray(categoriesData.data)) {
+          extractedCategories = categoriesData.data;
+        } else if (categoriesData.categories && Array.isArray(categoriesData.categories)) {
+          extractedCategories = categoriesData.categories;
+        } else if (categoriesData.items && Array.isArray(categoriesData.items)) {
+          extractedCategories = categoriesData.items;
+        } else {
+          // Tentar encontrar qualquer propriedade que seja um array
+          for (const key in categoriesData) {
+            if (Array.isArray(categoriesData[key])) {
+              extractedCategories = categoriesData[key];
+              console.log(`Encontrado array de categorias na propriedade '${key}'`);
+              break;
+            }
+          }
+        }
+      } else if (Array.isArray(categoriesData)) {
+        extractedCategories = categoriesData;
+      }
+      
+      console.log('Categorias extraídas:', {
+        length: extractedCategories.length,
+        data: extractedCategories
+      });
+      
+      setCategories(extractedCategories);
+
+      // Buscar bancos
+      const banksResponse = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/banks`, {
+        headers: {
+          'Authorization': `Bearer ${auth.token}`
+        }
+      });
+      
+      if (!banksResponse.ok) {
+        throw new Error('Erro ao carregar bancos');
+      }
+      
+      const banksData = await banksResponse.json();
+      console.log('Dados de bancos recebidos:', {
+        type: typeof banksData,
+        isArray: Array.isArray(banksData),
+        data: banksData
+      });
+      
+      // Extrair os dados de bancos do objeto retornado
+      let extractedBanks = [];
+      
+      if (typeof banksData === 'object' && !Array.isArray(banksData)) {
+        if (banksData.data && Array.isArray(banksData.data)) {
+          extractedBanks = banksData.data;
+        } else if (banksData.banks && Array.isArray(banksData.banks)) {
+          extractedBanks = banksData.banks;
+        } else if (banksData.items && Array.isArray(banksData.items)) {
+          extractedBanks = banksData.items;
+        } else {
+          // Tentar encontrar qualquer propriedade que seja um array
+          for (const key in banksData) {
+            if (Array.isArray(banksData[key])) {
+              extractedBanks = banksData[key];
+              console.log(`Encontrado array de bancos na propriedade '${key}'`);
+              break;
+            }
+          }
+        }
+      } else if (Array.isArray(banksData)) {
+        extractedBanks = banksData;
+      }
+      
+      console.log('Bancos extraídos:', {
+        length: extractedBanks.length,
+        data: extractedBanks
+      });
+      
+      setBanks(extractedBanks);
+
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+      setError(error.message);
+      setOriginalExpenses([]);
+      setFilteredExpenses([]);
+      setExpenses([]);
+    } finally {
+      setLoading(false);
     }
-  }, [originalExpenses]);
+  };
 
-  const filterExpenses = (term = searchTerm) => {
-    let filtered = [...originalExpenses];
-
-    if (term) {
-      filtered = filtered.filter(expense => 
-        expense.description?.toLowerCase().includes(term.toLowerCase()) ||
-        expense.Category?.category_name?.toLowerCase().includes(term.toLowerCase()) ||
-        expense.Bank?.name?.toLowerCase().includes(term.toLowerCase())
-      );
-    }
-
-    setFilteredExpenses(filtered);
-    setExpenses(filtered);
+  // Aplicar filtros no backend
+  const applyFilters = async () => {
+    // Mapear os filtros do estado para o formato que o backend espera
+    const backendFilters = {
+      month: filters.months !== 'all' ? filters.months : undefined,
+      year: filters.years !== 'all' ? filters.years : undefined,
+      category_id: filters.category !== 'all' ? filters.category : undefined,
+      bank_id: filters.paymentMethod !== 'all' ? filters.paymentMethod : undefined,
+      is_recurring: filters.is_recurring !== '' ? filters.is_recurring : undefined,
+      description: searchTerm || undefined
+    };
+    
+    console.log('Aplicando filtros no backend:', backendFilters);
+    
+    // Buscar dados com filtros
+    await fetchData(backendFilters);
   };
 
   // Log do estado antes da renderização

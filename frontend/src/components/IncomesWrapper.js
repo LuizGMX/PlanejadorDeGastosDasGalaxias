@@ -66,7 +66,20 @@ const IncomesWrapper = () => {
   const handleSearch = (term) => {
     console.log('Searching for:', term);
     setSearchTerm(term);
-    filterIncomes(term);
+    
+    // Atualizar o termo de busca e aplicar filtros no backend
+    setTimeout(() => {
+      const backendFilters = {
+        month: filters.months !== 'all' ? filters.months : undefined,
+        year: filters.years !== 'all' ? filters.years : undefined,
+        category_id: filters.category_id !== 'all' ? filters.category_id : undefined,
+        bank_id: filters.bank_id !== 'all' ? filters.bank_id : undefined,
+        is_recurring: filters.is_recurring !== '' ? filters.is_recurring : undefined,
+        description: term || undefined
+      };
+      
+      fetchData(backendFilters);
+    }, 0);
   };
 
   const handleFilter = (type, value) => {
@@ -76,7 +89,7 @@ const IncomesWrapper = () => {
     if (type === 'resetAllFilters' && value === true) {
       console.log('Resetting all filters - showing all data');
       
-      // Resetar o estado dos filtros para valores padrão, mas não aplicar filtragem
+      // Resetar o estado dos filtros para valores padrão
       setFilters({
         months: 'all',
         years: 'all',
@@ -86,136 +99,30 @@ const IncomesWrapper = () => {
         is_recurring: ''
       });
       
-      // Mostrar todos os dados originais sem filtrar
-      setFilteredIncomes([...originalIncomes]);
-      setIncomes([...originalIncomes]);
-      console.log('Reset complete - showing all', originalIncomes.length, 'incomes');
+      // Buscar todos os dados sem filtros
+      fetchData();
       return;
     }
     
-    // Atualizar o estado do filtro
+    // Atualizar o estado do filtro e depois buscar os dados
     setFilters(prevFilters => {
-      // Criar uma cópia do estado atual dos filtros
       const newFilters = { ...prevFilters };
-      
-      // Atualizar apenas o filtro específico que está sendo modificado
       newFilters[type] = value;
       
-      console.log('New filters state:', newFilters);
-      
-      // Aplicar todos os filtros aos dados originais
-      let filtered = [...originalIncomes];
-      console.log('Starting filtering with', filtered.length, 'incomes from original list');
-      
-      // Agora aplicamos os filtros um por um, verificando se cada um está ativo
-      
-      // Filtrar por termo de busca, se existir
-      if (searchTerm) {
-        filtered = filtered.filter(income => 
-          income.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          income.Category?.category_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          income.Bank?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-        console.log('After search term filter:', filtered.length, 'incomes');
-      }
-      
-      // Filtrar por categoria
-      if (newFilters.category_id && newFilters.category_id !== 'all') {
-        filtered = filtered.filter(income => income.category_id === parseInt(newFilters.category_id, 10));
-        console.log('After category filter:', filtered.length, 'incomes');
-      }
-      
-      // Filtrar por banco
-      if (newFilters.bank_id && newFilters.bank_id !== 'all') {
-        filtered = filtered.filter(income => income.bank_id === parseInt(newFilters.bank_id, 10));
-        console.log('After bank filter:', filtered.length, 'incomes');
-      }
-      
-      // Filtrar por tipo (recorrente ou não)
-      if (newFilters.is_recurring && newFilters.is_recurring !== '') {
-        const isRecurring = newFilters.is_recurring === 'true';
-        filtered = filtered.filter(income => income.is_recurring === isRecurring);
-        console.log('After recurring filter:', filtered.length, 'incomes');
-      }
-      
-      // Filtrar por mês somente se não for 'all'
-      if (newFilters.months && newFilters.months !== 'all') {
-        const months = Array.isArray(newFilters.months) ? newFilters.months : [newFilters.months];
-        console.log('Filtering by months:', months);
+      // Buscar dados com os novos filtros após atualizar o estado
+      setTimeout(() => {
+        // Aguardar a atualização do estado antes de aplicar os filtros
+        const backendFilters = {
+          month: newFilters.months !== 'all' ? newFilters.months : undefined,
+          year: newFilters.years !== 'all' ? newFilters.years : undefined,
+          category_id: newFilters.category_id !== 'all' ? newFilters.category_id : undefined,
+          bank_id: newFilters.bank_id !== 'all' ? newFilters.bank_id : undefined,
+          is_recurring: newFilters.is_recurring !== '' ? newFilters.is_recurring : undefined,
+          description: searchTerm || undefined
+        };
         
-        filtered = filtered.filter(income => {
-          if (!income.date) return false;
-          
-          try {
-            const dateStr = income.date;
-            // Verificar se a data está em formato ISO ou outro formato
-            let incomeMonth;
-            
-            if (dateStr.includes('T') || dateStr.includes('-')) {
-              // Formato ISO ou yyyy-mm-dd
-              const parts = dateStr.split('T')[0].split('-');
-              incomeMonth = parseInt(parts[1], 10);
-            } else if (dateStr.includes('/')) {
-              // Formato dd/mm/yyyy
-              const parts = dateStr.split('/');
-              incomeMonth = parseInt(parts[1], 10);
-            } else {
-              // Tentar parse como timestamp
-              const incomeDate = new Date(dateStr);
-              incomeMonth = incomeDate.getMonth() + 1;
-            }
-            
-            console.log(`Income date: ${dateStr}, extracted month: ${incomeMonth}`);
-            return months.includes(incomeMonth);
-          } catch (error) {
-            console.error('Erro ao interpretar data:', income.date, error);
-            return false;
-          }
-        });
-        console.log('After month filter:', filtered.length, 'incomes');
-      }
-      
-      // Filtrar por ano somente se não for 'all'
-      if (newFilters.years && newFilters.years !== 'all') {
-        const years = Array.isArray(newFilters.years) ? newFilters.years : [newFilters.years];
-        console.log('Filtering by years:', years);
-        
-        filtered = filtered.filter(income => {
-          if (!income.date) return false;
-          
-          try {
-            const dateStr = income.date;
-            // Verificar se a data está em formato ISO ou outro formato
-            let incomeYear;
-            
-            if (dateStr.includes('T') || dateStr.includes('-')) {
-              // Formato ISO ou yyyy-mm-dd
-              const parts = dateStr.split('T')[0].split('-');
-              incomeYear = parseInt(parts[0], 10);
-            } else if (dateStr.includes('/')) {
-              // Formato dd/mm/yyyy
-              const parts = dateStr.split('/');
-              incomeYear = parseInt(parts[2], 10);
-            } else {
-              // Tentar parse como timestamp
-              const incomeDate = new Date(dateStr);
-              incomeYear = incomeDate.getFullYear();
-            }
-            
-            console.log(`Income date: ${dateStr}, extracted year: ${incomeYear}`);
-            return years.includes(incomeYear);
-          } catch (error) {
-            console.error('Erro ao interpretar data:', income.date, error);
-            return false;
-          }
-        });
-        console.log('After year filter:', filtered.length, 'incomes');
-      }
-      
-      // Atualizar os dados filtrados
-      setFilteredIncomes(filtered);
-      setIncomes(filtered);
-      console.log('Final filtered incomes after all filters:', filtered.length);
+        fetchData(backendFilters);
+      }, 0);
       
       return newFilters;
     });
@@ -244,274 +151,230 @@ const IncomesWrapper = () => {
 
   // Efeito para carregar dados
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        console.log('Iniciando busca de receitas...');
-        // Buscar receitas
-        const incomesResponse = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes`, {
-          headers: {
-            'Authorization': `Bearer ${auth.token}`
-          }
-        });
-        
-        console.log('Resposta da API de receitas:', {
-          status: incomesResponse.status,
-          ok: incomesResponse.ok,
-          statusText: incomesResponse.statusText
-        });
-        
-        if (!incomesResponse.ok) {
-          throw new Error('Erro ao carregar receitas');
-        }
-        
-        const incomesData = await incomesResponse.json();
-        console.log('Dados de receitas recebidos:', {
-          type: typeof incomesData,
-          isArray: Array.isArray(incomesData),
-          length: incomesData?.length,
-          data: incomesData
-        });
-        
-        // Extrair os dados de receitas do objeto retornado
-        let extractedIncomes = [];
-        
-        // Verificar se é um objeto e tem uma propriedade que contém os dados
-        if (typeof incomesData === 'object' && !Array.isArray(incomesData)) {
-          // Verificar propriedades comuns que podem conter os dados
-          if (incomesData.data && Array.isArray(incomesData.data)) {
-            extractedIncomes = incomesData.data;
-          } else if (incomesData.incomes && Array.isArray(incomesData.incomes)) {
-            extractedIncomes = incomesData.incomes;
-          } else if (incomesData.items && Array.isArray(incomesData.items)) {
-            extractedIncomes = incomesData.items;
-          } else if (incomesData.records && Array.isArray(incomesData.records)) {
-            extractedIncomes = incomesData.records;
-          } else {
-            // Tentar encontrar qualquer propriedade que seja um array
-            for (const key in incomesData) {
-              if (Array.isArray(incomesData[key])) {
-                extractedIncomes = incomesData[key];
-                console.log(`Encontrado array na propriedade '${key}'`);
-                break;
-              }
-            }
-          }
-        } else if (Array.isArray(incomesData)) {
-          extractedIncomes = incomesData;
-        }
-        
-        console.log('Receitas extraídas:', {
-          length: extractedIncomes.length,
-          data: extractedIncomes
-        });
-        
-        setOriginalIncomes(extractedIncomes);
-        setFilteredIncomes(extractedIncomes);
-        setIncomes(extractedIncomes);
-        
-        // Exibe os dados antes de aplicar filtros
-        console.log("Dados carregados antes de filtros:", extractedIncomes.length);
-        
-        // Examine alguns dados para debug
-        if (extractedIncomes.length > 0) {
-          console.log("Exemplo de receita:", extractedIncomes[0]);
-          console.log("Data da receita:", extractedIncomes[0].date);
-          console.log("Formato da data:", typeof extractedIncomes[0].date);
-        }
-
-        // Buscar categorias
-        const categoriesResponse = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/categories`, {
-          headers: {
-            'Authorization': `Bearer ${auth.token}`
-          }
-        });
-        
-        if (!categoriesResponse.ok) {
-          throw new Error('Erro ao carregar categorias');
-        }
-        
-        const categoriesData = await categoriesResponse.json();
-        console.log('Dados de categorias recebidos:', {
-          type: typeof categoriesData,
-          isArray: Array.isArray(categoriesData),
-          data: categoriesData
-        });
-        
-        // Extrair os dados de categorias do objeto retornado
-        let extractedCategories = [];
-        
-        if (typeof categoriesData === 'object' && !Array.isArray(categoriesData)) {
-          if (categoriesData.data && Array.isArray(categoriesData.data)) {
-            extractedCategories = categoriesData.data;
-          } else if (categoriesData.categories && Array.isArray(categoriesData.categories)) {
-            extractedCategories = categoriesData.categories;
-          } else if (categoriesData.items && Array.isArray(categoriesData.items)) {
-            extractedCategories = categoriesData.items;
-          } else {
-            // Tentar encontrar qualquer propriedade que seja um array
-            for (const key in categoriesData) {
-              if (Array.isArray(categoriesData[key])) {
-                extractedCategories = categoriesData[key];
-                console.log(`Encontrado array de categorias na propriedade '${key}'`);
-                break;
-              }
-            }
-          }
-        } else if (Array.isArray(categoriesData)) {
-          extractedCategories = categoriesData;
-        }
-        
-        console.log('Categorias extraídas:', {
-          length: extractedCategories.length,
-          data: extractedCategories
-        });
-        
-        setCategories(extractedCategories);
-
-        // Buscar bancos
-        const banksResponse = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/banks`, {
-          headers: {
-            'Authorization': `Bearer ${auth.token}`
-          }
-        });
-        
-        if (!banksResponse.ok) {
-          throw new Error('Erro ao carregar bancos');
-        }
-        
-        const banksData = await banksResponse.json();
-        console.log('Dados de bancos recebidos:', {
-          type: typeof banksData,
-          isArray: Array.isArray(banksData),
-          data: banksData
-        });
-        
-        // Extrair os dados de bancos do objeto retornado
-        let extractedBanks = [];
-        
-        if (typeof banksData === 'object' && !Array.isArray(banksData)) {
-          if (banksData.data && Array.isArray(banksData.data)) {
-            extractedBanks = banksData.data;
-          } else if (banksData.banks && Array.isArray(banksData.banks)) {
-            extractedBanks = banksData.banks;
-          } else if (banksData.items && Array.isArray(banksData.items)) {
-            extractedBanks = banksData.items;
-          } else {
-            // Tentar encontrar qualquer propriedade que seja um array
-            for (const key in banksData) {
-              if (Array.isArray(banksData[key])) {
-                extractedBanks = banksData[key];
-                console.log(`Encontrado array de bancos na propriedade '${key}'`);
-                break;
-              }
-            }
-          }
-        } else if (Array.isArray(banksData)) {
-          extractedBanks = banksData;
-        }
-        
-        console.log('Bancos extraídos:', {
-          length: extractedBanks.length,
-          data: extractedBanks
-        });
-        
-        setBanks(extractedBanks);
-
-      } catch (error) {
-        console.error('Erro ao carregar dados:', error);
-        setError(error.message);
-        // Garantir que incomes seja um array vazio em caso de erro
-        setOriginalIncomes([]);
-        setFilteredIncomes([]);
-        setIncomes([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, [auth.token]);
 
-  // Efeito para aplicar filtros quando o termo de busca mudar
-  useEffect(() => {
-    filterIncomes(searchTerm);
-  }, [searchTerm, originalIncomes]);
-
-  // Efeito para aplicar filtros quando os dados originais forem carregados
-  useEffect(() => {
-    if (originalIncomes.length > 0) {
-      console.log('Dados originais carregados:', originalIncomes.length);
+  const fetchData = async (filterParams = {}) => {
+    try {
+      setLoading(true);
+      setError(null);
       
-      // TEMPORÁRIO: Mostra todos os dados sem filtrar
-      // Comentado para debugging
-      /*
-      // Reaplica o filtro de mês e ano atual
-      const currentFilters = { ...filters };
-      let filtered = [...originalIncomes];
+      // Construir os parâmetros da query
+      const queryParams = new URLSearchParams();
       
-      // Aplicar os filtros de data
-      if (currentFilters.months && currentFilters.months !== 'all') {
-        const months = Array.isArray(currentFilters.months) ? currentFilters.months : [currentFilters.months];
-        
-        filtered = filtered.filter(income => {
-          if (!income.date) return false;
-          
-          try {
-            const [year, month, day] = income.date.split('T')[0].split('-').map(Number);
-            const incomeDate = new Date(year, month - 1, day);
-            const incomeMonth = incomeDate.getMonth() + 1;
-            return months.includes(incomeMonth);
-          } catch (error) {
-            console.error('Erro ao interpretar data:', income.date, error);
-            return false;
-          }
-        });
+      // Adicionar os parâmetros de filtro à URL
+      if (filterParams.months && filterParams.months.length > 0) {
+        filterParams.months.forEach(month => queryParams.append('months[]', month));
       }
       
-      if (currentFilters.years && currentFilters.years !== 'all') {
-        const years = Array.isArray(currentFilters.years) ? currentFilters.years : [currentFilters.years];
-        
-        filtered = filtered.filter(income => {
-          if (!income.date) return false;
-          
-          try {
-            const [year, month, day] = income.date.split('T')[0].split('-').map(Number);
-            const incomeDate = new Date(year, month - 1, day);
-            const incomeYear = incomeDate.getFullYear();
-            return years.includes(incomeYear);
-          } catch (error) {
-            console.error('Erro ao interpretar data:', income.date, error);
-            return false;
-          }
-        });
+      if (filterParams.years && filterParams.years.length > 0) {
+        filterParams.years.forEach(year => queryParams.append('years[]', year));
       }
       
-      setFilteredIncomes(filtered);
-      setIncomes(filtered);
-      console.log('Filtros iniciais aplicados, resultando em', filtered.length, 'receitas');
-      */
+      if (filterParams.description) {
+        queryParams.append('description', filterParams.description);
+      }
       
-      // Por enquanto, exibindo todos os dados para depuração
-      setFilteredIncomes(originalIncomes);
-      setIncomes(originalIncomes);
-      console.log('Mostrando todos os dados sem filtrar:', originalIncomes.length);
+      if (filterParams.category_id && filterParams.category_id !== 'all') {
+        queryParams.append('category_id', filterParams.category_id);
+      }
+      
+      if (filterParams.bank_id && filterParams.bank_id !== 'all') {
+        queryParams.append('bank_id', filterParams.bank_id);
+      }
+      
+      if (filterParams.is_recurring !== undefined && filterParams.is_recurring !== '') {
+        queryParams.append('is_recurring', filterParams.is_recurring);
+      }
+      
+      // Construir a URL com query params
+      const queryString = queryParams.toString();
+      const url = `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes${queryString ? `?${queryString}` : ''}`;
+      
+      console.log('URL da requisição:', url);
+      
+      // Buscar receitas com os filtros
+      const incomesResponse = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${auth.token}`
+        }
+      });
+      
+      console.log('Resposta da API de receitas:', {
+        status: incomesResponse.status,
+        ok: incomesResponse.ok,
+        statusText: incomesResponse.statusText
+      });
+      
+      if (!incomesResponse.ok) {
+        throw new Error('Erro ao carregar receitas');
+      }
+      
+      const incomesData = await incomesResponse.json();
+      console.log('Dados de receitas recebidos:', {
+        type: typeof incomesData,
+        isArray: Array.isArray(incomesData),
+        length: incomesData?.length,
+        data: incomesData
+      });
+      
+      // Extrair os dados de receitas do objeto retornado
+      let extractedIncomes = [];
+      
+      // Verificar se é um objeto e contém a propriedade 'incomes'
+      if (typeof incomesData === 'object' && 'incomes' in incomesData) {
+        extractedIncomes = incomesData.incomes;
+      } else if (Array.isArray(incomesData)) {
+        extractedIncomes = incomesData;
+      } else {
+        console.error('Formato de dados inesperado:', incomesData);
+        extractedIncomes = [];
+      }
+      
+      console.log('Receitas extraídas:', {
+        length: extractedIncomes.length,
+        data: extractedIncomes
+      });
+      
+      setOriginalIncomes(extractedIncomes);
+      setFilteredIncomes(extractedIncomes);
+      setIncomes(extractedIncomes);
+      
+      // Exibe os dados antes de aplicar filtros
+      console.log("Dados carregados antes de filtros:", extractedIncomes.length);
+      
+      // Examine alguns dados para debug
+      if (extractedIncomes.length > 0) {
+        console.log("Exemplo de receita:", extractedIncomes[0]);
+        console.log("Data da receita:", extractedIncomes[0].date);
+        console.log("Formato da data:", typeof extractedIncomes[0].date);
+      }
+
+      // Buscar categorias
+      const categoriesResponse = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/categories`, {
+        headers: {
+          'Authorization': `Bearer ${auth.token}`
+        }
+      });
+      
+      if (!categoriesResponse.ok) {
+        throw new Error('Erro ao carregar categorias');
+      }
+      
+      const categoriesData = await categoriesResponse.json();
+      console.log('Dados de categorias recebidos:', {
+        type: typeof categoriesData,
+        isArray: Array.isArray(categoriesData),
+        data: categoriesData
+      });
+      
+      // Extrair os dados de categorias do objeto retornado
+      let extractedCategories = [];
+      
+      if (typeof categoriesData === 'object' && !Array.isArray(categoriesData)) {
+        if (categoriesData.data && Array.isArray(categoriesData.data)) {
+          extractedCategories = categoriesData.data;
+        } else if (categoriesData.categories && Array.isArray(categoriesData.categories)) {
+          extractedCategories = categoriesData.categories;
+        } else if (categoriesData.items && Array.isArray(categoriesData.items)) {
+          extractedCategories = categoriesData.items;
+        } else {
+          // Tentar encontrar qualquer propriedade que seja um array
+          for (const key in categoriesData) {
+            if (Array.isArray(categoriesData[key])) {
+              extractedCategories = categoriesData[key];
+              console.log(`Encontrado array de categorias na propriedade '${key}'`);
+              break;
+            }
+          }
+        }
+      } else if (Array.isArray(categoriesData)) {
+        extractedCategories = categoriesData;
+      }
+      
+      console.log('Categorias extraídas:', {
+        length: extractedCategories.length,
+        data: extractedCategories
+      });
+      
+      setCategories(extractedCategories);
+
+      // Buscar bancos
+      const banksResponse = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/banks`, {
+        headers: {
+          'Authorization': `Bearer ${auth.token}`
+        }
+      });
+      
+      if (!banksResponse.ok) {
+        throw new Error('Erro ao carregar bancos');
+      }
+      
+      const banksData = await banksResponse.json();
+      console.log('Dados de bancos recebidos:', {
+        type: typeof banksData,
+        isArray: Array.isArray(banksData),
+        data: banksData
+      });
+      
+      // Extrair os dados de bancos do objeto retornado
+      let extractedBanks = [];
+      
+      if (typeof banksData === 'object' && !Array.isArray(banksData)) {
+        if (banksData.data && Array.isArray(banksData.data)) {
+          extractedBanks = banksData.data;
+        } else if (banksData.banks && Array.isArray(banksData.banks)) {
+          extractedBanks = banksData.banks;
+        } else if (banksData.items && Array.isArray(banksData.items)) {
+          extractedBanks = banksData.items;
+        } else {
+          // Tentar encontrar qualquer propriedade que seja um array
+          for (const key in banksData) {
+            if (Array.isArray(banksData[key])) {
+              extractedBanks = banksData[key];
+              console.log(`Encontrado array de bancos na propriedade '${key}'`);
+              break;
+            }
+          }
+        }
+      } else if (Array.isArray(banksData)) {
+        extractedBanks = banksData;
+      }
+      
+      console.log('Bancos extraídos:', {
+        length: extractedBanks.length,
+        data: extractedBanks
+      });
+      
+      setBanks(extractedBanks);
+
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+      setError(error.message);
+      setOriginalIncomes([]);
+      setFilteredIncomes([]);
+      setIncomes([]);
+    } finally {
+      setLoading(false);
     }
-  }, [originalIncomes]);
+  };
 
-  const filterIncomes = (term = searchTerm) => {
-    let filtered = [...originalIncomes];
-
-    if (term) {
-      filtered = filtered.filter(income => 
-        income.description?.toLowerCase().includes(term.toLowerCase()) ||
-        income.Category?.category_name?.toLowerCase().includes(term.toLowerCase()) ||
-        income.Bank?.name?.toLowerCase().includes(term.toLowerCase())
-      );
-    }
-
-    setFilteredIncomes(filtered);
-    setIncomes(filtered);
+  // Aplicar filtros no backend
+  const applyFilters = async () => {
+    // Mapear os filtros do estado para o formato que o backend espera
+    const backendFilters = {
+      month: filters.months !== 'all' ? filters.months : undefined,
+      year: filters.years !== 'all' ? filters.years : undefined,
+      category_id: filters.category_id !== 'all' ? filters.category_id : undefined,
+      bank_id: filters.bank_id !== 'all' ? filters.bank_id : undefined,
+      is_recurring: filters.is_recurring !== '' ? filters.is_recurring : undefined,
+      description: searchTerm || undefined
+    };
+    
+    console.log('Aplicando filtros no backend:', backendFilters);
+    
+    // Buscar dados com filtros
+    await fetchData(backendFilters);
   };
 
   // Log do estado antes da renderização

@@ -28,32 +28,24 @@ const MobileExpenses = ({
 
   // Inicializa os filtros com o mês atual se ainda não estiver definido
   useEffect(() => {
-    // Temporariamente desabilitado para depuração
-    /*
     if (initialFilterApplied.current) return;
     
-    console.log('Inicializando filtros');
+    console.log('Inicializando filtros no mobile');
     
     // Forçar a aplicação do filtro com valores iniciais
     const today = new Date();
     const thisMonth = today.getMonth() + 1;
     const thisYear = today.getFullYear();
     
-    console.log(`Aplicando filtro inicial: mês=${thisMonth}, ano=${thisYear}`);
+    console.log(`Aplicando filtro inicial no mobile: mês=${thisMonth}, ano=${thisYear}`);
     
-    // Aplicar filtro de mês atual como padrão
+    // Aplicar o filtro inicial para carregar dados do backend com o mês e ano atual
     onFilter('months', [thisMonth]);
-    
-    // Aplicar filtro de ano atual como padrão
     setTimeout(() => {
       onFilter('years', [thisYear]);
       initialFilterApplied.current = true;
     }, 100);
-    */
-
-    // Durante a depuração, vamos mostrar todos os dados sem filtrar
-    console.log('Pulando inicialização automática de filtros para depuração');
-  }, []);
+  }, [onFilter]);
 
   const handleSearch = (e) => {
     const value = e.target.value;
@@ -136,14 +128,14 @@ const MobileExpenses = ({
                   console.log('Filtro mês selecionado:', value);
                   if (value === 'all') {
                     console.log('Enviando "all" para o filtro de meses');
-                    onFilter('months', 'all');
+                    onFilter('months', []);
                   } else {
                     const parsedValue = parseInt(value, 10);
                     console.log('Enviando array para o filtro de meses:', [parsedValue]);
                     onFilter('months', [parsedValue]);
                   }
                 }}
-                defaultValue={filters.months?.[0] || currentMonth}
+                value={filters.months?.[0]?.toString() || currentMonth.toString()}
               >
                 <option value="all">Todos os meses</option>
                 <option value="1">Janeiro</option>
@@ -168,12 +160,12 @@ const MobileExpenses = ({
                 onChange={(e) => {
                   const value = e.target.value;
                   if (value === 'all') {
-                    onFilter('years', 'all');
+                    onFilter('years', []);
                   } else {
                     onFilter('years', [parseInt(value, 10)]);
                   }
                 }}
-                defaultValue={filters.years?.[0] || currentYear}
+                value={filters.years?.[0]?.toString() || currentYear.toString()}
               >
                 <option value="all">Todos os anos</option>
                 <option value={currentYear - 1}>{currentYear - 1}</option>
