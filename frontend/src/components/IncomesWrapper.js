@@ -25,6 +25,9 @@ const IncomesWrapper = () => {
     category_id: '',
     is_recurring: ''
   });
+  const [originalIncomes, setOriginalIncomes] = useState([]);
+  const [filteredIncomes, setFilteredIncomes] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Função para verificar se a tela é mobile
   const isMobileView = () => {
@@ -61,11 +64,12 @@ const IncomesWrapper = () => {
   };
 
   const handleSearch = (term) => {
-    setFilters(prev => ({ ...prev, description: term }));
+    console.log('Searching for:', term);
+    setSearchTerm(term);
   };
 
   const handleFilter = () => {
-    // Implementar lógica de filtro
+    filterIncomes();
   };
 
   const handleSelectIncome = (id) => {
@@ -153,6 +157,8 @@ const IncomesWrapper = () => {
           data: extractedIncomes
         });
         
+        setOriginalIncomes(extractedIncomes);
+        setFilteredIncomes(extractedIncomes);
         setIncomes(extractedIncomes);
 
         // Buscar categorias
@@ -257,6 +263,8 @@ const IncomesWrapper = () => {
         console.error('Erro ao carregar dados:', error);
         setError(error.message);
         // Garantir que incomes seja um array vazio em caso de erro
+        setOriginalIncomes([]);
+        setFilteredIncomes([]);
         setIncomes([]);
       } finally {
         setLoading(false);
@@ -265,6 +273,26 @@ const IncomesWrapper = () => {
 
     fetchData();
   }, [auth.token]);
+
+  // Efeito para aplicar filtros quando o termo de busca mudar
+  useEffect(() => {
+    filterIncomes();
+  }, [searchTerm, originalIncomes]);
+
+  const filterIncomes = () => {
+    let filtered = [...originalIncomes];
+
+    if (searchTerm) {
+      filtered = filtered.filter(income => 
+        income.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        income.Category?.category_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        income.Bank?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    setFilteredIncomes(filtered);
+    setIncomes(filtered);
+  };
 
   // Log do estado antes da renderização
   console.log('IncomesWrapper render:', {

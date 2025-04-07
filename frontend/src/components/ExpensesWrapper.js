@@ -27,6 +27,9 @@ const ExpensesWrapper = () => {
     description: '',
     is_recurring: ''
   });
+  const [originalExpenses, setOriginalExpenses] = useState([]);
+  const [filteredExpenses, setFilteredExpenses] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Função para verificar se a tela é mobile
   const isMobileView = () => {
@@ -63,11 +66,12 @@ const ExpensesWrapper = () => {
   };
 
   const handleSearch = (term) => {
-    setFilters(prev => ({ ...prev, description: term }));
+    console.log('Searching for:', term);
+    setSearchTerm(term);
   };
 
   const handleFilter = () => {
-    // Implementar lógica de filtro
+    filterExpenses();
   };
 
   const handleSelectExpense = (id) => {
@@ -149,6 +153,8 @@ const ExpensesWrapper = () => {
           data: extractedExpenses
         });
         
+        setOriginalExpenses(extractedExpenses);
+        setFilteredExpenses(extractedExpenses);
         setExpenses(extractedExpenses);
 
         // Buscar categorias
@@ -253,6 +259,8 @@ const ExpensesWrapper = () => {
         console.error('Erro ao carregar dados:', error);
         setError(error.message);
         // Garantir que expenses seja um array vazio em caso de erro
+        setOriginalExpenses([]);
+        setFilteredExpenses([]);
         setExpenses([]);
       } finally {
         setLoading(false);
@@ -261,6 +269,26 @@ const ExpensesWrapper = () => {
 
     fetchData();
   }, [auth.token]);
+
+  // Efeito para aplicar filtros quando o termo de busca mudar
+  useEffect(() => {
+    filterExpenses();
+  }, [searchTerm, originalExpenses]);
+
+  const filterExpenses = () => {
+    let filtered = [...originalExpenses];
+
+    if (searchTerm) {
+      filtered = filtered.filter(expense => 
+        expense.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        expense.Category?.category_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        expense.Bank?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    setFilteredExpenses(filtered);
+    setExpenses(filtered);
+  };
 
   // Log do estado antes da renderização
   console.log('ExpensesWrapper render:', {

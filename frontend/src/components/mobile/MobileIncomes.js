@@ -36,7 +36,7 @@ const MobileIncomes = ({
     // Filtrar por termo de busca
     if (searchTerm) {
       filtered = filtered.filter(income => 
-        income.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        income.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (income.Category?.category_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (income.Bank?.name || '').toLowerCase().includes(searchTerm.toLowerCase())
       );
