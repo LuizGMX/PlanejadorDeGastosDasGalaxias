@@ -57,8 +57,8 @@ const Expenses = () => {
   const [messagePosition, setMessagePosition] = useState({ x: 0, y: 0 });
   const [deleteOption, setDeleteOption] = useState(null);
   const [noExpensesMessage, setNoExpensesMessage] = useState(null);
-  const [showFilters, setShowFilters] = useState(window.innerWidth > 768);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [showFilters, setShowFilters] = useState(window.innerWidth >= 768);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [expandedCardDetails, setExpandedCardDetails] = useState({});
 
   const years = Array.from(
@@ -960,7 +960,7 @@ const Expenses = () => {
   // Detectar tamanho da tela
   useEffect(() => {
     const handleResize = () => {
-      const mobile = window.innerWidth <= 768;
+      const mobile = window.innerWidth < 768;
       // Force re-render by updating state only when it changes
       if (mobile !== isMobile) {
         setIsMobile(mobile);
@@ -1055,7 +1055,7 @@ const Expenses = () => {
         ) : (
           <>
             {/* Mobile View - Only render when isMobile is true */}
-            {isMobile && (
+            {isMobile ? (
               <div className={dataTableStyles.mobileCardView}>
                 {expenses.map((expense) => (
                   <div 
@@ -1179,10 +1179,7 @@ const Expenses = () => {
                   </div>
                 ))}
               </div>
-            )}
-            
-            {/* Desktop View - Only render when isMobile is false */}
-            {!isMobile && (
+            ) : (
               <div className={dataTableStyles.tableContainer}>
                 <table className={dataTableStyles.table}>
                   <thead>

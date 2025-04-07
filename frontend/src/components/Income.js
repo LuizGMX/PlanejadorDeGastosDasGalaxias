@@ -64,7 +64,7 @@ const Income = () => {
   const [banks, setBanks] = useState([]);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [showFilters, setShowFilters] = useState(!isMobile);
+  const [showFilters, setShowFilters] = useState(window.innerWidth >= 768);
   const [expandedCardDetails, setExpandedCardDetails] = useState({});
   const [activeSwipeCard, setActiveSwipeCard] = useState(null);
   const [touchStartX, setTouchStartX] = useState(0);
@@ -672,6 +672,12 @@ const Income = () => {
 
   // Função para renderizar cartões em visualização mobile
   const renderMobileCards = () => {
+    console.log("Rendering mobile cards:", { 
+      isMobile, 
+      incomesLength: incomes.length,
+      noIncomesMessage 
+    });
+    
     if (incomes.length === 0) {
       return (
         <div className={dataTableStyles.noDataContainer}>
@@ -688,6 +694,7 @@ const Income = () => {
     
     return (
       <div className={dataTableStyles.mobileCardView}>
+        {console.log("Rendering mobile card view with", incomes.length, "incomes")}
         {incomes.map((income) => {
           const isSwipeActive = activeSwipeCard === income.id;
 
@@ -1119,6 +1126,7 @@ const Income = () => {
           </div>
         ) : (
           <>
+            {console.log("Rendering table view or mobile cards:", { isMobile, incomes: incomes.length })}
             {isMobile ? (
               // Visualização mobile
               renderMobileCards()
