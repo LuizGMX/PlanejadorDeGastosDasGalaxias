@@ -13,6 +13,7 @@ import {
 import { GiPayMoney, GiReceiveMoney } from "react-icons/gi";
 import { isIOS } from '../utils/iosSupport';
 
+
 const MobileNavbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
