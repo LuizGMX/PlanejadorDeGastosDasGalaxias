@@ -28,6 +28,8 @@ const MobileIncomes = ({
 
   // Inicializa os filtros com o mês atual se ainda não estiver definido
   useEffect(() => {
+    // Temporariamente desabilitado para depuração
+    /*
     if (initialFilterApplied.current) return;
     
     console.log('Inicializando filtros');
@@ -47,6 +49,10 @@ const MobileIncomes = ({
       onFilter('years', [thisYear]);
       initialFilterApplied.current = true;
     }, 100);
+    */
+
+    // Durante a depuração, vamos mostrar todos os dados sem filtrar
+    console.log('Pulando inicialização automática de filtros para depuração');
   }, []);
 
   const handleSearch = (e) => {
@@ -246,17 +252,15 @@ const MobileIncomes = ({
           className={styles.clearFiltersButton}
           onClick={() => {
             console.log('Limpando todos os filtros');
-            // Limpar filtros
-            onFilter('category_id', 'all');
-            onFilter('bank_id', 'all');
-            onFilter('is_recurring', '');
-            onFilter('months', 'all');
-            onFilter('years', 'all');
+            // Definir valores de filtro para mostrar todos os dados
+            // Temporariamente inativamos o filtro por mês/ano para ver todos os dados
+            onFilter('resetAllFilters', true); // Nova ação para resetar todos os filtros
             setSearchTerm('');
             onSearch('');
+            setShowFilters(false); // Fechar o painel de filtros
           }}
         >
-          Limpar Filtros
+          Mostrar Todos
         </button>
 
         <div className={styles.cardsContainer}>

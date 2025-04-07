@@ -74,14 +74,43 @@ const ExpensesWrapper = () => {
   const handleFilter = (type, value) => {
     console.log('Applying filter:', type, value, typeof value);
     
+    // Caso especial para resetar todos os filtros
+    if (type === 'resetAllFilters' && value === true) {
+      console.log('Resetting all filters - showing all data');
+      
+      // Resetar o estado dos filtros para valores padrão, mas não aplicar filtragem
+      setFilters({
+        months: 'all',
+        years: 'all',
+        category: 'all',
+        paymentMethod: 'all',
+        hasInstallments: 'all',
+        description: '',
+        is_recurring: ''
+      });
+      
+      // Mostrar todos os dados originais sem filtrar
+      setFilteredExpenses([...originalExpenses]);
+      setExpenses([...originalExpenses]);
+      console.log('Reset complete - showing all', originalExpenses.length, 'expenses');
+      return;
+    }
+    
     // Atualizar o estado do filtro
     setFilters(prevFilters => {
-      const newFilters = { ...prevFilters, [type]: value };
+      // Criar uma cópia do estado atual dos filtros
+      const newFilters = { ...prevFilters };
+      
+      // Atualizar apenas o filtro específico que está sendo modificado
+      newFilters[type] = value;
+      
       console.log('New filters state:', newFilters);
       
       // Aplicar todos os filtros aos dados originais
       let filtered = [...originalExpenses];
       console.log('Starting filtering with', filtered.length, 'expenses from original list');
+      
+      // Agora aplicamos os filtros um por um, verificando se cada um está ativo
       
       // Filtrar por termo de busca, se existir
       if (searchTerm) {
@@ -112,7 +141,7 @@ const ExpensesWrapper = () => {
         console.log('After recurring filter:', filtered.length, 'expenses');
       }
       
-      // Filtrar por mês
+      // Filtrar por mês somente se não for 'all'
       if (newFilters.months && newFilters.months !== 'all') {
         const months = Array.isArray(newFilters.months) ? newFilters.months : [newFilters.months];
         console.log('Filtering by months:', months);
@@ -121,9 +150,25 @@ const ExpensesWrapper = () => {
           if (!expense.date) return false;
           
           try {
-            const [year, month, day] = expense.date.split('T')[0].split('-').map(Number);
-            const expenseDate = new Date(year, month - 1, day);
-            const expenseMonth = expenseDate.getMonth() + 1;
+            const dateStr = expense.date;
+            // Verificar se a data está em formato ISO ou outro formato
+            let expenseMonth;
+            
+            if (dateStr.includes('T') || dateStr.includes('-')) {
+              // Formato ISO ou yyyy-mm-dd
+              const parts = dateStr.split('T')[0].split('-');
+              expenseMonth = parseInt(parts[1], 10);
+            } else if (dateStr.includes('/')) {
+              // Formato dd/mm/yyyy
+              const parts = dateStr.split('/');
+              expenseMonth = parseInt(parts[1], 10);
+            } else {
+              // Tentar parse como timestamp
+              const expenseDate = new Date(dateStr);
+              expenseMonth = expenseDate.getMonth() + 1;
+            }
+            
+            console.log(`Expense date: ${dateStr}, extracted month: ${expenseMonth}`);
             return months.includes(expenseMonth);
           } catch (error) {
             console.error('Erro ao interpretar data:', expense.date, error);
@@ -133,7 +178,7 @@ const ExpensesWrapper = () => {
         console.log('After month filter:', filtered.length, 'expenses');
       }
       
-      // Filtrar por ano
+      // Filtrar por ano somente se não for 'all'
       if (newFilters.years && newFilters.years !== 'all') {
         const years = Array.isArray(newFilters.years) ? newFilters.years : [newFilters.years];
         console.log('Filtering by years:', years);
@@ -142,9 +187,25 @@ const ExpensesWrapper = () => {
           if (!expense.date) return false;
           
           try {
-            const [year, month, day] = expense.date.split('T')[0].split('-').map(Number);
-            const expenseDate = new Date(year, month - 1, day);
-            const expenseYear = expenseDate.getFullYear();
+            const dateStr = expense.date;
+            // Verificar se a data está em formato ISO ou outro formato
+            let expenseYear;
+            
+            if (dateStr.includes('T') || dateStr.includes('-')) {
+              // Formato ISO ou yyyy-mm-dd
+              const parts = dateStr.split('T')[0].split('-');
+              expenseYear = parseInt(parts[0], 10);
+            } else if (dateStr.includes('/')) {
+              // Formato dd/mm/yyyy
+              const parts = dateStr.split('/');
+              expenseYear = parseInt(parts[2], 10);
+            } else {
+              // Tentar parse como timestamp
+              const expenseDate = new Date(dateStr);
+              expenseYear = expenseDate.getFullYear();
+            }
+            
+            console.log(`Expense date: ${dateStr}, extracted year: ${expenseYear}`);
             return years.includes(expenseYear);
           } catch (error) {
             console.error('Erro ao interpretar data:', expense.date, error);
@@ -245,6 +306,16 @@ const ExpensesWrapper = () => {
         setOriginalExpenses(extractedExpenses);
         setFilteredExpenses(extractedExpenses);
         setExpenses(extractedExpenses);
+        
+        // Exibe os dados antes de aplicar filtros
+        console.log("Dados carregados antes de filtros:", extractedExpenses.length);
+        
+        // Examine alguns dados para debug
+        if (extractedExpenses.length > 0) {
+          console.log("Exemplo de despesa:", extractedExpenses[0]);
+          console.log("Data da despesa:", extractedExpenses[0].date);
+          console.log("Formato da data:", typeof extractedExpenses[0].date);
+        }
 
         // Buscar categorias
         const categoriesResponse = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/categories`, {
@@ -367,8 +438,11 @@ const ExpensesWrapper = () => {
   // Efeito para aplicar filtros quando os dados originais forem carregados
   useEffect(() => {
     if (originalExpenses.length > 0) {
-      console.log('Dados originais carregados, aplicando filtros iniciais');
+      console.log('Dados originais carregados:', originalExpenses.length);
       
+      // TEMPORÁRIO: Mostra todos os dados sem filtrar
+      // Comentado para debugging
+      /*
       // Reaplica o filtro de mês e ano atual
       const currentFilters = { ...filters };
       let filtered = [...originalExpenses];
@@ -413,6 +487,12 @@ const ExpensesWrapper = () => {
       setFilteredExpenses(filtered);
       setExpenses(filtered);
       console.log('Filtros iniciais aplicados, resultando em', filtered.length, 'despesas');
+      */
+      
+      // Por enquanto, exibindo todos os dados para depuração
+      setFilteredExpenses(originalExpenses);
+      setExpenses(originalExpenses);
+      console.log('Mostrando todos os dados sem filtrar:', originalExpenses.length);
     }
   }, [originalExpenses]);
 

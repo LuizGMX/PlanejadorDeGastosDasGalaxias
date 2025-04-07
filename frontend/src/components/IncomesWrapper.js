@@ -72,14 +72,42 @@ const IncomesWrapper = () => {
   const handleFilter = (type, value) => {
     console.log('Applying filter:', type, value, typeof value);
     
+    // Caso especial para resetar todos os filtros
+    if (type === 'resetAllFilters' && value === true) {
+      console.log('Resetting all filters - showing all data');
+      
+      // Resetar o estado dos filtros para valores padrão, mas não aplicar filtragem
+      setFilters({
+        months: 'all',
+        years: 'all',
+        description: '',
+        category_id: 'all',
+        bank_id: 'all',
+        is_recurring: ''
+      });
+      
+      // Mostrar todos os dados originais sem filtrar
+      setFilteredIncomes([...originalIncomes]);
+      setIncomes([...originalIncomes]);
+      console.log('Reset complete - showing all', originalIncomes.length, 'incomes');
+      return;
+    }
+    
     // Atualizar o estado do filtro
     setFilters(prevFilters => {
-      const newFilters = { ...prevFilters, [type]: value };
+      // Criar uma cópia do estado atual dos filtros
+      const newFilters = { ...prevFilters };
+      
+      // Atualizar apenas o filtro específico que está sendo modificado
+      newFilters[type] = value;
+      
       console.log('New filters state:', newFilters);
       
       // Aplicar todos os filtros aos dados originais
       let filtered = [...originalIncomes];
       console.log('Starting filtering with', filtered.length, 'incomes from original list');
+      
+      // Agora aplicamos os filtros um por um, verificando se cada um está ativo
       
       // Filtrar por termo de busca, se existir
       if (searchTerm) {
@@ -110,7 +138,7 @@ const IncomesWrapper = () => {
         console.log('After recurring filter:', filtered.length, 'incomes');
       }
       
-      // Filtrar por mês
+      // Filtrar por mês somente se não for 'all'
       if (newFilters.months && newFilters.months !== 'all') {
         const months = Array.isArray(newFilters.months) ? newFilters.months : [newFilters.months];
         console.log('Filtering by months:', months);
@@ -119,9 +147,25 @@ const IncomesWrapper = () => {
           if (!income.date) return false;
           
           try {
-            const [year, month, day] = income.date.split('T')[0].split('-').map(Number);
-            const incomeDate = new Date(year, month - 1, day);
-            const incomeMonth = incomeDate.getMonth() + 1;
+            const dateStr = income.date;
+            // Verificar se a data está em formato ISO ou outro formato
+            let incomeMonth;
+            
+            if (dateStr.includes('T') || dateStr.includes('-')) {
+              // Formato ISO ou yyyy-mm-dd
+              const parts = dateStr.split('T')[0].split('-');
+              incomeMonth = parseInt(parts[1], 10);
+            } else if (dateStr.includes('/')) {
+              // Formato dd/mm/yyyy
+              const parts = dateStr.split('/');
+              incomeMonth = parseInt(parts[1], 10);
+            } else {
+              // Tentar parse como timestamp
+              const incomeDate = new Date(dateStr);
+              incomeMonth = incomeDate.getMonth() + 1;
+            }
+            
+            console.log(`Income date: ${dateStr}, extracted month: ${incomeMonth}`);
             return months.includes(incomeMonth);
           } catch (error) {
             console.error('Erro ao interpretar data:', income.date, error);
@@ -131,7 +175,7 @@ const IncomesWrapper = () => {
         console.log('After month filter:', filtered.length, 'incomes');
       }
       
-      // Filtrar por ano
+      // Filtrar por ano somente se não for 'all'
       if (newFilters.years && newFilters.years !== 'all') {
         const years = Array.isArray(newFilters.years) ? newFilters.years : [newFilters.years];
         console.log('Filtering by years:', years);
@@ -140,9 +184,25 @@ const IncomesWrapper = () => {
           if (!income.date) return false;
           
           try {
-            const [year, month, day] = income.date.split('T')[0].split('-').map(Number);
-            const incomeDate = new Date(year, month - 1, day);
-            const incomeYear = incomeDate.getFullYear();
+            const dateStr = income.date;
+            // Verificar se a data está em formato ISO ou outro formato
+            let incomeYear;
+            
+            if (dateStr.includes('T') || dateStr.includes('-')) {
+              // Formato ISO ou yyyy-mm-dd
+              const parts = dateStr.split('T')[0].split('-');
+              incomeYear = parseInt(parts[0], 10);
+            } else if (dateStr.includes('/')) {
+              // Formato dd/mm/yyyy
+              const parts = dateStr.split('/');
+              incomeYear = parseInt(parts[2], 10);
+            } else {
+              // Tentar parse como timestamp
+              const incomeDate = new Date(dateStr);
+              incomeYear = incomeDate.getFullYear();
+            }
+            
+            console.log(`Income date: ${dateStr}, extracted year: ${incomeYear}`);
             return years.includes(incomeYear);
           } catch (error) {
             console.error('Erro ao interpretar data:', income.date, error);
@@ -249,6 +309,16 @@ const IncomesWrapper = () => {
         setOriginalIncomes(extractedIncomes);
         setFilteredIncomes(extractedIncomes);
         setIncomes(extractedIncomes);
+        
+        // Exibe os dados antes de aplicar filtros
+        console.log("Dados carregados antes de filtros:", extractedIncomes.length);
+        
+        // Examine alguns dados para debug
+        if (extractedIncomes.length > 0) {
+          console.log("Exemplo de receita:", extractedIncomes[0]);
+          console.log("Data da receita:", extractedIncomes[0].date);
+          console.log("Formato da data:", typeof extractedIncomes[0].date);
+        }
 
         // Buscar categorias
         const categoriesResponse = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/categories`, {
@@ -371,8 +441,11 @@ const IncomesWrapper = () => {
   // Efeito para aplicar filtros quando os dados originais forem carregados
   useEffect(() => {
     if (originalIncomes.length > 0) {
-      console.log('Dados originais carregados, aplicando filtros iniciais');
+      console.log('Dados originais carregados:', originalIncomes.length);
       
+      // TEMPORÁRIO: Mostra todos os dados sem filtrar
+      // Comentado para debugging
+      /*
       // Reaplica o filtro de mês e ano atual
       const currentFilters = { ...filters };
       let filtered = [...originalIncomes];
@@ -417,6 +490,12 @@ const IncomesWrapper = () => {
       setFilteredIncomes(filtered);
       setIncomes(filtered);
       console.log('Filtros iniciais aplicados, resultando em', filtered.length, 'receitas');
+      */
+      
+      // Por enquanto, exibindo todos os dados para depuração
+      setFilteredIncomes(originalIncomes);
+      setIncomes(originalIncomes);
+      console.log('Mostrando todos os dados sem filtrar:', originalIncomes.length);
     }
   }, [originalIncomes]);
 
