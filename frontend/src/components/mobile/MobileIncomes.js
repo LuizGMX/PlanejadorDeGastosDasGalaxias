@@ -253,21 +253,6 @@ const MobileIncomes = ({
       <div className={styles.dataContainer}>
         {renderFilters()}
 
-        <button 
-          className={styles.clearFiltersButton}
-          onClick={() => {
-            console.log('Limpando todos os filtros');
-            // Definir valores de filtro para mostrar todos os dados
-            // Temporariamente inativamos o filtro por mês/ano para ver todos os dados
-            onFilter('resetAllFilters', true); // Nova ação para resetar todos os filtros
-            setSearchTerm('');
-            onSearch('');
-            setShowFilters(false); // Fechar o painel de filtros
-          }}
-        >
-          Mostrar Todos
-        </button>
-
         <div className={styles.cardsContainer}>
           {incomes.map((income) => (
             <div key={income.id} className={styles.card} style={{ borderLeftColor: '#4caf50' }}>
