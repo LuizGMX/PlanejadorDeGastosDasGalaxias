@@ -400,23 +400,26 @@
   gap: 1.5rem;
   margin-top: 1.5rem;
   width: 100%;
-  justify-items: center;
+  justify-content: center;
   align-items: center;
 }
 
 /* Estilo especial para a primeira grid - orçamento e objetivo lado a lado */
 .chartsGrid:first-of-type {
   grid-template-columns: repeat(2, 1fr);
+  justify-content: center;
 }
 
 /* Para telas menores */
 @media (max-width: 1200px) {
   .chartsGrid {
     grid-template-columns: repeat(auto-fill, minmax(45%, 1fr));
+    justify-content: center;
   }
   
   .chartsGrid:first-of-type {
     grid-template-columns: repeat(2, 1fr);
+    justify-content: center;
   }
 }
 
@@ -434,6 +437,7 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  position: relative;
 }
 
 .chartContainer h3 {
@@ -580,7 +584,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-bottom: 1rem;
+  margin: 0 auto;
   position: relative;
   width: 100%;
   height: 100%;
@@ -2991,11 +2995,12 @@ input:checked + .toggleSlider:before {
 }
 
 .chartContainer .recharts-responsive-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  height: 100%;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 auto !important;
 }
 
 .chartBody {
@@ -3004,6 +3009,7 @@ input:checked + .toggleSlider:before {
   display: flex;
   justify-content: center;
   align-items: center;
+  margin: 0 auto;
 }
 
 /* Botões dentro dos cartões de visão geral */
