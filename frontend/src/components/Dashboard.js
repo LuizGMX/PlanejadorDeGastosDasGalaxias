@@ -25,14 +25,7 @@ import {
 import styles from '../styles/dashboard.module.css';
 import { FaCalendarAlt, FaChartLine, FaPlus, FaChevronDown, FaChevronRight, FaSearch, FaFilter } from 'react-icons/fa';
 import DateRangePicker from './DateRangePicker';
-import {  
-  BsPencil,
-  BsEye,
-  // ... other imports
-} from 'react-icons/bs';
-import dataTableStyles from '../styles/dataTable.module.css';
-import sharedStyles from '../styles/shared.module.css';
-import { toast } from 'react-hot-toast';
+
 import { 
   BsPlusLg, 
   BsCash, 
@@ -40,6 +33,7 @@ import {
   BsFilter, 
   BsSearch, 
   BsPencil, 
+  BsEye,
   BsTrash, 
   BsBank2, 
   BsExclamationTriangle, 
