@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import { AuthContext } from '../App';
-import { useNavigate, Link } from 'react-router-dom';
-import MobileDashboard from './mobile/MobileDashboard';
-import {
-  LineChart,
+import { useNavigate } from 'react-router-dom';
+import {  
   Line,
   PieChart,
   Pie,
@@ -19,34 +17,17 @@ import {
   Cell,
   ComposedChart,
   AreaChart,
-  ReferenceLine,
-  LabelList,
+  ReferenceLine  
 } from 'recharts';
 import styles from '../styles/dashboard.module.css';
-import { FaCalendarAlt, FaChartLine, FaPlus, FaChevronDown, FaChevronRight, FaSearch, FaFilter } from 'react-icons/fa';
+import { FaChartLine, FaChevronDown} from 'react-icons/fa';
 import DateRangePicker from './DateRangePicker';
 
 import { 
   BsPlusLg, 
-  BsCash, 
-  BsCalendar3, 
-  BsFilter, 
-  BsSearch, 
+  BsCash,  
   BsPencil, 
   BsEye,
-  BsTrash, 
-  BsBank2, 
-  BsExclamationTriangle, 
-  BsRepeat, 
-  BsCurrencyDollar,
-  BsX,
-  BsCheckAll,
-  BsCheck2,
-  BsFolderSymlink,
-  BsListCheck,
-  BsChevronDown,
-  BsChevronUp,
-  BsArrowClockwise
 } from 'react-icons/bs';
 
 const motivationalPhrases = [
