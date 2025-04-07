@@ -313,6 +313,8 @@ const ExpensesWrapper = () => {
       onSelectAll={handleSelectAll}
       loading={loading}
       error={error}
+      categories={categories}
+      banks={banks}
     />
   ) : (
     <Expenses

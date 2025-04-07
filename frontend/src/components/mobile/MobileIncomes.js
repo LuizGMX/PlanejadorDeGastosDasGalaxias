@@ -15,7 +15,9 @@ const MobileIncomes = ({
   onSelectIncome,
   onSelectAll,
   loading,
-  error
+  error,
+  categories = [],
+  banks = []
 }) => {
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -49,6 +51,34 @@ const MobileIncomes = ({
               value={searchTerm}
               onChange={handleSearch}
             />
+          </div>
+          
+          {/* Additional filter options */}
+          <div className={styles.filterOptions}>
+            <div className={styles.filterGroup}>
+              <label className={styles.filterLabel}>Categorias</label>
+              <select 
+                className={styles.filterSelect}
+                onChange={(e) => onFilter('category_id', e.target.value)}
+              >
+                <option value="all">Todas as categorias</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>{category.category_name}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className={styles.filterGroup}>
+              <label className={styles.filterLabel}>Tipo</label>
+              <select 
+                className={styles.filterSelect}
+                onChange={(e) => onFilter('is_recurring', e.target.value)}
+              >
+                <option value="">Todos os tipos</option>
+                <option value="true">Fixas</option>
+                <option value="false">Únicas</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>

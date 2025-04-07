@@ -15,7 +15,9 @@ const MobileExpenses = ({
   onSelectExpense,
   onSelectAll,
   loading,
-  error
+  error,
+  categories = [],
+  banks = []
 }) => {
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -49,6 +51,47 @@ const MobileExpenses = ({
               value={searchTerm}
               onChange={handleSearch}
             />
+          </div>
+          
+          {/* Additional filter options */}
+          <div className={styles.filterOptions}>
+            <div className={styles.filterGroup}>
+              <label className={styles.filterLabel}>Categorias</label>
+              <select 
+                className={styles.filterSelect}
+                onChange={(e) => onFilter('category', e.target.value)}
+              >
+                <option value="all">Todas as categorias</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>{category.category_name}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className={styles.filterGroup}>
+              <label className={styles.filterLabel}>Método de Pagamento</label>
+              <select 
+                className={styles.filterSelect}
+                onChange={(e) => onFilter('paymentMethod', e.target.value)}
+              >
+                <option value="all">Todos os métodos</option>
+                {banks.map((bank) => (
+                  <option key={bank.id} value={bank.id}>{bank.name}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className={styles.filterGroup}>
+              <label className={styles.filterLabel}>Tipo</label>
+              <select 
+                className={styles.filterSelect}
+                onChange={(e) => onFilter('is_recurring', e.target.value)}
+              >
+                <option value="">Todos os tipos</option>
+                <option value="true">Fixas</option>
+                <option value="false">Únicas</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
