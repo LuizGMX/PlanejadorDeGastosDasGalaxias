@@ -5,6 +5,7 @@ import './styles/ios.css';
 import './styles/mobile/dataTable.mobile.css';
 import './styles/mobile/forms.mobile.css';
 import './styles/mobile/navbar.mobile.css';
+import './styles/mobile/dashboard.mobile.css';
 import App from './App';
 import { initIOSSupport, isIOS } from './utils/iosSupport';
 

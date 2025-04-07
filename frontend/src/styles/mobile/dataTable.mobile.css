@@ -99,8 +99,8 @@
     margin-bottom: 16px;
     font-size: 14px;
     margin-top: 20px;
-    display: table;
-    min-width: auto;
+    display: table !important;
+    min-width: auto !important;
   }
   
   .mobileTable:before {
@@ -502,5 +502,21 @@
   .modernSelectDropdown {
     max-height: 250px;
     width: 100%;
+  }
+  
+  /* Garantir que a tabela mobile seja exibida corretamente */
+  .mobileTable td:before {
+    position: relative;
+    display: block;
+    width: 100%;
+    text-align: left;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: var(--text-color);
+  }
+  
+  .mobileTable td {
+    text-align: left;
+    padding-left: 10px;
   }
 } 
