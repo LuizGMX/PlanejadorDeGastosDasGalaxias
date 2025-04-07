@@ -83,44 +83,51 @@ const IncomesWrapper = () => {
   };
 
   const handleFilter = (type, value) => {
-    console.log('Applying filter:', type, value, typeof value);
+    console.log('Applying filter for incomes:', type, value, typeof value);
     
     // Caso especial para resetar todos os filtros
     if (type === 'resetAllFilters' && value === true) {
-      console.log('Resetting all filters - showing all data');
+      console.log('Resetting all filters for incomes - showing all data');
       
       // Resetar o estado dos filtros para valores padrão
-      setFilters({
-        months: 'all',
-        years: 'all',
+      const resetFilters = {
+        months: [],
+        years: [],
         description: '',
         category_id: 'all',
         bank_id: 'all',
         is_recurring: ''
-      });
+      };
+      
+      setFilters(resetFilters);
       
       // Buscar todos os dados sem filtros
-      fetchData();
+      fetchData(resetFilters);
       return;
     }
     
     // Atualizar o estado do filtro e depois buscar os dados
     setFilters(prevFilters => {
       const newFilters = { ...prevFilters };
+      
+      // Atualizar o valor do filtro específico
       newFilters[type] = value;
+      
+      console.log('Novos filtros para receitas:', newFilters);
       
       // Buscar dados com os novos filtros após atualizar o estado
       setTimeout(() => {
-        // Aguardar a atualização do estado antes de aplicar os filtros
+        // Converter filtros internos para o formato da API
         const backendFilters = {
-          month: newFilters.months !== 'all' ? newFilters.months : undefined,
-          year: newFilters.years !== 'all' ? newFilters.years : undefined,
+          months: newFilters.months,
+          years: newFilters.years,
+          description: newFilters.description || undefined,
           category_id: newFilters.category_id !== 'all' ? newFilters.category_id : undefined,
           bank_id: newFilters.bank_id !== 'all' ? newFilters.bank_id : undefined,
-          is_recurring: newFilters.is_recurring !== '' ? newFilters.is_recurring : undefined,
-          description: searchTerm || undefined
+          is_recurring: newFilters.is_recurring !== '' ? newFilters.is_recurring : undefined
         };
         
+        console.log('Filtros enviados para a API de receitas:', backendFilters);
         fetchData(backendFilters);
       }, 0);
       

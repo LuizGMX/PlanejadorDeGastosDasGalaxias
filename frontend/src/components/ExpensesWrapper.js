@@ -85,45 +85,53 @@ const ExpensesWrapper = () => {
   };
 
   const handleFilter = (type, value) => {
-    console.log('Applying filter:', type, value, typeof value);
+    console.log('Applying filter for expenses:', type, value, typeof value);
     
     // Caso especial para resetar todos os filtros
     if (type === 'resetAllFilters' && value === true) {
-      console.log('Resetting all filters - showing all data');
+      console.log('Resetting all filters for expenses - showing all data');
       
       // Resetar o estado dos filtros para valores padrão
-      setFilters({
-        months: 'all',
-        years: 'all',
+      const resetFilters = {
+        months: [],
+        years: [],
         category: 'all',
         paymentMethod: 'all',
         hasInstallments: 'all',
         description: '',
         is_recurring: ''
-      });
+      };
+      
+      setFilters(resetFilters);
       
       // Buscar todos os dados sem filtros
-      fetchData();
+      fetchData(resetFilters);
       return;
     }
     
     // Atualizar o estado do filtro e depois buscar os dados
     setFilters(prevFilters => {
       const newFilters = { ...prevFilters };
+      
+      // Atualizar o valor do filtro específico
       newFilters[type] = value;
+      
+      console.log('Novos filtros para despesas:', newFilters);
       
       // Buscar dados com os novos filtros após atualizar o estado
       setTimeout(() => {
-        // Aguardar a atualização do estado antes de aplicar os filtros
+        // Converter filtros internos para o formato da API
         const backendFilters = {
-          month: newFilters.months !== 'all' ? newFilters.months : undefined,
-          year: newFilters.years !== 'all' ? newFilters.years : undefined,
-          category_id: newFilters.category !== 'all' ? newFilters.category : undefined,
-          bank_id: newFilters.paymentMethod !== 'all' ? newFilters.paymentMethod : undefined,
-          is_recurring: newFilters.is_recurring !== '' ? newFilters.is_recurring : undefined,
-          description: searchTerm || undefined
+          months: newFilters.months,
+          years: newFilters.years,
+          description: newFilters.description || undefined,
+          category: newFilters.category !== 'all' ? newFilters.category : undefined,
+          paymentMethod: newFilters.paymentMethod !== 'all' ? newFilters.paymentMethod : undefined,
+          hasInstallments: newFilters.hasInstallments !== 'all' ? newFilters.hasInstallments : undefined,
+          is_recurring: newFilters.is_recurring !== '' ? newFilters.is_recurring : undefined
         };
         
+        console.log('Filtros enviados para a API de despesas:', backendFilters);
         fetchData(backendFilters);
       }, 0);
       

@@ -30,20 +30,23 @@ const MobileExpenses = ({
   useEffect(() => {
     if (initialFilterApplied.current) return;
     
-    console.log('Inicializando filtros no mobile');
+    console.log('Inicializando filtros no mobile para despesas');
     
     // Forçar a aplicação do filtro com valores iniciais
     const today = new Date();
     const thisMonth = today.getMonth() + 1;
     const thisYear = today.getFullYear();
     
-    console.log(`Aplicando filtro inicial no mobile: mês=${thisMonth}, ano=${thisYear}`);
+    console.log(`Aplicando filtro inicial no mobile para despesas: mês=${thisMonth}, ano=${thisYear}`);
+    
+    // Primeiro definimos a flag como true para evitar chamadas repetidas
+    initialFilterApplied.current = true;
     
     // Aplicar o filtro inicial para carregar dados do backend com o mês e ano atual
     onFilter('months', [thisMonth]);
+    // Importante: o timeout é necessário para garantir que a segunda chamada aconteça após a primeira ser processada
     setTimeout(() => {
       onFilter('years', [thisYear]);
-      initialFilterApplied.current = true;
     }, 100);
   }, [onFilter]);
 
