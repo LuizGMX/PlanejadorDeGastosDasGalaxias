@@ -400,4 +400,174 @@ const Income = ({
                 <div className={dataTableStyles.mobileCardActions}>
                   <div className={dataTableStyles.mobileCardType}>
                     {income.is_recurring ? (
-                      <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`
+                      <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
+                        <BsRepeat /> Fixo
+                      </span>
+                    ) : (
+                      <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
+                        <BsCurrencyDollar /> Único
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className={dataTableStyles.mobileCardActionButtons}>
+                    <button 
+                      onClick={() => handleEditIncome(income)} 
+                      className={dataTableStyles.actionButton}
+                      title="Editar"
+                    >
+                      <BsPencil />
+                    </button>
+                    <button 
+                      onClick={() => handleDeleteIncome(income)} 
+                      className={`${dataTableStyles.actionButton} ${dataTableStyles.delete}`}
+                      title="Excluir"
+                    >
+                      <BsTrash />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  return (
+    <div className={dataTableStyles.pageContainer}>
+      {console.log("Rendering Income component:", {
+        isMobile,
+        showFilters,
+        incomesCount: safeIncomes.length,
+        loading,
+        hasError: !!error,
+        showNoIncomesMessage: !!noIncomesMessage
+      })}
+      <div className={dataTableStyles.pageHeader}>
+        <h1 className={dataTableStyles.pageTitle}>Receitas</h1>
+        <button 
+          onClick={() => navigate('/add-income')} 
+          className={dataTableStyles.addButton}
+        >
+          <BsPlusLg size={16} /> Adicionar
+        </button>
+      </div>
+
+      <div className={dataTableStyles.dataContainer}>
+        {isMobile && (
+          <button 
+            className={dataTableStyles.filterToggleButton} 
+            onClick={() => {
+              console.log("Toggling filters from", showFilters, "to", !showFilters);
+              setShowFilters(!showFilters);
+            }}
+          >
+            <BsFilter size={16} /> 
+            {showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}
+            {showFilters ? <BsChevronUp /> : <BsChevronDown />}
+          </button>
+        )}
+
+        <div className={`${dataTableStyles.filtersContainer} ${isMobile && !showFilters ? dataTableStyles.filtersCollapsed : ''} ${isMobile && showFilters ? dataTableStyles.filtersExpanded : ''}`} style={isMobile ? { display: showFilters ? 'flex' : 'none', flexDirection: 'column' } : {}}>
+          {deleteSuccess && (
+            <div className={dataTableStyles.successMessage}>
+              {deleteSuccess.message} {deleteSuccess.count > 1 ? `(${deleteSuccess.count} itens)` : ''}
+            </div>
+          )}
+
+          <div className={dataTableStyles.filterRow}>
+            <div className={dataTableStyles.filterGroup}>
+              <label className={dataTableStyles.filterLabel}>
+                <BsSearch /> Buscar
+              </label>
+              <div className={dataTableStyles.searchField}>
+                <input
+                  type="text"
+                  className={dataTableStyles.searchInput}
+                  placeholder="Buscar receitas..."
+                  onChange={(e) => handleSearch(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className={dataTableStyles.tableContainer}>
+          <table className={dataTableStyles.table}>
+            <thead>
+              <tr>
+                <th>
+                  <div className={dataTableStyles.checkboxContainer}>
+                    <input
+                      type="checkbox"
+                      checked={selectedIncomes.length === safeIncomes.length}
+                      onChange={handleSelectAll}
+                    />
+                    <span className={dataTableStyles.checkmark}></span>
+                  </div>
+                </th>
+                <th>Descrição</th>
+                <th>Valor</th>
+                <th>Data</th>
+                <th>Categoria</th>
+                <th>Banco</th>
+                <th>Tipo</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {safeIncomes.map((income) => (
+                <tr key={income.id}>
+                  <td>
+                    <div className={dataTableStyles.checkboxContainer}>
+                      <input
+                        type="checkbox"
+                        checked={selectedIncomes.includes(income.id)}
+                        onChange={() => handleSelectIncome(income.id)}
+                      />
+                      <span className={dataTableStyles.checkmark}></span>
+                    </div>
+                  </td>
+                  <td>{income.description}</td>
+                  <td>
+                    <span className={`${dataTableStyles.amountBadge} ${dataTableStyles.incomeAmount}`}>
+                      {formatCurrency(income.amount)}
+                    </span>
+                  </td>
+                  <td>{formatDate(income.date)}</td>
+                  <td>{income.Category?.category_name || '-'}</td>
+                  <td>{income.Bank?.name || '-'}</td>
+                  <td>
+                    <span className={`${dataTableStyles.typeStatus} ${income.is_recurring ? dataTableStyles.fixedType : dataTableStyles.oneTimeType}`}>
+                      {income.is_recurring ? 'Fixa' : 'Única'}
+                    </span>
+                  </td>
+                  <td>
+                    <div className={dataTableStyles.actionButtons}>
+                      <button
+                        className={dataTableStyles.editButton}
+                        onClick={() => handleEditIncome(income)}
+                      >
+                        <BsPencil />
+                      </button>
+                      <button
+                        className={dataTableStyles.deleteButton}
+                        onClick={() => handleDeleteIncome(income)}
+                      >
+                        <BsTrash />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Income;
