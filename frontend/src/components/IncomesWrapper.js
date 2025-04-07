@@ -90,16 +90,52 @@ const IncomesWrapper = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Implementar lógica para buscar receitas, categorias e bancos
-        // Por enquanto, vamos apenas simular um carregamento
-        setTimeout(() => {
-          setIncomes([]);
-          setCategories([]);
-          setBanks([]);
-          setLoading(false);
-        }, 1000);
-      } catch (err) {
-        setError('Erro ao carregar dados: ' + err.message);
+        // Buscar receitas
+        const incomesResponse = await fetch('/api/incomes', {
+          headers: {
+            'Authorization': `Bearer ${auth.token}`
+          }
+        });
+        
+        if (!incomesResponse.ok) {
+          throw new Error('Erro ao carregar receitas');
+        }
+        
+        const incomesData = await incomesResponse.json();
+        setIncomes(incomesData);
+
+        // Buscar categorias
+        const categoriesResponse = await fetch('/api/categories', {
+          headers: {
+            'Authorization': `Bearer ${auth.token}`
+          }
+        });
+        
+        if (!categoriesResponse.ok) {
+          throw new Error('Erro ao carregar categorias');
+        }
+        
+        const categoriesData = await categoriesResponse.json();
+        setCategories(categoriesData);
+
+        // Buscar bancos
+        const banksResponse = await fetch('/api/banks', {
+          headers: {
+            'Authorization': `Bearer ${auth.token}`
+          }
+        });
+        
+        if (!banksResponse.ok) {
+          throw new Error('Erro ao carregar bancos');
+        }
+        
+        const banksData = await banksResponse.json();
+        setBanks(banksData);
+
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+        setError(error.message);
+      } finally {
         setLoading(false);
       }
     };
@@ -107,9 +143,9 @@ const IncomesWrapper = () => {
     fetchData();
   }, [auth.token]);
 
-  // Renderiza o componente apropriado com base no tamanho da tela
+  // Renderização condicional baseada no dispositivo
   return isMobile ? (
-    <MobileIncomes 
+    <MobileIncomes
       incomes={incomes}
       onEdit={handleEditIncome}
       onDelete={handleDeleteIncome}
@@ -123,7 +159,19 @@ const IncomesWrapper = () => {
       error={error}
     />
   ) : (
-    <Income />
+    <Income
+      incomes={incomes}
+      onEdit={handleEditIncome}
+      onDelete={handleDeleteIncome}
+      onAdd={handleAddIncome}
+      onFilter={handleFilter}
+      onSearch={handleSearch}
+      selectedIncomes={selectedIncomes}
+      onSelectIncome={handleSelectIncome}
+      onSelectAll={handleSelectAll}
+      loading={loading}
+      error={error}
+    />
   );
 };
 

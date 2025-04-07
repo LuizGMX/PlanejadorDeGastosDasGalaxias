@@ -49,7 +49,7 @@ const MobileIncomes = ({
     return (
       <div className={styles.noDataContainer}>
         <div className={styles.noDataIcon}>💰</div>
-        <h3 className={styles.noDataMessage}>Nenhuma receita encontrada - MOBILEEEE</h3>
+        <h3 className={styles.noDataMessage}>Nenhuma receita encontrada</h3>
         <p className={styles.noDataSuggestion}>
           Comece adicionando sua primeira receita clicando no botão abaixo
         </p>

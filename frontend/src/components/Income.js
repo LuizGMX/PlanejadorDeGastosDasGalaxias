@@ -27,13 +27,21 @@ import {
   BsArrowClockwise
 } from 'react-icons/bs';
 
-const Income = () => {
+const Income = ({ 
+  incomes, 
+  onEdit, 
+  onDelete, 
+  onAdd,
+  onFilter,
+  onSearch,
+  selectedIncomes,
+  onSelectIncome,
+  onSelectAll,
+  loading,
+  error
+}) => {
   const navigate = useNavigate();
   const { auth } = useContext(AuthContext);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [incomes, setIncomes] = useState([]);
-  const [selectedIncomes, setSelectedIncomes] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [incomeToDelete, setIncomeToDelete] = useState(null);
   const [editingIncome, setEditingIncome] = useState(null);
@@ -356,272 +364,49 @@ const Income = () => {
     if (!dateString) return '-';
     try {
       const date = new Date(dateString);
-      if (isNaN(date.getTime())) return '-';
       return date.toLocaleDateString('pt-BR');
     } catch (error) {
+      console.error('Erro ao formatar data:', error);
       return '-';
     }
   };
 
-  const handleSelectAll = (e) => {
-    if (e.target.checked) {
-      const nonRecurringIncomes = incomes
-        .filter(income => !income.is_recurring)
-        .map(income => income.id);
-      setSelectedIncomes(nonRecurringIncomes);
-    } else {
-      setSelectedIncomes([]);
-    }
+  // Funções para manipular receitas
+  const handleAddIncome = () => {
+    onAdd();
   };
 
-  const handleSelectIncome = (id, event) => {
-    const income = incomes.find(i => i.id === id);
-    if (income?.is_recurring) {
-      const rect = event.target.getBoundingClientRect();
-      setMessagePosition({
-        x: rect.left,
-        y: rect.bottom + window.scrollY + 5
-      });
-      setShowInstallmentMessage(true);
-      setTimeout(() => setShowInstallmentMessage(false), 3000);
-      return;
-    }
-
-    setSelectedIncomes(prev => {
-      if (prev.includes(id)) {
-        return prev.filter(incomeId => incomeId !== id);
-      } else {
-        return [...prev, id];
-      }
-    });
+  const handleEditIncome = (income) => {
+    onEdit(income);
   };
 
-  const handleDelete = async (income) => {
-    if (income.is_recurring) {
-      setIncomeToDelete(income);
-      setDeleteOptions({
-        type: 'recurring',
-        showModal: true,
-        options: [
-          { id: 'all', label: 'Excluir todos os receitas fixos (passados e futuros)' },
-          { id: 'past', label: 'Excluir somente receitas fixos passados' },
-          { id: 'future', label: 'Excluir somente receitas fixos futuros' }
-        ],
-        message: 'Para excluir um ganho fixo específico, encontre-o na lista de receitas do mês desejado.'
-      });
-      return;
-    }
-    try {
-      if (deleteOptions.type === 'bulk') {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/bulk`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${auth.token}`
-          },
-          body: JSON.stringify({ ids: selectedIncomes })
-        });
-
-        if (!response.ok) {
-          throw new Error('Falha ao excluir receitas');
-        }
-
-        const data = await response.json();
-
-        // Limpa os estados do modal
-        setShowDeleteModal(false);
-        setIncomeToDelete(null);
-        setDeleteOptions({ type: 'single' });
-        setSelectedIncomes([]);
-
-        // Mostra mensagem de sucesso
-        setDeleteSuccess({
-          message: data.message,
-          count: data.count
-        });
-
-        // Remove a mensagem após 3 segundos
-        setTimeout(() => {
-          setDeleteSuccess(null);
-        }, 3000);
-
-        // Recarrega a lista de receitas
-        await fetchIncomes();
-        return;
-      }
-
-      let url = `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${income.id}`;
-      if (deleteOption) {
-        url += `?deleteOption=${deleteOption}`;
-      }
-
-      const response = await fetch(url, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${auth.token}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Falha ao excluir ganho');
-      }
-
-      const data = await response.json();
-
-      // Limpa os estados do modal
-      setShowDeleteModal(false);
-      setIncomeToDelete(null);
-      setDeleteOption(null);
-
-      // Mostra mensagem de sucesso
-      setDeleteSuccess({
-        message: data.message,
-        count: 1
-      });
-
-      // Remove a mensagem após 3 segundos
-      setTimeout(() => {
-        setDeleteSuccess(null);
-      }, 3000);
-
-      // Recarrega a lista de receitas
-      await fetchIncomes();
-    } catch (error) {
-      console.error('Erro ao excluir:', error);
-      setError('Erro ao excluir ganho(s)');
-    }
-  };
-
-  const handleDeleteClick = (income = null) => {
-    if (income) {
-      setIncomeToDelete(income);
-      setDeleteOption('single');
-      
-      if (income.is_recurring) {
-        setDeleteOptions({
-          type: 'single'
-        });
-      } else {
-        setDeleteOptions({
-          type: 'single'
-        });
-      }
-    } else {
-      setIncomeToDelete(null);
-      setDeleteOption(null);
-      setDeleteOptions({
-        type: 'bulk',
-        ids: selectedIncomes
-      });
-    }
+  const handleDeleteIncome = (income) => {
+    setIncomeToDelete(income);
     setShowDeleteModal(true);
   };
 
-  const handleUpdate = async (updatedIncome) => {
-    try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${updatedIncome.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${auth.token}`
-        },
-        body: JSON.stringify(updatedIncome)
-      });
-
-      if (!response.ok) {
-        throw new Error('Falha ao atualizar ganho');
-      }
-
-      setEditingIncome(null);
-      await fetchIncomes();
-    } catch (error) {
-      setError('Erro ao atualizar ganho. Por favor, tente novamente.');
-    }
-  };
-
-  const handleEditClick = (income) => {
-    setEditingIncome(income);
-  };
-
-  const handleSave = async (incomeData) => {
-    try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${incomeData.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${auth.token}`
-        },
-        body: JSON.stringify(incomeData)
-      });
-
-      if (!response.ok) {
-        throw new Error('Erro ao atualizar receita');
-      }
-
-      setEditingIncome(null);
-      // Atualiza a lista de receitas após a edição
-      const updatedIncomes = incomes.map(income => 
-        income.id === incomeData.id ? incomeData : income
-      );
-      setIncomes(updatedIncomes);
-      toast.success('Receita atualizada com sucesso!');
-    } catch (error) {
-      console.error('Erro:', error);
-      toast.error('Erro ao atualizar receita');
-    }
-  };
-
-  const handleDeleteConfirm = async (option) => {
-    try {
-      if (!incomeToDelete) return;
-      setIsDeleting(true);
-
-      let url = `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${incomeToDelete.id}`;
-      const queryParams = new URLSearchParams();
-
-      if (incomeToDelete.is_recurring) {
-        switch (option) {
-          case 'all':
-            queryParams.append('delete_all', 'true');
-            break;
-          case 'past':
-            queryParams.append('delete_past', 'true');
-            queryParams.append('reference_date', incomeToDelete.date);
-            break;
-          case 'future':
-            queryParams.append('delete_future', 'true');
-            queryParams.append('reference_date', incomeToDelete.date);
-            break;
-          default:
-            break;
-        }
-
-        if (queryParams.toString()) {
-          url += `?${queryParams.toString()}`;
-        }
-      }
-
-      const response = await fetch(url, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${auth.token}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Erro ao excluir receita');
-      }
-
+  const handleConfirmDelete = async () => {
+    if (incomeToDelete) {
+      onDelete(incomeToDelete);
       setShowDeleteModal(false);
       setIncomeToDelete(null);
-      await fetchIncomes();
-      toast.success('Receita(s) excluída(s) com sucesso!');
-    } catch (error) {
-      console.error('Erro:', error);
-      toast.error('Erro ao excluir receita');
-    } finally {
-      setIsDeleting(false);
     }
+  };
+
+  const handleSearch = (term) => {
+    onSearch(term);
+  };
+
+  const handleFilter = () => {
+    onFilter();
+  };
+
+  const handleSelectIncome = (id) => {
+    onSelectIncome(id);
+  };
+
+  const handleSelectAll = () => {
+    onSelectAll();
   };
 
   // Add useEffect for detecting mobile screen size
@@ -777,14 +562,14 @@ const Income = () => {
                   
                   <div className={dataTableStyles.mobileCardActionButtons}>
                     <button 
-                      onClick={() => handleEditClick(income)} 
+                      onClick={() => handleEditIncome(income)} 
                       className={dataTableStyles.actionButton}
                       title="Editar"
                     >
                       <BsPencil />
                     </button>
                     <button 
-                      onClick={() => handleDeleteClick(income)} 
+                      onClick={() => handleDeleteIncome(income)} 
                       className={`${dataTableStyles.actionButton} ${dataTableStyles.delete}`}
                       title="Excluir"
                     >
@@ -797,13 +582,13 @@ const Income = () => {
               <div className={dataTableStyles.mobileCardSwipeActions}>
                 <div 
                   className={dataTableStyles.mobileCardSwipeEdit}
-                  onClick={() => handleEditClick(income)}
+                  onClick={() => handleEditIncome(income)}
                 >
                   <BsPencil size={20} />
                 </div>
                 <div 
                   className={dataTableStyles.mobileCardSwipeDelete}
-                  onClick={() => handleDeleteClick(income)}
+                  onClick={() => handleDeleteIncome(income)}
                 >
                   <BsTrash size={20} />
                 </div>
