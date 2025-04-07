@@ -41,6 +41,7 @@ const MobileIncomes = ({
       </div>
 
       <div className={showFilters ? styles.filtersExpanded : styles.filtersCollapsed}>
+        <div className={styles.filtersExpandedTitle}>Opções de Filtro</div>
         <div className={styles.filterRow}>
           <div className={styles.searchField}>
             <FiSearch className={styles.searchIcon} />
@@ -64,6 +65,19 @@ const MobileIncomes = ({
                 <option value="all">Todas as categorias</option>
                 {categories.map((category) => (
                   <option key={category.id} value={category.id}>{category.category_name}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className={styles.filterGroup}>
+              <label className={styles.filterLabel}>Banco</label>
+              <select 
+                className={styles.filterSelect}
+                onChange={(e) => onFilter('bank_id', e.target.value)}
+              >
+                <option value="all">Todos os bancos</option>
+                {banks.map((bank) => (
+                  <option key={bank.id} value={bank.id}>{bank.name}</option>
                 ))}
               </select>
             </div>
@@ -201,6 +215,20 @@ const MobileIncomes = ({
             </div>
           ))}
         </div>
+        
+        <button 
+          className={styles.clearFiltersButton}
+          onClick={() => {
+            // Limpar filtros
+            onFilter('category_id', 'all');
+            onFilter('bank_id', 'all');
+            onFilter('is_recurring', '');
+            setSearchTerm('');
+            onSearch('');
+          }}
+        >
+          Limpar Filtros
+        </button>
       </div>
     </div>
   );

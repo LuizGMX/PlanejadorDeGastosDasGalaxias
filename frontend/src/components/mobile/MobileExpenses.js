@@ -41,6 +41,7 @@ const MobileExpenses = ({
       </div>
 
       <div className={showFilters ? styles.filtersExpanded : styles.filtersCollapsed}>
+        <div className={styles.filtersExpandedTitle}>Opções de Filtro</div>
         <div className={styles.filterRow}>
           <div className={styles.searchField}>
             <FiSearch className={styles.searchIcon} />
@@ -214,6 +215,20 @@ const MobileExpenses = ({
             </div>
           ))}
         </div>
+
+        <button 
+          className={styles.clearFiltersButton}
+          onClick={() => {
+            // Limpar filtros
+            onFilter('category', 'all');
+            onFilter('paymentMethod', 'all');
+            onFilter('is_recurring', '');
+            setSearchTerm('');
+            onSearch('');
+          }}
+        >
+          Limpar Filtros
+        </button>
       </div>
     </div>
   );

@@ -71,8 +71,43 @@ const ExpensesWrapper = () => {
     filterExpenses(term);
   };
 
-  const handleFilter = () => {
-    filterExpenses(searchTerm);
+  const handleFilter = (type, value) => {
+    console.log('Applying filter:', type, value);
+    
+    // Atualizar o estado do filtro
+    setFilters(prev => ({
+      ...prev,
+      [type]: value
+    }));
+    
+    // Aplicar filtros aos dados
+    let filtered = [...originalExpenses];
+    
+    // Filtrar por termo de busca, se existir
+    if (searchTerm) {
+      filtered = filtered.filter(expense => 
+        expense.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        expense.Category?.category_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        expense.Bank?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    // Aplicar filtros adicionais
+    if (type === 'category' && value !== 'all') {
+      filtered = filtered.filter(expense => expense.category_id === parseInt(value, 10));
+    }
+    
+    if (type === 'paymentMethod' && value !== 'all') {
+      filtered = filtered.filter(expense => expense.bank_id === parseInt(value, 10));
+    }
+    
+    if (type === 'is_recurring' && value !== '') {
+      const isRecurring = value === 'true';
+      filtered = filtered.filter(expense => expense.is_recurring === isRecurring);
+    }
+    
+    setFilteredExpenses(filtered);
+    setExpenses(filtered);
   };
 
   const handleSelectExpense = (id) => {

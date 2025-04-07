@@ -69,8 +69,43 @@ const IncomesWrapper = () => {
     filterIncomes(term);
   };
 
-  const handleFilter = () => {
-    filterIncomes(searchTerm);
+  const handleFilter = (type, value) => {
+    console.log('Applying filter:', type, value);
+    
+    // Atualizar o estado do filtro
+    setFilters(prev => ({
+      ...prev,
+      [type]: value
+    }));
+    
+    // Aplicar filtros aos dados
+    let filtered = [...originalIncomes];
+    
+    // Filtrar por termo de busca, se existir
+    if (searchTerm) {
+      filtered = filtered.filter(income => 
+        income.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        income.Category?.category_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        income.Bank?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    // Aplicar filtros adicionais
+    if (type === 'category_id' && value !== 'all') {
+      filtered = filtered.filter(income => income.category_id === parseInt(value, 10));
+    }
+    
+    if (type === 'bank_id' && value !== 'all') {
+      filtered = filtered.filter(income => income.bank_id === parseInt(value, 10));
+    }
+    
+    if (type === 'is_recurring' && value !== '') {
+      const isRecurring = value === 'true';
+      filtered = filtered.filter(income => income.is_recurring === isRecurring);
+    }
+    
+    setFilteredIncomes(filtered);
+    setIncomes(filtered);
   };
 
   const handleSelectIncome = (id) => {
