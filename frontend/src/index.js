@@ -6,7 +6,7 @@ import './styles/mobile/dataTable.mobile.css';
 import './styles/mobile/forms.mobile.css';
 import './styles/mobile/navbar.mobile.css';
 import App from './App';
-import { initIOSSupport } from './utils/iosSupport';
+import { initIOSSupport, isIOS } from './utils/iosSupport';
 
 // Initialize iOS support
 console.log('Initializing application, checking for iOS...');
