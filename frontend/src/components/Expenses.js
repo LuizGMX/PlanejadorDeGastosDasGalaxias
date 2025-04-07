@@ -1181,7 +1181,7 @@ const Expenses = () => {
                   ))}
                 </div>
                 <div className={dataTableStyles.tableContainer}>
-                  <table className={`${dataTableStyles.table} ${dataTableStyles.mobileTable}`}>
+                  <table className={dataTableStyles.mobileTable}>
                     <thead>
                       <tr>
                         <th>Seleção</th>

@@ -444,4 +444,45 @@
   .bankPieContainer {
     height: 280px;
   }
-} 
+}
+
+/* Mobile styles have been moved to dataTable.mobile.css */
+
+@media (min-width: 768px) {
+    .formGrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    
+    .formGroup {
+      margin-bottom: 20px;
+    }
+    
+    .formInput,
+    .formSelect {
+      margin-top: 6px;
+    }
+    
+    .modalActions {
+      grid-column: span 2;
+      display: flex;
+      justify-content: flex-end;
+      gap: 15px;
+      margin-top: 15px;
+    }
+    
+    .formButton {
+      padding: 10px 20px;
+    }
+    
+    .formWideField {
+      grid-column: span 2;
+    }
+  }
+  
+  /* Ensure mobile card view is hidden on desktop */
+  .mobileCardView {
+    display: none;
+  }
+  

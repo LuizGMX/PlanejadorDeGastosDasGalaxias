@@ -50,26 +50,18 @@
   
   .tableContainer {
     display: block !important;
-    overflow-x: auto;
+    overflow-x: visible;
     width: 100%;
     -webkit-overflow-scrolling: touch;
     margin-bottom: 16px;
     position: relative;
     border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    border: 1px solid var(--border-color);
+    box-shadow: none;
+    border: none;
   }
   
   .tableContainer::before {
-    content: "Visualização alternativa - Deslize para navegar →";
-    display: block;
-    padding: 10px 12px;
-    background-color: var(--secondary-color);
-    color: var(--text-color);
-    font-size: 14px;
-    font-weight: 500;
-    border-bottom: 1px solid var(--border-color);
-    text-align: center;
+    display: none;
   }
   
   .table {
@@ -107,6 +99,8 @@
     margin-bottom: 16px;
     font-size: 14px;
     margin-top: 20px;
+    display: table;
+    min-width: auto;
   }
   
   .mobileTable:before {
@@ -129,10 +123,9 @@
     display: block;
     text-align: right;
     position: relative;
+    padding: 12px 10px;
     padding-left: 50%;
     border-bottom: 1px solid rgba(var(--border-color), 0.2);
-    padding-top: 10px;
-    padding-bottom: 10px;
   }
   
   .mobileTable td:before {
@@ -152,10 +145,23 @@
     border: 1px solid var(--border-color);
     border-radius: 8px;
     background-color: var(--card-background);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   }
   
   .mobileTable tr:last-child {
     margin-bottom: 0;
+  }
+  
+  .mobileTable .actionButtons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  
+  .mobileTable .amountBadge {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 4px;
   }
   
   /* Ver ambos os modos (cards e tabela) em dispositivos móveis */

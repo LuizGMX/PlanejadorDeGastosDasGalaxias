@@ -1132,7 +1132,7 @@ const Income = () => {
               <>
                 {renderMobileCards()}
                 <div className={dataTableStyles.tableContainer} style={{ marginTop: '1rem' }}>
-                  <table className={`${dataTableStyles.table} ${dataTableStyles.mobileTable}`}>
+                  <table className={dataTableStyles.mobileTable}>
                     <thead>
                       <tr>
                         <th>Seleção</th>
