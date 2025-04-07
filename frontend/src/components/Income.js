@@ -724,4 +724,103 @@ const Income = () => {
                 
                 <div className={dataTableStyles.mobileCardHeader}>
                   <h3 className={dataTableStyles.mobileCardTitle}>{income.description}</h3>
-                  <span className={`
+                  <span className={`${dataTableStyles.amountBadge} ${dataTableStyles.incomeAmount} ${dataTableStyles.mobileCardAmount}`}>
+                    {formatCurrency(income.amount)}
+                  </span>
+                </div>
+                
+                <div className={dataTableStyles.mobileCardDetails}>
+                  <div className={dataTableStyles.mobileCardDetail}>
+                    <span className={dataTableStyles.mobileCardLabel}>Data</span>
+                    <span className={dataTableStyles.mobileCardValue}>{formatDate(income.date)}</span>
+                  </div>
+                  
+                  <div className={dataTableStyles.mobileCardDetail}>
+                    <span className={dataTableStyles.mobileCardLabel}>Categoria</span>
+                    <span className={dataTableStyles.mobileCardValue}>
+                      <BsFolderSymlink style={{color: 'var(--primary-color)'}} />
+                      {income.Category?.category_name || '-'}
+                    </span>
+                  </div>
+                  
+                  <div className={dataTableStyles.mobileCardDetail}>
+                    <span className={dataTableStyles.mobileCardLabel}>Banco</span>
+                    <span className={dataTableStyles.mobileCardValue}>
+                      <BsBank2 style={{color: 'var(--primary-color)'}} />
+                      {income.Bank?.name || '-'}
+                    </span>
+                  </div>
+                  
+                  <div className={dataTableStyles.mobileCardDetail}>
+                    <span className={dataTableStyles.mobileCardLabel}>Tipo</span>
+                    <span className={dataTableStyles.mobileCardValue}>
+                      {income.is_recurring ? (
+                        <><BsRepeat style={{color: 'var(--primary-color)'}} /> Receita fixa</>
+                      ) : (
+                        <><BsCurrencyDollar style={{color: 'var(--text-color)'}} /> Receita única</>
+                      )}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className={dataTableStyles.mobileCardActions}>
+                  <div className={dataTableStyles.mobileCardType}>
+                    {income.is_recurring ? (
+                      <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
+                        <BsRepeat /> Fixo
+                      </span>
+                    ) : (
+                      <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
+                        <BsCurrencyDollar /> Único
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className={dataTableStyles.mobileCardActionButtons}>
+                    <button 
+                      onClick={() => handleEditClick(income)} 
+                      className={dataTableStyles.actionButton}
+                      title="Editar"
+                    >
+                      <BsPencil />
+                    </button>
+                    <button 
+                      onClick={() => handleDeleteClick(income)} 
+                      className={`${dataTableStyles.actionButton} ${dataTableStyles.delete}`}
+                      title="Excluir"
+                    >
+                      <BsTrash />
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
+              <div className={dataTableStyles.mobileCardSwipeActions}>
+                <div 
+                  className={dataTableStyles.mobileCardSwipeEdit}
+                  onClick={() => handleEditClick(income)}
+                >
+                  <BsPencil size={20} />
+                </div>
+                <div 
+                  className={dataTableStyles.mobileCardSwipeDelete}
+                  onClick={() => handleDeleteClick(income)}
+                >
+                  <BsTrash size={20} />
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  return (
+    <div className={dataTableStyles.container}>
+      {/* Rest of the component content */}
+    </div>
+  );
+};
+
+export default Income;
