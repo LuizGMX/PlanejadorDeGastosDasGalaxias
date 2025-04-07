@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { AuthContext } from '../App';
-import dataTableStyles from '../styles/dataTable.module.css';
-import sharedStyles from '../styles/shared.module.css';
+import { AuthContext } from '../../App';
+import dataTableStyles from '../../styles/dataTable.module.css';
+import sharedStyles from '../../styles/shared.module.css';
 import EditExpenseForm from './EditExpenseForm';
 import { toast } from 'react-hot-toast';
 import { 

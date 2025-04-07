@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { AuthContext } from '../App';
+import { AuthContext } from '../../App';
 import { useNavigate } from 'react-router-dom';
-import dataTableStyles from '../styles/dataTable.module.css';
+import dataTableStyles from '../../styles/dataTable.module.css';
+import sharedStyles from '../../styles/shared.module.css';
 import EditIncomeForm from './EditIncomeForm';
 import { 
   BsArrowLeft, 

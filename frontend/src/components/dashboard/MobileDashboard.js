@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
-import { AuthContext } from '../App';
+import { AuthContext } from '../../App';
 import { useNavigate } from 'react-router-dom';
 import {  
   Line,
@@ -20,7 +20,7 @@ import {
 } from 'recharts';
 import styles from '../../styles/mobile/dashboard.mobile.module.css';
 import { FaChartLine, FaChevronDown} from 'react-icons/fa';
-import DateRangePicker from './DateRangePicker';
+import DateRangePicker from '../shared/DateRangePicker';
 
 import { 
   BsPlusLg, 

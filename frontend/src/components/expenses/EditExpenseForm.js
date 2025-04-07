@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { AuthContext } from '../App';
-import dataTableStyles from '../styles/dataTable.module.css';
-import sharedStyles from '../styles/shared.module.css';
+import React, { useState, useEffect } from 'react';
+import dataTableStyles from '../../styles/dataTable.module.css';
+import sharedStyles from '../../styles/shared.module.css';
 import CurrencyInput from 'react-currency-input-field';
 import { 
   BsPencil, 
@@ -19,7 +18,6 @@ import {
 } from 'react-icons/bs';
 
 const EditExpenseForm = ({ expense, onSave, onCancel }) => {
-  const { auth } = useContext(AuthContext);
   const [formData, setFormData] = useState({
     description: expense.description,
     amount: expense.amount,

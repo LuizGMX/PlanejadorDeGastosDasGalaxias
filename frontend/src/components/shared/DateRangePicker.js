@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaCalendarAlt } from 'react-icons/fa';
-import styles from '../styles/dashboard.module.css';
+import styles from '../../styles/dashboard.module.css';
 
 const DateRangePicker = ({ onDateRangeSelect, onCancel }) => {
   // Inicializa com o primeiro e último dia do mês atual

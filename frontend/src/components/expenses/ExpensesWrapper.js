@@ -1,32 +1,34 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AuthContext } from '../App';
-import Income from './Income';
-import MobileIncomes from './mobile/MobileIncomes';
-import dataTableStyles from '../styles/dataTable.module.css';
+import { AuthContext } from '../../App';
+import Expenses from './Expenses';
+import MobileExpenses from './MobileExpenses';
+import styles from '../../styles/shared.module.css';
+import '../../styles/dataTable.module.css';
 
-const IncomesWrapper = () => {
+const ExpensesWrapper = () => {
   const navigate = useNavigate();
   const { auth } = useContext(AuthContext);
-  const [incomes, setIncomes] = useState([]);
+  const [expenses, setExpenses] = useState([]);
   const [categories, setCategories] = useState([]);
   const [banks, setBanks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedIncomes, setSelectedIncomes] = useState([]);
+  const [selectedExpenses, setSelectedExpenses] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [incomeToDelete, setIncomeToDelete] = useState(null);
-  const [editingIncome, setEditingIncome] = useState(null);
-  const [deleteSuccess, setDeleteSuccess] = useState(null);
+  const [expenseToDelete, setExpenseToDelete] = useState(null);
+  
   const [filters, setFilters] = useState({
     months: [new Date().getMonth() + 1],
     years: [new Date().getFullYear()],
+    category: 'all',
+    paymentMethod: 'all',
+    hasInstallments: 'all',
     description: '',
-    category_id: '',
     is_recurring: ''
   });
-  const [originalIncomes, setOriginalIncomes] = useState([]);
-  const [filteredIncomes, setFilteredIncomes] = useState([]);
+  const [originalExpenses, setOriginalExpenses] = useState([]);
+  const [filteredExpenses, setFilteredExpenses] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
 
   // Função para verificar se a tela é mobile
@@ -49,17 +51,17 @@ const IncomesWrapper = () => {
     };
   }, []);
 
-  // Funções para manipular receitas
-  const handleAddIncome = () => {
-    navigate('/add-income');
+  // Funções para manipular despesas
+  const handleAddExpense = () => {
+    navigate('/add-expense');
   };
 
-  const handleEditIncome = (income) => {
-    navigate(`/incomes/edit/${income.id}`);
+  const handleEditExpense = (expense) => {
+    navigate(`/expenses/edit/${expense.id}`);
   };
 
-  const handleDeleteIncome = (income) => {
-    setIncomeToDelete(income);
+  const handleDeleteExpense = (expense) => {
+    setExpenseToDelete(expense);
     setShowDeleteModal(true);
   };
 
@@ -72,8 +74,8 @@ const IncomesWrapper = () => {
       const backendFilters = {
         month: filters.months !== 'all' ? filters.months : undefined,
         year: filters.years !== 'all' ? filters.years : undefined,
-        category_id: filters.category_id !== 'all' ? filters.category_id : undefined,
-        bank_id: filters.bank_id !== 'all' ? filters.bank_id : undefined,
+        category_id: filters.category !== 'all' ? filters.category : undefined,
+        bank_id: filters.paymentMethod !== 'all' ? filters.paymentMethod : undefined,
         is_recurring: filters.is_recurring !== '' ? filters.is_recurring : undefined,
         description: term || undefined
       };
@@ -83,19 +85,20 @@ const IncomesWrapper = () => {
   };
 
   const handleFilter = (type, value) => {
-    console.log('Applying filter for incomes:', type, value, typeof value);
+    console.log('Applying filter for expenses:', type, value, typeof value);
     
     // Caso especial para resetar todos os filtros
     if (type === 'resetAllFilters' && value === true) {
-      console.log('Resetting all filters for incomes - showing all data');
+      console.log('Resetting all filters for expenses - showing all data');
       
       // Resetar o estado dos filtros para valores padrão
       const resetFilters = {
         months: [],
         years: [],
+        category: 'all',
+        paymentMethod: 'all',
+        hasInstallments: 'all',
         description: '',
-        category_id: 'all',
-        bank_id: 'all',
         is_recurring: ''
       };
       
@@ -113,7 +116,7 @@ const IncomesWrapper = () => {
       // Atualizar o valor do filtro específico
       newFilters[type] = value;
       
-      console.log('Novos filtros para receitas:', newFilters);
+      console.log('Novos filtros para despesas:', newFilters);
       
       // Buscar dados com os novos filtros após atualizar o estado
       setTimeout(() => {
@@ -122,12 +125,13 @@ const IncomesWrapper = () => {
           months: newFilters.months,
           years: newFilters.years,
           description: newFilters.description || undefined,
-          category_id: newFilters.category_id !== 'all' ? newFilters.category_id : undefined,
-          bank_id: newFilters.bank_id !== 'all' ? newFilters.bank_id : undefined,
+          category: newFilters.category !== 'all' ? newFilters.category : undefined,
+          paymentMethod: newFilters.paymentMethod !== 'all' ? newFilters.paymentMethod : undefined,
+          hasInstallments: newFilters.hasInstallments !== 'all' ? newFilters.hasInstallments : undefined,
           is_recurring: newFilters.is_recurring !== '' ? newFilters.is_recurring : undefined
         };
         
-        console.log('Filtros enviados para a API de receitas:', backendFilters);
+        console.log('Filtros enviados para a API de despesas:', backendFilters);
         fetchData(backendFilters);
       }, 0);
       
@@ -135,10 +139,10 @@ const IncomesWrapper = () => {
     });
   };
 
-  const handleSelectIncome = (id) => {
-    setSelectedIncomes(prev => {
+  const handleSelectExpense = (id) => {
+    setSelectedExpenses(prev => {
       if (prev.includes(id)) {
-        return prev.filter(incId => incId !== id);
+        return prev.filter(expId => expId !== id);
       } else {
         return [...prev, id];
       }
@@ -146,19 +150,16 @@ const IncomesWrapper = () => {
   };
 
   const handleSelectAll = () => {
-    // Garantir que incomes seja um array
-    const safeIncomes = Array.isArray(incomes) ? incomes : [];
-    
-    if (selectedIncomes.length === safeIncomes.length) {
-      setSelectedIncomes([]);
+    if (selectedExpenses.length === expenses.length) {
+      setSelectedExpenses([]);
     } else {
-      setSelectedIncomes(safeIncomes.map(inc => inc.id));
+      setSelectedExpenses(expenses.map(exp => exp.id));
     }
   };
 
   // Efeito para carregar dados
   useEffect(() => {
-    console.log('IncomesWrapper - Carregando dados iniciais');
+    console.log('ExpensesWrapper - Carregando dados iniciais');
     const today = new Date();
     const thisMonth = today.getMonth() + 1;
     const thisYear = today.getFullYear();
@@ -167,9 +168,10 @@ const IncomesWrapper = () => {
     setFilters({
       months: [thisMonth],
       years: [thisYear],
+      category: 'all',
+      paymentMethod: 'all',
+      hasInstallments: 'all',
       description: '',
-      category_id: 'all',
-      bank_id: 'all',
       is_recurring: ''
     });
     
@@ -201,12 +203,20 @@ const IncomesWrapper = () => {
         queryParams.append('description', filterParams.description);
       }
       
-      if (filterParams.category_id && filterParams.category_id !== 'all') {
-        queryParams.append('category_id', filterParams.category_id);
+      if (filterParams.category && filterParams.category !== 'all') {
+        queryParams.append('category_id', filterParams.category);
       }
       
-      if (filterParams.bank_id && filterParams.bank_id !== 'all') {
-        queryParams.append('bank_id', filterParams.bank_id);
+      if (filterParams.bank && filterParams.bank !== 'all') {
+        queryParams.append('bank_id', filterParams.bank);
+      }
+      
+      if (filterParams.hasInstallments && filterParams.hasInstallments !== 'all') {
+        queryParams.append('has_installments', filterParams.hasInstallments === 'yes');
+      }
+      
+      if (filterParams.paymentMethod && filterParams.paymentMethod !== 'all') {
+        queryParams.append('payment_method', filterParams.paymentMethod);
       }
       
       if (filterParams.is_recurring !== undefined && filterParams.is_recurring !== '') {
@@ -215,65 +225,62 @@ const IncomesWrapper = () => {
       
       // Construir a URL com query params
       const queryString = queryParams.toString();
-      const url = `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes${queryString ? `?${queryString}` : ''}`;
+      const url = `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses${queryString ? `?${queryString}` : ''}`;
       
       console.log('URL da requisição:', url);
       
-      // Buscar receitas com os filtros
-      const incomesResponse = await fetch(url, {
+      // Buscar despesas com os filtros
+      const expensesResponse = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${auth.token}`
         }
       });
       
-      console.log('Resposta da API de receitas:', {
-        status: incomesResponse.status,
-        ok: incomesResponse.ok,
-        statusText: incomesResponse.statusText
+      console.log('Resposta da API de despesas:', {
+        status: expensesResponse.status,
+        ok: expensesResponse.ok,
+        statusText: expensesResponse.statusText
       });
       
-      if (!incomesResponse.ok) {
-        throw new Error('Erro ao carregar receitas');
+      if (!expensesResponse.ok) {
+        throw new Error('Erro ao carregar despesas');
       }
       
-      const incomesData = await incomesResponse.json();
-      console.log('Dados de receitas recebidos:', {
-        type: typeof incomesData,
-        isArray: Array.isArray(incomesData),
-        length: incomesData?.length,
-        data: incomesData
+      const expensesData = await expensesResponse.json();
+      console.log('Dados de despesas recebidos:', {
+        type: typeof expensesData,
+        isArray: Array.isArray(expensesData),
+        length: expensesData?.length,
+        sample: expensesData?.length > 0 ? expensesData[0] : null
       });
       
-      // Extrair os dados de receitas do objeto retornado
-      let extractedIncomes = [];
+      // Extração dos dados de despesas
+      let extractedExpenses = [];
       
-      // Verificar se é um objeto e contém a propriedade 'incomes'
-      if (typeof incomesData === 'object' && 'incomes' in incomesData) {
-        extractedIncomes = incomesData.incomes;
-      } else if (Array.isArray(incomesData)) {
-        extractedIncomes = incomesData;
+      if (Array.isArray(expensesData)) {
+        extractedExpenses = expensesData;
       } else {
-        console.error('Formato de dados inesperado:', incomesData);
-        extractedIncomes = [];
+        console.error('Formato de dados inesperado:', expensesData);
+        extractedExpenses = [];
       }
       
-      console.log('Receitas extraídas:', {
-        length: extractedIncomes.length,
-        data: extractedIncomes
+      console.log('Despesas extraídas:', {
+        length: extractedExpenses.length,
+        sample: extractedExpenses.length > 0 ? extractedExpenses[0] : null
       });
       
-      setOriginalIncomes(extractedIncomes);
-      setFilteredIncomes(extractedIncomes);
-      setIncomes(extractedIncomes);
+      setOriginalExpenses(extractedExpenses);
+      setFilteredExpenses(extractedExpenses);
+      setExpenses(extractedExpenses);
       
       // Exibe os dados antes de aplicar filtros
-      console.log("Dados carregados antes de filtros:", extractedIncomes.length);
+      console.log("Dados carregados antes de filtros:", extractedExpenses.length);
       
       // Examine alguns dados para debug
-      if (extractedIncomes.length > 0) {
-        console.log("Exemplo de receita:", extractedIncomes[0]);
-        console.log("Data da receita:", extractedIncomes[0].date);
-        console.log("Formato da data:", typeof extractedIncomes[0].date);
+      if (extractedExpenses.length > 0) {
+        console.log("Exemplo de despesa:", extractedExpenses[0]);
+        console.log("Data da despesa:", extractedExpenses[0].date);
+        console.log("Formato da data:", typeof extractedExpenses[0].date);
       }
 
       // Buscar categorias
@@ -377,9 +384,9 @@ const IncomesWrapper = () => {
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
       setError(error.message);
-      setOriginalIncomes([]);
-      setFilteredIncomes([]);
-      setIncomes([]);
+      setOriginalExpenses([]);
+      setFilteredExpenses([]);
+      setExpenses([]);
     } finally {
       setLoading(false);
     }
@@ -391,8 +398,8 @@ const IncomesWrapper = () => {
     const backendFilters = {
       month: filters.months !== 'all' ? filters.months : undefined,
       year: filters.years !== 'all' ? filters.years : undefined,
-      category_id: filters.category_id !== 'all' ? filters.category_id : undefined,
-      bank_id: filters.bank_id !== 'all' ? filters.bank_id : undefined,
+      category_id: filters.category !== 'all' ? filters.category : undefined,
+      bank_id: filters.paymentMethod !== 'all' ? filters.paymentMethod : undefined,
       is_recurring: filters.is_recurring !== '' ? filters.is_recurring : undefined,
       description: searchTerm || undefined
     };
@@ -404,8 +411,8 @@ const IncomesWrapper = () => {
   };
 
   // Log do estado antes da renderização
-  console.log('IncomesWrapper render:', {
-    incomesLength: incomes.length,
+  console.log('ExpensesWrapper render:', {
+    expensesLength: expenses.length,
     loading,
     error,
     isMobile
@@ -413,15 +420,15 @@ const IncomesWrapper = () => {
 
   // Renderização condicional baseada no dispositivo
   return isMobile ? (
-    <MobileIncomes
-      incomes={incomes}
-      onEdit={handleEditIncome}
-      onDelete={handleDeleteIncome}
-      onAdd={handleAddIncome}
+    <MobileExpenses
+      expenses={expenses}
+      onEdit={handleEditExpense}
+      onDelete={handleDeleteExpense}
+      onAdd={handleAddExpense}
       onFilter={handleFilter}
       onSearch={handleSearch}
-      selectedIncomes={selectedIncomes}
-      onSelectIncome={handleSelectIncome}
+      selectedExpenses={selectedExpenses}
+      onSelectExpense={handleSelectExpense}
       onSelectAll={handleSelectAll}
       loading={loading}
       error={error}
@@ -430,15 +437,15 @@ const IncomesWrapper = () => {
       filters={filters}
     />
   ) : (
-    <Income
-      incomes={incomes}
-      onEdit={handleEditIncome}
-      onDelete={handleDeleteIncome}
-      onAdd={handleAddIncome}
+    <Expenses
+      expenses={expenses}
+      onEdit={handleEditExpense}
+      onDelete={handleDeleteExpense}
+      onAdd={handleAddExpense}
       onFilter={handleFilter}
       onSearch={handleSearch}
-      selectedIncomes={selectedIncomes}
-      onSelectIncome={handleSelectIncome}
+      selectedExpenses={selectedExpenses}
+      onSelectExpense={handleSelectExpense}
       onSelectAll={handleSelectAll}
       loading={loading}
       error={error}
@@ -446,4 +453,4 @@ const IncomesWrapper = () => {
   );
 };
 
-export default IncomesWrapper; 
+export default ExpensesWrapper; 

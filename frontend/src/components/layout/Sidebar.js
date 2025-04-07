@@ -1,9 +1,9 @@
 import React, { useContext, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { AuthContext } from '../App';
-import styles from '../styles/sidebar.module.css';
+import { AuthContext } from '../../App';
+import styles from '../../styles/sidebar.module.css';
 import { BsGraphUp, BsListUl, BsPlusCircle, BsDoorOpen, BsCashCoin, BsChevronDown, BsPerson, BsPencil } from 'react-icons/bs';
-import logo from '../assets/logo.svg';
+import logo from '../../assets/logo.svg';
 import { GiPayMoney, GiReceiveMoney, } from "react-icons/gi";
 
 const Sidebar = ({ className }) => {

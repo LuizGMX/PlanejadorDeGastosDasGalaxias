@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import MobileAddExpense from './MobileAddExpense';
 import AddExpense from './AddExpense';
-import MobileAddExpense from './mobile/MobileAddExpense';
 
 const AddExpenseWrapper = () => {
   // Função para verificar se a tela é mobile

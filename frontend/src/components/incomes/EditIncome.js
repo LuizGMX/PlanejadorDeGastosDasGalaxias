@@ -1,74 +1,74 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { AuthContext } from '../App';
-import dataTableStyles from '../styles/dataTable.module.css';
-import EditExpenseForm from './EditExpenseForm';
+import { AuthContext } from '../../App';
+import dataTableStyles from '../../styles/dataTable.module.css';
+import EditIncomeForm from './EditIncomeForm';
 import { toast } from 'react-hot-toast';
 import { BsArrowLeft } from 'react-icons/bs';
 
-const EditExpense = () => {
+const EditIncome = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const { auth } = useContext(AuthContext);
-  const [expense, setExpense] = useState(null);
+  const [income, setIncome] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchExpense = async () => {
+    const fetchIncome = async () => {
       try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses/${id}`, {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${id}`, {
           headers: {
             'Authorization': `Bearer ${auth.token}`
           }
         });
 
         if (!response.ok) {
-          throw new Error('Erro ao carregar despesa');
+          throw new Error('Erro ao carregar receita');
         }
 
         const data = await response.json();
-        setExpense(data);
+        setIncome(data);
         setLoading(false);
       } catch (error) {
-        console.error('Erro ao carregar despesa:', error);
-        setError('Erro ao carregar despesa. Por favor, tente novamente.');
+        console.error('Erro ao carregar receita:', error);
+        setError('Erro ao carregar receita. Por favor, tente novamente.');
         setLoading(false);
       }
     };
 
     if (id) {
-      fetchExpense();
+      fetchIncome();
     } else {
-      navigate('/expenses');
+      navigate('/income');
     }
   }, [id, auth.token, navigate]);
 
-  const handleSave = async (expenseData) => {
+  const handleSave = async (incomeData) => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses/${id}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${auth.token}`
         },
-        body: JSON.stringify(expenseData)
+        body: JSON.stringify(incomeData)
       });
 
       if (!response.ok) {
-        throw new Error('Erro ao atualizar despesa');
+        throw new Error('Erro ao atualizar receita');
       }
 
-      toast.success('Despesa atualizada com sucesso!');
-      navigate('/expenses');
+      toast.success('Receita atualizada com sucesso!');
+      navigate('/income');
     } catch (error) {
-      console.error('Erro ao atualizar despesa:', error);
-      toast.error('Erro ao atualizar despesa');
+      console.error('Erro ao atualizar receita:', error);
+      toast.error('Erro ao atualizar receita');
     }
   };
 
   const handleCancel = () => {
-    navigate('/expenses');
+    navigate('/income');
   };
 
   if (loading) {
@@ -87,7 +87,7 @@ const EditExpense = () => {
         <div className={dataTableStyles.card}>
           <p className={dataTableStyles.error}>{error}</p>
           <button 
-            onClick={() => navigate('/expenses')}
+            onClick={() => navigate('/income')}
             className={dataTableStyles.backButton}
           >
             <BsArrowLeft /> Voltar
@@ -97,13 +97,13 @@ const EditExpense = () => {
     );
   }
 
-  if (!expense) {
+  if (!income) {
     return (
       <div className={dataTableStyles.container}>
         <div className={dataTableStyles.card}>
-          <p className={dataTableStyles.error}>Despesa não encontrada</p>
+          <p className={dataTableStyles.error}>Receita não encontrada</p>
           <button 
-            onClick={() => navigate('/expenses')}
+            onClick={() => navigate('/income')}
             className={dataTableStyles.backButton}
           >
             <BsArrowLeft /> Voltar
@@ -115,8 +115,8 @@ const EditExpense = () => {
 
   return (
     <div className={dataTableStyles.container}>
-      <EditExpenseForm
-        expense={expense}
+      <EditIncomeForm
+        income={income}
         onSave={handleSave}
         onCancel={handleCancel}
       />
@@ -124,4 +124,4 @@ const EditExpense = () => {
   );
 };
 
-export default EditExpense; 
+export default EditIncome; 

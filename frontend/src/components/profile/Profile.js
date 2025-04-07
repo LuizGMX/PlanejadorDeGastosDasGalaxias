@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AuthContext } from '../App';
-import styles from '../styles/shared.module.css';
+import { AuthContext } from '../../App';
+import styles from '../../styles/shared.module.css';
 import { BsDoorOpen } from 'react-icons/bs';
 
 // Importando os novos componentes
-import PersonalInfoAndEmail from './profile/PersonalInfoAndEmail';
-import FinancialGoal from './profile/FinancialGoal';
-import BanksList from './profile/BanksList';
-import TelegramVerification from './profile/TelegramVerification';
+import PersonalInfoAndEmail from './PersonalInfoAndEmail';
+import FinancialGoal from './FinancialGoal';
+import BanksList from './BanksList';
+import TelegramVerification from './TelegramVerification';
 
 const Profile = () => {
   const navigate = useNavigate();

@@ -1,7 +1,7 @@
 import React from 'react';
 import Sidebar from './Sidebar';
 import MobileNavbar from './MobileNavbar';
-import styles from '../styles/layout.module.css';
+import styles from '../../styles/layout.module.css';
 
 const Layout = ({ children }) => {
   return (

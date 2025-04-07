@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import { FiEdit2, FiTrash2, FiFilter, FiSearch, FiPlus } from 'react-icons/fi';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import styles from '../../styles/mobile/dataTable.mobile.module.css';
 import dataTableStyles from '../../styles/dataTable.module.css';
+import sharedStyles from '../../styles/shared.module.css';
+import { AuthContext } from '../../App';
 
 const MobileIncomes = ({ 
   incomes, 

@@ -1,6 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { AuthContext } from '../../App';
+import dataTableStyles from '../../styles/dataTable.module.css';
+import sharedStyles from '../../styles/shared.module.css';
+import MobileAddIncome from './MobileAddIncome';
 import AddIncome from './AddIncome';
-import MobileAddIncome from './mobile/MobileAddIncome';
 
 const AddIncomeWrapper = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);

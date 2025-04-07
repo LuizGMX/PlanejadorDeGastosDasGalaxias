@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
-import { AuthContext } from '../App';
 import { useNavigate } from 'react-router-dom';
+import { AuthContext } from '../../App';
 import {  
   Line,
   PieChart,
@@ -19,9 +19,9 @@ import {
   AreaChart,
   ReferenceLine  
 } from 'recharts';
-import styles from '../styles/dashboard.module.css';
+import styles from '../../styles/dashboard.module.css';
 import { FaChartLine, FaChevronDown} from 'react-icons/fa';
-import DateRangePicker from './DateRangePicker';
+import DateRangePicker from '../shared/DateRangePicker';
 
 import { 
   BsPlusLg, 

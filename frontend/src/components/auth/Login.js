@@ -1,9 +1,9 @@
 import React, { useState, useContext, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AuthContext } from '../App';
+import { AuthContext } from '../../App';
 import CurrencyInput from 'react-currency-input-field';
-import styles from '../styles/login.module.css';
-import logo from '../assets/logo.svg';
+import styles from '../../styles/login.module.css';
+import logo from '../../assets/logo.svg';
 import { BsEnvelope, BsPerson, BsShieldLock, BsBank2, BsGraphUp, BsTelegram } from 'react-icons/bs';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
