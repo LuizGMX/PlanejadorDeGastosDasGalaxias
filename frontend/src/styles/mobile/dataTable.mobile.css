@@ -1,5 +1,18 @@
 /* Mobile styles for data tables */
 @media (max-width: 768px) {
+  /* Hack para forçar a exibição no mobile */
+  .dataContainer, .mobileCardView, .mobileCard, .tableContainer, .mobileTable {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  
+  /* Definindo largura máxima e garantir que caiba na tela */
+  .dataContainer {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  
   .filterToggleButton {
     display: flex;
     position: sticky;
@@ -196,6 +209,9 @@
     position: relative;
     overflow: hidden;
     transition: all 0.2s ease;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
   }
   
   .mobileCard:hover {
