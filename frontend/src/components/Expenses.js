@@ -24,6 +24,7 @@ import {
   BsChevronDown,
   BsChevronUp
 } from 'react-icons/bs';
+import { FiEdit2, FiTrash2 } from 'react-icons/fi';
 
 const Expenses = () => {
   const navigate = useNavigate();
@@ -1203,8 +1204,8 @@ const Expenses = () => {
           </div>
         ) : (
           <>
-            {/* Mobile View - Only render when isMobile is true */}
-            {isMobile ? (
+            {/* Mobile View */}
+            {isMobile && (
               <>
                 {renderMobileCards()}
                 <div className={dataTableStyles.tableContainer}>
@@ -1224,82 +1225,38 @@ const Expenses = () => {
                     </thead>
                     <tbody>
                       {expenses.map((expense) => (
-                        <tr key={expense.id} className={dataTableStyles.tableRow}>
-                          <td data-label="Seleção">
-                            <label className={dataTableStyles.checkboxContainer}>
-                              <input
-                                type="checkbox"
-                                checked={selectedExpenses.includes(expense.id)}
-                                onChange={(e) => handleSelectExpense(expense.id, e)}
-                                className={dataTableStyles.checkbox}
-                                disabled={expense.has_installments}
-                              />
-                              <span className={dataTableStyles.checkmark}></span>
-                            </label>
+                        <tr key={expense.id}>
+                          <td>
+                            <input
+                              type="checkbox"
+                              checked={selectedExpenses.includes(expense.id)}
+                              onChange={(e) => handleSelectExpense(expense.id, e)}
+                            />
                           </td>
                           <td data-label="Descrição">{expense.description}</td>
                           <td data-label="Valor">
-                            <span className={`${dataTableStyles.amountBadge} ${dataTableStyles.expenseAmount}`}>
-                              R$ {Number(expense.amount).toFixed(2)}
+                            <span className={dataTableStyles.amountBadge}>
+                              {formatCurrency(expense.amount)}
                             </span>
                           </td>
                           <td data-label="Data">{formatDate(expense.expense_date)}</td>
                           <td data-label="Categoria">{expense.Category?.category_name}</td>
-                          <td data-label="Pagamento">
-                            {expense.payment_method === 'credit_card' ? (
-                              <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
-                                <BsCreditCard2Front /> Crédito
-                              </span>
-                            ) : expense.payment_method === 'debit_card' ? (
-                              <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
-                                <BsCreditCard2Front /> Débito
-                              </span>
-                            ) : expense.payment_method === 'pix' ? (
-                              <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
-                                <BsCurrencyDollar /> Pix
-                              </span>
-                            ) : (
-                              <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
-                                <BsCashCoin /> Dinheiro
-                              </span>
-                            )}
-                          </td>
-                          <td data-label="Tipo">
-                            {expense.is_recurring ? (
-                              <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
-                                <BsRepeat /> Fixo
-                              </span>
-                            ) : expense.has_installments ? (
-                              <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.installmentsType}`}>
-                                <BsCreditCard2Front /> Parcelado
-                              </span>
-                            ) : (
-                              <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
-                                <BsCurrencyDollar /> Único
-                              </span>
-                            )}
-                          </td>
-                          <td data-label="Parcelas">
-                            {expense.has_installments 
-                              ? `${expense.current_installment}/${expense.total_installments}`
-                              : '-'
-                            }
-                          </td>
+                          <td data-label="Pagamento">{expense.payment_method}</td>
+                          <td data-label="Tipo">{expense.is_recurring ? 'Fixo' : expense.has_installments ? 'Parcelado' : 'Único'}</td>
+                          <td data-label="Parcelas">{expense.has_installments ? `${expense.current_installment}/${expense.total_installments}` : '-'}</td>
                           <td data-label="Ações">
                             <div className={dataTableStyles.actionButtons}>
-                              <button 
-                                onClick={() => handleEditClick(expense)} 
-                                className={dataTableStyles.actionButton}
-                                title="Editar"
+                              <button
+                                onClick={() => handleEditClick(expense)}
+                                className={dataTableStyles.editButton}
                               >
-                                <BsPencil />
+                                <FiEdit2 />
                               </button>
-                              <button 
-                                onClick={() => handleDeleteClick(expense)} 
-                                className={`${dataTableStyles.actionButton} ${dataTableStyles.delete}`}
-                                title="Excluir"
+                              <button
+                                onClick={() => handleDeleteClick(expense)}
+                                className={dataTableStyles.deleteButton}
                               >
-                                <BsTrash />
+                                <FiTrash2 />
                               </button>
                             </div>
                           </td>
@@ -1309,21 +1266,20 @@ const Expenses = () => {
                   </table>
                 </div>
               </>
-            ) : (
+            )}
+
+            {/* Desktop View */}
+            {!isMobile && (
               <div className={dataTableStyles.tableContainer}>
                 <table className={dataTableStyles.table}>
                   <thead>
                     <tr>
-                      <th width="40">
-                        <label className={dataTableStyles.checkboxContainer}>
-                          <input
-                            type="checkbox"
-                            checked={selectedExpenses.length === expenses.filter(e => !e.has_installments).length && expenses.length > 0}
-                            onChange={handleSelectAll}
-                            className={dataTableStyles.checkbox}
-                          />
-                          <span className={dataTableStyles.checkmark}></span>
-                        </label>
+                      <th>
+                        <input
+                          type="checkbox"
+                          checked={selectedExpenses.length === expenses.length}
+                          onChange={handleSelectAll}
+                        />
                       </th>
                       <th>Descrição</th>
                       <th>Valor</th>
@@ -1332,87 +1288,43 @@ const Expenses = () => {
                       <th>Pagamento</th>
                       <th>Tipo</th>
                       <th>Parcelas</th>
-                      <th width="100">Ações</th>
+                      <th>Ações</th>
                     </tr>
                   </thead>
                   <tbody>
                     {expenses.map((expense) => (
-                      <tr key={expense.id} className={dataTableStyles.tableRow}>
+                      <tr key={expense.id}>
                         <td>
-                          <label className={dataTableStyles.checkboxContainer}>
-                            <input
-                              type="checkbox"
-                              checked={selectedExpenses.includes(expense.id)}
-                              onChange={(e) => handleSelectExpense(expense.id, e)}
-                              className={dataTableStyles.checkbox}
-                              disabled={expense.has_installments}
-                            />
-                            <span className={dataTableStyles.checkmark}></span>
-                          </label>
+                          <input
+                            type="checkbox"
+                            checked={selectedExpenses.includes(expense.id)}
+                            onChange={(e) => handleSelectExpense(expense.id, e)}
+                          />
                         </td>
                         <td>{expense.description}</td>
                         <td>
-                          <span className={`${dataTableStyles.amountBadge} ${dataTableStyles.expenseAmount}`}>
-                            R$ {Number(expense.amount).toFixed(2)}
+                          <span className={dataTableStyles.amountBadge}>
+                            {formatCurrency(expense.amount)}
                           </span>
                         </td>
                         <td>{formatDate(expense.expense_date)}</td>
                         <td>{expense.Category?.category_name}</td>
-                        <td>
-                          {expense.payment_method === 'credit_card' ? (
-                            <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
-                              <BsCreditCard2Front /> Crédito
-                            </span>
-                          ) : expense.payment_method === 'debit_card' ? (
-                            <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
-                              <BsCreditCard2Front /> Débito
-                            </span>
-                          ) : expense.payment_method === 'pix' ? (
-                            <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
-                              <BsCurrencyDollar /> Pix
-                            </span>
-                          ) : (
-                            <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
-                              <BsCashCoin /> Dinheiro
-                            </span>
-                          )}
-                        </td>
-                        <td>
-                          {expense.is_recurring ? (
-                            <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
-                              <BsRepeat /> Fixo
-                            </span>
-                          ) : expense.has_installments ? (
-                            <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.installmentsType}`}>
-                              <BsCreditCard2Front /> Parcelado
-                            </span>
-                          ) : (
-                            <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
-                              <BsCurrencyDollar /> Único
-                            </span>
-                          )}
-                        </td>
-                        <td>
-                          {expense.has_installments 
-                            ? `${expense.current_installment}/${expense.total_installments}`
-                            : '-'
-                          }
-                        </td>
+                        <td>{expense.payment_method}</td>
+                        <td>{expense.is_recurring ? 'Fixo' : expense.has_installments ? 'Parcelado' : 'Único'}</td>
+                        <td>{expense.has_installments ? `${expense.current_installment}/${expense.total_installments}` : '-'}</td>
                         <td>
                           <div className={dataTableStyles.actionButtons}>
-                            <button 
-                              onClick={() => handleEditClick(expense)} 
-                              className={dataTableStyles.actionButton}
-                              title="Editar"
+                            <button
+                              onClick={() => handleEditClick(expense)}
+                              className={dataTableStyles.editButton}
                             >
-                              <BsPencil />
+                              <FiEdit2 />
                             </button>
-                            <button 
-                              onClick={() => handleDeleteClick(expense)} 
-                              className={`${dataTableStyles.actionButton} ${dataTableStyles.delete}`}
-                              title="Excluir"
+                            <button
+                              onClick={() => handleDeleteClick(expense)}
+                              className={dataTableStyles.deleteButton}
                             >
-                              <BsTrash />
+                              <FiTrash2 />
                             </button>
                           </div>
                         </td>

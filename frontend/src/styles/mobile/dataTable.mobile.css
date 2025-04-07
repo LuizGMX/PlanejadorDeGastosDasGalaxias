@@ -1,16 +1,13 @@
 /* Mobile styles for data tables */
 @media (max-width: 768px) {
   /* Hack para forçar a exibição no mobile */
-  .dataContainer, .mobileCardView, .mobileCard, .tableContainer, .mobileTable {
+  .dataContainer {
     display: block !important;
     visibility: visible !important;
     opacity: 1 !important;
-  }
-  
-  /* Definindo largura máxima e garantir que caiba na tela */
-  .dataContainer {
     max-width: 100%;
     overflow-x: hidden;
+    padding-top: 8px;
   }
   
   .filterToggleButton {
@@ -42,10 +39,6 @@
   .filterToggleButton svg {
     color: var(--primary-color);
     font-size: 16px;
-  }
-  
-  .dataContainer {
-    padding-top: 8px;
   }
   
   .filtersCollapsed {
@@ -520,7 +513,6 @@
     width: 100%;
   }
   
-  /* Garantir que a tabela mobile seja exibida corretamente */
   .mobileTable td:before {
     position: relative;
     display: block;

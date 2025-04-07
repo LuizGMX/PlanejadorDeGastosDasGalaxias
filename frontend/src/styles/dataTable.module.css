@@ -305,74 +305,87 @@
 
 /* Tabela de dados */
 .tableContainer {
-  padding: 0;
   overflow-x: auto;
+  margin-top: 1rem;
+  background: var(--card-background);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-color);
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
-  border-spacing: 0;
-  color: var(--text-color);
+  min-width: 800px;
 }
 
-.table th {
-  background-color: transparent;
-  padding: 16px;
+.table th,
+.table td {
+  padding: 1rem;
   text-align: left;
-  font-weight: 600;
-  color: var(--text-secondary);
-  position: sticky;
-  top: 0;
-  font-size: 14px;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
   border-bottom: 1px solid var(--border-color);
 }
 
-.table td {
-  padding: 16px;
-  border-bottom: 1px solid rgba(42, 43, 51, 0.5);
-  transition: all 0.2s ease;
-  font-size: 15px;
+.table th {
+  background: var(--secondary-color);
+  font-weight: 600;
+  color: var(--text-color);
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
-.tableRow {
-  transition: background-color 0.2s ease;
+.table tr:hover {
+  background: var(--hover-bg);
 }
 
-.tableRow:hover {
-  background-color: rgba(var(--primary-rgb), 0.03);
+.table tr:nth-child(even) {
+  background-color: rgba(var(--border-color), 0.05);
 }
 
-.tableRow.selected {
-  background-color: rgba(0, 255, 133, 0.05);
+.amountBadge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+  background-color: var(--primary-color);
+  color: var(--secondary-color);
 }
 
-/* Coluna de ações */
 .actionButtons {
   display: flex;
   gap: 8px;
+  justify-content: flex-end;
 }
 
-.actionButton {
-  background: none;
-  border: none;
-  color: var(--text-secondary);
-  cursor: pointer;
-  padding: 6px;
+.editButton,
+.deleteButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
   border-radius: 4px;
+  border: none;
+  cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.actionButton:hover {
-  color: var(--primary-color);
-  background-color: rgba(0, 255, 133, 0.1);
+.editButton {
+  background-color: var(--primary-color);
+  color: var(--secondary-color);
 }
 
-.actionButton.delete:hover {
-  color: var(--error-color);
-  background-color: rgba(255, 107, 107, 0.1);
+.deleteButton {
+  background-color: var(--error-color);
+  color: var(--secondary-color);
+}
+
+.editButton:hover {
+  opacity: 0.9;
+}
+
+.deleteButton:hover {
+  opacity: 0.9;
 }
 
 /* Checkbox customizado */
@@ -1176,42 +1189,12 @@
   color: white;
 }
 
-/* Mobile styles have been moved to dataTable.mobile.css */
-
-@media (min-width: 768px) {
-  .formGrid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-  }
-  
-  .formGroup {
-    margin-bottom: 20px;
-  }
-  
-  .formInput,
-  .formSelect {
-    margin-top: 6px;
-  }
-  
-  .modalActions {
-    grid-column: span 2;
-    display: flex;
-    justify-content: flex-end;
-    gap: 15px;
-    margin-top: 15px;
-  }
-  
-  .formButton {
-    padding: 10px 20px;
-  }
-  
-  .formWideField {
-    grid-column: span 2;
+/* Esconder elementos mobile em desktop */
+@media (min-width: 769px) {
+  .mobileTable,
+  .mobileCardView,
+  .mobileCard {
+    display: none !important;
   }
 }
 
-/* Ensure mobile card view is hidden on desktop */
-.mobileCardView {
-  display: none;
-}
