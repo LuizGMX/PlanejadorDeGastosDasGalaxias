@@ -17,7 +17,6 @@ import {
   BsWallet2,
   BsExclamationTriangle
 } from 'react-icons/bs';
-import formStyles from '../styles/form.module.css';
 import '../styles/mobile/forms.mobile.css';
 
 const EditExpenseForm = ({ expense, onSave, onCancel }) => {
