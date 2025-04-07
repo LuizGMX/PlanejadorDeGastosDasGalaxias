@@ -14,7 +14,6 @@ import SpreadsheetUpload from './components/SpreadsheetUpload';
 import Layout from './components/Layout';
 import EditRecurringIncomes from './components/EditRecurringIncomes';
 import styles from './styles/app.module.css';
-import './styles/navbar.mobile.css';
 import { checkApiHealth, diagnoseProblem } from './utils/apiHealth';
 
 export const AuthContext = React.createContext();

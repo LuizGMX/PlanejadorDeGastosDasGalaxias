@@ -689,7 +689,6 @@ const Income = () => {
     return (
       <div className={dataTableStyles.mobileCardView}>
         {incomes.map((income) => {
-          const isExpanded = expandedCardDetails[income.id];
           const isSwipeActive = activeSwipeCard === income.id;
 
           return (
@@ -744,18 +743,16 @@ const Income = () => {
                     </span>
                   </div>
                   
-                  {isExpanded && (
-                    <div className={dataTableStyles.mobileCardDetail}>
-                      <span className={dataTableStyles.mobileCardLabel}>Tipo</span>
-                      <span className={dataTableStyles.mobileCardValue}>
-                        {income.is_recurring ? (
-                          <><BsRepeat style={{color: 'var(--primary-color)'}} /> Receita fixa</>
-                        ) : (
-                          <><BsCurrencyDollar style={{color: 'var(--text-color)'}} /> Receita única</>
-                        )}
-                      </span>
-                    </div>
-                  )}
+                  <div className={dataTableStyles.mobileCardDetail}>
+                    <span className={dataTableStyles.mobileCardLabel}>Tipo</span>
+                    <span className={dataTableStyles.mobileCardValue}>
+                      {income.is_recurring ? (
+                        <><BsRepeat style={{color: 'var(--primary-color)'}} /> Receita fixa</>
+                      ) : (
+                        <><BsCurrencyDollar style={{color: 'var(--text-color)'}} /> Receita única</>
+                      )}
+                    </span>
+                  </div>
                 </div>
                 
                 <div className={dataTableStyles.mobileCardActions}>
@@ -788,17 +785,6 @@ const Income = () => {
                     </button>
                   </div>
                 </div>
-                
-                <button 
-                  className={dataTableStyles.mobileCardDetailToggle}
-                  onClick={() => toggleCardDetails(income.id)}
-                >
-                  {isExpanded ? (
-                    <>Menos detalhes <BsChevronUp /></>
-                  ) : (
-                    <>Mais detalhes <BsChevronDown /></>
-                  )}
-                </button>
               </div>
               
               <div className={dataTableStyles.mobileCardSwipeActions}>

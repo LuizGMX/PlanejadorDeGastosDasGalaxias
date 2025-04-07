@@ -32,10 +32,11 @@
   input, textarea, select {
     -webkit-appearance: none;
     font-size: 16px !important; /* Prevent zoom on focus */
+    border-radius: 6px;
   }
   
   /* Fix for position:fixed elements on iOS */
-  .fixed-element {
+  .fixed-element, .filterToggleButton {
     position: fixed;
     transform: translateZ(0);
     -webkit-transform: translateZ(0);
@@ -53,6 +54,46 @@
     overscroll-behavior-y: none;
     -webkit-overflow-scrolling: touch;
   }
+
+  /* Fix for swipe actions on mobile cards */
+  .mobileCard {
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+  }
+
+  .mobileCardSwipeState {
+    -webkit-transform: translate3d(0, 0, 0);
+    -webkit-transition: -webkit-transform 0.3s ease;
+    transition: transform 0.3s ease;
+  }
+
+  .mobileCardSwipeActive .mobileCardSwipeState {
+    -webkit-transform: translateX(-140px);
+  }
+
+  /* Fix for sticky headers in data tables */
+  .tableContainer th {
+    position: -webkit-sticky;
+  }
+
+  /* Fix for modal scrolling issues */
+  .modalContent {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Fix dropdown menus for filters */
+  .modernSelectDropdown {
+    -webkit-overflow-scrolling: touch;
+    position: absolute;
+    left: 0;
+    right: 0;
+  }
+
+  /* Fix for checkboxes */
+  .checkmark, .customCheckbox, .customRadio {
+    -webkit-appearance: none;
+    -webkit-transform: translateZ(0);
+  }
 }
 
 /* Special handling for notched iOS devices (iPhone X and newer) */
@@ -68,7 +109,7 @@
   }
   
   /* Ensure content doesn't get hidden behind the notch */
-  .container, .mainContainer {
+  .container, .mainContainer, .pageContainer {
     padding-left: max(var(--safe-area-left), 16px);
     padding-right: max(var(--safe-area-right), 16px);
   }
@@ -87,4 +128,27 @@
   .full-height-safe {
     height: calc((var(--vh, 1vh) * 100) - var(--safe-area-top) - var(--safe-area-bottom));
   }
+
+  /* Fix for filter toggle button placement */
+  .filterToggleButton {
+    top: var(--safe-area-top);
+  }
+
+  /* Make sure mobile cards have proper padding to avoid notch */
+  .mobileCardView {
+    padding-left: max(var(--safe-area-left), 8px);
+    padding-right: max(var(--safe-area-right), 8px);
+  }
+  
+  /* Ensure modals don't get cut off by the notch */
+  .modalContent {
+    margin-top: var(--safe-area-top);
+    max-height: calc(100vh - var(--safe-area-top) - var(--safe-area-bottom) - 20px);
+  }
+}
+
+/* Fix momentum scrolling for iOS */
+.mobileCardView, .tableContainer, .modalContent, .optionsContainer, 
+.formModal, .dataContainer, .modernSelectDropdown, .toggleGroup {
+  -webkit-overflow-scrolling: touch;
 } 

@@ -2,12 +2,15 @@ import React from 'react';
 import ReactDOM from 'react-dom/client'; // Importa createRoot
 import './index.css';
 import './styles/ios.css';
+import './styles/mobile/dataTable.mobile.css';
+import './styles/mobile/forms.mobile.css';
+import './styles/mobile/navbar.mobile.css';
 import App from './App';
-import { initIOSFixes, isIOS } from './utils/ios-fixes';
+import { initIOSSupport } from './utils/iosSupport';
 
-// Initialize iOS fixes
+// Initialize iOS support
 console.log('Initializing application, checking for iOS...');
-initIOSFixes();
+initIOSSupport();
 
 // Log iOS detection after a small delay to ensure DOM is loaded
 setTimeout(() => {

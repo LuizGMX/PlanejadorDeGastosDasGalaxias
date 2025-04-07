@@ -1,7 +1,7 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../App';
-import '../styles/navbar.mobile.css';
+import '../styles/mobile/navbar.mobile.css';
 import { 
   BsHouseDoor, 
   BsArrowDownUp, 
@@ -13,7 +13,7 @@ import {
   BsCashCoin
 } from 'react-icons/bs';
 import { GiPayMoney, GiReceiveMoney } from "react-icons/gi";
-import { isIOS } from '../utils/ios-fixes';
+import { isIOS } from '../utils/iosSupport';
 
 const MobileNavbar = () => {
   const location = useLocation();

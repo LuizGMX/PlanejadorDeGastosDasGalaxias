@@ -1,0 +1,128 @@
+/* Mobile styles for forms and modals */
+@media (max-width: 768px) {
+  .formModal {
+    padding: 16px;
+    max-width: 100%;
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    overflow-y: auto;
+  }
+
+  .formGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .formGroupRow {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .formGroupHalf {
+    width: 100%;
+  }
+  
+  .formButton {
+    min-width: 0;
+    flex: 1;
+    padding: 12px 16px;
+  }
+  
+  .toggleGroup {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 8px;
+    width: 100%;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .toggleGroup::-webkit-scrollbar {
+    display: none;
+  }
+
+  .toggleButton {
+    min-width: auto;
+    flex: 1 0 auto;
+    white-space: nowrap;
+    padding: 0 12px;
+  }
+  
+  .formGroup:nth-child(3) .toggleButton,
+  .formGroup:nth-child(7) .toggleButton {
+    flex: 1;
+    text-align: center;
+    justify-content: center;
+  }
+  
+  /* Options lists in deletion modals */
+  .optionsContainer {
+    padding: 12px;
+  }
+  
+  .optionsList {
+    gap: 8px;
+  }
+  
+  .optionItem {
+    padding: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .toggleGroup {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: visible;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    justify-content: space-between;
+    gap: 6px;
+  }
+  
+  .toggleButton {
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+    padding: 0 8px;
+    height: 42px;
+  }
+  
+  .toggleButton svg {
+    font-size: 14px;
+    margin-right: 4px;
+  }
+  
+  .formGroup:nth-child(3) .toggleGroup {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+  
+  .formGroup:nth-child(3) .toggleButton {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    padding: 0 4px;
+    font-size: 12px;
+  }
+  
+  .formGroup:nth-child(3) .toggleButton svg {
+    font-size: 13px;
+    margin-right: 3px;
+  }
+  
+  .formGroup:nth-child(7) .toggleGroup {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+} 

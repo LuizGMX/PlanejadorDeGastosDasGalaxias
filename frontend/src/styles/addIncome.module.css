@@ -540,13 +540,4 @@
   animation: spin 1s linear infinite;
 }
 
-@media (max-width: 768px) {
-  .buttonContainer {
-    flex-direction: column-reverse;
-  }
-
-  .button {
-    width: 100%;
-    justify-content: center;
-  }
-}
+/* Mobile styles have been moved to forms.mobile.css */

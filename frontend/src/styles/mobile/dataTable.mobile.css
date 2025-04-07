@@ -1,0 +1,381 @@
+/* Mobile styles for data tables */
+@media (max-width: 768px) {
+  .filterToggleButton {
+    display: flex;
+    position: sticky;
+    top: 0;
+    margin-top: -8px;
+    margin-bottom: 16px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px;
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-color);
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 20;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  }
+  
+  .filterToggleButton:hover {
+    background-color: var(--hover-bg);
+  }
+  
+  .filterToggleButton svg {
+    color: var(--primary-color);
+    font-size: 16px;
+  }
+  
+  .dataContainer {
+    padding-top: 8px;
+  }
+  
+  .filtersCollapsed {
+    display: none;
+    max-height: 0;
+    overflow: hidden;
+  }
+  
+  .filtersExpanded {
+    display: flex;
+    flex-direction: column;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  
+  .tableContainer {
+    display: none;
+  }
+  
+  .mobileCardView {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    margin-bottom: 24px;
+    padding: 0 8px;
+  }
+  
+  .mobileCard {
+    background-color: var(--secondary-color);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--border-color);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.2s ease;
+  }
+  
+  .mobileCard:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+  }
+  
+  .mobileCardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(var(--border-color), 0.2);
+  }
+  
+  .mobileCardTitle {
+    font-weight: 600;
+    font-size: 16px;
+    margin: 0;
+    max-width: 70%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  .mobileCardAmount {
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+  }
+  
+  .mobileCardDetails {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  
+  .mobileCardDetail {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .mobileCardLabel {
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+  }
+  
+  .mobileCardValue {
+    color: var(--text-color);
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .mobileCardActions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 12px;
+    border-top: 1px solid rgba(var(--border-color), 0.2);
+  }
+  
+  .mobileCardType {
+    display: flex;
+    align-items: center;
+  }
+  
+  .mobileCardActionButtons {
+    display: flex;
+    gap: 8px;
+  }
+  
+  .mobileCardSelect {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    z-index: 10;
+  }
+
+  /* Swipe actions on mobile cards */
+  .mobileCardSwipeState {
+    position: relative;
+    width: 100%;
+    z-index: 1;
+    background-color: var(--secondary-color);
+    transition: transform 0.3s ease;
+  }
+  
+  .mobileCardSwipeActions {
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 100%;
+    display: flex;
+    z-index: 0;
+  }
+  
+  .mobileCardSwipeEdit,
+  .mobileCardSwipeDelete {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 70px;
+    height: 100%;
+  }
+  
+  .mobileCardSwipeEdit {
+    background-color: rgba(var(--primary-rgb), 0.8);
+    color: var(--secondary-color);
+  }
+  
+  .mobileCardSwipeDelete {
+    background-color: rgba(var(--error-rgb), 0.8);
+    color: var(--text-color);
+  }
+  
+  .mobileCardSwipeActive .mobileCardSwipeState {
+    transform: translateX(-140px);
+  }
+  
+  .mobileCardSwipeActive .mobileCardSwipeActions {
+    display: flex;
+  }
+  
+  /* Form and filter adaptations for mobile */
+  .filtersContainer {
+    padding: 16px 12px;
+  }
+  
+  .filterRow {
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+  }
+  
+  .filterGroup {
+    width: 100%;
+    min-width: 100%;
+  }
+  
+  .searchField {
+    min-width: auto;
+    width: 100%;
+  }
+  
+  .modernSelectHeader {
+    padding: 10px 12px;
+  }
+  
+  .pageContainer {
+    padding: 12px;
+  }
+  
+  .pageHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  
+  .pageTitle {
+    font-size: 24px;
+    margin-bottom: 8px;
+  }
+  
+  .addButton {
+    width: 100%;
+    justify-content: center;
+    padding: 12px;
+  }
+  
+  /* No data state on mobile */
+  .noDataContainer {
+    padding: 30px 16px;
+  }
+  
+  .noDataIcon {
+    font-size: 40px;
+  }
+  
+  .noDataMessage {
+    font-size: 18px;
+  }
+  
+  .noDataSuggestion {
+    max-width: 100%;
+    font-size: 14px;
+  }
+  
+  .noDataActions {
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
+  }
+  
+  .noDataActions button {
+    width: 100%;
+  }
+  
+  /* Modal adaptations */
+  .modalContent {
+    width: 95%;
+    padding: 16px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  
+  .modalActions {
+    flex-direction: row;
+    gap: 12px;
+    justify-content: space-between;
+    margin-top: 24px;
+  }
+  
+  .typeStatus {
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+  
+  .actionButtons {
+    flex-direction: row;
+    gap: 4px;
+  }
+  
+  .actionButton {
+    padding: 6px;
+    font-size: 14px;
+  }
+}
+
+/* Tablet layout optimizations */
+@media (min-width: 600px) and (max-width: 768px) {
+  .mobileCardView {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+  }
+  
+  .mobileCard {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .mobileCardActions {
+    margin-top: auto;
+  }
+}
+
+/* Small screen optimizations */
+@media (max-width: 480px) {
+  .formGrid .formGroup:nth-child(1),
+  .formGrid .formGroup:nth-child(2) {
+    display: inline-block;
+    vertical-align: top;
+    width: calc(50% - 8px);
+  }
+  
+  .formGrid .formGroup:nth-child(1) {
+    margin-right: 16px;
+  }
+  
+  .formGrid .formGroup:nth-child(2) {
+    margin-right: 0;
+  }
+  
+  .formGrid .formGroup:nth-child(3) {
+    clear: both;
+    width: 100%;
+  }
+  
+  .table th:nth-child(5),
+  .table td:nth-child(5),
+  .table th:nth-child(6),
+  .table td:nth-child(6) {
+    display: none;
+  }
+  
+  .amountBadge {
+    padding: 3px 6px;
+    font-size: 12px;
+  }
+  
+  .modalHeader h3 {
+    font-size: 18px;
+  }
+  
+  .modalMessage {
+    font-size: 14px;
+  }
+  
+  .modalActions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .modernSelectDropdown {
+    max-height: 250px;
+    width: 100%;
+  }
+} 
