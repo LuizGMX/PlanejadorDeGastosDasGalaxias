@@ -92,16 +92,52 @@ const ExpensesWrapper = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Implementar lógica para buscar despesas, categorias e bancos
-        // Por enquanto, vamos apenas simular um carregamento
-        setTimeout(() => {
-          setExpenses([]);
-          setCategories([]);
-          setBanks([]);
-          setLoading(false);
-        }, 1000);
-      } catch (err) {
-        setError('Erro ao carregar dados: ' + err.message);
+        // Buscar despesas
+        const expensesResponse = await fetch('/api/expenses', {
+          headers: {
+            'Authorization': `Bearer ${auth.token}`
+          }
+        });
+        
+        if (!expensesResponse.ok) {
+          throw new Error('Erro ao carregar despesas');
+        }
+        
+        const expensesData = await expensesResponse.json();
+        setExpenses(expensesData);
+
+        // Buscar categorias
+        const categoriesResponse = await fetch('/api/categories', {
+          headers: {
+            'Authorization': `Bearer ${auth.token}`
+          }
+        });
+        
+        if (!categoriesResponse.ok) {
+          throw new Error('Erro ao carregar categorias');
+        }
+        
+        const categoriesData = await categoriesResponse.json();
+        setCategories(categoriesData);
+
+        // Buscar bancos
+        const banksResponse = await fetch('/api/banks', {
+          headers: {
+            'Authorization': `Bearer ${auth.token}`
+          }
+        });
+        
+        if (!banksResponse.ok) {
+          throw new Error('Erro ao carregar bancos');
+        }
+        
+        const banksData = await banksResponse.json();
+        setBanks(banksData);
+
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+        setError(error.message);
+      } finally {
         setLoading(false);
       }
     };
@@ -109,9 +145,9 @@ const ExpensesWrapper = () => {
     fetchData();
   }, [auth.token]);
 
-  // Renderiza o componente apropriado com base no tamanho da tela
+  // Renderização condicional baseada no dispositivo
   return isMobile ? (
-    <MobileExpenses 
+    <MobileExpenses
       expenses={expenses}
       onEdit={handleEditExpense}
       onDelete={handleDeleteExpense}
@@ -125,7 +161,19 @@ const ExpensesWrapper = () => {
       error={error}
     />
   ) : (
-    <Expenses />
+    <Expenses
+      expenses={expenses}
+      onEdit={handleEditExpense}
+      onDelete={handleDeleteExpense}
+      onAdd={handleAddExpense}
+      onFilter={handleFilter}
+      onSearch={handleSearch}
+      selectedExpenses={selectedExpenses}
+      onSelectExpense={handleSelectExpense}
+      onSelectAll={handleSelectAll}
+      loading={loading}
+      error={error}
+    />
   );
 };
 
