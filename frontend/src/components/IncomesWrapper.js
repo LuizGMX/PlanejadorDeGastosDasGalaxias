@@ -106,18 +106,20 @@ const IncomesWrapper = () => {
     
     // Filtros de data (mês e ano)
     if (type === 'months' && value !== 'all') {
-      const month = parseInt(value, 10);
+      // Se o valor for um array, filtrar por qualquer um dos meses do array
+      const months = Array.isArray(value) ? value : [value];
       filtered = filtered.filter(income => {
         const incomeDate = new Date(income.date);
-        return incomeDate.getMonth() + 1 === month;
+        return months.includes(incomeDate.getMonth() + 1);
       });
     }
     
     if (type === 'years' && value !== 'all') {
-      const year = parseInt(value, 10);
+      // Se o valor for um array, filtrar por qualquer um dos anos do array
+      const years = Array.isArray(value) ? value : [value];
       filtered = filtered.filter(income => {
         const incomeDate = new Date(income.date);
-        return incomeDate.getFullYear() === year;
+        return years.includes(incomeDate.getFullYear());
       });
     }
     

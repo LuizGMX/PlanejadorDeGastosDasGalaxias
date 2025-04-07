@@ -27,11 +27,14 @@ const MobileIncomes = ({
 
   // Inicializa os filtros com o mês atual se ainda não estiver definido
   useEffect(() => {
-    if (!filters.months || filters.months.length === 0) {
-      onFilter('months', currentMonth);
+    // Verifica se o filtro de mês já está definido
+    if (!filters.months || filters.months === 'all' || filters.months.length === 0) {
+      onFilter('months', [currentMonth]);
     }
-    if (!filters.years || filters.years.length === 0) {
-      onFilter('years', currentYear);
+    
+    // Verifica se o filtro de ano já está definido
+    if (!filters.years || filters.years === 'all' || filters.years.length === 0) {
+      onFilter('years', [currentYear]);
     }
   }, []);
 
@@ -112,9 +115,12 @@ const MobileIncomes = ({
               <select 
                 className={styles.filterSelect}
                 onChange={(e) => {
-                  const value = parseInt(e.target.value, 10);
-                  const currentMonths = filters?.months || [new Date().getMonth() + 1];
-                  onFilter('months', value);
+                  const value = e.target.value;
+                  if (value === 'all') {
+                    onFilter('months', 'all');
+                  } else {
+                    onFilter('months', [parseInt(value, 10)]);
+                  }
                 }}
                 defaultValue={filters.months?.[0] || currentMonth}
               >
@@ -139,8 +145,12 @@ const MobileIncomes = ({
               <select 
                 className={styles.filterSelect}
                 onChange={(e) => {
-                  const value = parseInt(e.target.value, 10);
-                  onFilter('years', value);
+                  const value = e.target.value;
+                  if (value === 'all') {
+                    onFilter('years', 'all');
+                  } else {
+                    onFilter('years', [parseInt(value, 10)]);
+                  }
                 }}
                 defaultValue={filters.years?.[0] || currentYear}
               >
