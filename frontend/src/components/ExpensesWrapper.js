@@ -106,6 +106,23 @@ const ExpensesWrapper = () => {
       filtered = filtered.filter(expense => expense.is_recurring === isRecurring);
     }
     
+    // Filtros de data (mês e ano)
+    if (type === 'months' && value !== 'all') {
+      const month = parseInt(value, 10);
+      filtered = filtered.filter(expense => {
+        const expenseDate = new Date(expense.date);
+        return expenseDate.getMonth() + 1 === month;
+      });
+    }
+    
+    if (type === 'years' && value !== 'all') {
+      const year = parseInt(value, 10);
+      filtered = filtered.filter(expense => {
+        const expenseDate = new Date(expense.date);
+        return expenseDate.getFullYear() === year;
+      });
+    }
+    
     setFilteredExpenses(filtered);
     setExpenses(filtered);
   };
@@ -350,6 +367,7 @@ const ExpensesWrapper = () => {
       error={error}
       categories={categories}
       banks={banks}
+      filters={filters}
     />
   ) : (
     <Expenses

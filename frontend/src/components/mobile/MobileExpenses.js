@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FiEdit2, FiTrash2, FiFilter, FiSearch, FiPlus } from 'react-icons/fi';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import styles from '../../styles/mobile/dataTable.mobile.module.css';
@@ -17,10 +17,23 @@ const MobileExpenses = ({
   loading,
   error,
   categories = [],
-  banks = []
+  banks = [],
+  filters = {}
 }) => {
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const currentMonth = new Date().getMonth() + 1;
+  const currentYear = new Date().getFullYear();
+
+  // Inicializa os filtros com o mês atual se ainda não estiver definido
+  useEffect(() => {
+    if (!filters.months || filters.months.length === 0) {
+      onFilter('months', currentMonth);
+    }
+    if (!filters.years || filters.years.length === 0) {
+      onFilter('years', currentYear);
+    }
+  }, []);
 
   const handleSearch = (e) => {
     const value = e.target.value;
@@ -91,6 +104,50 @@ const MobileExpenses = ({
                 <option value="">Todos os tipos</option>
                 <option value="true">Fixas</option>
                 <option value="false">Únicas</option>
+              </select>
+            </div>
+
+            <div className={styles.filterGroup}>
+              <label className={styles.filterLabel}>Mês</label>
+              <select 
+                className={styles.filterSelect}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value, 10);
+                  const currentMonths = filters?.months || [new Date().getMonth() + 1];
+                  onFilter('months', value);
+                }}
+                defaultValue={filters.months?.[0] || currentMonth}
+              >
+                <option value="all">Todos os meses</option>
+                <option value="1">Janeiro</option>
+                <option value="2">Fevereiro</option>
+                <option value="3">Março</option>
+                <option value="4">Abril</option>
+                <option value="5">Maio</option>
+                <option value="6">Junho</option>
+                <option value="7">Julho</option>
+                <option value="8">Agosto</option>
+                <option value="9">Setembro</option>
+                <option value="10">Outubro</option>
+                <option value="11">Novembro</option>
+                <option value="12">Dezembro</option>
+              </select>
+            </div>
+            
+            <div className={styles.filterGroup}>
+              <label className={styles.filterLabel}>Ano</label>
+              <select 
+                className={styles.filterSelect}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value, 10);
+                  onFilter('years', value);
+                }}
+                defaultValue={filters.years?.[0] || currentYear}
+              >
+                <option value="all">Todos os anos</option>
+                <option value={currentYear - 1}>{currentYear - 1}</option>
+                <option value={currentYear}>{currentYear}</option>
+                <option value={currentYear + 1}>{currentYear + 1}</option>
               </select>
             </div>
           </div>
@@ -223,6 +280,8 @@ const MobileExpenses = ({
             onFilter('category', 'all');
             onFilter('paymentMethod', 'all');
             onFilter('is_recurring', '');
+            onFilter('months', 'all');
+            onFilter('years', 'all');
             setSearchTerm('');
             onSearch('');
           }}

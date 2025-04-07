@@ -104,6 +104,23 @@ const IncomesWrapper = () => {
       filtered = filtered.filter(income => income.is_recurring === isRecurring);
     }
     
+    // Filtros de data (mês e ano)
+    if (type === 'months' && value !== 'all') {
+      const month = parseInt(value, 10);
+      filtered = filtered.filter(income => {
+        const incomeDate = new Date(income.date);
+        return incomeDate.getMonth() + 1 === month;
+      });
+    }
+    
+    if (type === 'years' && value !== 'all') {
+      const year = parseInt(value, 10);
+      filtered = filtered.filter(income => {
+        const incomeDate = new Date(income.date);
+        return incomeDate.getFullYear() === year;
+      });
+    }
+    
     setFilteredIncomes(filtered);
     setIncomes(filtered);
   };
@@ -354,6 +371,7 @@ const IncomesWrapper = () => {
       error={error}
       categories={categories}
       banks={banks}
+      filters={filters}
     />
   ) : (
     <Income
