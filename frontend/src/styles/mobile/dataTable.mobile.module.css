@@ -2,19 +2,21 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --primary-green: #4caf50;
-  --primary-green-dark: #388e3c;
-  --primary-red: #f44336;
-  --primary-red-dark: #d32f2f;
-  --text-dark: #212121;
-  --text-medium: #424242;
-  --text-light: #757575;
-  --background-light: #f0f2f5;
-  --background-system: transparent;
-  --card-bg: #ffffff;
-  --border-light: #e0e0e0;
-  --shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.05);
-  --shadow-medium: 0 6px 16px rgba(0, 0, 0, 0.1);
+  --primary-color: #00FF85;
+  --secondary-color: #1A1B23;
+  --background-color: #13141B;
+  --card-background: #1A1B23;
+  --text-color: #FFFFFF;
+  --text-secondary: #8B8D97;
+  --error-color: #FF6B6B;
+  --success-color: #51CF66;
+  --border-color: #2A2B33;
+  --hover-color: #00E676;
+  --input-background: #2A2B33;
+  --gradient-start: #00FF85;
+  --gradient-end: #80FFB9;
+  --button-text-color: #000000;
+  --button-background-color: #00FF85;
 }
 
 /* Mobile styles for data tables */
