@@ -21,6 +21,22 @@
   --warning-color: #ffb946;
 }
 
+.successMessage {
+  color: var(--success-color);
+  font-size: 16px;
+  font-weight: 500;
+  text-align: center;
+  margin: 0 auto 24px;
+  padding: 16px;
+  background-color: rgba(81, 207, 102, 0.15);
+  border: 1px solid var(--success-color);
+  border-radius: 12px;
+  max-width: 600px;
+  animation: fadeIn 0.3s ease-out;
+  position: relative;
+  z-index: 100;
+}
+
 
 /* Mobile styles for data tables */
 @media (max-width: 768px) {
@@ -446,7 +462,7 @@
     gap: 8px;
     padding: 8px 16px;
     background-color: var(--primary-color);
-    color: #121212;
+    color: #121212 !important;
     border: none;
     border-radius: 4px;
     font-size: 14px;

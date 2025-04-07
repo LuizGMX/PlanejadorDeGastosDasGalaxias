@@ -4,7 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import ExpensesWrapper from './components/ExpensesWrapper';
-import AddExpense from './components/AddExpense';
+import AddExpenseWrapper from './components/AddExpenseWrapper';
 import EditExpense from './components/EditExpense';
 import Profile from './components/Profile';
 import IncomesWrapper from './components/IncomesWrapper';
@@ -13,8 +13,6 @@ import EditIncome from './components/EditIncome';
 import SpreadsheetUpload from './components/SpreadsheetUpload';
 import Layout from './components/Layout';
 import EditRecurringIncomes from './components/EditRecurringIncomes';
-import styles from './styles/app.module.css';
-import dataTableStyles from './styles/dataTable.module.css';
 import { checkApiHealth, diagnoseProblem } from './utils/apiHealth';
 
 export const AuthContext = React.createContext();
@@ -198,7 +196,7 @@ function App() {
           } />
           <Route path="/add-expense" element={
             <PrivateRoute>
-              <AddExpense />
+              <AddExpenseWrapper />
             </PrivateRoute>
           } />
           <Route path="/profile" element={

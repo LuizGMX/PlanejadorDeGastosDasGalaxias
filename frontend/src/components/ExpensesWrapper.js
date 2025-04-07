@@ -16,8 +16,7 @@ const ExpensesWrapper = () => {
   const [selectedExpenses, setSelectedExpenses] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState(null);
-  const [editingExpense, setEditingExpense] = useState(null);
-  const [deleteSuccess, setDeleteSuccess] = useState(null);
+  
   const [filters, setFilters] = useState({
     months: [new Date().getMonth() + 1],
     years: [new Date().getFullYear()],

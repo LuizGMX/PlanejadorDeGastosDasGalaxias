@@ -11,7 +11,6 @@ import './styles/mobile/expenses.mobile.css';
 import './styles/mobile/incomes.mobile.css';
 import App from './App';
 import { initIOSSupport, isIOS } from './utils/iosSupport';
-import reportWebVitals from './reportWebVitals';
 
 // Initialize iOS support
 console.log('Initializing application, checking for iOS...');

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../App';
-import dataTableStyles from '../styles/dataTable.module.css';
+import addExpenseStyles from '../../styles/mobile/addExpense.mobile.module.css';
 import CurrencyInput from 'react-currency-input-field';
 import { 
   BsPlusCircle, 
@@ -19,7 +19,7 @@ import {
 } from 'react-icons/bs';
 
 
-const AddExpense = () => {
+const MobileAddExpense = () => {
   const navigate = useNavigate();
   const { auth } = useContext(AuthContext);
   const [formData, setFormData] = useState({
@@ -454,325 +454,323 @@ const AddExpense = () => {
   };
 
   return (
-    <div className={dataTableStyles.modalOverlay}>
-      <div className={`${dataTableStyles.modalContent} ${dataTableStyles.formModal}`}>
-        <div className={dataTableStyles.modalHeader}>
-          <BsPlusCircle size={20} style={{ color: 'var(--primary-color)' }} />
-          <h3>Adicionar Despesa</h3>
-        </div>
-
-        {error && (
-          <div className={dataTableStyles.errorCard}>
-            <div>
-              <div className={dataTableStyles.errorIcon}>!</div>
-              <p className={dataTableStyles.errorMessage}>{error}</p>
-            </div>
-            <button 
-              type="button" 
-              className={dataTableStyles.errorRetryButton}
-              onClick={() => window.location.reload()}
-            >
-              Tentar novamente
-            </button>
-          </div>
-        )}
-        
-        {success && (
-          <div className={dataTableStyles.successMessage}>
-            {success}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className={dataTableStyles.formGrid}>
-          <div className={dataTableStyles.inlineFieldsContainer}>
-            <div className={dataTableStyles.formGroup}>
-              <label className={dataTableStyles.formLabel}>
-                Descrição
-              </label>
-              <input
-                type="text"
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                className={dataTableStyles.formInput}
-                required
-              />
-            </div>
-
-            <div className={dataTableStyles.formGroup}>
-              <label className={dataTableStyles.formLabel}>
-                {formData.has_installments ? 'Valor Total da Compra (calcularemos o valor de cada parcela automaticamente)' : 'Valor'}
-              </label>
-              <CurrencyInput
-                name="amount"
-                value={formData.amount}
-                placeholder="R$ 0,00"
-                decimalsLimit={2}
-                onValueChange={(value) => {
-                  setFormData(prev => ({
-                    ...prev,
-                    amount: value
-                  }));
-                }}
-                intlConfig={{ locale: 'pt-BR', currency: 'BRL' }}
-                className={dataTableStyles.formInput}
-                required
-              />
-            </div>
+    <>
+      <div className={addExpenseStyles.modalOverlay}>
+        <div className={`${addExpenseStyles.modalContent} ${addExpenseStyles.formModal}`}>
+          <div className={addExpenseStyles.modalHeader}>
+            <h2>Adicionar Despesa</h2>
           </div>
 
-          {/* Tipo de Despesa */}
-          <div className={dataTableStyles.formGroup}>
-            <label className={dataTableStyles.formLabel}>
-              Tipo de Despesa
-            </label>
-            <div className={dataTableStyles.toggleGroup}>
-              <button
-                type="button"
-                className={`${dataTableStyles.toggleButton} ${!formData.is_recurring && !formData.has_installments ? dataTableStyles.active : ''}`}
-                onClick={() => handleToggleChange('normal')}
+          {error && (
+            <div className={addExpenseStyles.errorCard}>
+              <div className={addExpenseStyles.errorIcon}>!</div>
+              <div className={addExpenseStyles.errorMessage}>{error}</div>
+              <button 
+                className={addExpenseStyles.errorRetryButton}
+                onClick={() => setError(null)}
               >
-                <BsCurrencyDollar /> Única
-              </button>
-              <button
-                type="button"
-                className={`${dataTableStyles.toggleButton} ${formData.has_installments ? dataTableStyles.active : ''}`}
-                onClick={() => handleToggleChange('installments')}
-              >
-                <BsListCheck /> Parcelada
-              </button>
-              <button
-                type="button"
-                className={`${dataTableStyles.toggleButton} ${formData.is_recurring ? dataTableStyles.active : ''}`}
-                onClick={() => handleToggleChange('recurring')}
-              >
-                <BsRepeat /> Fixa
+                Tentar Novamente
               </button>
             </div>
-          </div>
+          )}
+          
+          {success && (
+            <div className={addExpenseStyles.successMessage}>
+              {success}
+            </div>
+          )}
 
-          {/* Data para Despesa Única */}
-          {!formData.is_recurring && !formData.has_installments && (
-            <div className={dataTableStyles.formGroup}>
-              <label className={dataTableStyles.formLabel}>
-                Data
-              </label>
-              <div className={dataTableStyles.inputWithIcon}>
-                <BsCalendar3 className={dataTableStyles.inputIcon} />
+          <form onSubmit={handleSubmit} className={addExpenseStyles.formGrid}>
+            <div className={addExpenseStyles.inlineFieldsContainer}>
+              <div className={addExpenseStyles.formGroup}>
+                <label className={addExpenseStyles.formLabel}>
+                  Descrição
+                </label>
                 <input
-                  type="date"
-                  name="expense_date"
-                  value={formData.expense_date}
+                  type="text"
+                  name="description"
+                  value={formData.description}
                   onChange={handleChange}
-                  className={dataTableStyles.formInput}
+                  className={addExpenseStyles.formInput}
+                  required
+                />
+              </div>
+
+              <div className={addExpenseStyles.formGroup}>
+                <label className={addExpenseStyles.formLabel}>
+                  {formData.has_installments ? 'Valor Total da Compra (calcularemos o valor de cada parcela automaticamente)' : 'Valor'}
+                </label>
+                <CurrencyInput
+                  name="amount"
+                  value={formData.amount}
+                  placeholder="R$ 0,00"
+                  decimalsLimit={2}
+                  onValueChange={(value) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      amount: value
+                    }));
+                  }}
+                  intlConfig={{ locale: 'pt-BR', currency: 'BRL' }}
+                  className={addExpenseStyles.formInput}
                   required
                 />
               </div>
             </div>
-          )}
 
-          {/* Configurações de Parcelas */}
-          {formData.has_installments && (
-            <div style={{marginBottom: '20px'}}>
-              <label className={dataTableStyles.formLabel}>
-                <div className={`${dataTableStyles.typeStatus} ${dataTableStyles.installmentType}`}>
-                  <BsListCheck /> Despesa Parcelada
-                </div>
+            {/* Tipo de Despesa */}
+            <div className={addExpenseStyles.formGroup}>
+              <label className={addExpenseStyles.formLabel}>
+                Tipo de Despesa
               </label>
-              <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginTop: '10px'}}>
-                <div className={dataTableStyles.formGroup}>
-                  <label className={dataTableStyles.formLabel}>Data da Parcela Atual</label>
+              <div className={addExpenseStyles.toggleGroup}>
+                <button
+                  type="button"
+                  className={`${addExpenseStyles.toggleButton} ${!formData.is_recurring && !formData.has_installments ? addExpenseStyles.active : ''}`}
+                  onClick={() => handleToggleChange('normal')}
+                >
+                  <BsCurrencyDollar /> Única
+                </button>
+                <button
+                  type="button"
+                  className={`${addExpenseStyles.toggleButton} ${formData.has_installments ? addExpenseStyles.active : ''}`}
+                  onClick={() => handleToggleChange('installments')}
+                >
+                  <BsListCheck /> Parcelada
+                </button>
+                <button
+                  type="button"
+                  className={`${addExpenseStyles.toggleButton} ${formData.is_recurring ? addExpenseStyles.active : ''}`}
+                  onClick={() => handleToggleChange('recurring')}
+                >
+                  <BsRepeat /> Fixa
+                </button>
+              </div>
+            </div>
+
+            {/* Data para Despesa Única */}
+            {!formData.is_recurring && !formData.has_installments && (
+              <div className={addExpenseStyles.formGroup}>
+                <label className={addExpenseStyles.formLabel}>
+                  Data
+                </label>
+                <div className={addExpenseStyles.inputWithIcon}>
+                  <BsCalendar3 className={addExpenseStyles.inputIcon} />
                   <input
                     type="date"
                     name="expense_date"
                     value={formData.expense_date}
                     onChange={handleChange}
-                    className={dataTableStyles.formInput}
+                    className={addExpenseStyles.formInput}
                     required
                   />
                 </div>
-                
-                <div className={dataTableStyles.formGroup}>
-                  <label className={dataTableStyles.formLabel}>Parcela Atual / Total</label>
-                  <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
+              </div>
+            )}
+
+            {/* Configurações de Parcelas */}
+            {formData.has_installments && (
+              <div style={{marginBottom: '20px'}}>
+                <label className={addExpenseStyles.formLabel}>
+                  <div className={`${addExpenseStyles.typeStatus} ${addExpenseStyles.installmentType}`}>
+                    <BsListCheck /> Despesa Parcelada
+                  </div>
+                </label>
+                <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginTop: '10px'}}>
+                  <div className={addExpenseStyles.formGroup}>
+                    <label className={addExpenseStyles.formLabel}>Data da Parcela Atual</label>
                     <input
-                      type="number"
-                      min="1"
-                      max={formData.total_installments}
-                      name="current_installment"
-                      value={formData.current_installment}
+                      type="date"
+                      name="expense_date"
+                      value={formData.expense_date}
                       onChange={handleChange}
-                      className={dataTableStyles.formInput}
-                      style={{width: '45%'}}
-                      required
-                    />
-                    <span style={{margin: '0 5px'}}>/</span>
-                    <input
-                      type="number"
-                      min={formData.current_installment}
-                      max="60"
-                      name="total_installments"
-                      value={formData.total_installments}
-                      onChange={handleChange}
-                      className={dataTableStyles.formInput}
-                      style={{width: '45%'}}
+                      className={addExpenseStyles.formInput}
                       required
                     />
                   </div>
-                </div>
-              </div>             
-            </div>
-          )}
+                  
+                  <div className={addExpenseStyles.formGroup}>
+                    <label className={addExpenseStyles.formLabel}>Parcela Atual / Total</label>
+                    <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
+                      <input
+                        type="number"
+                        min="1"
+                        max={formData.total_installments}
+                        name="current_installment"
+                        value={formData.current_installment}
+                        onChange={handleChange}
+                        className={addExpenseStyles.formInput}
+                        style={{width: '45%'}}
+                        required
+                      />
+                      <span style={{margin: '0 5px'}}>/</span>
+                      <input
+                        type="number"
+                        min={formData.current_installment}
+                        max="60"
+                        name="total_installments"
+                        value={formData.total_installments}
+                        onChange={handleChange}
+                        className={addExpenseStyles.formInput}
+                        style={{width: '45%'}}
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>             
+              </div>
+            )}
 
-          {/* Configurações de Despesa Fixa */}
-          {formData.is_recurring && !formData.has_installments && (
-            <div style={{marginBottom: '20px'}}>
-              <label className={dataTableStyles.formLabel}>
-                <div className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
-                  <BsRepeat /> Despesa Fixa
-                </div>
-              </label>
-              <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginTop: '10px'}}>
-                <div className={dataTableStyles.formGroup}>
-                  <label className={dataTableStyles.formLabel}>Data de Início</label>
-                  <input
-                    type="date"
-                    name="expense_date"
-                    value={formData.expense_date}
-                    onChange={handleChange}
-                    className={dataTableStyles.formInput}
-                    required
-                  />
-                </div>
-                
-                <div className={dataTableStyles.formGroup}>
-                  <label className={dataTableStyles.formLabel}>Tipo de Recorrência</label>
-                  <select
-                    name="recurrence_type"
-                    value={formData.recurrence_type || 'monthly'}
-                    onChange={handleChange}
-                    className={dataTableStyles.formInput}
-                    required
-                  >
-                    <option value="daily">Diária</option>
-                    <option value="weekly">Semanal</option>
-                    <option value="monthly">Mensal</option>
-                    <option value="quarterly">Trimestral</option>
-                    <option value="semiannual">Semestral</option>
-                    <option value="annual">Anual</option>
-                  </select>
+            {/* Configurações de Despesa Fixa */}
+            {formData.is_recurring && !formData.has_installments && (
+              <div style={{marginBottom: '20px'}}>
+                <label className={addExpenseStyles.formLabel}>
+                  <div className={`${addExpenseStyles.typeStatus} ${addExpenseStyles.fixedType}`}>
+                    <BsRepeat /> Despesa Fixa
+                  </div>
+                </label>
+                <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginTop: '10px'}}>
+                  <div className={addExpenseStyles.formGroup}>
+                    <label className={addExpenseStyles.formLabel}>Data de Início</label>
+                    <input
+                      type="date"
+                      name="expense_date"
+                      value={formData.expense_date}
+                      onChange={handleChange}
+                      className={addExpenseStyles.formInput}
+                      required
+                    />
+                  </div>
+                  
+                  <div className={addExpenseStyles.formGroup}>
+                    <label className={addExpenseStyles.formLabel}>Tipo de Recorrência</label>
+                    <select
+                      name="recurrence_type"
+                      value={formData.recurrence_type || 'monthly'}
+                      onChange={handleChange}
+                      className={addExpenseStyles.formInput}
+                      required
+                    >
+                      <option value="daily">Diária</option>
+                      <option value="weekly">Semanal</option>
+                      <option value="monthly">Mensal</option>
+                      <option value="quarterly">Trimestral</option>
+                      <option value="semiannual">Semestral</option>
+                      <option value="annual">Anual</option>
+                    </select>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Categoria e Banco/Carteira em duas colunas */}
-          <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px'}}>
-            <div className={dataTableStyles.formGroup}>
-              <label className={dataTableStyles.formLabel}>
-                <BsFolderSymlink size={16} /> Categoria
-              </label>
-              <select
-                name="category_id"
-                value={formData.category_id}
-                onChange={handleChange}
-                className={dataTableStyles.formInput}
-                required
-              >
-                <option value="">Selecione uma categoria</option>
-                {categories.map(category => (
-                  <option key={category.id} value={category.id}>
-                    {category.category_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className={dataTableStyles.formGroup}>
-              <label className={dataTableStyles.formLabel}>
-                <BsBank2 size={16} /> Banco/Carteira
-              </label>
-              {banks.length > 0 ? (
+            {/* Categoria e Banco/Carteira em duas colunas */}
+            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px'}}>
+              <div className={addExpenseStyles.formGroup}>
+                <label className={addExpenseStyles.formLabel}>
+                  <BsFolderSymlink size={16} /> Categoria
+                </label>
                 <select
-                  name="bank_id"
-                  value={formData.bank_id}
+                  name="category_id"
+                  value={formData.category_id}
                   onChange={handleChange}
-                  className={dataTableStyles.formInput}
+                  className={addExpenseStyles.formInput}
                   required
                 >
-                  <option value="">Selecione um banco</option>
-                  {banks.map(bank => (
-                    <option key={bank.id} value={bank.id}>
-                      {bank.name}
+                  <option value="">Selecione uma categoria</option>
+                  {categories.map(category => (
+                    <option key={category.id} value={category.id}>
+                      {category.category_name}
                     </option>
                   ))}
                 </select>
-              ) : (
-                <div className={dataTableStyles.emptySelectError}>
-                  Erro ao carregar bancos. Por favor, tente novamente.
-                </div>
-              )}
-            </div>
-          </div>
+              </div>
 
-          {/* Forma de Pagamento */}
-          <div className={dataTableStyles.formGroup}>
-            <label className={dataTableStyles.formLabel}>
-              Forma de Pagamento
-            </label>
-            <div className={dataTableStyles.toggleGroup}>
-              <button
-                type="button"
-                className={`${dataTableStyles.toggleButton} ${formData.payment_method === 'credit_card' ? dataTableStyles.active : ''}`}
-                onClick={() => handlePaymentMethodChange('credit_card')}
+              <div className={addExpenseStyles.formGroup}>
+                <label className={addExpenseStyles.formLabel}>
+                  <BsBank2 size={16} /> Banco/Carteira
+                </label>
+                {banks.length > 0 ? (
+                  <select
+                    name="bank_id"
+                    value={formData.bank_id}
+                    onChange={handleChange}
+                    className={addExpenseStyles.formInput}
+                    required
+                  >
+                    <option value="">Selecione um banco</option>
+                    {banks.map(bank => (
+                      <option key={bank.id} value={bank.id}>
+                        {bank.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className={addExpenseStyles.emptySelectError}>
+                    Erro ao carregar bancos. Por favor, tente novamente.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Forma de Pagamento */}
+            <div className={addExpenseStyles.formGroup}>
+              <label className={addExpenseStyles.formLabel}>
+                Forma de Pagamento
+              </label>
+              <div className={addExpenseStyles.toggleGroup}>
+                <button
+                  type="button"
+                  className={`${addExpenseStyles.toggleButton} ${formData.payment_method === 'credit_card' ? addExpenseStyles.active : ''}`}
+                  onClick={() => handlePaymentMethodChange('credit_card')}
+                >
+                  <BsCreditCard2Front /> Crédito
+                </button>
+                <button
+                  type="button"
+                  className={`${addExpenseStyles.toggleButton} ${formData.payment_method === 'debit_card' ? addExpenseStyles.active : ''}`}
+                  onClick={() => handlePaymentMethodChange('debit_card')}
+                >
+                  <BsCreditCard2Front /> Débito
+                </button>
+                <button
+                  type="button"
+                  className={`${addExpenseStyles.toggleButton} ${formData.payment_method === 'cash' ? addExpenseStyles.active : ''}`}
+                  onClick={() => handlePaymentMethodChange('cash')}
+                >
+                  <BsCashCoin /> Dinheiro
+                </button>
+                <button
+                  type="button"
+                  className={`${addExpenseStyles.toggleButton} ${formData.payment_method === 'pix' ? addExpenseStyles.active : ''}`}
+                  onClick={() => handlePaymentMethodChange('pix')}
+                >
+                  <BsWallet2 /> Pix
+                </button>
+              </div>
+            </div>
+
+            {/* Botões de Ação */}
+            <div className={addExpenseStyles.modalActions}>
+              <button 
+                type="button" 
+                className={`${addExpenseStyles.formButton} ${addExpenseStyles.formCancel}`}
+                onClick={() => navigate('/expenses')}
               >
-                <BsCreditCard2Front /> Crédito
+                <BsXLg /> Cancelar
               </button>
-              <button
-                type="button"
-                className={`${dataTableStyles.toggleButton} ${formData.payment_method === 'debit_card' ? dataTableStyles.active : ''}`}
-                onClick={() => handlePaymentMethodChange('debit_card')}
+              <button 
+                type="submit" 
+                className={`${addExpenseStyles.formButton} ${addExpenseStyles.formSubmit}`}
+                disabled={loading}
               >
-                <BsCreditCard2Front /> Débito
-              </button>
-              <button
-                type="button"
-                className={`${dataTableStyles.toggleButton} ${formData.payment_method === 'cash' ? dataTableStyles.active : ''}`}
-                onClick={() => handlePaymentMethodChange('cash')}
-              >
-                <BsCashCoin /> Dinheiro
-              </button>
-              <button
-                type="button"
-                className={`${dataTableStyles.toggleButton} ${formData.payment_method === 'pix' ? dataTableStyles.active : ''}`}
-                onClick={() => handlePaymentMethodChange('pix')}
-              >
-                <BsWallet2 /> Pix
+                <BsCheck2 /> {loading ? 'Salvando...' : 'Salvar Despesa'}
               </button>
             </div>
-          </div>
-
-          {/* Botões de Ação */}
-          <div className={dataTableStyles.modalActions}>
-            <button 
-              type="button" 
-              onClick={() => navigate('/expenses')} 
-              className={`${dataTableStyles.formButton} ${dataTableStyles.formCancel}`}
-            >
-              <BsXLg /> Cancelar
-            </button>
-            <button 
-              type="submit" 
-              className={`${dataTableStyles.formButton} ${dataTableStyles.formSubmit}`}
-              disabled={loading}
-            >
-              <BsCheck2 /> {loading ? 'Salvando...' : 'Salvar Despesa'}
-            </button>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
-export default AddExpense;
+export default MobileAddExpense;
