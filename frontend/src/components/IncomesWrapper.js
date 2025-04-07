@@ -368,6 +368,58 @@ const IncomesWrapper = () => {
     filterIncomes(searchTerm);
   }, [searchTerm, originalIncomes]);
 
+  // Efeito para aplicar filtros quando os dados originais forem carregados
+  useEffect(() => {
+    if (originalIncomes.length > 0) {
+      console.log('Dados originais carregados, aplicando filtros iniciais');
+      
+      // Reaplica o filtro de mês e ano atual
+      const currentFilters = { ...filters };
+      let filtered = [...originalIncomes];
+      
+      // Aplicar os filtros de data
+      if (currentFilters.months && currentFilters.months !== 'all') {
+        const months = Array.isArray(currentFilters.months) ? currentFilters.months : [currentFilters.months];
+        
+        filtered = filtered.filter(income => {
+          if (!income.date) return false;
+          
+          try {
+            const [year, month, day] = income.date.split('T')[0].split('-').map(Number);
+            const incomeDate = new Date(year, month - 1, day);
+            const incomeMonth = incomeDate.getMonth() + 1;
+            return months.includes(incomeMonth);
+          } catch (error) {
+            console.error('Erro ao interpretar data:', income.date, error);
+            return false;
+          }
+        });
+      }
+      
+      if (currentFilters.years && currentFilters.years !== 'all') {
+        const years = Array.isArray(currentFilters.years) ? currentFilters.years : [currentFilters.years];
+        
+        filtered = filtered.filter(income => {
+          if (!income.date) return false;
+          
+          try {
+            const [year, month, day] = income.date.split('T')[0].split('-').map(Number);
+            const incomeDate = new Date(year, month - 1, day);
+            const incomeYear = incomeDate.getFullYear();
+            return years.includes(incomeYear);
+          } catch (error) {
+            console.error('Erro ao interpretar data:', income.date, error);
+            return false;
+          }
+        });
+      }
+      
+      setFilteredIncomes(filtered);
+      setIncomes(filtered);
+      console.log('Filtros iniciais aplicados, resultando em', filtered.length, 'receitas');
+    }
+  }, [originalIncomes]);
+
   const filterIncomes = (term = searchTerm) => {
     let filtered = [...originalIncomes];
 
