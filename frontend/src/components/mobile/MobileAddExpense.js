@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AuthContext } from '../App';
+import { AuthContext } from '../../App';
 import addExpenseStyles from '../../styles/mobile/addExpense.mobile.module.css';
 import CurrencyInput from 'react-currency-input-field';
 import { 
