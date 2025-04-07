@@ -457,6 +457,8 @@
     height: auto;
     border-radius: 8px;
     font-size: 1rem;
+    color: var(--secondary-color);
+    
   }
   
   /* Adaptações para os componentes do perfil */
