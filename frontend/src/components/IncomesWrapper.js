@@ -119,14 +119,40 @@ const IncomesWrapper = () => {
           data: incomesData
         });
         
-        // Garantir que incomes seja sempre um array
-        const safeIncomes = Array.isArray(incomesData) ? incomesData : [];
-        console.log('Receitas após tratamento:', {
-          length: safeIncomes.length,
-          data: safeIncomes
+        // Extrair os dados de receitas do objeto retornado
+        let extractedIncomes = [];
+        
+        // Verificar se é um objeto e tem uma propriedade que contém os dados
+        if (typeof incomesData === 'object' && !Array.isArray(incomesData)) {
+          // Verificar propriedades comuns que podem conter os dados
+          if (incomesData.data && Array.isArray(incomesData.data)) {
+            extractedIncomes = incomesData.data;
+          } else if (incomesData.incomes && Array.isArray(incomesData.incomes)) {
+            extractedIncomes = incomesData.incomes;
+          } else if (incomesData.items && Array.isArray(incomesData.items)) {
+            extractedIncomes = incomesData.items;
+          } else if (incomesData.records && Array.isArray(incomesData.records)) {
+            extractedIncomes = incomesData.records;
+          } else {
+            // Tentar encontrar qualquer propriedade que seja um array
+            for (const key in incomesData) {
+              if (Array.isArray(incomesData[key])) {
+                extractedIncomes = incomesData[key];
+                console.log(`Encontrado array na propriedade '${key}'`);
+                break;
+              }
+            }
+          }
+        } else if (Array.isArray(incomesData)) {
+          extractedIncomes = incomesData;
+        }
+        
+        console.log('Receitas extraídas:', {
+          length: extractedIncomes.length,
+          data: extractedIncomes
         });
         
-        setIncomes(safeIncomes);
+        setIncomes(extractedIncomes);
 
         // Buscar categorias
         const categoriesResponse = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/categories`, {
@@ -140,7 +166,42 @@ const IncomesWrapper = () => {
         }
         
         const categoriesData = await categoriesResponse.json();
-        setCategories(Array.isArray(categoriesData) ? categoriesData : []);
+        console.log('Dados de categorias recebidos:', {
+          type: typeof categoriesData,
+          isArray: Array.isArray(categoriesData),
+          data: categoriesData
+        });
+        
+        // Extrair os dados de categorias do objeto retornado
+        let extractedCategories = [];
+        
+        if (typeof categoriesData === 'object' && !Array.isArray(categoriesData)) {
+          if (categoriesData.data && Array.isArray(categoriesData.data)) {
+            extractedCategories = categoriesData.data;
+          } else if (categoriesData.categories && Array.isArray(categoriesData.categories)) {
+            extractedCategories = categoriesData.categories;
+          } else if (categoriesData.items && Array.isArray(categoriesData.items)) {
+            extractedCategories = categoriesData.items;
+          } else {
+            // Tentar encontrar qualquer propriedade que seja um array
+            for (const key in categoriesData) {
+              if (Array.isArray(categoriesData[key])) {
+                extractedCategories = categoriesData[key];
+                console.log(`Encontrado array de categorias na propriedade '${key}'`);
+                break;
+              }
+            }
+          }
+        } else if (Array.isArray(categoriesData)) {
+          extractedCategories = categoriesData;
+        }
+        
+        console.log('Categorias extraídas:', {
+          length: extractedCategories.length,
+          data: extractedCategories
+        });
+        
+        setCategories(extractedCategories);
 
         // Buscar bancos
         const banksResponse = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/banks`, {
@@ -154,7 +215,42 @@ const IncomesWrapper = () => {
         }
         
         const banksData = await banksResponse.json();
-        setBanks(Array.isArray(banksData) ? banksData : []);
+        console.log('Dados de bancos recebidos:', {
+          type: typeof banksData,
+          isArray: Array.isArray(banksData),
+          data: banksData
+        });
+        
+        // Extrair os dados de bancos do objeto retornado
+        let extractedBanks = [];
+        
+        if (typeof banksData === 'object' && !Array.isArray(banksData)) {
+          if (banksData.data && Array.isArray(banksData.data)) {
+            extractedBanks = banksData.data;
+          } else if (banksData.banks && Array.isArray(banksData.banks)) {
+            extractedBanks = banksData.banks;
+          } else if (banksData.items && Array.isArray(banksData.items)) {
+            extractedBanks = banksData.items;
+          } else {
+            // Tentar encontrar qualquer propriedade que seja um array
+            for (const key in banksData) {
+              if (Array.isArray(banksData[key])) {
+                extractedBanks = banksData[key];
+                console.log(`Encontrado array de bancos na propriedade '${key}'`);
+                break;
+              }
+            }
+          }
+        } else if (Array.isArray(banksData)) {
+          extractedBanks = banksData;
+        }
+        
+        console.log('Bancos extraídos:', {
+          length: extractedBanks.length,
+          data: extractedBanks
+        });
+        
+        setBanks(extractedBanks);
 
       } catch (error) {
         console.error('Erro ao carregar dados:', error);

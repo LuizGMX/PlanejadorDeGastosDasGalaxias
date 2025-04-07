@@ -92,11 +92,18 @@ const ExpensesWrapper = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
+        console.log('Iniciando busca de despesas...');
         // Buscar despesas
-        const expensesResponse = await fetch('/api/expenses', {
+        const expensesResponse = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses`, {
           headers: {
             'Authorization': `Bearer ${auth.token}`
           }
+        });
+        
+        console.log('Resposta da API de despesas:', {
+          status: expensesResponse.status,
+          ok: expensesResponse.ok,
+          statusText: expensesResponse.statusText
         });
         
         if (!expensesResponse.ok) {
@@ -104,10 +111,47 @@ const ExpensesWrapper = () => {
         }
         
         const expensesData = await expensesResponse.json();
-        setExpenses(expensesData);
+        console.log('Dados de despesas recebidos:', {
+          type: typeof expensesData,
+          isArray: Array.isArray(expensesData),
+          data: expensesData
+        });
+        
+        // Extrair os dados de despesas do objeto retornado
+        let extractedExpenses = [];
+        
+        if (typeof expensesData === 'object' && !Array.isArray(expensesData)) {
+          if (expensesData.data && Array.isArray(expensesData.data)) {
+            extractedExpenses = expensesData.data;
+          } else if (expensesData.expenses && Array.isArray(expensesData.expenses)) {
+            extractedExpenses = expensesData.expenses;
+          } else if (expensesData.items && Array.isArray(expensesData.items)) {
+            extractedExpenses = expensesData.items;
+          } else if (expensesData.records && Array.isArray(expensesData.records)) {
+            extractedExpenses = expensesData.records;
+          } else {
+            // Tentar encontrar qualquer propriedade que seja um array
+            for (const key in expensesData) {
+              if (Array.isArray(expensesData[key])) {
+                extractedExpenses = expensesData[key];
+                console.log(`Encontrado array na propriedade '${key}'`);
+                break;
+              }
+            }
+          }
+        } else if (Array.isArray(expensesData)) {
+          extractedExpenses = expensesData;
+        }
+        
+        console.log('Despesas extraídas:', {
+          length: extractedExpenses.length,
+          data: extractedExpenses
+        });
+        
+        setExpenses(extractedExpenses);
 
         // Buscar categorias
-        const categoriesResponse = await fetch('/api/categories', {
+        const categoriesResponse = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/categories`, {
           headers: {
             'Authorization': `Bearer ${auth.token}`
           }
@@ -118,10 +162,45 @@ const ExpensesWrapper = () => {
         }
         
         const categoriesData = await categoriesResponse.json();
-        setCategories(categoriesData);
+        console.log('Dados de categorias recebidos:', {
+          type: typeof categoriesData,
+          isArray: Array.isArray(categoriesData),
+          data: categoriesData
+        });
+        
+        // Extrair os dados de categorias do objeto retornado
+        let extractedCategories = [];
+        
+        if (typeof categoriesData === 'object' && !Array.isArray(categoriesData)) {
+          if (categoriesData.data && Array.isArray(categoriesData.data)) {
+            extractedCategories = categoriesData.data;
+          } else if (categoriesData.categories && Array.isArray(categoriesData.categories)) {
+            extractedCategories = categoriesData.categories;
+          } else if (categoriesData.items && Array.isArray(categoriesData.items)) {
+            extractedCategories = categoriesData.items;
+          } else {
+            // Tentar encontrar qualquer propriedade que seja um array
+            for (const key in categoriesData) {
+              if (Array.isArray(categoriesData[key])) {
+                extractedCategories = categoriesData[key];
+                console.log(`Encontrado array de categorias na propriedade '${key}'`);
+                break;
+              }
+            }
+          }
+        } else if (Array.isArray(categoriesData)) {
+          extractedCategories = categoriesData;
+        }
+        
+        console.log('Categorias extraídas:', {
+          length: extractedCategories.length,
+          data: extractedCategories
+        });
+        
+        setCategories(extractedCategories);
 
         // Buscar bancos
-        const banksResponse = await fetch('/api/banks', {
+        const banksResponse = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/banks`, {
           headers: {
             'Authorization': `Bearer ${auth.token}`
           }
@@ -132,11 +211,48 @@ const ExpensesWrapper = () => {
         }
         
         const banksData = await banksResponse.json();
-        setBanks(banksData);
+        console.log('Dados de bancos recebidos:', {
+          type: typeof banksData,
+          isArray: Array.isArray(banksData),
+          data: banksData
+        });
+        
+        // Extrair os dados de bancos do objeto retornado
+        let extractedBanks = [];
+        
+        if (typeof banksData === 'object' && !Array.isArray(banksData)) {
+          if (banksData.data && Array.isArray(banksData.data)) {
+            extractedBanks = banksData.data;
+          } else if (banksData.banks && Array.isArray(banksData.banks)) {
+            extractedBanks = banksData.banks;
+          } else if (banksData.items && Array.isArray(banksData.items)) {
+            extractedBanks = banksData.items;
+          } else {
+            // Tentar encontrar qualquer propriedade que seja um array
+            for (const key in banksData) {
+              if (Array.isArray(banksData[key])) {
+                extractedBanks = banksData[key];
+                console.log(`Encontrado array de bancos na propriedade '${key}'`);
+                break;
+              }
+            }
+          }
+        } else if (Array.isArray(banksData)) {
+          extractedBanks = banksData;
+        }
+        
+        console.log('Bancos extraídos:', {
+          length: extractedBanks.length,
+          data: extractedBanks
+        });
+        
+        setBanks(extractedBanks);
 
       } catch (error) {
         console.error('Erro ao carregar dados:', error);
         setError(error.message);
+        // Garantir que expenses seja um array vazio em caso de erro
+        setExpenses([]);
       } finally {
         setLoading(false);
       }
@@ -144,6 +260,14 @@ const ExpensesWrapper = () => {
 
     fetchData();
   }, [auth.token]);
+
+  // Log do estado antes da renderização
+  console.log('ExpensesWrapper render:', {
+    expensesLength: expenses.length,
+    loading,
+    error,
+    isMobile
+  });
 
   // Renderização condicional baseada no dispositivo
   return isMobile ? (
