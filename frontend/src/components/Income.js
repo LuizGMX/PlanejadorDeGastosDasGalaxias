@@ -263,9 +263,7 @@ const Income = ({
     const handleResize = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
-      if (!mobile) {
-        setShowFilters(true);
-      }
+      setShowFilters(!mobile);
     };
     
     // Initial check
