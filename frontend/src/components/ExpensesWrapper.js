@@ -159,7 +159,27 @@ const ExpensesWrapper = () => {
 
   // Efeito para carregar dados
   useEffect(() => {
-    fetchData();
+    console.log('ExpensesWrapper - Carregando dados iniciais');
+    const today = new Date();
+    const thisMonth = today.getMonth() + 1;
+    const thisYear = today.getFullYear();
+    
+    // Definir filtros iniciais
+    setFilters({
+      months: [thisMonth],
+      years: [thisYear],
+      category: 'all',
+      paymentMethod: 'all',
+      hasInstallments: 'all',
+      description: '',
+      is_recurring: ''
+    });
+    
+    // Buscar dados com os filtros iniciais
+    fetchData({
+      months: [thisMonth],
+      years: [thisYear]
+    });
   }, [auth.token]);
 
   const fetchData = async (filterParams = {}) => {
