@@ -262,20 +262,23 @@ const Income = ({
   useEffect(() => {
     const handleResize = () => {
       const mobile = window.innerWidth < 768;
-      console.log("Resize detected: Window width =", window.innerWidth, "isMobile =", mobile);
       setIsMobile(mobile);
       if (!mobile) {
         setShowFilters(true);
       }
     };
     
-    // Execute imediatamente para definir o estado inicial
+    // Initial check
     handleResize();
     
+    // Add event listener
     window.addEventListener('resize', handleResize);
     
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+    // Cleanup
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []); // Empty dependency array since we only want to set up the listener once
 
   // Função para alternar detalhes do cartão em visualização mobile
   const toggleCardDetails = (id) => {
