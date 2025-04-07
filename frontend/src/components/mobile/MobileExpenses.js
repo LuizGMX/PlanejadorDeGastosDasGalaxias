@@ -76,7 +76,7 @@ const MobileExpenses = ({
     <div className={styles.filtersContainer}>
       <div className={styles.filterToggleButton} onClick={toggleFilters}>
         <FiFilter />
-        <span>Filtros</span>
+        <span>{showFilters ? 'Ocultar filtros' : 'Mostrar filtros'}</span>
       </div>
 
       <div className={showFilters ? styles.filtersExpanded : styles.filtersCollapsed}>
@@ -87,66 +87,23 @@ const MobileExpenses = ({
             <input
               type="text"
               className={styles.searchInput}
-              placeholder="Buscar despesas..."
+              placeholder="Buscar por descrição..."
               value={searchTerm}
               onChange={handleSearch}
             />
           </div>
           
-          {/* Additional filter options */}
           <div className={styles.filterOptions}>
-            <div className={styles.filterGroup}>
-              <label className={styles.filterLabel}>Categorias</label>
-              <select 
-                className={styles.filterSelect}
-                onChange={(e) => onFilter('category', e.target.value)}
-              >
-                <option value="all">Todas as categorias</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>{category.category_name}</option>
-                ))}
-              </select>
-            </div>
-            
-            <div className={styles.filterGroup}>
-              <label className={styles.filterLabel}>Método de Pagamento</label>
-              <select 
-                className={styles.filterSelect}
-                onChange={(e) => onFilter('paymentMethod', e.target.value)}
-              >
-                <option value="all">Todos os métodos</option>
-                {banks.map((bank) => (
-                  <option key={bank.id} value={bank.id}>{bank.name}</option>
-                ))}
-              </select>
-            </div>
-            
-            <div className={styles.filterGroup}>
-              <label className={styles.filterLabel}>Tipo</label>
-              <select 
-                className={styles.filterSelect}
-                onChange={(e) => onFilter('is_recurring', e.target.value)}
-              >
-                <option value="">Todos os tipos</option>
-                <option value="true">Fixas</option>
-                <option value="false">Únicas</option>
-              </select>
-            </div>
-
             <div className={styles.filterGroup}>
               <label className={styles.filterLabel}>Mês</label>
               <select 
                 className={styles.filterSelect}
                 onChange={(e) => {
                   const value = e.target.value;
-                  console.log('Filtro mês selecionado:', value);
                   if (value === 'all') {
-                    console.log('Enviando "all" para o filtro de meses');
                     onFilter('months', []);
                   } else {
-                    const parsedValue = parseInt(value, 10);
-                    console.log('Enviando array para o filtro de meses:', [parsedValue]);
-                    onFilter('months', [parsedValue]);
+                    onFilter('months', [parseInt(value, 10)]);
                   }
                 }}
                 value={filters.months?.[0]?.toString() || currentMonth.toString()}
@@ -185,8 +142,50 @@ const MobileExpenses = ({
                 <option value={currentYear - 1}>{currentYear - 1}</option>
                 <option value={currentYear}>{currentYear}</option>
                 <option value={currentYear + 1}>{currentYear + 1}</option>
+                <option value={currentYear + 2}>{currentYear + 2}</option>
               </select>
             </div>
+
+            <div className={styles.filterGroup}>
+              <label className={styles.filterLabel}>Categorias</label>
+              <select 
+                className={styles.filterSelect}
+                onChange={(e) => onFilter('category', e.target.value)}
+                value={filters.category || 'all'}
+              >
+                <option value="all">Todas as categorias</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>{category.category_name}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className={styles.filterGroup}>
+              <label className={styles.filterLabel}>Método de Pagamento</label>
+              <select 
+                className={styles.filterSelect}
+                onChange={(e) => onFilter('paymentMethod', e.target.value)}
+                value={filters.paymentMethod || 'all'}
+              >
+                <option value="all">Todos os métodos</option>
+                {banks.map((bank) => (
+                  <option key={bank.id} value={bank.id}>{bank.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          
+          <div className={styles.filterGroup}>
+            <label className={styles.filterLabel}>Tipo</label>
+            <select 
+              className={styles.filterSelect}
+              onChange={(e) => onFilter('is_recurring', e.target.value)}
+              value={filters.is_recurring || ''}
+            >
+              <option value="">Todos os tipos</option>
+              <option value="true">Fixas</option>
+              <option value="false">Únicas</option>
+            </select>
           </div>
         </div>
       </div>
@@ -271,7 +270,7 @@ const MobileExpenses = ({
 
         <div className={styles.cardsContainer}>
           {expenses.map((expense) => (
-            <div key={expense.id} className={styles.card}>
+            <div key={expense.id} className={styles.card} style={{ borderLeftColor: '#f44336' }}>
               <div className={styles.cardHeader}>
                 <h3 className={styles.cardTitle}>{expense.description}</h3>
                 <span className={`${styles.amountBadge} ${styles.expenseAmount}`}>
@@ -311,12 +310,14 @@ const MobileExpenses = ({
                 <button
                   className={styles.editButton}
                   onClick={() => onEdit(expense)}
+                  aria-label="Editar despesa"
                 >
                   <FiEdit2 />
                 </button>
                 <button
                   className={styles.deleteButton}
                   onClick={() => onDelete(expense)}
+                  aria-label="Excluir despesa"
                 >
                   <FiTrash2 />
                 </button>
@@ -329,4 +330,4 @@ const MobileExpenses = ({
   );
 };
 
-export default MobileExpenses; 
+export default MobileExpenses;

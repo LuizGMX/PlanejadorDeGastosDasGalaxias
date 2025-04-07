@@ -4,15 +4,15 @@ import { formatCurrency, formatDate } from '../../utils/formatters';
 import styles from '../../styles/mobile/dataTable.mobile.module.css';
 import dataTableStyles from '../../styles/dataTable.module.css';
 
-const MobileIncomes = ({ 
-  incomes, 
+const MobileExpenses = ({ 
+  expenses, 
   onEdit, 
   onDelete, 
   onAdd,
   onFilter,
   onSearch,
-  selectedIncomes,
-  onSelectIncome,
+  selectedExpenses,
+  onSelectExpense,
   onSelectAll,
   loading,
   error,
@@ -28,7 +28,7 @@ const MobileIncomes = ({
 
   // Inicializa os filtros com o mês atual se ainda não estiver definido
   useEffect(() => {
-    console.log('MobileIncomes - Verificando inicialização de filtros', {
+    console.log('MobileExpenses - Verificando inicialização de filtros', {
       initialFilterApplied: initialFilterApplied.current,
       filters
     });
@@ -38,14 +38,14 @@ const MobileIncomes = ({
       return;
     }
     
-    console.log('Inicializando filtros no mobile para receitas');
+    console.log('Inicializando filtros no mobile para despesas');
     
     // Forçar a aplicação do filtro com valores iniciais
     const today = new Date();
     const thisMonth = today.getMonth() + 1;
     const thisYear = today.getFullYear();
     
-    console.log(`Aplicando filtro inicial no mobile para receitas: mês=${thisMonth}, ano=${thisYear}`);
+    console.log(`Aplicando filtro inicial no mobile para despesas: mês=${thisMonth}, ano=${thisYear}`);
     
     // Primeiro definimos a flag como true para evitar chamadas repetidas
     initialFilterApplied.current = true;
@@ -150,8 +150,8 @@ const MobileIncomes = ({
               <label className={styles.filterLabel}>Categorias</label>
               <select 
                 className={styles.filterSelect}
-                onChange={(e) => onFilter('category_id', e.target.value)}
-                value={filters.category_id || 'all'}
+                onChange={(e) => onFilter('category', e.target.value)}
+                value={filters.category || 'all'}
               >
                 <option value="all">Todas as categorias</option>
                 {categories.map((category) => (
@@ -161,13 +161,13 @@ const MobileIncomes = ({
             </div>
             
             <div className={styles.filterGroup}>
-              <label className={styles.filterLabel}>Banco</label>
+              <label className={styles.filterLabel}>Método de Pagamento</label>
               <select 
                 className={styles.filterSelect}
-                onChange={(e) => onFilter('bank_id', e.target.value)}
-                value={filters.bank_id || 'all'}
+                onChange={(e) => onFilter('paymentMethod', e.target.value)}
+                value={filters.paymentMethod || 'all'}
               >
-                <option value="all">Todos os bancos</option>
+                <option value="all">Todos os métodos</option>
                 {banks.map((bank) => (
                   <option key={bank.id} value={bank.id}>{bank.name}</option>
                 ))}
@@ -195,7 +195,7 @@ const MobileIncomes = ({
   if (loading) {
     return (
       <div className={styles.loadingContainer}>
-        <div className={styles.loadingText}>Carregando receitas...</div>
+        <div className={styles.loadingText}>Carregando despesas...</div>
       </div>
     );
   }
@@ -203,16 +203,16 @@ const MobileIncomes = ({
   if (error) {
     return (
       <div className={styles.errorContainer}>
-        <div className={styles.errorText}>Erro ao carregar receitas: {error}</div>
+        <div className={styles.errorText}>Erro ao carregar despesas: {error}</div>
       </div>
     );
   }
 
-  if (incomes.length === 0) {
+  if (expenses.length === 0) {
     return (
       <div className={styles.container}>
         <div className={styles.header}>
-          <h1 className={styles.title}>Receitas</h1>
+          <h1 className={styles.title}>Despesas</h1>
           <button onClick={onAdd} className={styles.addButton}>
             <FiPlus /> Adicionar
           </button>
@@ -224,15 +224,15 @@ const MobileIncomes = ({
           <div className={styles.noDataContainer}>
             <div className={styles.noDataIcon}>💰</div>
             <h3 className={styles.noDataMessage}>
-              {searchTerm ? "Nenhuma receita encontrada para os filtros selecionados." : "Nenhuma receita encontrada"}
+              {searchTerm ? "Nenhuma despesa encontrada para os filtros selecionados." : "Nenhuma despesa encontrada"}
             </h3>
             <p className={styles.noDataSuggestion}>
               {searchTerm ? "Tente ajustar os filtros ou " : "Comece "}
-              adicionando sua primeira receita
+              adicionando sua primeira despesa
             </p>
             <div className={styles.noDataActions}>
               <button className={styles.primaryButton} onClick={onAdd}>
-                <FiPlus /> Adicionar Receita
+                <FiPlus /> Adicionar Despesa
               </button>
             </div>
           </div>
@@ -244,7 +244,7 @@ const MobileIncomes = ({
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h1 className={styles.title}>Receitas</h1>
+        <h1 className={styles.title}>Despesas</h1>
         <button onClick={onAdd} className={styles.addButton}>
           <FiPlus /> Adicionar
         </button>
@@ -269,65 +269,35 @@ const MobileIncomes = ({
         </button>
 
         <div className={styles.cardsContainer}>
-          {incomes.map((income) => (
-            <div key={income.id} className={styles.card} style={{ borderLeftColor: '#4caf50' }}>
+          {expenses.map((expense) => (
+            <div key={expense.id} className={styles.card}>
               <div className={styles.cardHeader}>
-                <h3 className={styles.cardTitle}>{income.description}</h3>
-                <span className={`${styles.amountBadge} ${styles.incomeAmount}`}>
-                  {formatCurrency(income.amount)}
+                <h3 className={styles.cardTitle}>{expense.description}</h3>
+                <span className={`${styles.amountBadge} ${styles.expenseAmount}`}>
+                  {formatCurrency(expense.amount)}
                 </span>
               </div>
 
               <div className={styles.cardDetails}>
                 <div className={styles.cardDetail}>
                   <span className={styles.cardLabel}>Data</span>
-                  <span className={styles.cardValue}>{formatDate(income.date)}</span>
+                  <span className={styles.cardValue}>{formatDate(expense.date)}</span>
                 </div>
 
                 <div className={styles.cardDetail}>
                   <span className={styles.cardLabel}>Categoria</span>
                   <span className={styles.cardValue}>
-                    {income.Category?.category_name || '-'}
+                    {expense.Category?.category_name || '-'}
                   </span>
                 </div>
 
                 <div className={styles.cardDetail}>
                   <span className={styles.cardLabel}>Banco</span>
                   <span className={styles.cardValue}>
-                    {income.Bank?.name || '-'}
+                    {expense.Bank?.name || '-'}
                   </span>
                 </div>
 
                 <div className={styles.cardDetail}>
                   <span className={styles.cardLabel}>Tipo</span>
-                  <span className={`${styles.typeStatus} ${income.is_recurring ? styles.fixedType : styles.oneTimeType}`}>
-                    {income.is_recurring ? 'Fixa' : 'Única'}
-                  </span>
-                </div>
-              </div>
-
-              <div className={styles.cardActions}>
-                <button
-                  className={styles.editButton}
-                  onClick={() => onEdit(income)}
-                  aria-label="Editar receita"
-                >
-                  <FiEdit2 />
-                </button>
-                <button
-                  className={styles.deleteButton}
-                  onClick={() => onDelete(income)}
-                  aria-label="Excluir receita"
-                >
-                  <FiTrash2 />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default MobileIncomes; 
+                  <span className={`

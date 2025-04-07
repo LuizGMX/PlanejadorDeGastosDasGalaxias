@@ -1,3 +1,21 @@
+/* Adicionar fontes e variáveis globais */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --primary-green: #4caf50;
+  --primary-green-dark: #388e3c;
+  --primary-red: #f44336;
+  --primary-red-dark: #d32f2f;
+  --text-dark: #212121;
+  --text-medium: #424242;
+  --text-light: #757575;
+  --background-light: #f8f9fa;
+  --card-bg: #ffffff;
+  --border-light: #e0e0e0;
+  --shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --shadow-medium: 0 6px 16px rgba(0, 0, 0, 0.1);
+}
+
 /* Mobile styles for data tables */
 @media (max-width: 768px) {
   /* Hack para forçar a exibição no mobile */
@@ -527,44 +545,64 @@
   }
 }
 
+/* Estilos para o container principal */
 .container {
   padding: 16px;
-  max-width: 100%;
-  overflow-x: hidden;
+  background-color: var(--background-light);
+  min-height: 100vh;
+  font-family: 'Poppins', 'Roboto', sans-serif;
 }
 
+/* Estilos para o cabeçalho */
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-light);
 }
 
 .title {
   font-size: 24px;
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--text-dark);
+  margin: 0;
 }
 
 .addButton {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background-color: var(--primary-color);
+  justify-content: center;
+  background-color: var(--primary-green);
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
+  padding: 10px 16px;
   font-size: 14px;
   font-weight: 500;
-  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: all 0.2s ease;
 }
 
-.dataContainer {
-  margin-top: 16px;
+.addButton:active {
+  transform: scale(0.98);
+  background-color: var(--primary-green-dark);
 }
 
+.addButton svg {
+  margin-right: 6px;
+}
+
+/* Estilos para o container de dados */
+.dataContainer {
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+}
+
+/* Estilos para filtros */
 .filtersContainer {
   margin-bottom: 16px;
 }
@@ -572,38 +610,55 @@
 .filterToggleButton {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  padding: 12px;
-  background-color: var(--card-background);
-  border: 1px solid var(--border-color);
+  padding: 12px 16px;
+  background-color: #f1f3f4;
   border-radius: 8px;
-  color: var(--text-color);
-  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-medium);
   cursor: pointer;
-  transition: all 0.2s ease;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.filterToggleButton svg {
+  margin-right: 8px;
+  color: var(--text-light);
 }
 
 .filtersExpanded {
-  display: flex;
-  flex-direction: column;
+  background-color: #f8f9fa;
+  border-radius: 10px;
+  padding: 16px;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+  max-height: 1000px;
+  opacity: 1;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  margin-bottom: 16px;
 }
 
 .filtersCollapsed {
-  display: none;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+}
+
+.filtersExpandedTitle {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text-dark);
 }
 
 .filterRow {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 16px;
 }
 
 .searchField {
   position: relative;
-  width: 100%;
+  margin-bottom: 8px;
 }
 
 .searchIcon {
@@ -611,73 +666,147 @@
   left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: var(--text-secondary);
-  font-size: 16px;
+  color: var(--text-light);
 }
 
 .searchInput {
   width: 100%;
   padding: 12px 12px 12px 40px;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border-light);
   border-radius: 8px;
-  background-color: var(--input-bg);
-  color: var(--text-color);
-  font-size: 14px;
+  font-size: 15px;
+  background-color: white;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .searchInput:focus {
+  border-color: var(--primary-green);
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
   outline: none;
-  border-color: var(--primary-color);
 }
 
+.filterOptions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 8px;
+}
+
+.filterLabel {
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: var(--text-medium);
+}
+
+.filterSelect {
+  padding: 10px 12px;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  background-color: white;
+  font-size: 14px;
+  color: var(--text-medium);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 16px;
+}
+
+.filterSelect:focus {
+  border-color: var(--primary-green);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
+/* Botão para limpar filtros */
+.clearFiltersButton {
+  width: 100%;
+  padding: 12px;
+  background-color: #f1f3f4;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  color: var(--text-medium);
+  margin: 10px 0 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: background-color 0.2s ease;
+}
+
+.clearFiltersButton:active {
+  background-color: #e0e0e0;
+}
+
+/* Estilos para os cards */
 .cardsContainer {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
+  padding: 0 10px 16px;
 }
 
 .card {
-  background-color: var(--card-background);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
+  background-color: white;
+  border-radius: 12px;
   padding: 16px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-soft);
+  position: relative;
+  border-left: 4px solid var(--primary-green);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.card:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
 .cardHeader {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--border-color);
 }
 
 .cardTitle {
   font-size: 16px;
   font-weight: 600;
-  color: var(--text-color);
   margin: 0;
+  color: var(--text-dark);
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  max-width: 65%;
 }
 
 .amountBadge {
   font-weight: 600;
-  margin-left: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 15px;
+  min-width: 80px;
+  text-align: right;
 }
 
 .incomeAmount {
-  color: var(--success-color);
+  background-color: rgba(76, 175, 80, 0.12);
+  color: var(--primary-green-dark);
+}
+
+.expenseAmount {
+  background-color: rgba(244, 67, 54, 0.12);
+  color: var(--primary-red-dark);
 }
 
 .cardDetails {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: 10px 16px;
+  margin-bottom: 14px;
 }
 
 .cardDetail {
@@ -687,76 +816,80 @@
 
 .cardLabel {
   font-size: 12px;
-  color: var(--text-secondary);
-  margin-bottom: 2px;
+  color: var(--text-light);
+  margin-bottom: 4px;
 }
 
 .cardValue {
   font-size: 14px;
-  color: var(--text-color);
+  font-weight: 500;
+  color: var(--text-medium);
 }
 
 .typeStatus {
   display: inline-block;
-  padding: 2px 6px;
+  padding: 4px 8px;
   border-radius: 4px;
   font-size: 12px;
   font-weight: 500;
 }
 
 .fixedType {
-  background-color: var(--success-color);
-  color: white;
+  background-color: rgba(25, 118, 210, 0.12);
+  color: #1976d2;
 }
 
 .oneTimeType {
-  background-color: var(--warning-color);
-  color: var(--text-dark);
+  background-color: rgba(156, 39, 176, 0.12);
+  color: #9c27b0;
 }
 
 .cardActions {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid var(--border-color);
+  gap: 10px;
+  margin-top: 4px;
 }
 
-.editButton,
-.deleteButton {
+.editButton, .deleteButton {
+  border: none;
+  border-radius: 6px;
+  padding: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  background-color: transparent;
+  transition: background-color 0.2s ease;
 }
 
 .editButton {
-  background-color: var(--primary-color);
-  color: white;
+  color: #2196f3;
 }
 
 .deleteButton {
-  background-color: var(--danger-color);
-  color: white;
+  color: var(--primary-red);
 }
 
+.editButton:active, .deleteButton:active {
+  transform: scale(0.95);
+}
+
+.editButton:active {
+  background-color: rgba(33, 150, 243, 0.1);
+}
+
+.deleteButton:active {
+  background-color: rgba(244, 67, 54, 0.1);
+}
+
+/* Estilos para tela vazia */
 .noDataContainer {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 32px 16px;
+  padding: 40px 20px;
   text-align: center;
-  background-color: var(--card-background);
-  border-radius: 8px;
-  border: 1px dashed var(--border-color);
-  margin-top: 16px;
 }
 
 .noDataIcon {
@@ -766,94 +899,71 @@
 
 .noDataMessage {
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 500;
   margin-bottom: 8px;
-  color: var(--text-color);
+  color: var(--text-medium);
 }
 
 .noDataSuggestion {
   font-size: 14px;
-  color: var(--text-secondary);
   margin-bottom: 24px;
+  color: var(--text-light);
 }
 
 .noDataActions {
-  display: flex;
-  gap: 16px;
+  margin-top: 8px;
 }
 
 .primaryButton {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 10px 16px;
-  background-color: var(--primary-color);
+  background-color: var(--primary-green);
   color: white;
   border: none;
-  border-radius: 4px;
-  font-size: 14px;
+  border-radius: 8px;
+  padding: 12px 20px;
+  font-size: 15px;
   font-weight: 500;
-  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: all 0.2s ease;
 }
 
-.loadingContainer,
-.errorContainer {
+.primaryButton svg {
+  margin-right: 8px;
+}
+
+.primaryButton:active {
+  transform: scale(0.98);
+  background-color: var(--primary-green-dark);
+}
+
+/* Estilos para loading e erro */
+.loadingContainer, .errorContainer {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 32px 16px;
-  text-align: center;
-  background-color: var(--card-background);
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-  margin-top: 16px;
+  min-height: 60vh;
+  padding: 20px;
 }
 
-.loadingText,
+.loadingText, .errorText {
+  margin-top: 16px;
+  font-size: 16px;
+  color: var(--text-medium);
+}
+
 .errorText {
-  font-size: 16px;
-  color: var(--text-secondary);
+  color: var(--primary-red-dark);
 }
 
-@keyframes slideDown {
-  from {
-    max-height: 0;
-    opacity: 0;
-  }
-  to {
-    max-height: 500px;
-    opacity: 1;
-  }
+/* Estilos para animações */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.filtersExpandedTitle {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 12px;
-  color: var(--primary-color);
-  text-align: center;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.clearFiltersButton {
-  width: 100%;
-  padding: 10px;
-  margin-top: 16px;
-  background-color: var(--card-background);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  color: var(--danger-color);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.clearFiltersButton:hover {
-  background-color: var(--danger-color);
-  color: white;
+.card {
+  animation: fadeIn 0.3s ease-out;
 } 
