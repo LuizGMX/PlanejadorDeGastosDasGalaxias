@@ -44,19 +44,19 @@
 }
 
 .errorMessage {
-  background-color: var(--error-background);
+  background-color: var(--error-color-light);
   color: var(--error-color);
   padding: 12px;
-  border-radius: 8px;
+  border-radius: var(--border-radius-medium);
   margin-bottom: 16px;
   font-size: 14px;
 }
 
 .successMessage {
-  background-color: var(--success-background);
+  background-color: var(--success-color-light);
   color: var(--success-color);
   padding: 12px;
-  border-radius: 8px;
+  border-radius: var(--border-radius-medium);
   margin-bottom: 16px;
   font-size: 14px;
   display: flex;
@@ -85,17 +85,19 @@
 .formLabel {
   font-size: 14px;
   font-weight: 500;
-  color: var(--text-color);
+  color: var(--text-color-medium);
 }
 
 .formInput {
   padding: 12px;
   border: 1px solid var(--border-color);
-  border-radius: 8px;
-  background-color: var(--surface-color);
+  border-radius: var(--border-radius-medium);
+  background-color: var(--input-bg);
   color: var(--text-color);
   font-size: 16px;
   width: 100%;
+  transition: border-color var(--transition-fast);
+  min-height: 44px;
 }
 
 .formInput:focus {
@@ -109,14 +111,21 @@
   gap: 8px;
   cursor: pointer;
   user-select: none;
+  color: var(--text-color);
 }
 
 .checkbox {
   width: 20px;
   height: 20px;
   border: 2px solid var(--border-color);
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
   cursor: pointer;
+  background-color: var(--input-bg);
+}
+
+.checkbox:checked {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
 }
 
 .typeStatus {
@@ -125,6 +134,7 @@
   gap: 8px;
   font-size: 14px;
   font-weight: 500;
+  color: var(--text-color-medium);
 }
 
 .fixedType {
@@ -143,18 +153,19 @@
   justify-content: center;
   gap: 8px;
   padding: 12px 24px;
-  border-radius: 8px;
+  border-radius: var(--border-radius-medium);
   font-size: 16px;
   font-weight: 500;
   cursor: pointer;
-  flex: 1;
-  transition: all 0.2s ease;
+  transition: all var(--transition-fast);
+  min-height: 44px;
 }
 
 .cancelButton {
   background-color: var(--surface-color);
   color: var(--text-color);
   border: 1px solid var(--border-color);
+  flex: 1;
 }
 
 .cancelButton:hover:not(:disabled) {
@@ -163,8 +174,9 @@
 
 .submitButton {
   background-color: var(--primary-color);
-  color: var(--background-color);
+  color: var(--text-color);
   border: none;
+  flex: 2;
 }
 
 .submitButton:hover:not(:disabled) {
@@ -192,6 +204,17 @@
 @media (min-width: 768px) {
   .inlineFieldsContainer {
     grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Ajustes para iOS */
+@supports (-webkit-touch-callout: none) {
+  .container {
+    padding-bottom: calc(80px + var(--safe-area-bottom));
+  }
+  
+  .buttonContainer {
+    padding-bottom: var(--safe-area-bottom);
   }
 }
 
