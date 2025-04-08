@@ -2,26 +2,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 @import '../variables.css';
 
-:root {
-  --primary-green: #00ff85;
-  --primary-green-dark: #00E676;
-  --primary-red: #ff6b6b;
-  --primary-red-dark: #ff5252;
-  --text-dark: #ffffff;
-  --text-medium: #aaaaaa;
-  --text-light: #888888;
-  --background-light: #121212;
-  --background-system: transparent;
-  --card-bg: #1e1e1e;
-  --border-light: #444444;
-  --shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.2);
-  --shadow-medium: 0 6px 16px rgba(0, 0, 0, 0.3);
-  --input-bg: #2a2a2a;
-  --hover-bg: #333333;
-  --success-color: #00ff85;
-  --warning-color: #ffb946;
-}
-
 .successMessage {
   color: var(--success-color);
   font-size: 16px;
