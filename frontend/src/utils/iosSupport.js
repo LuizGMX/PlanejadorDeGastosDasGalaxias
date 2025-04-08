@@ -8,10 +8,9 @@
  * @returns {boolean} True if iOS device is detected
  */
 export const isIOS = () => {
-  return (
-    ['iPad', 'iPhone', 'iPod'].includes(navigator.platform) ||
-    (navigator.userAgent.includes("Mac") && "ontouchend" in document)
-  );
+  const userAgent = window.navigator.userAgent.toLowerCase();
+  return /iphone|ipad|ipod/.test(userAgent) || 
+         (userAgent.includes('mac') && 'ontouchend' in document);
 };
 
 /**
@@ -56,21 +55,81 @@ export const applyIOSClasses = () => {
  * Call this function once when the app starts
  */
 export const initIOSSupport = () => {
-  applyIOSClasses();
-  setVHVariable();
-  
-  // Handle resize events to update the vh variable
-  window.addEventListener('resize', () => {
-    setVHVariable();
-  });
-  
-  // Handle orientation change specifically
-  window.addEventListener('orientationchange', () => {
-    // Small delay to ensure the resize has completed
-    setTimeout(() => {
-      setVHVariable();
-    }, 100);
-  });
+  if (isIOS()) {
+    console.log('iOS device detected, initializing support...');
+    
+    // Adicionar classes específicas para iOS
+    document.documentElement.classList.add('ios-device');
+    document.body.classList.add('ios-device');
+    
+    // Adicionar meta viewport com viewport-fit=cover para suporte a safe-area
+    const viewportMeta = document.querySelector('meta[name="viewport"]');
+    if (viewportMeta) {
+      viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, viewport-fit=cover');
+    }
+    
+    // Adicionar CSS para garantir que a navbar seja exibida corretamente
+    const style = document.createElement('style');
+    style.textContent = `
+      .ios-device .mobileNavbar {
+        display: block !important;
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 1000 !important;
+        padding-bottom: env(safe-area-inset-bottom, 0) !important;
+        -webkit-transform: translateZ(0) !important;
+        transform: translateZ(0) !important;
+        -webkit-backface-visibility: hidden !important;
+        backface-visibility: hidden !important;
+      }
+      
+      .ios-device .mobileNavbar.ios-navbar {
+        display: block !important;
+      }
+      
+      .ios-device main {
+        padding-bottom: calc(60px + env(safe-area-inset-bottom, 0));
+      }
+      
+      @supports (-webkit-touch-callout: none) {
+        .ios-device {
+          min-height: -webkit-fill-available;
+        }
+        
+        .ios-device .mobileNavbar {
+          position: fixed !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    
+    // Forçar exibição da navbar
+    const navbarElement = document.querySelector('.mobileNavbar');
+    if (navbarElement) {
+      navbarElement.style.display = 'block';
+      navbarElement.classList.add('ios-navbar');
+      console.log('Forced mobile navbar display for iOS device');
+    }
+    
+    // Adicionar event listeners para garantir que a navbar seja exibida corretamente
+    window.addEventListener('resize', () => {
+      const navbarElement = document.querySelector('.mobileNavbar');
+      if (navbarElement) {
+        navbarElement.style.display = 'block';
+      }
+    });
+    
+    window.addEventListener('orientationchange', () => {
+      setTimeout(() => {
+        const navbarElement = document.querySelector('.mobileNavbar');
+        if (navbarElement) {
+          navbarElement.style.display = 'block';
+        }
+      }, 100);
+    });
+  }
 };
 
 export default {

@@ -13,7 +13,6 @@ import {
 import { GiPayMoney, GiReceiveMoney } from "react-icons/gi";
 import { isIOS } from '../../utils/iosSupport';
 
-
 const MobileNavbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -22,16 +21,43 @@ const MobileNavbar = () => {
   const [isIOSDevice, setIsIOSDevice] = useState(false);
   
   useEffect(() => {
-    // Check if running on iOS
-    setIsIOSDevice(isIOS());
+    // Verificar se é um dispositivo iOS
+    const isIOSDevice = isIOS();
+    setIsIOSDevice(isIOSDevice);
     
-    // Force the mobile navbar to be visible on iOS devices
-    if (isIOS()) {
+    // Forçar exibição da navbar em dispositivos iOS
+    if (isIOSDevice) {
       const navbarElement = document.querySelector('.mobileNavbar');
       if (navbarElement) {
         navbarElement.style.display = 'block';
+        navbarElement.classList.add('ios-navbar');
         console.log('MobileNavbar: Forcing display for iOS device');
       }
+      
+      // Adicionar event listeners para garantir que a navbar seja exibida corretamente
+      const handleResize = () => {
+        const navbarElement = document.querySelector('.mobileNavbar');
+        if (navbarElement) {
+          navbarElement.style.display = 'block';
+        }
+      };
+      
+      const handleOrientationChange = () => {
+        setTimeout(() => {
+          const navbarElement = document.querySelector('.mobileNavbar');
+          if (navbarElement) {
+            navbarElement.style.display = 'block';
+          }
+        }, 100);
+      };
+      
+      window.addEventListener('resize', handleResize);
+      window.addEventListener('orientationchange', handleOrientationChange);
+      
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        window.removeEventListener('orientationchange', handleOrientationChange);
+      };
     }
   }, []);
   

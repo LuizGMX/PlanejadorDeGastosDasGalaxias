@@ -103,6 +103,112 @@
     -webkit-appearance: none;
     -webkit-transform: translateZ(0);
   }
+
+  /* Garantir que o conteúdo não fique escondido atrás da navbar */
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.ios-device .mobileNavbar {
+  /* Forçar exibição da navbar */
+  display: block !important;
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 1000 !important;
+  
+  /* Suporte a safe-area */
+  padding-bottom: env(safe-area-inset-bottom, 0) !important;
+  
+  /* Forçar hardware acceleration */
+  -webkit-transform: translateZ(0) !important;
+  transform: translateZ(0) !important;
+  -webkit-backface-visibility: hidden !important;
+  backface-visibility: hidden !important;
+  
+  /* Garantir que a navbar fique visível */
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Classe específica para a navbar no iOS */
+.ios-device .mobileNavbar.ios-navbar {
+  display: block !important;
+}
+
+/* Ajustes para o conteúdo principal */
+.ios-device main {
+  padding-bottom: calc(60px + env(safe-area-inset-bottom, 0));
+}
+
+/* Ajustes para o viewport */
+@supports (-webkit-touch-callout: none) {
+  .ios-device {
+    min-height: -webkit-fill-available;
+  }
+  
+  .ios-device .mobileNavbar {
+    position: fixed !important;
+  }
+  
+  .ios-device .mobileNavbar.ios-navbar {
+    display: block !important;
+  }
+  
+  .ios-device main {
+    padding-bottom: calc(60px + env(safe-area-inset-bottom, 0));
+  }
+}
+
+/* Ajustes para o body */
+.ios-device body {
+  min-height: -webkit-fill-available;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Ajustes para o root */
+.ios-device #root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Ajustes para o app */
+.ios-device .app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Ajustes para o conteúdo principal */
+.ios-device main {
+  flex: 1;
+  padding-bottom: calc(60px + env(safe-area-inset-bottom, 0));
+}
+
+/* Ajustes para a navbar */
+.ios-device .mobileNavbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background-color: #ffffff;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* Ajustes para dispositivos iOS */
+.ios-device .mobileNavbar.ios-navbar {
+  display: block !important;
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 1000 !important;
+  padding-bottom: env(safe-area-inset-bottom, 0) !important;
 }
 
 /* Special handling for notched iOS devices (iPhone X and newer) */

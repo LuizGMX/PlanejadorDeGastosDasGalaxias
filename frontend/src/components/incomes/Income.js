@@ -27,7 +27,7 @@ import {
   BsArrowClockwise
 } from 'react-icons/bs';
 
-const Income = ({ 
+function Income({ 
   incomes, 
   onEdit, 
   onDelete, 
@@ -39,7 +39,7 @@ const Income = ({
   onSelectAll,
   loading,
   error
-}) => {
+}) {
   const navigate = useNavigate();
   const { auth } = useContext(AuthContext);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -569,6 +569,6 @@ const Income = ({
       </div>
     </div>
   );
-};
+}
 
 export default Income;

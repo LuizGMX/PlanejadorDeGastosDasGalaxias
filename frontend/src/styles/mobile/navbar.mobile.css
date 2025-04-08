@@ -2,30 +2,138 @@
 @import '../variables.css';
 
 .mobileNavbar {
+  display: none;
   position: fixed;
   bottom: 0;
   left: 0;
-  width: 100%;
-  background-color: var(--card-background);
-  border-top: 1px solid var(--border-color);
-  z-index: 999; /* Valor menor que os modais (10000) mas ainda alto */
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.15);
-  display: none; /* Inicialmente escondida */
-  height: 70px; /* Altura fixa para calcular corretamente o padding necessário */
-  max-height: 70px; /* Impedir que cresça além do valor definido */
-  /* iOS safe area support */
+  right: 0;
+  background-color: #ffffff;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
   padding-bottom: env(safe-area-inset-bottom, 0);
-  /* Ensures proper rendering on iOS */
-  transform: translateZ(0);
   -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* Forçar exibição em dispositivos iOS */
+.ios-device .mobileNavbar {
+  display: block !important;
 }
 
 .mobileNavLinks {
   display: flex;
   justify-content: space-around;
-  padding: 8px 0;
-  height: 100%;
   align-items: center;
+  padding: 10px 0;
+}
+
+.mobileNavItem {
+  position: relative;
+  flex: 1;
+  text-align: center;
+}
+
+.mobileNavLink {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px;
+  color: #666;
+  text-decoration: none;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.mobileNavLink.active {
+  color: #007bff;
+}
+
+.mobileNavIcon {
+  font-size: 24px;
+  margin-bottom: 4px;
+}
+
+.mobileNavText {
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.mobileSubmenu {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  background-color: #ffffff;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  padding: 10px;
+  display: none;
+}
+
+.mobileNavItem:hover .mobileSubmenu {
+  display: block;
+}
+
+.mobileSubmenuItem {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  color: #666;
+  text-decoration: none;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.mobileSubmenuItem.active {
+  color: #007bff;
+}
+
+.mobileSubmenuIcon {
+  margin-right: 8px;
+}
+
+.mobileSubmenuIndicator {
+  font-size: 12px;
+  margin-left: 4px;
+}
+
+/* Media query para dispositivos móveis */
+@media (max-width: 768px) {
+  .mobileNavbar {
+    display: block;
+  }
+}
+
+/* Ajustes específicos para iOS */
+@supports (-webkit-touch-callout: none) {
+  .mobileNavbar {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    padding-bottom: env(safe-area-inset-bottom, 0) !important;
+  }
+  
+  .ios-device .mobileNavbar {
+    display: block !important;
+  }
+  
+  .ios-device .mobileNavbar.ios-navbar {
+    display: block !important;
+  }
+  
+  .ios-device main {
+    padding-bottom: calc(60px + env(safe-area-inset-bottom, 0));
+  }
+}
+
+/* Classe específica para iOS */
+.ios-navbar {
+  display: block !important; /* Forçar exibição em dispositivos iOS */
+  height: calc(70px + env(safe-area-inset-bottom, 0));
+  max-height: calc(70px + env(safe-area-inset-bottom, 0));
+  padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
 .mobileNavItem {
@@ -266,4 +374,6 @@
   -webkit-transform: translateZ(0);
   /* Fix sticky positioning */
   position: fixed;
+  /* Forçar exibição */
+  display: block !important;
 } 

@@ -1,5 +1,87 @@
 @import './styles/variables.css';
 
+/* Estilos globais */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* Ajustes para dispositivos iOS */
+@supports (-webkit-touch-callout: none) {
+  body {
+    min-height: -webkit-fill-available;
+  }
+  
+  .mobileNavbar {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    padding-bottom: env(safe-area-inset-bottom, 0) !important;
+  }
+}
+
+/* Ajustes para o viewport */
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Ajustes para o conteúdo principal */
+main {
+  flex: 1;
+  padding-bottom: calc(60px + env(safe-area-inset-bottom, 0));
+}
+
+/* Ajustes para a navbar */
+.mobileNavbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background-color: #ffffff;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* Ajustes para dispositivos iOS */
+.ios-device .mobileNavbar {
+  display: block !important;
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 1000 !important;
+  padding-bottom: env(safe-area-inset-bottom, 0) !important;
+}
+
 /* iOS-specific viewport fix */
 @supports (-webkit-touch-callout: none) {
   html, body {
@@ -36,14 +118,6 @@ body {
   -webkit-text-size-adjust: 100%;
   /* Disable iOS tap highlight */
   -webkit-tap-highlight-color: rgba(0,0,0,0);
-}
-
-#root {
-  height: 100%;
-  width: 100%;
-  overflow: auto; /* Scroll apenas no conteúdo */
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: 70px; /* Espaço para a navbar */
 }
 
 *, *:before, *:after {
@@ -102,17 +176,6 @@ input[type="datetime-local"] {
 
 /* Garantindo que a navbar mobile seja exibida em telas pequenas */
 @media (max-width: 768px) {
-  .mobileNavbar {
-    display: block !important;
-    z-index: 9999 !important;
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    /* iOS safe area padding for iPhone X and newer */
-    padding-bottom: env(safe-area-inset-bottom, 0);
-  }
-  
   body {
     padding-bottom: 0; /* Removendo o padding do body */
   }
@@ -161,10 +224,6 @@ input[type="datetime-local"] {
 
 /* iOS specific media query for notched devices */
 @supports (padding: max(0px)) {
-  .mobileNavbar {
-    padding-bottom: max(env(safe-area-inset-bottom), 0px) !important;
-  }
-  
   #root {
     padding-bottom: max(calc(70px + env(safe-area-inset-bottom)), 70px) !important;
   }
@@ -172,4 +231,40 @@ input[type="datetime-local"] {
   .mobile-scroll-container {
     height: calc(100vh - 70px - max(env(safe-area-inset-bottom), 0px));
   }
+}
+
+/* Ajustes para o app */
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Ajustes para o conteúdo principal */
+.app main {
+  flex: 1;
+  padding-bottom: calc(60px + env(safe-area-inset-bottom, 0));
+}
+
+/* Ajustes para a navbar */
+.app .mobileNavbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background-color: #ffffff;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* Ajustes para dispositivos iOS */
+.ios-device .app .mobileNavbar {
+  display: block !important;
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 1000 !important;
+  padding-bottom: env(safe-area-inset-bottom, 0) !important;
 }
