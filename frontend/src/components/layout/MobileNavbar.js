@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { AuthContext } from '../../App';
+import { AuthContext } from '../../contexts/AuthContext';
 import '../../styles/mobile/navbar.mobile.css';
 import { 
   BsHouseDoor, 

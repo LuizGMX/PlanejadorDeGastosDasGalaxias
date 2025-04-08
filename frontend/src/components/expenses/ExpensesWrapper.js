@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AuthContext } from '../../App';
+import { AuthContext } from '../../contexts/AuthContext';
 import Expenses from './Expenses';
 import MobileExpenses from './MobileExpenses';
 import styles from '../../styles/shared.module.css';

@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { AuthContext } from '../../App';
+import { AuthContext } from '../../contexts/AuthContext';
 import dataTableStyles from '../../styles/dataTable.module.css';
 import EditIncomeForm from './EditIncomeForm';
 import { toast } from 'react-hot-toast';

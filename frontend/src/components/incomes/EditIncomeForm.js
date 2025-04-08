@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { AuthContext } from '../../App';
+import { AuthContext } from '../../contexts/AuthContext';
 import dataTableStyles from '../../styles/dataTable.module.css';
 import sharedStyles from '../../styles/shared.module.css';
 import CurrencyInput from 'react-currency-input-field';

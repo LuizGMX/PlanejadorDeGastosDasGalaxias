@@ -4,7 +4,7 @@ import { formatCurrency, formatDate } from '../../utils/formatters';
 import styles from '../../styles/mobile/dataTable.mobile.module.css';
 import dataTableStyles from '../../styles/dataTable.module.css';
 import sharedStyles from '../../styles/shared.module.css';
-import { AuthContext } from '../../App';
+import { AuthContext } from '../../contexts/AuthContext';
 
 const MobileIncomes = ({ 
   incomes, 

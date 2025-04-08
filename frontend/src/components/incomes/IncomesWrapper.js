@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AuthContext } from '../../App';
+import { AuthContext } from '../../contexts/AuthContext';
 import Income from './Income';
 import MobileIncomes from './MobileIncomes';
 import dataTableStyles from '../../styles/dataTable.module.css';

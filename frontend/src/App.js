@@ -183,87 +183,85 @@ function App() {
 
   return (
     <AuthProvider>
-      <AuthContext.Provider value={{ auth, setAuth }}>
-        <Router {...routerConfig}>
-          <Toaster position="top-right" />
-          {/* Banner de aviso quando a API não está disponível */}
-          {apiStatus && !apiStatus.healthy && (
-            <div style={{
-              position: 'fixed', 
-              top: 0, 
-              left: 0, 
-              right: 0, 
-              backgroundColor: '#f44336', 
-              color: 'white', 
-              padding: '10px', 
-              textAlign: 'center', 
-              zIndex: 9999
-            }}>
-              Erro de conexão com o servidor. Algumas funcionalidades podem não estar disponíveis. 
-              {apiStatus.error && ` Erro: ${apiStatus.error}`}
-            </div>
-          )}
-          <div className={`app ${isIOSDevice ? 'ios-device' : ''}`}>
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/" element={<Navigate to={auth.token ? "/dashboard" : "/login"} />} />
-              <Route path="/dashboard" element={
-                <PrivateRoute>
-                  <Dashboard />
-                </PrivateRoute>
-              } />
-              <Route path="/expenses" element={
-                <PrivateRoute>
-                  <ExpensesWrapper />
-                </PrivateRoute>
-              } />
-              <Route path="/expenses/edit/:id" element={
-                <PrivateRoute>
-                  <EditExpense />
-                </PrivateRoute>
-              } />
-              <Route path="/add-expense" element={
-                <PrivateRoute>
-                  <AddExpenseWrapper />
-                </PrivateRoute>
-              } />
-              <Route path="/profile" element={
-                <PrivateRoute>
-                  <Profile />
-                </PrivateRoute>
-              } />
-              <Route path="/income" element={
-                <PrivateRoute>
-                  <IncomesWrapper />
-                </PrivateRoute>
-              } />
-              <Route path="/add-income" element={
-                <PrivateRoute>
-                  <AddIncomeWrapper />
-                </PrivateRoute>
-              } />
-              <Route path="/incomes/edit/:id" element={
-                <PrivateRoute>
-                  <EditIncome />
-                </PrivateRoute>
-              } />
-              <Route path="/edit-recurring-incomes" element={
-                <PrivateRoute>
-                  <EditRecurringIncomes />
-                </PrivateRoute>
-              } />
-              <Route path="/upload-spreadsheet" element={
-                <PrivateRoute>
-                  <SpreadsheetUpload />
-                </PrivateRoute>
-              } />
-              <Route path="*" element={<Navigate to={auth.token ? "/dashboard" : "/login"} />} />
-            </Routes>
-            <MobileNavbar />
+      <Router {...routerConfig}>
+        <Toaster position="top-right" />
+        {/* Banner de aviso quando a API não está disponível */}
+        {apiStatus && !apiStatus.healthy && (
+          <div style={{
+            position: 'fixed', 
+            top: 0, 
+            left: 0, 
+            right: 0, 
+            backgroundColor: '#f44336', 
+            color: 'white', 
+            padding: '10px', 
+            textAlign: 'center', 
+            zIndex: 9999
+          }}>
+            Erro de conexão com o servidor. Algumas funcionalidades podem não estar disponíveis. 
+            {apiStatus.error && ` Erro: ${apiStatus.error}`}
           </div>
-        </Router>
-      </AuthContext.Provider>
+        )}
+        <div className={`app ${isIOSDevice ? 'ios-device' : ''}`}>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/" element={<Navigate to={auth.token ? "/dashboard" : "/login"} />} />
+            <Route path="/dashboard" element={
+              <PrivateRoute>
+                <Dashboard />
+              </PrivateRoute>
+            } />
+            <Route path="/expenses" element={
+              <PrivateRoute>
+                <ExpensesWrapper />
+              </PrivateRoute>
+            } />
+            <Route path="/expenses/edit/:id" element={
+              <PrivateRoute>
+                <EditExpense />
+              </PrivateRoute>
+            } />
+            <Route path="/add-expense" element={
+              <PrivateRoute>
+                <AddExpenseWrapper />
+              </PrivateRoute>
+            } />
+            <Route path="/profile" element={
+              <PrivateRoute>
+                <Profile />
+              </PrivateRoute>
+            } />
+            <Route path="/income" element={
+              <PrivateRoute>
+                <IncomesWrapper />
+              </PrivateRoute>
+            } />
+            <Route path="/add-income" element={
+              <PrivateRoute>
+                <AddIncomeWrapper />
+              </PrivateRoute>
+            } />
+            <Route path="/incomes/edit/:id" element={
+              <PrivateRoute>
+                <EditIncome />
+              </PrivateRoute>
+            } />
+            <Route path="/edit-recurring-incomes" element={
+              <PrivateRoute>
+                <EditRecurringIncomes />
+              </PrivateRoute>
+            } />
+            <Route path="/upload-spreadsheet" element={
+              <PrivateRoute>
+                <SpreadsheetUpload />
+              </PrivateRoute>
+            } />
+            <Route path="*" element={<Navigate to={auth.token ? "/dashboard" : "/login"} />} />
+          </Routes>
+          <MobileNavbar />
+        </div>
+      </Router>
     </AuthProvider>
   );
 }

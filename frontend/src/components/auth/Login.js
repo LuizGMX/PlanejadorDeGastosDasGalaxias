@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AuthContext } from '../../App';
+import { AuthContext } from '../../contexts/AuthContext';
 import CurrencyInput from 'react-currency-input-field';
 import styles from '../../styles/login.module.css';
 import logo from '../../assets/logo.svg';

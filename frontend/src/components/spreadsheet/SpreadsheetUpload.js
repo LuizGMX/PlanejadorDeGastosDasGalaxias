@@ -9,7 +9,7 @@ import {
   Paper
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import { AuthContext } from '../../App';
+import { AuthContext } from '../../contexts/AuthContext';
 
 const SpreadsheetUpload = () => {
   const [file, setFile] = useState(null);
