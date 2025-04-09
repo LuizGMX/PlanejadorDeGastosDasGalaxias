@@ -16,7 +16,8 @@ import {
   ResponsiveContainer,
   ComposedChart,
   AreaChart,
-  ReferenceLine  
+  ReferenceLine,
+  Cell
 } from 'recharts';
 import styles from '../../styles/dashboard.mobile.module.css';
 import { FaChartLine, FaChevronDown} from 'react-icons/fa';
