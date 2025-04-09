@@ -4046,45 +4046,45 @@ const MobileDashboard = () => {
         <div>
           <div className={styles.mobileNavLabel}>Visualizações:</div>
           <div className={styles.mobileChartNavigation}>
-            <div 
+            <button 
               onClick={() => setActiveChartSection('income-expenses')}
-              className={`${styles.mobileNavButton} ${activeChartSection === 'income-expenses' ? styles.mobileNavButtonActive : styles.mobileNavButtonInactive}`}
+              className={activeChartSection === 'income-expenses' ? styles.mobileNavButtonActive : styles.mobileNavButtonInactive}
             >
               Despesas vs Receitas
-            </div>
-            <div 
+            </button>
+            <button 
               onClick={() => setActiveChartSection('expenses-categories')}
-              className={`${styles.mobileNavButton} ${activeChartSection === 'expenses-categories' ? styles.mobileNavButtonActive : styles.mobileNavButtonInactive}`}
+              className={activeChartSection === 'expenses-categories' ? styles.mobileNavButtonActive : styles.mobileNavButtonInactive}
             >
               Categorias
-            </div>
-            <div 
+            </button>
+            <button 
               onClick={() => setActiveChartSection('income-categories')}
-              className={`${styles.mobileNavButton} ${activeChartSection === 'income-categories' ? styles.mobileNavButtonActive : styles.mobileNavButtonInactive}`}
+              className={activeChartSection === 'income-categories' ? styles.mobileNavButtonActive : styles.mobileNavButtonInactive}
             >
               Fontes de Renda
-            </div>
-            <div 
+            </button>
+            <button 
               onClick={() => setActiveChartSection('banks')}
-              className={`${styles.mobileNavButton} ${activeChartSection === 'banks' ? styles.mobileNavButtonActive : styles.mobileNavButtonInactive}`}
+              className={activeChartSection === 'banks' ? styles.mobileNavButtonActive : styles.mobileNavButtonInactive}
             >
               Bancos
-            </div>
+            </button>
             {hasExpenses && (
-              <div 
+              <button 
                 onClick={() => setActiveChartSection('expenses-trend')}
-                className={`${styles.mobileNavButton} ${activeChartSection === 'expenses-trend' ? styles.mobileNavButtonActive : styles.mobileNavButtonInactive}`}
+                className={activeChartSection === 'expenses-trend' ? styles.mobileNavButtonActive : styles.mobileNavButtonInactive}
               >
                 Tendência Despesas
-              </div>
+              </button>
             )}
             {hasIncome && (
-              <div 
+              <button 
                 onClick={() => setActiveChartSection('income-trend')}
-                className={`${styles.mobileNavButton} ${activeChartSection === 'income-trend' ? styles.mobileNavButtonActive : styles.mobileNavButtonInactive}`}
+                className={activeChartSection === 'income-trend' ? styles.mobileNavButtonActive : styles.mobileNavButtonInactive}
               >
                 Tendência Receitas
-              </div>
+              </button>
             )}
           </div>
         </div>

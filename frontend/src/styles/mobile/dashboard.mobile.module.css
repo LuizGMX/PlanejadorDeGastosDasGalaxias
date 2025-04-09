@@ -237,6 +237,24 @@
   display: none; /* Chrome, Safari and Opera */
 }
 
+.mobileChartNavigation button {
+  appearance: none;
+  -webkit-appearance: none;
+  background: none;
+  margin: 0;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.mobileChartNavigation button:focus {
+  outline: none;
+}
+
+/* Adicionar um estilo para quando o botão estiver pressionado */
+.mobileChartNavigation button:active {
+  transform: translateY(1px);
+}
+
 .mobileNavButton {
   padding: 8px 16px;
   border-radius: 20px;
@@ -250,12 +268,24 @@
   background-color: var(--primary-color);
   color: var(--secondary-color);
   border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  white-space: nowrap;
+  font-weight: bold;
+  font-size: 0.9rem;
+  cursor: pointer;
 }
 
 .mobileNavButtonInactive {
   background-color: var(--card-background);
   color: var(--text-color);
   border: 1px solid var(--border-color);
+  padding: 8px 16px;
+  border-radius: 20px;
+  white-space: nowrap;
+  font-weight: bold;
+  font-size: 0.9rem;
+  cursor: pointer;
 }
 
 .mobileFabContainer {
