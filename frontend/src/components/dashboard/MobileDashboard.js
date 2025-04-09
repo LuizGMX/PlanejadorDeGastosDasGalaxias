@@ -19,7 +19,7 @@ import {
   ReferenceLine  
 } from 'recharts';
 import styles from '../../styles/mobile/dashboard.mobile.module.css';
-import { FaChartLine, FaChevronDown} from 'react-icons/fa';
+import { FaChartLine, FaChevronDown, FaTarget} from 'react-icons/fa';
 import DateRangePicker from '../shared/DateRangePicker';
 
 import { 
@@ -27,6 +27,7 @@ import {
   BsCash,  
   BsPencil, 
   BsEye,
+  BsTarget
 } from 'react-icons/bs';
 
 const motivationalPhrases = [
@@ -3660,14 +3661,16 @@ const MobileDashboard = () => {
 
   const renderOverviewCharts = () => (
     <>
-      {/* Exibir o orçamento e o objetivo financeiro lado a lado */}
+      {/* Exibir o orçamento e o objetivo financeiro um abaixo do outro */}
       <div className={styles.chartsGrid}>
         {/* Orçamento em destaque */}
         <div className={`${styles.chartContainer} ${styles.highlightedChart}`}>
           {renderBudgetChart()}
         </div>
-        
-        {/* Objetivo financeiro ao lado do orçamento */}
+      </div>
+      
+      <div className={styles.chartsGrid}>
+        {/* Objetivo financeiro abaixo do orçamento */}
         <div className={`${styles.chartContainer} ${styles.highlightedChart}`}>
           {renderFinancialGoalChart()}
         </div>
