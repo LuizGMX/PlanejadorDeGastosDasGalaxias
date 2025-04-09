@@ -3972,204 +3972,39 @@ const MobileDashboard = () => {
   };
 
   return (
-    <div className={styles.dashboardContainer}>
-      {getGreeting(auth.user?.name)}
-      <div className={styles.dashboardHeader}>
-        <div className={styles.navigationTabs}>
-          <button
-            className={`${styles.navTab} ${activeSection === 'overview' ? styles.activeTab : ''}`}
-            onClick={() => setActiveSection('overview')}
-          >
-            <span className={styles.tabIcon}>📊</span>
-            Visão Geral
-          </button>
-          <button
-            className={`${styles.navTab} ${activeSection === 'transactions' ? styles.activeTab : ''}`}
-            onClick={() => setActiveSection('transactions')}
-          >
-            <span className={styles.tabIcon}>💸</span>
-            Transações
-          </button>
+    <div className={styles.mobileDashboardWrapper}>
+      <div className={styles.mobileDashboardContent}>
+        {/* Greeting Section */}
+        {getGreeting(auth.user?.name)}
+
+        {/* Overview Section */}
+        <div className={styles.mobileOverviewSection}>
+          {/* Resumo do Orçamento */}
+          <div className={styles.mobileCard}>
+            <div className={styles.mobileCardHeader}>
+              <BsCash size={16} /> Resumo do Orçamento
+            </div>
+            <div className={styles.mobileCardContent}>
+              {renderBudgetChart()}
+            </div>
+          </div>
+
+          {/* Objetivo */}
+          <div className={styles.mobileCard}>
+            <div className={styles.mobileCardHeader}>
+              <BsTarget size={16} /> Objetivo
+            </div>
+            <div className={styles.mobileCardContent}>
+              {renderFinancialGoalChart()}
+            </div>
+          </div>
+        </div>
+
+        {/* Charts Section */}
+        <div className={styles.mobileChartsSection}>
+          {renderOverviewCharts()}
         </div>
       </div>
-
-      {/* Filtros */}
-      <div className={styles.filterRow}>
-        <div className={styles.filtersContainer}>
-          <div className={styles.filterSelector}>
-            <div className={styles.filterLabel}>Período</div>
-            <div 
-              className={`${styles.filterDisplay} ${showPeriodOptions ? styles.active : ''}`}
-              onClick={() => setShowPeriodOptions(!showPeriodOptions)}
-            >
-              {selectedPeriod === 'custom' && customDateRange
-                ? `${formatDateStringWithTimezone(customDateRange.start)} - ${formatDateStringWithTimezone(customDateRange.end)}`
-                : getActiveFilterLabel()
-              }
-              <FaChevronDown className={`${styles.arrowIcon} ${showPeriodOptions ? styles.rotated : ''}`} />
-            </div>
-            {showPeriodOptions && (
-              <div className={styles.filterOptions}>
-                <div 
-                  className={styles.filterOption}
-                  onClick={() => handlePeriodChange('current')}
-                >
-                  Mês Atual
-                </div>
-                <div 
-                  className={styles.filterOption}
-                  onClick={() => handlePeriodChange('last')}
-                >
-                  Mês Anterior
-                </div>
-                <div 
-                  className={styles.filterOption}
-                  onClick={() => handlePeriodChange('next')}
-                >
-                  Mês que vem
-                </div>
-                <div 
-                  className={styles.filterOption}
-                  onClick={() => handlePeriodChange('custom')}
-                >
-                  Personalizado
-                </div>
-              </div>
-            )}
-          </div>
-          {showDateRangePicker && (
-            <div className={styles.dateRangePickerContainer}>
-              <DateRangePicker onDateRangeSelect={handleDateRangeSelect} onCancel={handleDateRangeCancel} />
-            </div>
-          )}
-          <FilterSelector
-            label="Categoria"
-            options={categories}
-            selected={selectedCategories}
-            onSelect={handleCategoryChange}
-            multiple
-          />
-          <FilterSelector
-            label="Banco"
-            options={banks}
-            selected={selectedBanks}
-            onSelect={handleBankChange}
-            multiple
-          />
-        </div>
-        {!hasExpenses && !hasIncome && (
-          <div className={styles.emptyStateContainer}>
-            <FaChartLine className={styles.emptyStateIcon} />
-            <div className={styles.emptyStateContent}>
-              <div className={styles.emptyStateMessage}>
-                Você ainda não tem despesas ou receitas cadastradas para este período.
-              </div>
-              <div className={styles.emptyStateSuggestion}>
-                Que tal começar adicionando sua primeira transação?
-              </div>
-              <div className={styles.emptyStateButtons}>
-                <button 
-                  className={styles.addExpenseButton}
-                  onClick={() => navigate('/add-expense')}
-                >
-                  <BsPlusLg /> Adicionar Despesa
-                </button>
-                <button 
-                  className={styles.addIncomeButton}
-                  onClick={() => navigate('/add-income')}
-                >
-                  <BsCash /> Adicionar Receita
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {hasExpenses === false && hasIncome === true && (
-          <div className={styles.emptyStateContainer}>
-            <FaChartLine className={styles.emptyStateIcon} />
-            <div className={styles.emptyStateContent}>
-              <div className={styles.emptyStateMessage}>
-                Você tem receitas cadastradas, mas ainda não tem despesas para este período.
-              </div>
-              <div className={styles.emptyStateSuggestion}>
-                Que tal adicionar sua primeira despesa?
-              </div>
-              <div className={styles.emptyStateButtons}>
-                <button 
-                  className={styles.addExpenseButton}
-                  onClick={() => navigate('/add-expense')}
-                >
-                  <BsPlusLg /> Adicionar Despesa
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {hasExpenses === true && hasIncome === false && (
-          <div className={styles.emptyStateContainer}>
-            <FaChartLine className={styles.emptyStateIcon} />
-            <div className={styles.emptyStateContent}>
-              <div className={styles.emptyStateMessage}>
-                Você tem despesas cadastradas, mas ainda não tem receitas para este período.
-              </div>
-              <div className={styles.emptyStateSuggestion}>
-                Que tal adicionar sua primeira receita?
-              </div>
-              <div className={styles.emptyStateButtons}>
-                <button 
-                  className={styles.addIncomeButton}
-                  onClick={() => navigate('/add-income')}
-                >
-                  <BsCash /> Adicionar Receita
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Conteúdo baseado na seção selecionada - só mostra se tiver despesas E receitas */}
-      {(hasExpenses && hasIncome) && (
-        <div className={styles.dashboardContent}>
-          {activeSection === 'overview' && (
-            <div className={styles.overviewSection}>
-              {/* Conteúdo original do dashboard */}
-              {renderOverviewCharts()}
-            </div>
-          )}
-          
-          {activeSection === 'transactions' && (
-            <div className={styles.transactionsSection}>
-              {renderTimelineChart()}
-            </div>
-          )}
-        </div>
-      )}      
-      
-      {/* Mensagem quando há apenas um tipo de transação mas não ambos */}
-      {((hasExpenses && !hasIncome) || (!hasExpenses && hasIncome)) && (
-        <div className={styles.emptyStateContainer}>
-          <FaChartLine className={styles.emptyStateIcon} />
-          <div className={styles.emptyStateContent}>
-            <div className={styles.emptyStateMessage}>
-              Para visualizar os relatórios completos, você precisa ter tanto despesas quanto receitas cadastradas.
-            </div>
-            <div className={styles.emptyStateSuggestion}>
-              {hasExpenses && !hasIncome ? 'Adicione receitas para ver os relatórios completos.' : 'Adicione despesas para ver os relatórios completos.'}
-            </div>
-            <div className={styles.emptyStateButtons}>
-              <button 
-                className={hasExpenses ? styles.addIncomeButton : styles.addExpenseButton}
-                onClick={() => navigate(hasExpenses ? '/add-income' : '/add-expense')}
-              >
-                <BsPlusLg /> {hasExpenses ? 'Adicionar Receita' : 'Adicionar Despesa'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
