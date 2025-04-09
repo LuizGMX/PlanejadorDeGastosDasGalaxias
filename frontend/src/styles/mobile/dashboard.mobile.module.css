@@ -144,9 +144,9 @@
 .mobileNavLabel {
   font-size: 0.85rem;
   font-weight: 600;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   color: var(--text-color);
-  padding-left: 4px;
+  opacity: 0.8;
 }
 
 .mobileChartTitle {
@@ -225,12 +225,13 @@
 .mobileChartNavigation {
   display: flex;
   overflow-x: auto;
-  gap: 12px;
-  padding: 8px 0;
-  margin-bottom: 12px;
+  gap: 8px;
+  padding: 4px 0;
+  margin-bottom: 8px;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE and Edge */
+  padding-bottom: 4px; /* Espaço para evitar cortes na sombra */
 }
 
 .mobileChartNavigation::-webkit-scrollbar {
@@ -240,52 +241,74 @@
 .mobileChartNavigation button {
   appearance: none;
   -webkit-appearance: none;
-  background: none;
   margin: 0;
   text-align: center;
   box-sizing: border-box;
+  padding: 8px 16px;
+  border-radius: 20px;
+  white-space: nowrap;
+  font-weight: bold;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: none;
+  margin-right: 8px;
+  flex-shrink: 0;
 }
 
 .mobileChartNavigation button:focus {
   outline: none;
 }
 
-/* Adicionar um estilo para quando o botão estiver pressionado */
+/* Adicionar efeito de hover nos botões inativos */
+.mobileNavButtonInactive:hover {
+  background-color: rgba(0, 0, 0, 0.03);
+  border-color: var(--primary-color);
+}
+
+/* Melhorar o estilo de touch e active nos botões */
 .mobileChartNavigation button:active {
-  transform: translateY(1px);
+  transform: translateY(1px) scale(0.98);
+  opacity: 0.9;
 }
 
-.mobileNavButton {
-  padding: 8px 16px;
-  border-radius: 20px;
-  white-space: nowrap;
-  font-weight: bold;
-  font-size: 0.9rem;
-  cursor: pointer;
+/* Adicionar ícones sutis aos botões de navegação */
+.mobileNavButtonActive::before,
+.mobileNavButtonInactive::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+  margin-bottom: 2px;
 }
 
+.mobileNavButtonActive::before {
+  background-color: var(--secondary-color);
+}
+
+.mobileNavButtonInactive::before {
+  background-color: var(--border-color);
+}
+
+/* Estilo para o botão ativo */
 .mobileNavButtonActive {
   background-color: var(--primary-color);
   color: var(--secondary-color);
   border: none;
-  padding: 8px 16px;
-  border-radius: 20px;
-  white-space: nowrap;
-  font-weight: bold;
-  font-size: 0.9rem;
-  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+  min-width: fit-content;
 }
 
+/* Estilo para o botão inativo */
 .mobileNavButtonInactive {
   background-color: var(--card-background);
   color: var(--text-color);
   border: 1px solid var(--border-color);
-  padding: 8px 16px;
-  border-radius: 20px;
-  white-space: nowrap;
-  font-weight: bold;
-  font-size: 0.9rem;
-  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: fit-content;
 }
 
 .mobileFabContainer {

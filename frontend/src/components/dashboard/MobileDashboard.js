@@ -4043,7 +4043,12 @@ const MobileDashboard = () => {
         </div>
 
         {/* Navegação de Gráficos */}
-        <div>
+        <div style={{
+          backgroundColor: 'rgba(0, 0, 0, 0.05)', 
+          borderRadius: '12px',
+          padding: '10px',
+          marginBottom: '16px'
+        }}>
           <div className={styles.mobileNavLabel}>Visualizações:</div>
           <div className={styles.mobileChartNavigation}>
             <button 
