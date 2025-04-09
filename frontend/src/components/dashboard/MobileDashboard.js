@@ -4043,36 +4043,54 @@ const MobileDashboard = () => {
         </div>
 
         {/* Navegação de Gráficos */}
-        <div style={{
-          backgroundColor: 'rgba(0, 0, 0, 0.05)', 
-          borderRadius: '12px',
-          padding: '10px',
-          marginBottom: '16px'
-        }}>
+        <div className={styles.navigationContainer}>
           <div className={styles.mobileNavLabel}>Visualizações:</div>
           <div className={styles.mobileChartNavigation}>
             <button 
               onClick={() => setActiveChartSection('income-expenses')}
               className={activeChartSection === 'income-expenses' ? styles.mobileNavButtonActive : styles.mobileNavButtonInactive}
             >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{marginRight: '6px'}}>
+                <path d="M3 17L9 11L13 15L21 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M17 7H21V11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
               Despesas vs Receitas
             </button>
             <button 
               onClick={() => setActiveChartSection('expenses-categories')}
               className={activeChartSection === 'expenses-categories' ? styles.mobileNavButtonActive : styles.mobileNavButtonInactive}
             >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{marginRight: '6px'}}>
+                <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M22 2L12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
               Categorias
             </button>
             <button 
               onClick={() => setActiveChartSection('income-categories')}
               className={activeChartSection === 'income-categories' ? styles.mobileNavButtonActive : styles.mobileNavButtonInactive}
             >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{marginRight: '6px'}}>
+                <path d="M12 2V6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M12 18V22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M4 12H2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M22 12H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M19.07 4.93L16.24 7.76" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M7.76 16.24L4.93 19.07" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M19.07 19.07L16.24 16.24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M7.76 7.76L4.93 4.93" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
               Fontes de Renda
             </button>
             <button 
               onClick={() => setActiveChartSection('banks')}
               className={activeChartSection === 'banks' ? styles.mobileNavButtonActive : styles.mobileNavButtonInactive}
             >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{marginRight: '6px'}}>
+                <rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M6 7V5C6 3.89543 6.89543 3 8 3H16C17.1046 3 18 3.89543 18 5V7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M12 14C13.1046 14 14 13.1046 14 12C14 10.8954 13.1046 10 12 10C10.8954 10 10 10.8954 10 12C10 13.1046 10.8954 14 12 14Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
               Bancos
             </button>
             {hasExpenses && (
@@ -4080,6 +4098,9 @@ const MobileDashboard = () => {
                 onClick={() => setActiveChartSection('expenses-trend')}
                 className={activeChartSection === 'expenses-trend' ? styles.mobileNavButtonActive : styles.mobileNavButtonInactive}
               >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{marginRight: '6px'}}>
+                  <path d="M22 12H18L15 21L9 3L6 12H2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
                 Tendência Despesas
               </button>
             )}
@@ -4088,6 +4109,10 @@ const MobileDashboard = () => {
                 onClick={() => setActiveChartSection('income-trend')}
                 className={activeChartSection === 'income-trend' ? styles.mobileNavButtonActive : styles.mobileNavButtonInactive}
               >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{marginRight: '6px'}}>
+                  <path d="M22 7L13.5 15.5L9.5 11.5L2 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M16 7H22V13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
                 Tendência Receitas
               </button>
             )}
