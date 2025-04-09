@@ -440,6 +440,7 @@
   justify-content: center;
   align-items: center;
   margin: 0 auto;
+  position: relative;
 }
 
 /* Container responsivo do Recharts */
@@ -473,11 +474,22 @@
 
 /* Ajuste específico para gráficos de pizza */
 .categoriesPieContainer .recharts-pie,
-.bankPieContainer .recharts-pie {
-  transform: scale(0.85);
+.bankPieContainer .recharts-pie,
+.incomeVsExpensesContainer .recharts-pie {
+  transform-origin: center center;
 }
 
 .categoriesPieContainer {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  position: relative !important;
+}
+
+.bankPieContainer,
+.incomeVsExpensesContainer {
   display: flex !important;
   justify-content: center !important;
   align-items: center !important;
@@ -496,7 +508,8 @@
 
 /* Ajuste para o elemento pie dentro do SVG */
 .categoriesPieContainer .recharts-pie,
-.bankPieContainer .recharts-pie {
+.bankPieContainer .recharts-pie,
+.incomeVsExpensesContainer .recharts-pie {
   transform-origin: center center;
 }
 
@@ -629,10 +642,11 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  margin: 0 auto;
-  position: relative;
   width: 100%;
   height: 100%;
+  position: relative;
+  padding: 0;
+  margin: 0 auto;
 }
 
 .categoriesInsights {
