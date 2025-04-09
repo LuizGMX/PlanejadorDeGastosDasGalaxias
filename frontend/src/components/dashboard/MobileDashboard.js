@@ -18,7 +18,7 @@ import {
   AreaChart,
   ReferenceLine  
 } from 'recharts';
-import styles from '../../styles/mobile/dashboard.mobile.module.css';
+import styles from '../../styles/mobile/dashboard.module.css';
 import { FaChartLine, FaChevronDown, FaTarget} from 'react-icons/fa';
 import DateRangePicker from '../shared/DateRangePicker';
 
@@ -1228,7 +1228,7 @@ const MobileDashboard = () => {
     if (!data?.financial_goal) {
       return (
         <div className={`${styles.chartContainer} ${styles.emptyGoalCard}`}>
-          <h3>Objetivo Financeiro</h3>
+          <h3>Objetivo Financeiro - MOBILE</h3>
           <div className={styles.emptyGoalContent}>
             <span className={styles.emptyGoalIcon}>🎯</span>
             <p>Você ainda não definiu um objetivo financeiro.</p>
@@ -3660,24 +3660,19 @@ const MobileDashboard = () => {
   };
 
   const renderOverviewCharts = () => (
-    <>
-      {/* Exibir o orçamento e o objetivo financeiro um abaixo do outro */}
-      <div className={styles.chartsGrid}>
-        {/* Orçamento em destaque */}
-        <div className={`${styles.chartContainer} ${styles.highlightedChart}`}>
-          {renderBudgetChart()}
-        </div>
+    <div className={styles.overviewSection}>
+      {/* Resumo do Orçamento */}
+      <div className={styles.fullWidthCard}>
+        {renderBudgetChart()}
       </div>
-      
-      <div className={styles.chartsGrid}>
-        {/* Objetivo financeiro abaixo do orçamento */}
-        <div className={`${styles.chartContainer} ${styles.highlightedChart}`}>
-          {renderFinancialGoalChart()}
-        </div>
+
+      {/* Objetivo */}
+      <div className={styles.fullWidthCard}>
+        {renderFinancialGoalChart()}
       </div>
-      
+
+      {/* Outros gráficos */}
       <div className={styles.chartsGrid}>
-        {/* Main Charts */}
         <div className={styles.chartContainer}>
           {renderExpensesTrend()}
         </div>
@@ -3686,14 +3681,11 @@ const MobileDashboard = () => {
           {renderIncomeTrend()}
         </div>
         
-        {/* Categories Charts */}
         <div className={styles.chartContainer}>
-          {/* Use renderExpensesByCategoryChart() for the overview section instead of renderCategoriesChart() */}
           {renderExpensesByCategoryChart()}
         </div>
         
         <div className={styles.chartContainer}>
-          {/* Use directly the income chart here */}
           {renderIncomeCategoriesChart()}
         </div>
         
@@ -3705,7 +3697,7 @@ const MobileDashboard = () => {
           {renderIncomeVsExpensesChart()}
         </div>
       </div>
-    </>
+    </div>
   );
 
   if (loading) return (
