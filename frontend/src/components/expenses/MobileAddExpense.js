@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
-import addExpenseStyles from '../../styles/mobile/addExpense.mobile.module.css';
+import addExpenseStyles from '../../styles/mobile/addIncomeAndExpense.mobile.module.css';
 import CurrencyInput from 'react-currency-input-field';
-import { 
-  BsPlusCircle, 
+import {  
   BsCurrencyDollar, 
   BsCalendar3, 
   BsCheck2, 
@@ -13,7 +12,7 @@ import {
   BsBank2,
   BsRepeat,
   BsCreditCard2Front,
-  BsCashCoin,
+  BsCash,
   BsWallet2,
   BsListCheck
 } from 'react-icons/bs';
@@ -28,14 +27,11 @@ const MobileAddExpense = () => {
     expense_date: new Date().toISOString().split('T')[0],
     category_id: '',
     bank_id: '',
-    payment_method: '',
-    card_type: '',
     is_recurring: false,
-    has_installments: false,
     start_date: null,
     recurrence_type: 'monthly',
-    total_installments: 2,
-    current_installment: 1
+    payment_method: 'credit_card',
+    is_in_cash: false
   });
   const [categories, setCategories] = useState([]);
   const [banks, setBanks] = useState([]);
@@ -219,16 +215,6 @@ const MobileAddExpense = () => {
         setFormData(prev => ({
           ...prev,
           is_recurring: false,
-          has_installments: false,
-          expense_date: prev.expense_date || new Date().toISOString().split('T')[0]
-        }));
-        break;
-      case 'installments':
-        setFormData(prev => ({
-          ...prev,
-          is_recurring: false,
-          has_installments: true,
-          total_installments: prev.total_installments || 2,
           expense_date: prev.expense_date || new Date().toISOString().split('T')[0]
         }));
         break;
@@ -236,9 +222,8 @@ const MobileAddExpense = () => {
         setFormData(prev => ({
           ...prev,
           is_recurring: true,
-          has_installments: false,
           start_date: prev.start_date || new Date().toISOString().split('T')[0],
-          end_date: prev.end_date || ''
+          expense_date: prev.expense_date || new Date().toISOString().split('T')[0]
         }));
         break;
       default:
@@ -282,7 +267,7 @@ const MobileAddExpense = () => {
       }
 
       // Validação da data para pagamento à vista
-      if (!formData.is_recurring && !formData.has_installments) {
+      if (!formData.is_recurring) {
         const expenseDate = new Date(formData.expense_date);
         if (isNaN(expenseDate.getTime())) {
           throw new Error('A data da despesa é obrigatória para pagamento único');
@@ -481,6 +466,31 @@ const MobileAddExpense = () => {
           )}
 
           <form onSubmit={handleSubmit} className={addExpenseStyles.formGrid}>
+            {/* Tipo de Despesa */}
+            <div className={addExpenseStyles.formGroup}>
+              <label className={addExpenseStyles.formLabel}>
+                Tipo de Despesa
+              </label>
+              <div className={addExpenseStyles.toggleGroup}>
+                <button
+                  type="button"
+                  className={`${addExpenseStyles.toggleButton} ${!formData.is_recurring ? addExpenseStyles.active : ''}`}
+                  onClick={() => handleToggleChange('normal')}
+                >
+                  <BsCurrencyDollar style={{color: !formData.is_recurring ? 'var(--secondary-color)' : 'white'}} /> 
+                  <span style={{color: !formData.is_recurring ? 'var(--secondary-color)' : 'white'}}>Único</span>
+                </button>
+                <button
+                  type="button"
+                  className={`${addExpenseStyles.toggleButton} ${formData.is_recurring ? addExpenseStyles.active : ''}`}
+                  onClick={() => handleToggleChange('recurring')}
+                >
+                  <BsRepeat style={{color: formData.is_recurring ? 'var(--secondary-color)' : 'white'}} /> 
+                  <span style={{color: formData.is_recurring ? 'var(--secondary-color)' : 'white'}}>Fixo</span>
+                </button>
+              </div>
+            </div>
+
             <div className={addExpenseStyles.inlineFieldsContainer}>
               <div className={addExpenseStyles.formGroup}>
                 <label className={addExpenseStyles.formLabel}>
@@ -498,7 +508,7 @@ const MobileAddExpense = () => {
 
               <div className={addExpenseStyles.formGroup}>
                 <label className={addExpenseStyles.formLabel}>
-                  {formData.has_installments ? 'Valor Total da Compra (calcularemos o valor de cada parcela automaticamente)' : 'Valor'}
+                  Valor
                 </label>
                 <CurrencyInput
                   name="amount"
@@ -518,38 +528,8 @@ const MobileAddExpense = () => {
               </div>
             </div>
 
-            {/* Tipo de Despesa */}
-            <div className={addExpenseStyles.formGroup}>
-              <label className={addExpenseStyles.formLabel}>
-                Tipo de Despesa
-              </label>
-              <div className={addExpenseStyles.toggleGroup}>
-                <button
-                  type="button"
-                  className={`${addExpenseStyles.toggleButton} ${!formData.is_recurring && !formData.has_installments ? addExpenseStyles.active : ''}`}
-                  onClick={() => handleToggleChange('normal')}
-                >
-                  <BsCurrencyDollar /> Única
-                </button>
-                <button
-                  type="button"
-                  className={`${addExpenseStyles.toggleButton} ${formData.has_installments ? addExpenseStyles.active : ''}`}
-                  onClick={() => handleToggleChange('installments')}
-                >
-                  <BsListCheck /> Parcelada
-                </button>
-                <button
-                  type="button"
-                  className={`${addExpenseStyles.toggleButton} ${formData.is_recurring ? addExpenseStyles.active : ''}`}
-                  onClick={() => handleToggleChange('recurring')}
-                >
-                  <BsRepeat /> Fixa
-                </button>
-              </div>
-            </div>
-
             {/* Data para Despesa Única */}
-            {!formData.is_recurring && !formData.has_installments && (
+            {!formData.is_recurring && (
               <div className={addExpenseStyles.formGroup}>
                 <label className={addExpenseStyles.formLabel}>
                   Data
@@ -568,65 +548,12 @@ const MobileAddExpense = () => {
               </div>
             )}
 
-            {/* Configurações de Parcelas */}
-            {formData.has_installments && (
-              <div style={{marginBottom: '20px'}}>
-                <label className={addExpenseStyles.formLabel}>
-                  <div className={`${addExpenseStyles.typeStatus} ${addExpenseStyles.installmentType}`}>
-                    <BsListCheck /> Despesa Parcelada
-                  </div>
-                </label>
-                <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginTop: '10px'}}>
-                  <div className={addExpenseStyles.formGroup}>
-                    <label className={addExpenseStyles.formLabel}>Data da Parcela Atual</label>
-                    <input
-                      type="date"
-                      name="expense_date"
-                      value={formData.expense_date}
-                      onChange={handleChange}
-                      className={addExpenseStyles.formInput}
-                      required
-                    />
-                  </div>
-                  
-                  <div className={addExpenseStyles.formGroup}>
-                    <label className={addExpenseStyles.formLabel}>Parcela Atual / Total</label>
-                    <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
-                      <input
-                        type="number"
-                        min="1"
-                        max={formData.total_installments}
-                        name="current_installment"
-                        value={formData.current_installment}
-                        onChange={handleChange}
-                        className={addExpenseStyles.formInput}
-                        style={{width: '45%'}}
-                        required
-                      />
-                      <span style={{margin: '0 5px'}}>/</span>
-                      <input
-                        type="number"
-                        min={formData.current_installment}
-                        max="60"
-                        name="total_installments"
-                        value={formData.total_installments}
-                        onChange={handleChange}
-                        className={addExpenseStyles.formInput}
-                        style={{width: '45%'}}
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>             
-              </div>
-            )}
-
             {/* Configurações de Despesa Fixa */}
-            {formData.is_recurring && !formData.has_installments && (
+            {formData.is_recurring && (
               <div style={{marginBottom: '20px'}}>
                 <label className={addExpenseStyles.formLabel}>
                   <div className={`${addExpenseStyles.typeStatus} ${addExpenseStyles.fixedType}`}>
-                    <BsRepeat /> Despesa Fixa
+                    <BsRepeat /> Despesa fixa
                   </div>
                 </label>
                 <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginTop: '10px'}}>
@@ -663,7 +590,7 @@ const MobileAddExpense = () => {
               </div>
             )}
 
-            {/* Categoria e Banco/Carteira em duas colunas */}
+            {/* Categoria e Banco em duas colunas */}
             <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px'}}>
               <div className={addExpenseStyles.formGroup}>
                 <label className={addExpenseStyles.formLabel}>
@@ -687,7 +614,7 @@ const MobileAddExpense = () => {
 
               <div className={addExpenseStyles.formGroup}>
                 <label className={addExpenseStyles.formLabel}>
-                  <BsBank2 size={16} /> Banco/Carteira
+                  <BsBank2 size={16} /> Banco
                 </label>
                 {banks.length > 0 ? (
                   <select
@@ -712,10 +639,10 @@ const MobileAddExpense = () => {
               </div>
             </div>
 
-            {/* Forma de Pagamento */}
+            {/* Método de Pagamento */}
             <div className={addExpenseStyles.formGroup}>
               <label className={addExpenseStyles.formLabel}>
-                Forma de Pagamento
+                <BsCreditCard2Front size={16} /> Método de Pagamento
               </label>
               <div className={addExpenseStyles.toggleGroup}>
                 <button
@@ -723,28 +650,32 @@ const MobileAddExpense = () => {
                   className={`${addExpenseStyles.toggleButton} ${formData.payment_method === 'credit_card' ? addExpenseStyles.active : ''}`}
                   onClick={() => handlePaymentMethodChange('credit_card')}
                 >
-                  <BsCreditCard2Front /> Crédito
+                  <BsCreditCard2Front style={{color: formData.payment_method === 'credit_card' ? 'var(--secondary-color)' : 'white'}} /> 
+                  <span style={{color: formData.payment_method === 'credit_card' ? 'var(--secondary-color)' : 'white'}}>Crédito</span>
                 </button>
                 <button
                   type="button"
                   className={`${addExpenseStyles.toggleButton} ${formData.payment_method === 'debit_card' ? addExpenseStyles.active : ''}`}
                   onClick={() => handlePaymentMethodChange('debit_card')}
                 >
-                  <BsCreditCard2Front /> Débito
-                </button>
-                <button
-                  type="button"
-                  className={`${addExpenseStyles.toggleButton} ${formData.payment_method === 'cash' ? addExpenseStyles.active : ''}`}
-                  onClick={() => handlePaymentMethodChange('cash')}
-                >
-                  <BsCashCoin /> Dinheiro
+                  <BsCreditCard2Front style={{color: formData.payment_method === 'debit_card' ? 'var(--secondary-color)' : 'white'}} /> 
+                  <span style={{color: formData.payment_method === 'debit_card' ? 'var(--secondary-color)' : 'white'}}>Débito</span>
                 </button>
                 <button
                   type="button"
                   className={`${addExpenseStyles.toggleButton} ${formData.payment_method === 'pix' ? addExpenseStyles.active : ''}`}
                   onClick={() => handlePaymentMethodChange('pix')}
                 >
-                  <BsWallet2 /> Pix
+                  <BsCash style={{color: formData.payment_method === 'pix' ? 'var(--secondary-color)' : 'white'}} /> 
+                  <span style={{color: formData.payment_method === 'pix' ? 'var(--secondary-color)' : 'white'}}>PIX</span>
+                </button>
+                <button
+                  type="button"
+                  className={`${addExpenseStyles.toggleButton} ${formData.payment_method === 'money' ? addExpenseStyles.active : ''}`}
+                  onClick={() => handlePaymentMethodChange('money')}
+                >
+                  <BsCash style={{color: formData.payment_method === 'money' ? 'var(--secondary-color)' : 'white'}} /> 
+                  <span style={{color: formData.payment_method === 'money' ? 'var(--secondary-color)' : 'white'}}>Dinheiro</span>
                 </button>
               </div>
             </div>

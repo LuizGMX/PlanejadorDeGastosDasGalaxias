@@ -14,7 +14,8 @@ import {
   BsCreditCard2Front,
   BsCashCoin,
   BsWallet2,
-  BsExclamationTriangle
+  BsExclamationTriangle,
+  BsListCheck
 } from 'react-icons/bs';
 
 const EditExpenseForm = ({ expense, onSave, onCancel }) => {
@@ -136,6 +137,17 @@ const EditExpenseForm = ({ expense, onSave, onCancel }) => {
     }));
   };
 
+  const handleToggleChange = (type) => {
+    setFormData(prev => ({
+      ...prev,
+      is_recurring: type === 'recurring',
+      has_installments: type === 'installments',
+      start_date: null,
+      end_date: null,
+      total_installments: null
+    }));
+  };
+
   return (
     <div className={dataTableStyles.modalOverlay}>
       <div className={`${dataTableStyles.modalContent} ${dataTableStyles.formModal}`}>
@@ -147,6 +159,36 @@ const EditExpenseForm = ({ expense, onSave, onCancel }) => {
         {error && <p className={dataTableStyles.errorMessage}>{error}</p>}
         
         <form onSubmit={handleSubmit} className={dataTableStyles.formGrid}>
+          {/* Tipo de Despesa */}
+          <div className={dataTableStyles.formGroup}>
+            <label className={dataTableStyles.formLabel}>
+              Tipo de Despesa
+            </label>
+            <div className={dataTableStyles.toggleGroup}>
+              <button
+                type="button"
+                className={`${dataTableStyles.toggleButton} ${!formData.is_recurring && !formData.has_installments ? dataTableStyles.active : ''}`}
+                onClick={() => handleToggleChange('normal')}
+              >
+                <BsCurrencyDollar /> Único
+              </button>
+              <button
+                type="button"
+                className={`${dataTableStyles.toggleButton} ${formData.has_installments ? dataTableStyles.active : ''}`}
+                onClick={() => handleToggleChange('installments')}
+              >
+                <BsListCheck /> Parcelado
+              </button>
+              <button
+                type="button"
+                className={`${dataTableStyles.toggleButton} ${formData.is_recurring ? dataTableStyles.active : ''}`}
+                onClick={() => handleToggleChange('recurring')}
+              >
+                <BsRepeat /> Fixo
+              </button>
+            </div>
+          </div>
+
           <div className={dataTableStyles.formGroup}>
             <label className={dataTableStyles.formLabel}>
               Descrição

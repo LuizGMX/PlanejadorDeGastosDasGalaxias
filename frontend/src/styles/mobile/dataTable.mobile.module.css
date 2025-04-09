@@ -294,7 +294,7 @@
   
   .editButton {
     background-color: var(--primary-color);
-    color: white;
+    color: var(--secondary-color);
   }
   
   .editButton:hover {
@@ -585,8 +585,8 @@
   align-items: center;
   gap: 8px;
   padding: 10px 16px;
-  background-color: var(--primary-color);
-  color: var(--button-text-color);
+    background-color: var(--primary-color);
+  color: var(--secondary-color);
   border: none;
   border-radius: 8px;
   font-size: 14px;
@@ -863,7 +863,7 @@
 
 .editButton {
   background-color: var(--primary-color);
-  color: var(--button-text-color);
+  color: var(--secondary-color);
 }
 
 .deleteButton {
@@ -924,8 +924,8 @@
   align-items: center;
   gap: 8px;
   padding: 12px 20px;
-  background-color: var(--primary-color);
-  color: var(--button-text-color);
+    background-color: var(--primary-color);
+  color: var(--secondary-color);
   border: none;
   border-radius: 8px;
   font-size: 14px;

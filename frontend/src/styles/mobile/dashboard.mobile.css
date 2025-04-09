@@ -292,7 +292,7 @@
 
 .mobileNavTab.active {
   background-color: var(--primary-color);
-  color: white;
+  color: var(--secondary-color);
 }
 
 .mobileContent {
@@ -419,6 +419,7 @@
 .budgetProgressBarFill {
   height: 100%;
   background-color: var(--primary-color);
+  color: var(--secondary-color);
 }
 
 .budgetProgressBarFill.over {
@@ -487,6 +488,7 @@
 .categoryProgressBarFill {
   height: 100%;
   background-color: var(--primary-color);
+  color: var(--secondary-color);
 }
 
 .categoryProgressBarFill.over {
@@ -592,7 +594,7 @@
 .retryButton {
   padding: 8px 16px;
   background-color: var(--primary-color);
-  color: white;
+  color: var(--secondary-color);
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -670,7 +672,7 @@
 
 .datePickerButton.primary {
   background-color: var(--primary-color);
-  color: white;
+  color: var(--secondary-color);
   border: none;
 }
 
@@ -688,7 +690,7 @@
   height: 56px;
   border-radius: 28px;
   background-color: var(--primary-color);
-  color: white;
+  color: var(--secondary-color);
   border: none;
   cursor: pointer;
   display: flex;

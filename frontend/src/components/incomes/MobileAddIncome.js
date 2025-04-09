@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 import dataTableStyles from '../../styles/dataTable.module.css';
 import sharedStyles from '../../styles/shared.module.css';
-import addIncomeStyles from '../../styles/mobile/addIncome.mobile.module.css';
+import addIncomeStyles from '../../styles/mobile/addIncomeAndExpense.mobile.module.css';
 import CurrencyInput from 'react-currency-input-field';
 import { 
   BsPlusCircle, 
@@ -27,11 +27,8 @@ const MobileAddIncome = () => {
     category_id: '',
     bank_id: '',
     is_recurring: false,
-    has_installments: false,
     start_date: null,
-    recurrence_type: 'monthly',
-    total_installments: 2,
-    current_installment: 1
+    recurrence_type: 'monthly'
   });
   const [categories, setCategories] = useState([]);
   const [banks, setBanks] = useState([]);
@@ -450,6 +447,43 @@ const MobileAddIncome = () => {
           )}
 
           <form onSubmit={handleSubmit} className={addIncomeStyles.formGrid}>
+            {/* Tipo de Receita */}
+            <div className={addIncomeStyles.formGroup}>
+              <label className={addIncomeStyles.formLabel}>
+                Tipo de Receita
+              </label>
+              <div className={addIncomeStyles.toggleGroup}>
+                <button
+                  type="button"
+                  className={`${addIncomeStyles.toggleButton} ${!formData.is_recurring && !formData.has_installments ? addIncomeStyles.active : ''}`}
+                  onClick={() => {
+                    setFormData(prev => ({
+                      ...prev,
+                      is_recurring: false,
+                      has_installments: false
+                    }));
+                  }}
+                >
+                  <BsCurrencyDollar style={{color: !formData.is_recurring && !formData.has_installments ? 'var(--secondary-color)' : 'white'}} /> 
+                  <span style={{color: !formData.is_recurring && !formData.has_installments ? 'var(--secondary-color)' : 'white'}}>Único</span>
+                </button>
+                <button
+                  type="button"
+                  className={`${addIncomeStyles.toggleButton} ${formData.is_recurring && !formData.has_installments ? addIncomeStyles.active : ''}`}
+                  onClick={() => {
+                    setFormData(prev => ({
+                      ...prev,
+                      is_recurring: true,
+                      has_installments: false
+                    }));
+                  }}
+                >
+                  <BsRepeat style={{color: formData.is_recurring && !formData.has_installments ? 'var(--secondary-color)' : 'white'}} /> 
+                  <span style={{color: formData.is_recurring && !formData.has_installments ? 'var(--secondary-color)' : 'white'}}>Fixo</span>
+                </button>
+              </div>
+            </div>
+
             <div className={addIncomeStyles.inlineFieldsContainer}>
               <div className={addIncomeStyles.formGroup}>
                 <label className={addIncomeStyles.formLabel}>
@@ -487,36 +521,6 @@ const MobileAddIncome = () => {
               </div>
             </div>
 
-            {/* Tipo de Receita */}
-            <div className={addIncomeStyles.formGroup}>
-              <label className={addIncomeStyles.formLabel}>
-                Tipo de Receita
-              </label>
-              <div className={addIncomeStyles.toggleGroup}>
-                <button
-                  type="button"
-                  className={`${addIncomeStyles.toggleButton} ${!formData.is_recurring && !formData.has_installments ? addIncomeStyles.active : ''}`}
-                  onClick={() => handleToggleChange('normal')}
-                >
-                  <BsCurrencyDollar /> Única
-                </button>
-                <button
-                  type="button"
-                  className={`${addIncomeStyles.toggleButton} ${formData.has_installments ? addIncomeStyles.active : ''}`}
-                  onClick={() => handleToggleChange('installments')}
-                >
-                  <BsListCheck /> Parcelada
-                </button>
-                <button
-                  type="button"
-                  className={`${addIncomeStyles.toggleButton} ${formData.is_recurring ? addIncomeStyles.active : ''}`}
-                  onClick={() => handleToggleChange('recurring')}
-                >
-                  <BsRepeat /> Fixa
-                </button>
-              </div>
-            </div>
-
             {/* Data para Receita Única */}
             {!formData.is_recurring && !formData.has_installments && (
               <div className={addIncomeStyles.formGroup}>
@@ -534,59 +538,6 @@ const MobileAddIncome = () => {
                     required
                   />
                 </div>
-              </div>
-            )}
-
-            {/* Configurações de Parcelas */}
-            {formData.has_installments && (
-              <div style={{marginBottom: '20px'}}>
-                <label className={addIncomeStyles.formLabel}>
-                  <div className={`${addIncomeStyles.typeStatus} ${addIncomeStyles.installmentType}`}>
-                    <BsListCheck /> Receita Parcelada
-                  </div>
-                </label>
-                <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginTop: '10px'}}>
-                  <div className={addIncomeStyles.formGroup}>
-                    <label className={addIncomeStyles.formLabel}>Data da Parcela Atual</label>
-                    <input
-                      type="date"
-                      name="date"
-                      value={formData.date}
-                      onChange={handleChange}
-                      className={addIncomeStyles.formInput}
-                      required
-                    />
-                  </div>
-                  
-                  <div className={addIncomeStyles.formGroup}>
-                    <label className={addIncomeStyles.formLabel}>Parcela Atual / Total</label>
-                    <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
-                      <input
-                        type="number"
-                        min="1"
-                        max={formData.total_installments}
-                        name="current_installment"
-                        value={formData.current_installment}
-                        onChange={handleChange}
-                        className={addIncomeStyles.formInput}
-                        style={{width: '45%'}}
-                        required
-                      />
-                      <span style={{margin: '0 5px'}}>/</span>
-                      <input
-                        type="number"
-                        min={formData.current_installment}
-                        max="60"
-                        name="total_installments"
-                        value={formData.total_installments}
-                        onChange={handleChange}
-                        className={addIncomeStyles.formInput}
-                        style={{width: '45%'}}
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>             
               </div>
             )}
 

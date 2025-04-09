@@ -1085,7 +1085,7 @@ const Expenses = () => {
                   ) : expense.has_installments ? (
                     <><BsCreditCard2Front style={{color: '#598FFF'}} /> Parcelado</>
                   ) : (
-                    <><BsCurrencyDollar style={{color: 'var(--text-color)'}} /> Pagamento único</>
+                    <><BsCurrencyDollar style={{color: 'var(--text-color)'}} /> Único</>
                   )}
                 </span>
               </div>
@@ -1102,11 +1102,11 @@ const Expenses = () => {
               <div className={dataTableStyles.mobileCardType}>
                 {expense.is_recurring ? (
                   <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
-                    <BsRepeat /> Fixo
+                    <BsRepeat /> Despesa fixa
                   </span>
                 ) : expense.has_installments ? (
                   <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.installmentsType}`}>
-                    <BsCreditCard2Front /> Parcelado
+                    <BsCreditCard2Front /> Despesa parcelada
                   </span>
                 ) : (
                   <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
@@ -1366,7 +1366,7 @@ const Expenses = () => {
                 <div className={dataTableStyles.optionsContainer}>
                   <div className={dataTableStyles.optionHeader}>
                     <div className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
-                      <BsRepeat size={14} /> Despesa fixa mensal
+                      <BsRepeat size={14} /> Despesa fixa
                     </div>
                   </div>
                   

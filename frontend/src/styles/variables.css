@@ -1,59 +1,16 @@
 :root {
-  /* Cores principais */
-  --primary-color: #00ff85;
-  --primary-color-dark: #00cc6a;
-  --primary-color-light: #33ff9d;
-  --secondary-color: #03dac6;
-  --secondary-color-dark: #018786;
-  
-  /* Cores de status */
-  --success-color: #00ff85;
-  --success-color-light: rgba(0, 255, 133, 0.15);
-  --error-color: #ff6b6b;
-  --error-color-light: rgba(255, 107, 107, 0.15);
-  --warning-color: #ffd43b;
-  --warning-color-light: rgba(255, 212, 59, 0.15);
-  
-  /* Cores de fundo */
-  --background-color: #1A1B23;
-  --surface-color: #2d2d2d;
-  --card-bg: #2d2d2d;
-  --input-bg: #363636;
-  --hover-color: #404040;
-  
-  /* Cores de texto */
-  --text-color: #ffffff;
-  --text-color-light: rgba(255, 255, 255, 0.87);
-  --text-color-medium: rgba(255, 255, 255, 0.60);
-  --text-color-disabled: rgba(255, 255, 255, 0.38);
-  
-  /* Cores de borda */
-  --border-color: #404040;
-  --border-color-light: rgba(255, 255, 255, 0.12);
-  
-  /* Sombras */
-  --shadow-small: 0 2px 4px rgba(0, 0, 0, 0.2);
-  --shadow-medium: 0 4px 8px rgba(0, 0, 0, 0.3);
-  --shadow-large: 0 8px 16px rgba(0, 0, 0, 0.4);
-  
-  /* Dimensões */
-  --mobile-nav-height: 60px;
-  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
-  
-  /* Transições */
-  --transition-fast: 0.2s ease;
-  --transition-medium: 0.3s ease;
-  --transition-slow: 0.5s ease;
-  
-  /* Arredondamento */
-  --border-radius-small: 4px;
-  --border-radius-medium: 8px;
-  --border-radius-large: 12px;
-  
-  /* Z-index */
-  --z-index-modal: 1000;
-  --z-index-overlay: 900;
-  --z-index-dropdown: 800;
-  --z-index-header: 700;
-  --z-index-footer: 600;
-} 
+  --primary-color: #00FF85;
+  --secondary-color: #1A1B23;
+  --background-color: #13141B;
+  --card-background: #1A1B23;
+  --text-color: #FFFFFF;
+  --text-secondary: #8B8D97;
+  --error-color: #FF6B6B;
+  --success-color: #51CF66;
+  --border-color: #2A2B33;
+  --hover-color: #00E676;
+  --input-background: #2A2B33;
+  --gradient-start: #00FF85;
+  --gradient-end: #80FFB9;
+  --button-text-color: #FFFFFF;
+}

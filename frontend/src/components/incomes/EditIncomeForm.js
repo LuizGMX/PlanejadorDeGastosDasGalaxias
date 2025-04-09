@@ -167,6 +167,13 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
     handleSubmit({ preventDefault: () => {} });
   };
 
+  const handleToggleChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
   return (
     <div className={dataTableStyles.modalOverlay}>
       <div className={`${dataTableStyles.modalContent} ${dataTableStyles.formModal}`}>
@@ -178,6 +185,29 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
         {error && <p className={dataTableStyles.errorMessage}>{error}</p>}
         
         <form onSubmit={handleSubmit} className={dataTableStyles.formGrid}>
+          {/* Tipo de Receita */}
+          <div className={dataTableStyles.formGroup}>
+            <label className={dataTableStyles.formLabel}>
+              Tipo de Receita
+            </label>
+            <div className={dataTableStyles.toggleGroup}>
+              <button
+                type="button"
+                className={`${dataTableStyles.toggleButton} ${!formData.is_recurring ? dataTableStyles.active : ''}`}
+                onClick={() => handleToggleChange('is_recurring', false)}
+              >
+                <BsCurrencyDollar /> Único
+              </button>
+              <button
+                type="button"
+                className={`${dataTableStyles.toggleButton} ${formData.is_recurring ? dataTableStyles.active : ''}`}
+                onClick={() => handleToggleChange('is_recurring', true)}
+              >
+                <BsRepeat /> Fixo
+              </button>
+            </div>
+          </div>
+
           <div className={dataTableStyles.formGroup}>
             <label className={dataTableStyles.formLabel}>
               Descrição

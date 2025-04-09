@@ -898,9 +898,9 @@
   justify-content: center;
   gap: 8px;
   padding: 12px 24px;
-  background-color: var(--secondary-color);
+  background-color: var(--primary-color);
   border: 2px solid var(--primary-color);
-  color: var(--primary-color);
+  color: var(--secondary-color);
   border-radius: 12px;
   font-size: 15px;
   font-weight: 600;
@@ -1013,9 +1013,8 @@
 }
 
 .toggleButton.active {
-  background-color: var(--secondary-color);
-  border: 2px solid var(--primary-color);
-  color: var(--primary-color);
+  background-color: var(--primary-color);
+  color: var(--secondary-color);
   font-weight: 600;
 }
 

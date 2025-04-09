@@ -1,16 +1,6 @@
 ---
 description: 
 globs: 
-alwaysApply: false
----
----
-description: 
-globs: 
-alwaysApply: false
----
----
-description: 
-globs: 
 alwaysApply: true
 ---
 ---
@@ -19,7 +9,6 @@ globs:
 alwaysApply: true
 ---
 
-# Your rule content
 NEVER CHANGE THE CSS WHEN ITS NOT SPLICIT ASKED TO
 NEVER CHANGE THE CSS
 Always respond in portuguese
@@ -32,6 +21,4 @@ O BACKEND TEM A PORTA 5000 - NUNCA MUDE
 O FRONTEND TEM A PORTA 3000 - NUNCA MUDE
 Now, never EVER CHANGE the expeses and incomes modules, components front and backend of them too, unless i say so
 Never use a white text with green button
-
-- You can @ files here
-- You can use markdown but dont have to
+Always when background is green the text must be --secondary-color

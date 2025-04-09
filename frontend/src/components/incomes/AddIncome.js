@@ -206,6 +206,31 @@ const AddIncome = () => {
         )}
 
         <form onSubmit={handleSubmit} className={dataTableStyles.formGrid}>
+          {/* Tipo de Ganho */}
+          <div className={dataTableStyles.formGroup}>
+            <label className={dataTableStyles.formLabel}>
+              Tipo de Ganho
+            </label>
+            <div className={dataTableStyles.toggleGroup}>
+              <button
+                type="button"
+                className={`${dataTableStyles.toggleButton} ${!formData.is_recurring ? dataTableStyles.active : ''}`}
+                onClick={() => handleToggleChange('is_recurring', false)}
+              >
+                <BsCurrencyDollar style={{color: !formData.is_recurring ? 'var(--secondary-color)' : 'white'}} /> 
+                <span style={{color: !formData.is_recurring ? 'var(--secondary-color)' : 'white'}}>Único</span>
+              </button>
+              <button
+                type="button"
+                className={`${dataTableStyles.toggleButton} ${formData.is_recurring ? dataTableStyles.active : ''}`}
+                onClick={() => handleToggleChange('is_recurring', true)}
+              >
+                <BsRepeat style={{color: formData.is_recurring ? 'var(--secondary-color)' : 'white'}} /> 
+                <span style={{color: formData.is_recurring ? 'var(--secondary-color)' : 'white'}}>Fixo</span>
+              </button>
+            </div>
+          </div>
+
           <div className={dataTableStyles.inlineFieldsContainer}>
             <div className={dataTableStyles.formGroup}>
               <label className={dataTableStyles.formLabel}>
@@ -240,29 +265,6 @@ const AddIncome = () => {
                 className={dataTableStyles.formInput}
                 required
               />
-            </div>
-          </div>
-
-          {/* Tipo de Ganho */}
-          <div className={dataTableStyles.formGroup}>
-            <label className={dataTableStyles.formLabel}>
-              Tipo de Ganho
-            </label>
-            <div className={dataTableStyles.toggleGroup}>
-              <button
-                type="button"
-                className={`${dataTableStyles.toggleButton} ${!formData.is_recurring ? dataTableStyles.active : ''}`}
-                onClick={() => handleToggleChange('is_recurring', false)}
-              >
-                <BsCurrencyDollar /> Único
-              </button>
-              <button
-                type="button"
-                className={`${dataTableStyles.toggleButton} ${formData.is_recurring ? dataTableStyles.active : ''}`}
-                onClick={() => handleToggleChange('is_recurring', true)}
-              >
-                <BsRepeat /> Fixo
-              </button>
             </div>
           </div>
 

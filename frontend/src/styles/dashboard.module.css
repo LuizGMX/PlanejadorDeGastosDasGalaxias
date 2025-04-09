@@ -73,7 +73,7 @@
 
 .addFirstExpenseButton {
   background-color: var(--primary-color);
-  color: var(--button-text-color);
+  color: var(--secondary-color);
 }
 
 .addFirstExpenseButton:hover {
@@ -1890,7 +1890,7 @@
 
 .activeTab {
   background-color: var(--primary-color);
-  color: var(--button-text-color);
+  color: var(--secondary-color);
   box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.4);
 }
 
@@ -2016,7 +2016,7 @@
   gap: 0.5rem !important;
   padding: 0.75rem 1.5rem !important;
   background-color: var(--primary-color) !important;
-  color: var(--button-text-color) !important;
+  color: var(--secondary-color) !important;
   border: none !important;
   border-radius: 12px !important;
   font-size: 1rem !important;
@@ -2044,8 +2044,8 @@
   justify-content: center !important;
   gap: 0.5rem !important;
   padding: 0.75rem 1.5rem !important;
-  background-color: #3498db !important;
-  color: white !important;
+  background-color: var(--primary-color) !important;
+  color: var(--secondary-color) !important;
   border: none !important;
   border-radius: 12px !important;
   font-size: 1rem !important;
@@ -2161,8 +2161,8 @@
 
 .applyDateRange {
   padding: 0.7rem 1.2rem;
-  background: #00ff85;
-  color: #121317;
+  background: var(--primary-color);
+  color: var(--secondary-color);
   border: none;
   border-radius: 8px;
   font-size: 0.9rem;
@@ -2478,8 +2478,8 @@ input:checked + .toggleSlider:before {
 }
 
 .detailActionButton:first-child {
-  background-color: var(--primary-color);
-  color: var(--button-text-color);
+    background-color: var(--primary-color);
+  color: var(--secondary-color);
 }
 
 .detailActionButton:first-child:hover {
@@ -2915,7 +2915,7 @@ input:checked + .toggleSlider:before {
 .createGoalButton {
   padding: 10px 20px;
   background: var(--primary-color);
-  color: var(--button-text-color);
+  color: var(--secondary-color);
   border: none;
   border-radius: 8px;
   font-size: 0.95rem;
@@ -2999,8 +2999,8 @@ input:checked + .toggleSlider:before {
 
 .applyDateRange {
   padding: 8px 15px;
-  background-color: #4361ee;
-  color: white;
+  background-color: var(--primary-color);
+  color: var(--secondary-color);
   border: none;
   border-radius: 5px;
   cursor: pointer;
@@ -3051,7 +3051,7 @@ input:checked + .toggleSlider:before {
   font-weight: 500;
   border: none;
   background-color: var(--primary-color);
-  color: var(--button-text-color);
+  color: var(--secondary-color);
   cursor: pointer;
   transition: all 0.25s ease;
   display: flex;
@@ -3128,8 +3128,8 @@ input:checked + .toggleSlider:before {
   border-radius: 8px;
   font-weight: 500;
   border: none;
-  background-color: var(--primary-color);
-  color: var(--button-text-color);
+    background-color: var(--primary-color);
+  color: var(--secondary-color);
   cursor: pointer;
   transition: all 0.25s ease;
   display: flex;

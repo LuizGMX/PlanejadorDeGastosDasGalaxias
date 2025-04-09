@@ -485,43 +485,6 @@ const AddExpense = () => {
         )}
 
         <form onSubmit={handleSubmit} className={dataTableStyles.formGrid}>
-          <div className={dataTableStyles.inlineFieldsContainer}>
-            <div className={dataTableStyles.formGroup}>
-              <label className={dataTableStyles.formLabel}>
-                Descrição
-              </label>
-              <input
-                type="text"
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                className={dataTableStyles.formInput}
-                required
-              />
-            </div>
-
-            <div className={dataTableStyles.formGroup}>
-              <label className={dataTableStyles.formLabel}>
-                {formData.has_installments ? 'Valor Total da Compra (calcularemos o valor de cada parcela automaticamente)' : 'Valor'}
-              </label>
-              <CurrencyInput
-                name="amount"
-                value={formData.amount}
-                placeholder="R$ 0,00"
-                decimalsLimit={2}
-                onValueChange={(value) => {
-                  setFormData(prev => ({
-                    ...prev,
-                    amount: value
-                  }));
-                }}
-                intlConfig={{ locale: 'pt-BR', currency: 'BRL' }}
-                className={dataTableStyles.formInput}
-                required
-              />
-            </div>
-          </div>
-
           {/* Tipo de Despesa */}
           <div className={dataTableStyles.formGroup}>
             <label className={dataTableStyles.formLabel}>
@@ -533,22 +496,56 @@ const AddExpense = () => {
                 className={`${dataTableStyles.toggleButton} ${!formData.is_recurring && !formData.has_installments ? dataTableStyles.active : ''}`}
                 onClick={() => handleToggleChange('normal')}
               >
-                <BsCurrencyDollar /> Única
+                <BsCurrencyDollar /> Único
               </button>
               <button
                 type="button"
                 className={`${dataTableStyles.toggleButton} ${formData.has_installments ? dataTableStyles.active : ''}`}
                 onClick={() => handleToggleChange('installments')}
               >
-                <BsListCheck /> Parcelada
+                <BsListCheck /> Despesa parcelada
               </button>
               <button
                 type="button"
                 className={`${dataTableStyles.toggleButton} ${formData.is_recurring ? dataTableStyles.active : ''}`}
                 onClick={() => handleToggleChange('recurring')}
               >
-                <BsRepeat /> Fixa
+                <BsRepeat /> Despesa fixa
               </button>
+            </div>
+          </div>
+
+          <div className={dataTableStyles.formGroup}>
+            <label className={dataTableStyles.formLabel}>
+              Descrição
+            </label>
+            <input
+              type="text"
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              className={dataTableStyles.formInput}
+              required
+            />
+          </div>
+
+          <div className={dataTableStyles.formGroup}>
+            <label className={dataTableStyles.formLabel}>
+              Valor
+            </label>
+            <div className={dataTableStyles.inputWithIcon}>
+              <BsCurrencyDollar className={dataTableStyles.inputIcon} />
+              <CurrencyInput
+                name="amount"
+                value={formData.amount}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, amount: value || 0 }))}
+                prefix="R$ "
+                decimalsLimit={2}
+                decimalSeparator=","
+                groupSeparator="."
+                className={dataTableStyles.formInput}
+                required
+              />
             </div>
           </div>
 

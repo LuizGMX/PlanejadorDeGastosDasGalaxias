@@ -454,7 +454,7 @@
 
 .generateCodeButton {
   background-color: var(--primary-color);
-  color: white;
+  color: var(--secondary-color);
   border: none;
   border-radius: 5px;
   padding: 10px 15px;
@@ -629,7 +629,7 @@
 
 .activeStep .stepIndicator {
   background-color: var(--primary-color);
-  color: var(--background-color);
+  color: var(--secondary-color);
   transform: scale(1.1);
   box-shadow: 0 0 15px rgba(0, 255, 133, 0.5);
 }
@@ -645,7 +645,7 @@
 
 .completedStep .stepIndicator {
   background-color: var(--primary-color);
-  color: var(--background-color);
+  color: var(--secondary-color);
 }
 
 /* Enhanced Button Styles */
