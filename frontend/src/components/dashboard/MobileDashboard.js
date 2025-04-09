@@ -695,6 +695,17 @@ const MobileDashboard = () => {
   const [categoriesError, setCategoriesError] = useState(null);
   const [incomeError, setIncomeError] = useState(null);
 
+  // Adicionar estado para controlar o menu flutuante
+  const [showActionMenu, setShowActionMenu] = useState(false);
+
+  // Adicionar estado para controlar a seção ativa de gráficos
+  const [activeChartSection, setActiveChartSection] = useState('income-expenses');
+
+  // Função para alternar o menu de ações
+  const toggleActionMenu = () => {
+    setShowActionMenu(!showActionMenu);
+  };
+
   // Remover a verificação de isMobile do getCustomizedPieLabel
   const getCustomizedPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }) => {
     if (percent < 0.05) return null;
@@ -3662,35 +3673,62 @@ const MobileDashboard = () => {
     );
   };
 
-  const renderOverviewCharts = () => (
-    <div className={styles.chartsGrid}>
-      {/* Main Charts */}
-      <div className={styles.chartContainer}>
-        {renderExpensesTrend()}
+  // Melhorar renderização para os gráficos com função reutilizável
+  const renderChartContainer = (title, content) => {
+    return (
+      <div style={{
+        backgroundColor: 'var(--card-background)',
+        borderRadius: '12px',
+        padding: '16px',
+        marginBottom: '16px',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '12px',
+          borderBottom: '1px solid var(--border-color)',
+          paddingBottom: '8px'
+        }}>
+          <h3 style={{
+            margin: '0',
+            fontSize: '1rem',
+            fontWeight: 'bold',
+            color: 'var(--text-color)'
+          }}>{title}</h3>
+          <span style={{
+            fontSize: '0.8rem',
+            backgroundColor: 'rgba(0, 255, 133, 0.1)',
+            padding: '2px 8px',
+            borderRadius: '12px',
+            color: 'var(--text-color)'
+          }}>{formatCurrentDateFilter()}</span>
+        </div>
+        {content}
       </div>
-      
-      <div className={styles.chartContainer}>
-        {renderIncomeTrend()}
-      </div>
-      
-      {/* Categories Charts */}
-      <div className={styles.chartContainer}>
-        {renderExpensesByCategoryChart()}
-      </div>
-      
-      <div className={styles.chartContainer}>
-        {renderIncomeCategoriesChart()}
-      </div>
-      
-      <div className={styles.chartContainer}>
-        {renderBanksChart()}
-      </div>
-      
-      <div className={styles.chartContainer}>
-        {renderIncomeVsExpensesChart()}
-      </div>
-    </div>
-  );
+    );
+  };
+
+  // Atualizar o renderOverviewCharts para exibir apenas o gráfico ativo
+  const renderOverviewCharts = () => {
+    switch (activeChartSection) {
+      case 'income-expenses':
+        return renderChartContainer('Despesas vs Receitas', renderIncomeVsExpensesChart());
+      case 'expenses-categories':
+        return renderChartContainer('Despesas por Categoria', renderExpensesByCategoryChart());
+      case 'income-categories':
+        return renderChartContainer('Receitas por Categoria', renderIncomeCategoriesChart());
+      case 'banks':
+        return renderChartContainer('Distribuição por Banco', renderBanksChart());
+      case 'expenses-trend':
+        return hasExpenses ? renderChartContainer('Tendência de Despesas', renderExpensesTrend()) : null;
+      case 'income-trend':
+        return hasIncome ? renderChartContainer('Tendência de Receitas', renderIncomeTrend()) : null;
+      default:
+        return renderChartContainer('Despesas vs Receitas', renderIncomeVsExpensesChart());
+    }
+  };
 
   if (loading) return (
     <div className={styles.dashboardLoading}>
@@ -3969,12 +4007,98 @@ const MobileDashboard = () => {
         {/* Greeting Section */}
         {getGreeting(auth.user?.name)}
 
-        {/* Overview Section */}
+        {/* Filtros mais acessíveis */}
+        <div style={{ 
+          backgroundColor: 'var(--card-background)', 
+          borderRadius: '12px', 
+          padding: '12px', 
+          marginBottom: '16px', 
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+            <span style={{ fontWeight: 'bold', marginRight: '8px' }}>Período:</span>
+            <div 
+              style={{ 
+                padding: '6px 12px', 
+                background: 'rgba(0, 255, 133, 0.1)',
+                borderRadius: '20px',
+                fontSize: '0.9rem',
+                color: 'var(--text-color)',
+                border: '1px solid var(--primary-color)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              {getActiveFilterLabel()} <FaChevronDown style={{ marginLeft: '4px', fontSize: '0.7rem' }} />
+            </div>
+          </div>
+        </div>
+
+        {/* Overview Section - Reformatado */}
         <div className={styles.mobileOverviewSection}>
-          {/* Resumo do Orçamento */}
-          <div className={styles.mobileCard}>
-            <div className={styles.mobileCardHeader}>
-              <BsCash size={16} /> Resumo do Orçamento
+          {/* Cards em formatação de quadro de resumo */}
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            gap: '12px',
+            marginBottom: '16px'
+          }}>
+            <div style={{ 
+              backgroundColor: 'var(--card-background)', 
+              borderRadius: '12px', 
+              padding: '12px', 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}>
+              <span style={{ fontSize: '0.75rem', marginBottom: '4px', color: 'var(--text-secondary)' }}>Despesas</span>
+              <span style={{ 
+                fontSize: '1.2rem', 
+                fontWeight: 'bold', 
+                color: '#f44336' 
+              }}>{data && data.total_expenses ? formatCurrency(data.total_expenses) : formatCurrency(0)}</span>
+            </div>
+            <div style={{ 
+              backgroundColor: 'var(--card-background)', 
+              borderRadius: '12px', 
+              padding: '12px', 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}>
+              <span style={{ fontSize: '0.75rem', marginBottom: '4px', color: 'var(--text-secondary)' }}>Receitas</span>
+              <span style={{ 
+                fontSize: '1.2rem', 
+                fontWeight: 'bold', 
+                color: '#4caf50' 
+              }}>{data && data.total_income ? formatCurrency(data.total_income) : formatCurrency(0)}</span>
+            </div>
+          </div>
+
+          {/* Resumo do Orçamento - Redesenhado */}
+          <div className={styles.mobileCard} style={{ marginBottom: '16px' }}>
+            <div className={styles.mobileCardHeader} style={{ 
+              marginBottom: '12px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              borderBottom: '1px solid var(--border-color)',
+              paddingBottom: '8px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <BsCash size={16} style={{ marginRight: '6px' }} /> 
+                <span style={{ fontWeight: 'bold' }}>Resumo do Orçamento</span>
+              </div>
+              <span style={{ 
+                fontSize: '0.8rem', 
+                backgroundColor: 'rgba(0, 255, 133, 0.1)',
+                padding: '2px 8px',
+                borderRadius: '12px',
+                color: 'var(--text-color)'
+              }}>{formatCurrentDateFilter()}</span>
             </div>
             <div className={styles.mobileCardContent}>
               {renderBudgetChart()}
@@ -3982,9 +4106,19 @@ const MobileDashboard = () => {
           </div>
 
           {/* Objetivo */}
-          <div className={styles.mobileCard}>
-            <div className={styles.mobileCardHeader}>
-              <BsBullseye size={16} /> Objetivo
+          <div className={styles.mobileCard} style={{ marginBottom: '16px' }}>
+            <div className={styles.mobileCardHeader} style={{ 
+              marginBottom: '12px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              borderBottom: '1px solid var(--border-color)',
+              paddingBottom: '8px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <BsBullseye size={16} style={{ marginRight: '6px' }} /> 
+                <span style={{ fontWeight: 'bold' }}>Objetivo</span>
+              </div>
             </div>
             <div className={styles.mobileCardContent}>
               {renderFinancialGoalChart()}
@@ -3992,9 +4126,201 @@ const MobileDashboard = () => {
           </div>
         </div>
 
-        {/* Charts Section */}
+        {/* Navegação de Gráficos */}
+        <div style={{ 
+          display: 'flex', 
+          overflowX: 'auto', 
+          gap: '12px', 
+          padding: '8px 0',
+          marginBottom: '12px',
+          WebkitOverflowScrolling: 'touch',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none'
+        }}>
+          <div 
+            onClick={() => setActiveChartSection('income-expenses')}
+            style={{ 
+              padding: '8px 16px', 
+              backgroundColor: activeChartSection === 'income-expenses' ? 'var(--primary-color)' : 'var(--card-background)', 
+              borderRadius: '20px',
+              whiteSpace: 'nowrap',
+              color: activeChartSection === 'income-expenses' ? 'var(--secondary-color)' : 'var(--text-color)',
+              fontWeight: 'bold',
+              fontSize: '0.9rem',
+              border: activeChartSection === 'income-expenses' ? 'none' : '1px solid var(--border-color)',
+              cursor: 'pointer'
+            }}
+          >
+            Despesas vs Receitas
+          </div>
+          <div 
+            onClick={() => setActiveChartSection('expenses-categories')}
+            style={{ 
+              padding: '8px 16px', 
+              backgroundColor: activeChartSection === 'expenses-categories' ? 'var(--primary-color)' : 'var(--card-background)', 
+              borderRadius: '20px',
+              whiteSpace: 'nowrap',
+              color: activeChartSection === 'expenses-categories' ? 'var(--secondary-color)' : 'var(--text-color)',
+              fontWeight: 'bold',
+              fontSize: '0.9rem',
+              border: activeChartSection === 'expenses-categories' ? 'none' : '1px solid var(--border-color)',
+              cursor: 'pointer'
+            }}
+          >
+            Categorias
+          </div>
+          <div 
+            onClick={() => setActiveChartSection('income-categories')}
+            style={{ 
+              padding: '8px 16px', 
+              backgroundColor: activeChartSection === 'income-categories' ? 'var(--primary-color)' : 'var(--card-background)', 
+              borderRadius: '20px',
+              whiteSpace: 'nowrap',
+              color: activeChartSection === 'income-categories' ? 'var(--secondary-color)' : 'var(--text-color)',
+              fontWeight: 'bold',
+              fontSize: '0.9rem',
+              border: activeChartSection === 'income-categories' ? 'none' : '1px solid var(--border-color)',
+              cursor: 'pointer'
+            }}
+          >
+            Fontes de Renda
+          </div>
+          <div 
+            onClick={() => setActiveChartSection('banks')}
+            style={{ 
+              padding: '8px 16px', 
+              backgroundColor: activeChartSection === 'banks' ? 'var(--primary-color)' : 'var(--card-background)', 
+              borderRadius: '20px',
+              whiteSpace: 'nowrap',
+              color: activeChartSection === 'banks' ? 'var(--secondary-color)' : 'var(--text-color)',
+              fontWeight: 'bold',
+              fontSize: '0.9rem',
+              border: activeChartSection === 'banks' ? 'none' : '1px solid var(--border-color)',
+              cursor: 'pointer'
+            }}
+          >
+            Bancos
+          </div>
+          {hasExpenses && (
+            <div 
+              onClick={() => setActiveChartSection('expenses-trend')}
+              style={{ 
+                padding: '8px 16px', 
+                backgroundColor: activeChartSection === 'expenses-trend' ? 'var(--primary-color)' : 'var(--card-background)', 
+                borderRadius: '20px',
+                whiteSpace: 'nowrap',
+                color: activeChartSection === 'expenses-trend' ? 'var(--secondary-color)' : 'var(--text-color)',
+                fontWeight: 'bold',
+                fontSize: '0.9rem',
+                border: activeChartSection === 'expenses-trend' ? 'none' : '1px solid var(--border-color)',
+                cursor: 'pointer'
+              }}
+            >
+              Tendência Despesas
+            </div>
+          )}
+          {hasIncome && (
+            <div 
+              onClick={() => setActiveChartSection('income-trend')}
+              style={{ 
+                padding: '8px 16px', 
+                backgroundColor: activeChartSection === 'income-trend' ? 'var(--primary-color)' : 'var(--card-background)', 
+                borderRadius: '20px',
+                whiteSpace: 'nowrap',
+                color: activeChartSection === 'income-trend' ? 'var(--secondary-color)' : 'var(--text-color)',
+                fontWeight: 'bold',
+                fontSize: '0.9rem',
+                border: activeChartSection === 'income-trend' ? 'none' : '1px solid var(--border-color)',
+                cursor: 'pointer'
+              }}
+            >
+              Tendência Receitas
+            </div>
+          )}
+        </div>
+
+        {/* Charts Section - Melhor organização */}
         <div className={styles.mobileChartsSection}>
           {renderOverviewCharts()}
+        </div>
+
+        {/* Botão de ação flutuante */}
+        <div style={{
+          position: 'fixed',
+          bottom: '20px',
+          right: '20px',
+          zIndex: 999
+        }}>
+          <button 
+            onClick={toggleActionMenu}
+            style={{
+              width: '56px',
+              height: '56px',
+              borderRadius: '50%',
+              backgroundColor: 'var(--primary-color)',
+              color: 'var(--secondary-color)',
+              border: 'none',
+              boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '24px'
+            }}
+          >
+            <BsPlusLg />
+          </button>
+          
+          {/* Menu de ações flutuante */}
+          {showActionMenu && (
+            <div style={{
+              position: 'absolute',
+              bottom: '70px',
+              right: '0',
+              backgroundColor: 'var(--card-background)',
+              borderRadius: '12px',
+              boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+              padding: '8px',
+              width: '170px'
+            }}>
+              <div 
+                onClick={() => {
+                  navigate('/expenses/add');
+                  setShowActionMenu(false);
+                }}
+                style={{
+                  padding: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  borderBottom: '1px solid var(--border-color)',
+                  color: 'var(--text-color)',
+                  cursor: 'pointer'
+                }}
+              >
+                <span style={{ marginRight: '8px', color: '#f44336' }}>
+                  <BsPlusLg />
+                </span>
+                Adicionar Despesa
+              </div>
+              <div 
+                onClick={() => {
+                  navigate('/incomes/add');
+                  setShowActionMenu(false);
+                }}
+                style={{
+                  padding: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  color: 'var(--text-color)',
+                  cursor: 'pointer'
+                }}
+              >
+                <span style={{ marginRight: '8px', color: '#4caf50' }}>
+                  <BsCash />
+                </span>
+                Adicionar Receita
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
