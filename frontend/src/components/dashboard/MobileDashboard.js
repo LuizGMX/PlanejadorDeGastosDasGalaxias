@@ -19,9 +19,9 @@ import {
   ReferenceLine,
   Cell
 } from 'recharts';
-import styles from '../../styles/dashboard.mobile.module.css';
-import { FaChartLine, FaChevronDown} from 'react-icons/fa';
-import DateRangePicker from '../shared/DateRangePicker';
+import styles from '../../styles/dashboard.module.css';
+import { FaChevronDown} from 'react-icons/fa';
+
 
 import { 
   BsPlusLg, 

@@ -2,13 +2,29 @@ import React from 'react';
 import ReactDOM from 'react-dom/client'; // Importa createRoot
 import './index.css';
 import './styles/ios.css';
+import './styles/variables.css';
+import './styles/app.module.css';
+import './styles/layout.module.css';
+import './styles/sidebar.module.css';
+import './styles/shared.module.css';
+import './styles/dashboard.module.css';
 import './styles/dataTable.module.css';
-import './styles/mobile/dataTable.mobile.module.css';
-import './styles/mobile/forms.mobile.css';
-import './styles/mobile/navbar.mobile.css';
+import './styles/addIncome.module.css';
+import './styles/bankBalanceTrend.module.css';
+import './styles/login.module.css';
+import './styles/profile.module.css';
+import './styles/telegramLinking.module.css';
+
+// Estilos mobile
+import './styles/mobile/dashboard.mobile.module.css';
 import './styles/mobile/dashboard.mobile.css';
-import './styles/mobile/expenses.mobile.css';
+import './styles/mobile/dataTable.mobile.module.css';
+import './styles/mobile/addIncomeAndExpense.mobile.module.css';
 import './styles/mobile/incomes.mobile.css';
+import './styles/mobile/expenses.mobile.css';
+import './styles/mobile/navbar.mobile.css';
+import './styles/mobile/forms.mobile.css';
+
 import App from './App';
 import { initIOSSupport, isIOS } from './utils/iosSupport';
 
