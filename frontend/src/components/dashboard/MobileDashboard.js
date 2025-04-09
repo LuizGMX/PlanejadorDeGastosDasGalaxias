@@ -3676,34 +3676,12 @@ const MobileDashboard = () => {
   // Melhorar renderização para os gráficos com função reutilizável
   const renderChartContainer = (title, content) => {
     return (
-      <div style={{
-        backgroundColor: 'var(--card-background)',
-        borderRadius: '12px',
-        padding: '16px',
-        marginBottom: '16px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-      }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '12px',
-          borderBottom: '1px solid var(--border-color)',
-          paddingBottom: '8px'
-        }}>
-          <h3 style={{
-            margin: '0',
-            fontSize: '1rem',
-            fontWeight: 'bold',
-            color: 'var(--text-color)'
-          }}>{title}</h3>
-          <span style={{
-            fontSize: '0.8rem',
-            backgroundColor: 'rgba(0, 255, 133, 0.1)',
-            padding: '2px 8px',
-            borderRadius: '12px',
-            color: 'var(--text-color)'
-          }}>{formatCurrentDateFilter()}</span>
+      <div className={styles.mobileChartContainer}>
+        <div className={styles.mobileCardHeaderBordered}>
+          <h3 className={styles.mobileCardTitle}>{title}</h3>
+          <span className={styles.mobileFilterBadge}>
+            {formatCurrentDateFilter()}
+          </span>
         </div>
         {content}
       </div>
@@ -4008,28 +3986,10 @@ const MobileDashboard = () => {
         {getGreeting(auth.user?.name)}
 
         {/* Filtros mais acessíveis */}
-        <div style={{ 
-          backgroundColor: 'var(--card-background)', 
-          borderRadius: '12px', 
-          padding: '12px', 
-          marginBottom: '16px', 
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-        }}>
+        <div className={styles.mobileFilterSection}>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
             <span style={{ fontWeight: 'bold', marginRight: '8px' }}>Período:</span>
-            <div 
-              style={{ 
-                padding: '6px 12px', 
-                background: 'rgba(0, 255, 133, 0.1)',
-                borderRadius: '20px',
-                fontSize: '0.9rem',
-                color: 'var(--text-color)',
-                border: '1px solid var(--primary-color)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
+            <div className={styles.mobileFilterBadge}>
               {getActiveFilterLabel()} <FaChevronDown style={{ marginLeft: '4px', fontSize: '0.7rem' }} />
             </div>
           </div>
@@ -4038,67 +3998,31 @@ const MobileDashboard = () => {
         {/* Overview Section - Reformatado */}
         <div className={styles.mobileOverviewSection}>
           {/* Cards em formatação de quadro de resumo */}
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: '12px',
-            marginBottom: '16px'
-          }}>
-            <div style={{ 
-              backgroundColor: 'var(--card-background)', 
-              borderRadius: '12px', 
-              padding: '12px', 
-              display: 'flex', 
-              flexDirection: 'column', 
-              alignItems: 'center',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-            }}>
-              <span style={{ fontSize: '0.75rem', marginBottom: '4px', color: 'var(--text-secondary)' }}>Despesas</span>
-              <span style={{ 
-                fontSize: '1.2rem', 
-                fontWeight: 'bold', 
-                color: '#f44336' 
-              }}>{data && data.total_expenses ? formatCurrency(data.total_expenses) : formatCurrency(0)}</span>
+          <div className={styles.mobileSummaryGrid}>
+            <div className={styles.mobileMetricCard}>
+              <span className={styles.mobileMetricLabel}>Despesas</span>
+              <span className={`${styles.mobileMetricValue} ${styles.mobileMetricNegative}`}>
+                {data && data.total_expenses ? formatCurrency(data.total_expenses) : formatCurrency(0)}
+              </span>
             </div>
-            <div style={{ 
-              backgroundColor: 'var(--card-background)', 
-              borderRadius: '12px', 
-              padding: '12px', 
-              display: 'flex', 
-              flexDirection: 'column', 
-              alignItems: 'center',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-            }}>
-              <span style={{ fontSize: '0.75rem', marginBottom: '4px', color: 'var(--text-secondary)' }}>Receitas</span>
-              <span style={{ 
-                fontSize: '1.2rem', 
-                fontWeight: 'bold', 
-                color: '#4caf50' 
-              }}>{data && data.total_income ? formatCurrency(data.total_income) : formatCurrency(0)}</span>
+            <div className={styles.mobileMetricCard}>
+              <span className={styles.mobileMetricLabel}>Receitas</span>
+              <span className={`${styles.mobileMetricValue} ${styles.mobileMetricPositive}`}>
+                {data && data.total_income ? formatCurrency(data.total_income) : formatCurrency(0)}
+              </span>
             </div>
           </div>
 
           {/* Resumo do Orçamento - Redesenhado */}
-          <div className={styles.mobileCard} style={{ marginBottom: '16px' }}>
-            <div className={styles.mobileCardHeader} style={{ 
-              marginBottom: '12px',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              borderBottom: '1px solid var(--border-color)',
-              paddingBottom: '8px'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <BsCash size={16} style={{ marginRight: '6px' }} /> 
-                <span style={{ fontWeight: 'bold' }}>Resumo do Orçamento</span>
+          <div className={styles.mobileCard}>
+            <div className={styles.mobileCardHeaderBordered}>
+              <div className={styles.mobileCardTitle}>
+                <BsCash size={16} /> 
+                Resumo do Orçamento
               </div>
-              <span style={{ 
-                fontSize: '0.8rem', 
-                backgroundColor: 'rgba(0, 255, 133, 0.1)',
-                padding: '2px 8px',
-                borderRadius: '12px',
-                color: 'var(--text-color)'
-              }}>{formatCurrentDateFilter()}</span>
+              <span className={styles.mobileFilterBadge}>
+                {formatCurrentDateFilter()}
+              </span>
             </div>
             <div className={styles.mobileCardContent}>
               {renderBudgetChart()}
@@ -4106,18 +4030,11 @@ const MobileDashboard = () => {
           </div>
 
           {/* Objetivo */}
-          <div className={styles.mobileCard} style={{ marginBottom: '16px' }}>
-            <div className={styles.mobileCardHeader} style={{ 
-              marginBottom: '12px',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              borderBottom: '1px solid var(--border-color)',
-              paddingBottom: '8px'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <BsBullseye size={16} style={{ marginRight: '6px' }} /> 
-                <span style={{ fontWeight: 'bold' }}>Objetivo</span>
+          <div className={styles.mobileCard}>
+            <div className={styles.mobileCardHeaderBordered}>
+              <div className={styles.mobileCardTitle}>
+                <BsBullseye size={16} /> 
+                Objetivo
               </div>
             </div>
             <div className={styles.mobileCardContent}>
@@ -4127,94 +4044,35 @@ const MobileDashboard = () => {
         </div>
 
         {/* Navegação de Gráficos */}
-        <div style={{ 
-          display: 'flex', 
-          overflowX: 'auto', 
-          gap: '12px', 
-          padding: '8px 0',
-          marginBottom: '12px',
-          WebkitOverflowScrolling: 'touch',
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none'
-        }}>
+        <div className={styles.mobileChartNavigation}>
           <div 
             onClick={() => setActiveChartSection('income-expenses')}
-            style={{ 
-              padding: '8px 16px', 
-              backgroundColor: activeChartSection === 'income-expenses' ? 'var(--primary-color)' : 'var(--card-background)', 
-              borderRadius: '20px',
-              whiteSpace: 'nowrap',
-              color: activeChartSection === 'income-expenses' ? 'var(--secondary-color)' : 'var(--text-color)',
-              fontWeight: 'bold',
-              fontSize: '0.9rem',
-              border: activeChartSection === 'income-expenses' ? 'none' : '1px solid var(--border-color)',
-              cursor: 'pointer'
-            }}
+            className={`${styles.mobileNavButton} ${activeChartSection === 'income-expenses' ? styles.mobileNavButtonActive : styles.mobileNavButtonInactive}`}
           >
             Despesas vs Receitas
           </div>
           <div 
             onClick={() => setActiveChartSection('expenses-categories')}
-            style={{ 
-              padding: '8px 16px', 
-              backgroundColor: activeChartSection === 'expenses-categories' ? 'var(--primary-color)' : 'var(--card-background)', 
-              borderRadius: '20px',
-              whiteSpace: 'nowrap',
-              color: activeChartSection === 'expenses-categories' ? 'var(--secondary-color)' : 'var(--text-color)',
-              fontWeight: 'bold',
-              fontSize: '0.9rem',
-              border: activeChartSection === 'expenses-categories' ? 'none' : '1px solid var(--border-color)',
-              cursor: 'pointer'
-            }}
+            className={`${styles.mobileNavButton} ${activeChartSection === 'expenses-categories' ? styles.mobileNavButtonActive : styles.mobileNavButtonInactive}`}
           >
             Categorias
           </div>
           <div 
             onClick={() => setActiveChartSection('income-categories')}
-            style={{ 
-              padding: '8px 16px', 
-              backgroundColor: activeChartSection === 'income-categories' ? 'var(--primary-color)' : 'var(--card-background)', 
-              borderRadius: '20px',
-              whiteSpace: 'nowrap',
-              color: activeChartSection === 'income-categories' ? 'var(--secondary-color)' : 'var(--text-color)',
-              fontWeight: 'bold',
-              fontSize: '0.9rem',
-              border: activeChartSection === 'income-categories' ? 'none' : '1px solid var(--border-color)',
-              cursor: 'pointer'
-            }}
+            className={`${styles.mobileNavButton} ${activeChartSection === 'income-categories' ? styles.mobileNavButtonActive : styles.mobileNavButtonInactive}`}
           >
             Fontes de Renda
           </div>
           <div 
             onClick={() => setActiveChartSection('banks')}
-            style={{ 
-              padding: '8px 16px', 
-              backgroundColor: activeChartSection === 'banks' ? 'var(--primary-color)' : 'var(--card-background)', 
-              borderRadius: '20px',
-              whiteSpace: 'nowrap',
-              color: activeChartSection === 'banks' ? 'var(--secondary-color)' : 'var(--text-color)',
-              fontWeight: 'bold',
-              fontSize: '0.9rem',
-              border: activeChartSection === 'banks' ? 'none' : '1px solid var(--border-color)',
-              cursor: 'pointer'
-            }}
+            className={`${styles.mobileNavButton} ${activeChartSection === 'banks' ? styles.mobileNavButtonActive : styles.mobileNavButtonInactive}`}
           >
             Bancos
           </div>
           {hasExpenses && (
             <div 
               onClick={() => setActiveChartSection('expenses-trend')}
-              style={{ 
-                padding: '8px 16px', 
-                backgroundColor: activeChartSection === 'expenses-trend' ? 'var(--primary-color)' : 'var(--card-background)', 
-                borderRadius: '20px',
-                whiteSpace: 'nowrap',
-                color: activeChartSection === 'expenses-trend' ? 'var(--secondary-color)' : 'var(--text-color)',
-                fontWeight: 'bold',
-                fontSize: '0.9rem',
-                border: activeChartSection === 'expenses-trend' ? 'none' : '1px solid var(--border-color)',
-                cursor: 'pointer'
-              }}
+              className={`${styles.mobileNavButton} ${activeChartSection === 'expenses-trend' ? styles.mobileNavButtonActive : styles.mobileNavButtonInactive}`}
             >
               Tendência Despesas
             </div>
@@ -4222,17 +4080,7 @@ const MobileDashboard = () => {
           {hasIncome && (
             <div 
               onClick={() => setActiveChartSection('income-trend')}
-              style={{ 
-                padding: '8px 16px', 
-                backgroundColor: activeChartSection === 'income-trend' ? 'var(--primary-color)' : 'var(--card-background)', 
-                borderRadius: '20px',
-                whiteSpace: 'nowrap',
-                color: activeChartSection === 'income-trend' ? 'var(--secondary-color)' : 'var(--text-color)',
-                fontWeight: 'bold',
-                fontSize: '0.9rem',
-                border: activeChartSection === 'income-trend' ? 'none' : '1px solid var(--border-color)',
-                cursor: 'pointer'
-              }}
+              className={`${styles.mobileNavButton} ${activeChartSection === 'income-trend' ? styles.mobileNavButtonActive : styles.mobileNavButtonInactive}`}
             >
               Tendência Receitas
             </div>
@@ -4245,56 +4093,23 @@ const MobileDashboard = () => {
         </div>
 
         {/* Botão de ação flutuante */}
-        <div style={{
-          position: 'fixed',
-          bottom: '20px',
-          right: '20px',
-          zIndex: 999
-        }}>
+        <div className={styles.mobileFabContainer}>
           <button 
             onClick={toggleActionMenu}
-            style={{
-              width: '56px',
-              height: '56px',
-              borderRadius: '50%',
-              backgroundColor: 'var(--primary-color)',
-              color: 'var(--secondary-color)',
-              border: 'none',
-              boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '24px'
-            }}
+            className={styles.mobileFabButton}
           >
             <BsPlusLg />
           </button>
           
           {/* Menu de ações flutuante */}
           {showActionMenu && (
-            <div style={{
-              position: 'absolute',
-              bottom: '70px',
-              right: '0',
-              backgroundColor: 'var(--card-background)',
-              borderRadius: '12px',
-              boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-              padding: '8px',
-              width: '170px'
-            }}>
+            <div className={styles.mobileFabMenu}>
               <div 
                 onClick={() => {
                   navigate('/expenses/add');
                   setShowActionMenu(false);
                 }}
-                style={{
-                  padding: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  borderBottom: '1px solid var(--border-color)',
-                  color: 'var(--text-color)',
-                  cursor: 'pointer'
-                }}
+                className={styles.mobileFabMenuItem}
               >
                 <span style={{ marginRight: '8px', color: '#f44336' }}>
                   <BsPlusLg />
@@ -4306,13 +4121,7 @@ const MobileDashboard = () => {
                   navigate('/incomes/add');
                   setShowActionMenu(false);
                 }}
-                style={{
-                  padding: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  color: 'var(--text-color)',
-                  cursor: 'pointer'
-                }}
+                className={styles.mobileFabMenuItem}
               >
                 <span style={{ marginRight: '8px', color: '#4caf50' }}>
                   <BsCash />
