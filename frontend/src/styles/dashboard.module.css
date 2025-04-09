@@ -477,6 +477,23 @@
   transform: scale(0.85);
 }
 
+.categoriesPieContainer {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  position: relative !important;
+}
+
+.recharts-wrapper {
+  margin: 0 auto !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+
 /* Ajuste para o elemento pie dentro do SVG */
 .categoriesPieContainer .recharts-pie,
 .bankPieContainer .recharts-pie {

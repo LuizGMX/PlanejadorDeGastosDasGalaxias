@@ -2927,7 +2927,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className={styles.categoriesPieContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <div className={styles.categoriesPieContainer} >
           <ResponsiveContainer width="100%" height={isMobile ? 220 : 350}>
             <PieChart margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
               <defs>
