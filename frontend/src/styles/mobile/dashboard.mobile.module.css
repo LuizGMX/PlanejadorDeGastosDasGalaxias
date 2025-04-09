@@ -10,7 +10,7 @@
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
 }
 
 .mobileOverviewSection {
@@ -23,16 +23,17 @@
 .mobileCard {
   background-color: var(--card-background);
   border-radius: 12px;
-  padding: 16px;
+  padding: 14px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   width: 100%;
+  margin-bottom: 14px;
 }
 
 .mobileCardHeader {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   font-weight: 600;
   color: var(--text-color);
 }
@@ -58,6 +59,104 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Adicionar estilo aprimorado para filtro de período */
+.mobilePeriodBadge {
+  background-color: var(--card-background);
+  border-radius: 8px;
+  padding: 10px 15px;
+  margin-bottom: 10px;
+  width: 100%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.mobilePeriodLabel {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--primary-color);
+  display: block;
+}
+
+.mobilePeriodValue {
+  font-size: 1rem;
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Melhorar legibilidade dos valores */
+.mobileFinancialValue {
+  font-size: 1.1rem;
+  font-weight: 600;
+  padding: 6px 0;
+  display: block;
+  letter-spacing: 0.5px;
+}
+
+.mobileFinancialLabel {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 2px;
+}
+
+/* Melhorar formatação dos cartões de resumo */
+.mobileSummaryCard {
+  background-color: var(--card-background);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.mobileSummaryHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.mobileSummaryTitle {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-color);
+  margin: 0;
+}
+
+.mobileSummaryIcon {
+  color: var(--primary-color);
+  font-size: 16px;
+}
+
+.mobileDateDisplay {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-style: italic;
+  margin-top: 4px;
+  text-align: right;
+}
+
+/* Melhorar a navegação entre gráficos */
+.mobileNavLabel {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--text-color);
+  padding-left: 4px;
+}
+
+.mobileChartTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: var(--text-color);
+  text-align: center;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .mobileFilterSection {
@@ -209,4 +308,44 @@
   padding: 16px;
   margin-bottom: 16px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Evitar bullet points e formatações estranhas em listas */
+.mobileCard ul, 
+.mobileChartContainer ul {
+  list-style-type: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+/* Melhorar o texto nos gráficos */
+.mobileChartContainer text {
+  font-family: inherit !important;
+  fill: var(--text-color) !important;
+}
+
+/* Garantir que ícones sejam renderizados corretamente */
+.mobileSummaryIcon,
+.mobileCardIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Melhorar a aparência dos valores monetários */
+.currencyValue {
+  font-family: 'Roboto Mono', monospace;
+  letter-spacing: 0.5px;
+}
+
+/* Adicionar melhor visualização para data/período na parte superior */
+.mobileHeaderDate {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-bottom: 12px;
+  background-color: rgba(0, 0, 0, 0.1);
+  padding: 6px 10px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
 } 

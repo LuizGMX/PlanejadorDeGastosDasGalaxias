@@ -3677,11 +3677,9 @@ const MobileDashboard = () => {
   const renderChartContainer = (title, content) => {
     return (
       <div className={styles.mobileChartContainer}>
-        <div className={styles.mobileCardHeaderBordered}>
-          <h3 className={styles.mobileCardTitle}>{title}</h3>
-          <span className={styles.mobileFilterBadge}>
-            {formatCurrentDateFilter()}
-          </span>
+        <h3 className={styles.mobileChartTitle}>{title}</h3>
+        <div className={styles.mobileDateDisplay}>
+          {formatCurrentDateFilter()}
         </div>
         {content}
       </div>
@@ -3985,12 +3983,17 @@ const MobileDashboard = () => {
         {/* Greeting Section */}
         {getGreeting(auth.user?.name)}
 
+        {/* Data atual destacada */}
+        <div className={styles.mobileHeaderDate}>
+          {formatCurrentDateFilter()}
+        </div>
+
         {/* Filtros mais acessíveis */}
         <div className={styles.mobileFilterSection}>
-          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
-            <span style={{ fontWeight: 'bold', marginRight: '8px' }}>Período:</span>
-            <div className={styles.mobileFilterBadge}>
-              {getActiveFilterLabel()} <FaChevronDown style={{ marginLeft: '4px', fontSize: '0.7rem' }} />
+          <div className={styles.mobilePeriodBadge}>
+            <span className={styles.mobilePeriodLabel}>Período:</span>
+            <div className={styles.mobilePeriodValue}>
+              {getActiveFilterLabel()} <FaChevronDown style={{ fontSize: '0.7rem' }} />
             </div>
           </div>
         </div>
@@ -4000,14 +4003,14 @@ const MobileDashboard = () => {
           {/* Cards em formatação de quadro de resumo */}
           <div className={styles.mobileSummaryGrid}>
             <div className={styles.mobileMetricCard}>
-              <span className={styles.mobileMetricLabel}>Despesas</span>
-              <span className={`${styles.mobileMetricValue} ${styles.mobileMetricNegative}`}>
+              <span className={styles.mobileFinancialLabel}>Despesas</span>
+              <span className={`${styles.mobileFinancialValue} ${styles.mobileMetricNegative}`}>
                 {data && data.total_expenses ? formatCurrency(data.total_expenses) : formatCurrency(0)}
               </span>
             </div>
             <div className={styles.mobileMetricCard}>
-              <span className={styles.mobileMetricLabel}>Receitas</span>
-              <span className={`${styles.mobileMetricValue} ${styles.mobileMetricPositive}`}>
+              <span className={styles.mobileFinancialLabel}>Receitas</span>
+              <span className={`${styles.mobileFinancialValue} ${styles.mobileMetricPositive}`}>
                 {data && data.total_income ? formatCurrency(data.total_income) : formatCurrency(0)}
               </span>
             </div>
@@ -4015,14 +4018,12 @@ const MobileDashboard = () => {
 
           {/* Resumo do Orçamento - Redesenhado */}
           <div className={styles.mobileCard}>
-            <div className={styles.mobileCardHeaderBordered}>
-              <div className={styles.mobileCardTitle}>
-                <BsCash size={16} /> 
-                Resumo do Orçamento
-              </div>
-              <span className={styles.mobileFilterBadge}>
-                {formatCurrentDateFilter()}
-              </span>
+            <div className={styles.mobileSummaryHeader}>
+              <BsCash className={styles.mobileSummaryIcon} />
+              <h3 className={styles.mobileSummaryTitle}>Resumo do Orçamento</h3>
+            </div>
+            <div className={styles.mobileDateDisplay}>
+              {formatCurrentDateFilter()}
             </div>
             <div className={styles.mobileCardContent}>
               {renderBudgetChart()}
@@ -4031,11 +4032,9 @@ const MobileDashboard = () => {
 
           {/* Objetivo */}
           <div className={styles.mobileCard}>
-            <div className={styles.mobileCardHeaderBordered}>
-              <div className={styles.mobileCardTitle}>
-                <BsBullseye size={16} /> 
-                Objetivo
-              </div>
+            <div className={styles.mobileSummaryHeader}>
+              <BsBullseye className={styles.mobileSummaryIcon} />
+              <h3 className={styles.mobileSummaryTitle}>Objetivo</h3>
             </div>
             <div className={styles.mobileCardContent}>
               {renderFinancialGoalChart()}
@@ -4044,47 +4043,50 @@ const MobileDashboard = () => {
         </div>
 
         {/* Navegação de Gráficos */}
-        <div className={styles.mobileChartNavigation}>
-          <div 
-            onClick={() => setActiveChartSection('income-expenses')}
-            className={`${styles.mobileNavButton} ${activeChartSection === 'income-expenses' ? styles.mobileNavButtonActive : styles.mobileNavButtonInactive}`}
-          >
-            Despesas vs Receitas
-          </div>
-          <div 
-            onClick={() => setActiveChartSection('expenses-categories')}
-            className={`${styles.mobileNavButton} ${activeChartSection === 'expenses-categories' ? styles.mobileNavButtonActive : styles.mobileNavButtonInactive}`}
-          >
-            Categorias
-          </div>
-          <div 
-            onClick={() => setActiveChartSection('income-categories')}
-            className={`${styles.mobileNavButton} ${activeChartSection === 'income-categories' ? styles.mobileNavButtonActive : styles.mobileNavButtonInactive}`}
-          >
-            Fontes de Renda
-          </div>
-          <div 
-            onClick={() => setActiveChartSection('banks')}
-            className={`${styles.mobileNavButton} ${activeChartSection === 'banks' ? styles.mobileNavButtonActive : styles.mobileNavButtonInactive}`}
-          >
-            Bancos
-          </div>
-          {hasExpenses && (
+        <div>
+          <div className={styles.mobileNavLabel}>Visualizações:</div>
+          <div className={styles.mobileChartNavigation}>
             <div 
-              onClick={() => setActiveChartSection('expenses-trend')}
-              className={`${styles.mobileNavButton} ${activeChartSection === 'expenses-trend' ? styles.mobileNavButtonActive : styles.mobileNavButtonInactive}`}
+              onClick={() => setActiveChartSection('income-expenses')}
+              className={`${styles.mobileNavButton} ${activeChartSection === 'income-expenses' ? styles.mobileNavButtonActive : styles.mobileNavButtonInactive}`}
             >
-              Tendência Despesas
+              Despesas vs Receitas
             </div>
-          )}
-          {hasIncome && (
             <div 
-              onClick={() => setActiveChartSection('income-trend')}
-              className={`${styles.mobileNavButton} ${activeChartSection === 'income-trend' ? styles.mobileNavButtonActive : styles.mobileNavButtonInactive}`}
+              onClick={() => setActiveChartSection('expenses-categories')}
+              className={`${styles.mobileNavButton} ${activeChartSection === 'expenses-categories' ? styles.mobileNavButtonActive : styles.mobileNavButtonInactive}`}
             >
-              Tendência Receitas
+              Categorias
             </div>
-          )}
+            <div 
+              onClick={() => setActiveChartSection('income-categories')}
+              className={`${styles.mobileNavButton} ${activeChartSection === 'income-categories' ? styles.mobileNavButtonActive : styles.mobileNavButtonInactive}`}
+            >
+              Fontes de Renda
+            </div>
+            <div 
+              onClick={() => setActiveChartSection('banks')}
+              className={`${styles.mobileNavButton} ${activeChartSection === 'banks' ? styles.mobileNavButtonActive : styles.mobileNavButtonInactive}`}
+            >
+              Bancos
+            </div>
+            {hasExpenses && (
+              <div 
+                onClick={() => setActiveChartSection('expenses-trend')}
+                className={`${styles.mobileNavButton} ${activeChartSection === 'expenses-trend' ? styles.mobileNavButtonActive : styles.mobileNavButtonInactive}`}
+              >
+                Tendência Despesas
+              </div>
+            )}
+            {hasIncome && (
+              <div 
+                onClick={() => setActiveChartSection('income-trend')}
+                className={`${styles.mobileNavButton} ${activeChartSection === 'income-trend' ? styles.mobileNavButtonActive : styles.mobileNavButtonInactive}`}
+              >
+                Tendência Receitas
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Charts Section - Melhor organização */}
