@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useContext, useRef } from 'react';
-import { AuthContext } from '../../App';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AuthContext } from '../../contexts/AuthContext';
 import {  
   Line,
   PieChart,
@@ -18,8 +18,8 @@ import {
   AreaChart,
   ReferenceLine  
 } from 'recharts';
-import styles from '../../styles/mobile/dashboard.module.css';
-import { FaChartLine, FaChevronDown, FaTarget} from 'react-icons/fa';
+import styles from '../../styles/dashboard.mobile.module.css';
+import { FaChartLine, FaChevronDown} from 'react-icons/fa';
 import DateRangePicker from '../shared/DateRangePicker';
 
 import { 
@@ -27,7 +27,7 @@ import {
   BsCash,  
   BsPencil, 
   BsEye,
-  BsTarget
+  BsBullseye
 } from 'react-icons/bs';
 
 const motivationalPhrases = [
@@ -3992,7 +3992,7 @@ const MobileDashboard = () => {
           {/* Objetivo */}
           <div className={styles.mobileCard}>
             <div className={styles.mobileCardHeader}>
-              <BsTarget size={16} /> Objetivo
+              <BsBullseye size={16} /> Objetivo
             </div>
             <div className={styles.mobileCardContent}>
               {renderFinancialGoalChart()}

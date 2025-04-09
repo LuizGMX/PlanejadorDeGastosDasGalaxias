@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import Login from './components/auth/Login';
-import Dashboard from './components/dashboard/Dashboard';
+import DashboardWrapper from './components/dashboard/DashboardWrapper';
 import ExpensesWrapper from './components/expenses/ExpensesWrapper';
 import AddExpenseWrapper from './components/expenses/AddExpenseWrapper';
 import EditExpense from './components/expenses/EditExpense';
@@ -98,11 +98,7 @@ function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/" element={<Navigate to="/dashboard" />} />
-            <Route path="/dashboard" element={
-              <Layout>
-                <Dashboard />
-              </Layout>
-            } />
+            <Route path="/dashboard" element={<DashboardWrapper />} />
             <Route path="/expenses" element={
               <Layout>
                 <ExpensesWrapper />
