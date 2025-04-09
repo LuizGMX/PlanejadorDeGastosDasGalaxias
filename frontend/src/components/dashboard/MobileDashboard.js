@@ -1689,72 +1689,74 @@ const MobileDashboard = () => {
           </div>
         </div>
         <div className={styles.incomeVsExpensesContainer}>
-          <ResponsiveContainer width="100%" height={isMobile ? 220 : 280}>
-            <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
-              <defs>
-                <filter id="income-vs-expense-shadow" x="-20%" y="-20%" width="140%" height="140%">
-                  <feDropShadow dx="0" dy="0" stdDeviation="3" floodOpacity="0.3" />
-                </filter>
-              </defs>
-              <Pie
-                data={chartData}
-                      dataKey="value"
-                      nameKey="category"
-                      cx="50%"
-                      cy="50%"
-                outerRadius={isMobile ? 80 : 100}
-                innerRadius={0}
-                      startAngle={90}
-                      endAngle={-270}
-                filter="url(#income-vs-expense-shadow)"
-                animationDuration={800}
-                animationBegin={200}
-                animationEasing="ease-out"
-                label={incomePieLabel}
-                labelLine={false}
-              >
-                {chartData.map((entry, index) => (
-                  <Cell 
-                    key={`cell-${index}`} 
-                    fill={entry.color} 
-                    stroke="#ffffff" 
-                    strokeWidth={2} 
-                  />
-                ))}
-                    </Pie>
-                    <Tooltip
-                formatter={(value) => formatCurrency(value)}
-                      contentStyle={{
-                        backgroundColor: 'var(--card-background)',
-                        border: '1px solid var(--border-color)',
-                        color: 'var(--text-color)',
-                        padding: '10px',
-                  borderRadius: '8px',
-                  boxShadow: '0 4px 8px rgba(0,0,0,0.15)'
-                      }}
+          <div className={styles.pieChartContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <ResponsiveContainer width="100%" height={220}>
+              <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
+                <defs>
+                  <filter id="income-vs-expense-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="0" stdDeviation="3" floodOpacity="0.3" />
+                  </filter>
+                </defs>
+                <Pie
+                  data={chartData}
+                        dataKey="value"
+                        nameKey="category"
+                        cx="50%"
+                        cy="50%"
+                  outerRadius={isMobile ? 80 : 100}
+                  innerRadius={0}
+                        startAngle={90}
+                        endAngle={-270}
+                  filter="url(#income-vs-expense-shadow)"
+                  animationDuration={800}
+                  animationBegin={200}
+                  animationEasing="ease-out"
+                  label={incomePieLabel}
+                  labelLine={false}
+                >
+                  {chartData.map((entry, index) => (
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={entry.color} 
+                      stroke="#ffffff" 
+                      strokeWidth={2} 
                     />
-                    <Legend
-                layout={isMobile ? "horizontal" : "vertical"}
-                      align="center"
-                verticalAlign="bottom"
-                iconType="circle"
-                iconSize={isMobile ? 8 : 10}
-                formatter={(value, entry) => (
-                  <span style={{ 
-                    color: 'var(--text-color)', 
-                    fontSize: isMobile ? '10px' : '12px', 
-                    fontWeight: 'bold'
-                  }}>
-                    {value}{isMobile ? '' : `: ${formatCurrency(entry.payload.value)}`} ({(entry.payload.percent * 100).toFixed(0)}%)
-                  </span>
-                )}
-                wrapperStyle={{
-                  paddingTop: isMobile ? '8px' : '10px',
-                  fontSize: isMobile ? '10px' : '12px'
-                }}
-                    />
-                  </PieChart>
-          </ResponsiveContainer>
+                  ))}
+                      </Pie>
+                      <Tooltip
+                  formatter={(value) => formatCurrency(value)}
+                        contentStyle={{
+                          backgroundColor: 'var(--card-background)',
+                          border: '1px solid var(--border-color)',
+                          color: 'var(--text-color)',
+                          padding: '10px',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 8px rgba(0,0,0,0.15)'
+                        }}
+                      />
+                      <Legend
+                  layout={isMobile ? "horizontal" : "vertical"}
+                        align="center"
+                  verticalAlign="bottom"
+                  iconType="circle"
+                  iconSize={isMobile ? 8 : 10}
+                  formatter={(value, entry) => (
+                    <span style={{ 
+                      color: 'var(--text-color)', 
+                      fontSize: isMobile ? '10px' : '12px', 
+                      fontWeight: 'bold'
+                    }}>
+                      {value}{isMobile ? '' : `: ${formatCurrency(entry.payload.value)}`} ({(entry.payload.percent * 100).toFixed(0)}%)
+                    </span>
+                  )}
+                  wrapperStyle={{
+                    paddingTop: isMobile ? '8px' : '10px',
+                    fontSize: isMobile ? '10px' : '12px'
+                  }}
+                      />
+                    </PieChart>
+            </ResponsiveContainer>
+          </div>
         </div>
         
         <div className={styles.incomeVsExpensesSummary}>
@@ -1844,7 +1846,7 @@ const MobileDashboard = () => {
             </span>
           </div>
         </div>
-        <div className={styles.categoriesPieContainer}>
+        <div className={styles.categoriesPieContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <ResponsiveContainer width="100%" height={220}>
             <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
               <defs>
@@ -2733,9 +2735,9 @@ const MobileDashboard = () => {
           </div>
         </div>
         
-        <div className={styles.categoriesPieContainer}>
-          <ResponsiveContainer width="100%" height={isMobile ? 220 : 350}>
-            <PieChart margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
+        <div className={styles.categoriesPieContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <ResponsiveContainer width="100%" height={220}>
+            <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
               <defs>
                 {categoryData.map((entry, index) => (
                   <filter key={`shadow-${index}`} id={`shadow-cat-${index}`} x="-20%" y="-20%" width="140%" height="140%">
@@ -2748,8 +2750,8 @@ const MobileDashboard = () => {
                       cx="50%"
                       cy="50%"
                 labelLine={false}
-                outerRadius={isMobile ? 70 : 130}
-                innerRadius={isMobile ? 30 : 60}
+                outerRadius={70}
+                innerRadius={30}
                 paddingAngle={2}
                 fill="#8884d8"
                 dataKey="amount"
@@ -2772,20 +2774,20 @@ const MobileDashboard = () => {
                     </Pie>
               <Tooltip content={<CustomPieTooltip />} />
               <Legend 
-                layout={isMobile ? "horizontal" : "vertical"}
-                align={isMobile ? "center" : "right"}
-                verticalAlign={isMobile ? "bottom" : "middle"}
+                layout="horizontal"
+                align="center"
+                verticalAlign="bottom"
                 iconType="circle"
-                iconSize={isMobile ? 8 : 10}
+                iconSize={8}
                 formatter={(value, entry) => (
                   <span style={{ 
                     color: 'var(--text-color)', 
-                    fontSize: isMobile ? '10px' : '12px', 
+                    fontSize: '10px', 
                     fontWeight: entry.payload.name === categoryData[0]?.name ? 'bold' : 'normal',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    maxWidth: isMobile ? '60px' : '150px',
+                    maxWidth: '60px',
                     display: 'inline-block'
                   }}>
                     {value.substring(0, 10) + (value.length > 10 ? '...' : '')}
@@ -2886,9 +2888,9 @@ const MobileDashboard = () => {
           </div>
         </div>
 
-        <div className={styles.categoriesPieContainer}>
-          <ResponsiveContainer width="100%" height={isMobile ? 220 : 350}>
-            <PieChart margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
+        <div className={styles.categoriesPieContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <ResponsiveContainer width="100%" height={220}>
+            <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
               <defs>
                 {incomeCategoryData.map((entry, index) => (
                   <filter key={`shadow-${index}`} id={`shadow-income-${index}`} x="-20%" y="-20%" width="140%" height="140%">
@@ -2901,8 +2903,8 @@ const MobileDashboard = () => {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                outerRadius={isMobile ? 70 : 130}
-                innerRadius={isMobile ? 30 : 60}
+                outerRadius={70}
+                innerRadius={30}
                 paddingAngle={2}
                 fill="#8884d8"
                 dataKey="amount"
@@ -2925,20 +2927,20 @@ const MobileDashboard = () => {
               </Pie>
               <Tooltip content={<CustomPieTooltip />} />
               <Legend 
-                layout={isMobile ? "horizontal" : "vertical"}
-                align={isMobile ? "center" : "right"}
-                verticalAlign={isMobile ? "bottom" : "middle"}
+                layout="horizontal"
+                align="center"
+                verticalAlign="bottom"
                 iconType="circle"
-                iconSize={isMobile ? 8 : 10}
+                iconSize={8}
                 formatter={(value, entry) => (
                   <span style={{ 
                   color: 'var(--text-color)',
-                    fontSize: isMobile ? '10px' : '12px', 
+                    fontSize: '10px', 
                     fontWeight: entry.payload.category === incomeCategoryData[0]?.category ? 'bold' : 'normal',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    maxWidth: isMobile ? '60px' : '110px',
+                    maxWidth: '60px',
                     display: 'inline-block'
                   }}>
                     {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
@@ -2946,15 +2948,15 @@ const MobileDashboard = () => {
                   </span>
                 )}
                 wrapperStyle={{ 
-                  paddingLeft: isMobile ? '0px' : '10px', 
-                  fontSize: isMobile ? '10px' : '12px',
+                  paddingLeft: '0px', 
+                  fontSize: '10px',
                   overflowY: 'auto', 
-                  maxHeight: isMobile ? '80px' : '180px',
+                  maxHeight: '80px',
                   width: '100%',
-                  marginTop: isMobile ? '10px' : '0',
-                  justifyContent: isMobile ? 'center' : 'flex-start',
-                  flexWrap: isMobile ? 'wrap' : 'nowrap',
-                  gap: isMobile ? '5px' : '0'
+                  marginTop: '10px',
+                  justifyContent: 'center',
+                  flexWrap: 'wrap',
+                  gap: '5px'
                 }}
               />
             </PieChart>
@@ -3068,9 +3070,9 @@ const MobileDashboard = () => {
             </span>
           </div>
         </div>
-        <div className={styles.bankPieContainer}>
-          <ResponsiveContainer width="100%" height={isMobile ? 220 : 350}>
-            <PieChart margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
+        <div className={styles.bankPieContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <ResponsiveContainer width="100%" height={220}>
+            <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
               <defs>
                 {bankData.map((entry, index) => (
                   <filter key={`shadow-${index}`} id={`bank-shadow-${index}`} x="-20%" y="-20%" width="140%" height="140%">
@@ -3083,8 +3085,8 @@ const MobileDashboard = () => {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                outerRadius={isMobile ? 70 : 130}
-                innerRadius={isMobile ? 30 : 60}
+                outerRadius={70}
+                innerRadius={30}
                 paddingAngle={2}
                 fill="#8884d8"
                 dataKey="value"
@@ -3106,20 +3108,20 @@ const MobileDashboard = () => {
               </Pie>
               <Tooltip content={<CustomPieTooltip />} />
               <Legend 
-                layout={isMobile ? "horizontal" : "vertical"}
-                align={isMobile ? "center" : "right"}
-                verticalAlign={isMobile ? "bottom" : "middle"}
+                layout="horizontal"
+                align="center"
+                verticalAlign="bottom"
                 iconType="circle"
-                iconSize={isMobile ? 8 : 10}
+                iconSize={8}
                 formatter={(value, entry) => (
                   <span style={{ 
                   color: 'var(--text-color)',
-                    fontSize: isMobile ? '10px' : '12px', 
+                    fontSize: '10px', 
                     fontWeight: entry.payload.name === primaryBank.name ? 'bold' : 'normal',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    maxWidth: isMobile ? '60px' : '110px',
+                    maxWidth: '60px',
                     display: 'inline-block'
                   }}>
                     {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
@@ -3127,15 +3129,15 @@ const MobileDashboard = () => {
                   </span>
                 )}
                 wrapperStyle={{ 
-                  paddingLeft: isMobile ? '0px' : '10px', 
-                  fontSize: isMobile ? '10px' : '12px',
+                  paddingLeft: '0px', 
+                  fontSize: '10px',
                   overflowY: 'auto', 
-                  maxHeight: isMobile ? '80px' : '180px',
+                  maxHeight: '80px',
                   width: '100%',
-                  marginTop: isMobile ? '10px' : '0',
-                  justifyContent: isMobile ? 'center' : 'flex-start',
-                  flexWrap: isMobile ? 'wrap' : 'nowrap',
-                  gap: isMobile ? '5px' : '0'
+                  marginTop: '10px',
+                  justifyContent: 'center',
+                  flexWrap: 'wrap',
+                  gap: '5px'
                 }}
               />
             </PieChart>

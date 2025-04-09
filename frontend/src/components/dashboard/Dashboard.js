@@ -1883,7 +1883,7 @@ const Dashboard = () => {
             </span>
           </div>
         </div>
-        <div className={styles.categoriesPieContainer}>
+        <div className={styles.categoriesPieContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <ResponsiveContainer width="100%" height={isMobile ? 220 : 350}>
             <PieChart margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
               <defs>
@@ -2773,7 +2773,7 @@ const Dashboard = () => {
           </div>
         </div>
         
-        <div className={styles.categoriesPieContainer}>
+        <div className={styles.categoriesPieContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <ResponsiveContainer width="100%" height={isMobile ? 220 : 350}>
             <PieChart margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
               <defs>
@@ -2927,7 +2927,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className={styles.categoriesPieContainer}>
+        <div className={styles.categoriesPieContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <ResponsiveContainer width="100%" height={isMobile ? 220 : 350}>
             <PieChart margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
               <defs>
@@ -3109,7 +3109,7 @@ const Dashboard = () => {
             </span>
           </div>
         </div>
-        <div className={styles.bankPieContainer}>
+        <div className={styles.bankPieContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <ResponsiveContainer width="100%" height={isMobile ? 220 : 350}>
             <PieChart margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
               <defs>
@@ -4031,6 +4031,7 @@ const Dashboard = () => {
             <span className={styles.tabIcon}>📊</span>
             Visão Geral
           </button>
+          {/* Aba Transações oculta conforme solicitado 
           <button
             className={`${styles.navTab} ${activeSection === 'transactions' ? styles.activeTab : ''}`}
             onClick={() => setActiveSection('transactions')}
@@ -4038,6 +4039,7 @@ const Dashboard = () => {
             <span className={styles.tabIcon}>💸</span>
             Transações
           </button>
+          */}
         </div>
       </div>
 
