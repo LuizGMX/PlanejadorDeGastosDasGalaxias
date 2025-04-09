@@ -3661,42 +3661,31 @@ const MobileDashboard = () => {
   };
 
   const renderOverviewCharts = () => (
-    <div className={styles.overviewSection}>
-      {/* Resumo do Orçamento */}
-      <div className={styles.fullWidthCard}>
-        {renderBudgetChart()}
+    <div className={styles.chartsGrid}>
+      {/* Main Charts */}
+      <div className={styles.chartContainer}>
+        {renderExpensesTrend()}
       </div>
-
-      {/* Objetivo */}
-      <div className={styles.fullWidthCard}>
-        {renderFinancialGoalChart()}
+      
+      <div className={styles.chartContainer}>
+        {renderIncomeTrend()}
       </div>
-
-      {/* Outros gráficos */}
-      <div className={styles.chartsGrid}>
-        <div className={styles.chartContainer}>
-          {renderExpensesTrend()}
-        </div>
-        
-        <div className={styles.chartContainer}>
-          {renderIncomeTrend()}
-        </div>
-        
-        <div className={styles.chartContainer}>
-          {renderExpensesByCategoryChart()}
-        </div>
-        
-        <div className={styles.chartContainer}>
-          {renderIncomeCategoriesChart()}
-        </div>
-        
-        <div className={styles.chartContainer}>
-          {renderBanksChart()}
-        </div>
-        
-        <div className={styles.chartContainer}>
-          {renderIncomeVsExpensesChart()}
-        </div>
+      
+      {/* Categories Charts */}
+      <div className={styles.chartContainer}>
+        {renderExpensesByCategoryChart()}
+      </div>
+      
+      <div className={styles.chartContainer}>
+        {renderIncomeCategoriesChart()}
+      </div>
+      
+      <div className={styles.chartContainer}>
+        {renderBanksChart()}
+      </div>
+      
+      <div className={styles.chartContainer}>
+        {renderIncomeVsExpensesChart()}
       </div>
     </div>
   );
