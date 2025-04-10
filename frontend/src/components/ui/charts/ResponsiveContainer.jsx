@@ -1,5 +1,7 @@
+"use client"
+
 import React, { useEffect, useRef, useState } from 'react';
-import { cn } from '../../lib/utils';
+import { cn } from '@/lib/utils';
 
 const ResponsiveContainer = ({
   width,
@@ -37,11 +39,9 @@ const ResponsiveContainer = ({
   return (
     <div
       ref={containerRef}
-      className={cn('responsive-container', className)}
+      className={cn('relative w-full', className)}
       style={{
-        width: '100%',
         height: dimensions.height || height,
-        position: 'relative',
       }}
       {...props}
     >

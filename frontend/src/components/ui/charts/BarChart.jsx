@@ -1,143 +1,64 @@
+"use client"
+
 import React from 'react';
-import * as d3 from 'd3';
-import { Card } from "@/components/ui/card";
+import { Bar } from '@visx/shape';
+import { Group } from '@visx/group';
+import { scaleBand, scaleLinear } from '@visx/scale';
+import { AxisLeft, AxisBottom } from '@visx/axis';
+import { GridRows, GridColumns } from '@visx/grid';
+import { useTooltip, Tooltip } from '@visx/tooltip';
+import { localPoint } from '@visx/event';
+import { cn } from '../../../lib/utils';
+import { Card } from "../card";
 
 const BarChart = ({
   data,
   width = 600,
   height = 400,
-  margin = { top: 20, right: 30, bottom: 30, left: 60 },
+  margin = { top: 20, right: 20, bottom: 50, left: 50 },
   xAccessor = d => d.x,
   yAccessor = d => d.y,
-  xTickFormat = d => d,
-  yTickFormat = d => d,
+  fill = "var(--primary)",
+  className,
   title,
   subtitle,
   showTooltip = true,
   showGrid = true,
   showLegend = true,
   colors = ['#2196F3'],
-  className = '',
   isMobile = false,
   onBarClick,
+  ...props
 }) => {
-  const svgRef = React.useRef(null);
-  const tooltipRef = React.useRef(null);
-  const [activeIndex, setActiveIndex] = React.useState(null);
+  const { showTooltip: visxShowTooltip, hideTooltip, tooltipData, tooltipLeft, tooltipTop } = useTooltip();
 
-  React.useEffect(() => {
-    if (!data || !data.length) return;
+  // Dimensions
+  const innerWidth = width - margin.left - margin.right;
+  const innerHeight = height - margin.top - margin.bottom;
 
-    const svg = d3.select(svgRef.current);
-    svg.selectAll("*").remove();
+  // Scales
+  const xScale = scaleBand()
+    .range([0, innerWidth])
+    .domain(data.map(xAccessor))
+    .padding(0.2);
 
-    const chartWidth = width - margin.left - margin.right;
-    const chartHeight = height - margin.top - margin.bottom;
+  const yScale = scaleLinear()
+    .range([innerHeight, 0])
+    .domain([0, Math.max(...data.map(yAccessor))])
+    .nice();
 
-    const xScale = d3.scaleBand()
-      .domain(data.map(xAccessor))
-      .range([0, chartWidth])
-      .padding(0.2);
-
-    const yScale = d3.scaleLinear()
-      .domain([0, d3.max(data, yAccessor) * 1.1])
-      .range([chartHeight, 0]);
-
-    const g = svg
-      .append("g")
-      .attr("transform", `translate(${margin.left},${margin.top})`);
-
-    // Add grid
-    if (showGrid) {
-      g.append("g")
-        .attr("class", "grid")
-        .attr("transform", `translate(0,${chartHeight})`)
-        .call(
-          d3.axisBottom(xScale)
-            .tickSize(-chartHeight)
-            .tickFormat("")
-        )
-        .style("stroke", "var(--border)")
-        .style("stroke-opacity", 0.2);
-
-      g.append("g")
-        .attr("class", "grid")
-        .call(
-          d3.axisLeft(yScale)
-            .tickSize(-chartWidth)
-            .tickFormat("")
-        )
-        .style("stroke", "var(--border)")
-        .style("stroke-opacity", 0.2);
-    }
-
-    // Add axes
-    g.append("g")
-      .attr("transform", `translate(0,${chartHeight})`)
-      .call(d3.axisBottom(xScale).tickFormat(xTickFormat))
-      .style("color", "var(--text-color)");
-
-    g.append("g")
-      .call(d3.axisLeft(yScale).tickFormat(yTickFormat))
-      .style("color", "var(--text-color)");
-
-    // Add bars
-    const bars = g.selectAll(".bar")
-      .data(data)
-      .enter()
-      .append("rect")
-      .attr("class", "bar")
-      .attr("x", d => xScale(xAccessor(d)))
-      .attr("y", d => yScale(yAccessor(d)))
-      .attr("width", xScale.bandwidth())
-      .attr("height", d => chartHeight - yScale(yAccessor(d)))
-      .style("fill", colors[0])
-      .style("cursor", "pointer")
-      .on("mouseover", function(event, d) {
-        d3.select(this)
-          .transition()
-          .duration(200)
-          .style("opacity", 0.8);
-
-        if (showTooltip) {
-          const tooltip = d3.select(tooltipRef.current);
-          tooltip
-            .style("opacity", 1)
-            .html(`
-              <div class="bg-background p-2 rounded-lg shadow-lg border border-border">
-                <div class="font-semibold">${xTickFormat(xAccessor(d))}</div>
-                <div>${yTickFormat(yAccessor(d))}</div>
-              </div>
-            `)
-            .style("left", (event.pageX + 10) + "px")
-            .style("top", (event.pageY - 10) + "px");
-        }
-
-        setActiveIndex(data.indexOf(d));
-      })
-      .on("mouseout", function() {
-        d3.select(this)
-          .transition()
-          .duration(200)
-          .style("opacity", 1);
-
-        if (showTooltip) {
-          d3.select(tooltipRef.current)
-            .style("opacity", 0);
-        }
-
-        setActiveIndex(null);
-      })
-      .on("click", function(event, d) {
-        if (onBarClick) {
-          onBarClick(d, data.indexOf(d));
-        }
-      });
-
-  }, [data, width, height, margin, xAccessor, yAccessor, xTickFormat, yTickFormat, colors, showGrid, showTooltip]);
+  // Tooltip handler
+  const handleTooltip = (event, bar) => {
+    const { x, y } = localPoint(event) || { x: 0, y: 0 };
+    visxShowTooltip({
+      tooltipData: bar,
+      tooltipLeft: x,
+      tooltipTop: y,
+    });
+  };
 
   return (
-    <Card className={`w-full p-4 ${className}`}>
+    <Card className={cn('relative', className)} {...props}>
       {title && (
         <div className="mb-4">
           <h3 className="text-lg font-semibold">{title}</h3>
@@ -145,20 +66,85 @@ const BarChart = ({
         </div>
       )}
       <div className="relative">
-        <svg
-          ref={svgRef}
-          width={width}
-          height={height}
-          className="w-full h-full"
-          style={{ maxHeight: height }}
-        />
-        <div
-          ref={tooltipRef}
-          className="absolute pointer-events-none opacity-0 z-50"
-          style={{
-            transition: "opacity 0.2s ease"
-          }}
-        />
+        <svg width={width} height={height}>
+          <Group left={margin.left} top={margin.top}>
+            <GridRows
+              scale={yScale}
+              width={innerWidth}
+              height={innerHeight}
+              stroke="#e0e0e0"
+              strokeOpacity={0.2}
+            />
+            <GridColumns
+              scale={xScale}
+              width={innerWidth}
+              height={innerHeight}
+              stroke="#e0e0e0"
+              strokeOpacity={0.2}
+            />
+            <AxisBottom
+              scale={xScale}
+              top={innerHeight}
+              stroke="var(--border)"
+              tickStroke="var(--border)"
+              tickLabelProps={{
+                fill: 'var(--foreground)',
+                fontSize: 11,
+                textAnchor: 'middle',
+              }}
+            />
+            <AxisLeft
+              scale={yScale}
+              stroke="var(--border)"
+              tickStroke="var(--border)"
+              tickLabelProps={{
+                fill: 'var(--foreground)',
+                fontSize: 11,
+                textAnchor: 'end',
+                dx: -4,
+                dy: 4,
+              }}
+            />
+            {data.map((d, i) => {
+              const barHeight = innerHeight - yScale(yAccessor(d));
+              const barX = xScale(xAccessor(d));
+              const barY = innerHeight - barHeight;
+
+              return (
+                <Bar
+                  key={`bar-${i}`}
+                  x={barX}
+                  y={barY}
+                  width={xScale.bandwidth()}
+                  height={barHeight}
+                  fill={fill}
+                  onMouseMove={(e) => handleTooltip(e, d)}
+                  onMouseLeave={hideTooltip}
+                />
+              );
+            })}
+          </Group>
+        </svg>
+        {tooltipData && (
+          <Tooltip
+            top={tooltipTop}
+            left={tooltipLeft}
+            style={{
+              backgroundColor: 'white',
+              color: 'black',
+              padding: '0.5rem',
+              borderRadius: '0.25rem',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+            }}
+          >
+            <div>
+              <strong>Label:</strong> {xAccessor(tooltipData)}
+            </div>
+            <div>
+              <strong>Valor:</strong> {yAccessor(tooltipData)}
+            </div>
+          </Tooltip>
+        )}
       </div>
     </Card>
   );
