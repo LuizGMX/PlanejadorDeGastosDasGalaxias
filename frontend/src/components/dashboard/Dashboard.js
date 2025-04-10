@@ -1441,7 +1441,7 @@ const Dashboard = () => {
               <div className={styles.timelineBar}>
                 <div 
                   className={`${styles.timelineProgress} ${!goal.is_achievable ? styles.timelineWarning : ''}`}
-                  style={{ width: `${Math.min((goal.months_remaining / goal.months_needed_with_current_savings) * 100, 100)}%` }}
+                  style={{ '--progress-width': `${Math.min((goal.months_remaining / goal.months_needed_with_current_savings) * 100, 100)}%` }}
                 ></div>
               </div>
               <div className={styles.timelineEnd}>
@@ -1454,7 +1454,7 @@ const Dashboard = () => {
           </div>
           
           <div className={styles.projectionData}>
-            <ResponsiveContainer width="100%" height={120}>
+            <ResponsiveContainer className={styles.projectionDataBarWidth}>
               <BarChart
                 data={chartData}
                 layout="vertical"
@@ -1474,10 +1474,7 @@ const Dashboard = () => {
                 />
                 <Tooltip 
                   formatter={(value) => [formatCurrency(value), '']}
-                  contentStyle={{
-                    backgroundColor: 'var(--card-background)',
-                    border: '1px solid var(--border-color)',
-                  }}
+                  contentStyle={styles.tooltipStyle}
                 />
                 <Bar dataKey="economia" stackId="a" fill="var(--success-color)" name="Economizado" />
                 <Bar dataKey="projecao" stackId="a" fill="#2196F3" name="Projeção Futura" />
@@ -1487,15 +1484,15 @@ const Dashboard = () => {
             
             <div className={styles.projectionLegend}>
               <div className={styles.legendItem}>
-                <div className={styles.legendColor} style={{ backgroundColor: 'var(--success-color)' }}></div>
+                <div className={`${styles.legendColor} ${styles.legendColorSuccess}`}></div>
                 <div className={styles.legendLabel}>Economizado</div>
               </div>
               <div className={styles.legendItem}>
-                <div className={styles.legendColor} style={{ backgroundColor: '#2196F3' }}></div>
+                <div className={`${styles.legendColor} ${styles.legendColorProjecao}`}></div>
                 <div className={styles.legendLabel}>Projeção Futura</div>
               </div>
               <div className={styles.legendItem}>
-                <div className={styles.legendColor} style={{ backgroundColor: 'var(--error-color)' }}></div>
+                <div className={`${styles.legendColor} ${styles.legendColorError}`}></div>
                 <div className={styles.legendLabel}>Faltante</div>
               </div>
             </div>
@@ -1624,12 +1621,12 @@ const Dashboard = () => {
             </div>
             <div className={styles.budgetProgressBar}>
               <div 
-                className={`${styles.budgetProgress} ${styles[statusColor]}`} 
-                style={{ width: `${Math.min(spentPercentage, 100)}%` }}
+                className={`${styles.budgetProgress} ${styles[statusColor]} ${styles.budgetProgressStyle} ${styles.widthProgress}`} 
+                style={{ '--progress-width': `${Math.min(spentPercentage, 100)}%` }}
               />
               <div 
-                className={styles.idealMarker}
-                style={{ left: `${idealSpentPercentage}%` }}
+                className={`${styles.idealMarker} ${styles.idealMarkerStyle} ${styles.progressLeft}`}
+                style={{ '--progress-left': `${idealSpentPercentage}%` }}
                 title={`Ideal: ${idealSpentPercentage.toFixed(1)}%`}
               />
             </div>

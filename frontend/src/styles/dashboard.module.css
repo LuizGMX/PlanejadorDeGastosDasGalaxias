@@ -3295,3 +3295,51 @@ input:checked + .toggleSlider:before {
     width: 100%;
   }
 }
+
+/* Novas classes para remover estilos inline */
+.projectionDataBarWidth {
+  width: 100%;
+  height: 120px;
+}
+
+.legendColorSuccess {
+  background-color: var(--success-color);
+}
+
+.legendColorProjecao {
+  background-color: #2196F3;
+}
+
+.legendColorError {
+  background-color: var(--error-color);
+}
+
+.tooltipStyle {
+  background-color: var(--card-background);
+  border: 1px solid var(--border-color);
+}
+
+.budgetProgressStyle {
+  height: 100%;
+  transition: width 0.5s ease-in-out;
+}
+
+.idealMarkerStyle {
+  position: absolute;
+  height: 100%;
+  width: 2px;
+  background-color: var(--text-secondary);
+  z-index: 2;
+}
+
+.widthProgress {
+  width: var(--progress-width, 0%);
+}
+
+.progressLeft {
+  left: var(--progress-left, 0%);
+}
+
+.timelineProgress {
+  width: var(--progress-width, 0%);
+}
