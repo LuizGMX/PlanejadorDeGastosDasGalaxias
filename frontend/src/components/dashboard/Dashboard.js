@@ -257,16 +257,16 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
         >
           <defs>
             <linearGradient id="colorGanhos" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="var(--success-color)" stopOpacity={0.8}/>
-              <stop offset="95%" stopColor="var(--success-color)" stopOpacity={0}/>
+              <stop offset="5%" stopColor="var(--success-color)" stopOpacity={1}/>
+              <stop offset="95%" stopColor="var(--success-color)" stopOpacity={1}/>
             </linearGradient>
             <linearGradient id="colorDespesas" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="var(--error-color)" stopOpacity={0.8}/>
-              <stop offset="95%" stopColor="var(--error-color)" stopOpacity={0}/>
+              <stop offset="5%" stopColor="var(--error-color)" stopOpacity={1}/>
+              <stop offset="95%" stopColor="var(--error-color)" stopOpacity={1}/>
             </linearGradient>
             <linearGradient id="colorSaldo" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#1E90FF" stopOpacity={0.8}/>
-              <stop offset="95%" stopColor="#1E90FF" stopOpacity={0}/>
+              <stop offset="5%" stopColor="#1E90FF" stopOpacity={1}/>
+              <stop offset="95%" stopColor="#1E90FF" stopOpacity={1}/>
             </linearGradient>
           </defs>
           
@@ -331,7 +331,7 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
             dataKey="receitas"
             stroke="var(--success-color)"
             fillOpacity={1}
-            fill="url(#colorGanhos)"
+            fill="var(--success-color)"
             strokeWidth={2}
           />
           <Area
@@ -339,7 +339,7 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
             dataKey="despesas"
             stroke="var(--error-color)"
             fillOpacity={1}
-            fill="url(#colorDespesas)"
+            fill="var(--error-color)"
             strokeWidth={2}
           />
           <Line
@@ -1883,7 +1883,7 @@ const Dashboard = () => {
             </span>
           </div>
         </div>
-        <div className={styles.categoriesPieContainer}>
+        <div className={styles.categoriesPieContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <ResponsiveContainer width="100%" height={isMobile ? 220 : 350}>
             <PieChart margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
               <defs>
@@ -1909,8 +1909,6 @@ const Dashboard = () => {
                 animationDuration={800}
                 animationBegin={200}
                 animationEasing="ease-out"
-                startAngle={90}
-                endAngle={-270}
               >
                 {categoriesData.map((entry, index) => (
                   <Cell 
@@ -2775,7 +2773,7 @@ const Dashboard = () => {
           </div>
         </div>
         
-        <div className={styles.categoriesPieContainer}>
+        <div className={styles.categoriesPieContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <ResponsiveContainer width="100%" height={isMobile ? 220 : 350}>
             <PieChart margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
               <defs>
@@ -2787,8 +2785,8 @@ const Dashboard = () => {
               </defs>
               <Pie
                 data={categoryData}
-                cx="50%"
-                cy="50%"
+                      cx="50%"
+                      cy="50%"
                 labelLine={false}
                 outerRadius={isMobile ? 70 : 130}
                 innerRadius={isMobile ? 30 : 60}
@@ -2801,8 +2799,6 @@ const Dashboard = () => {
                 animationDuration={800}
                 animationBegin={200}
                 animationEasing="ease-out"
-                startAngle={90}
-                endAngle={-270}
               >
                 {categoryData.map((entry, index) => (
                   <Cell 
@@ -2931,7 +2927,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className={styles.categoriesPieContainer}>
+        <div className={styles.categoriesPieContainer} >
           <ResponsiveContainer width="100%" height={isMobile ? 220 : 350}>
             <PieChart margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
               <defs>
@@ -2957,8 +2953,6 @@ const Dashboard = () => {
                 animationDuration={800}
                 animationBegin={200}
                 animationEasing="ease-out"
-                startAngle={90}
-                endAngle={-270}
               >
                 {incomeCategoryData.map((entry, index) => (
                   <Cell 
@@ -3115,7 +3109,7 @@ const Dashboard = () => {
             </span>
           </div>
         </div>
-        <div className={styles.bankPieContainer}>
+        <div className={styles.bankPieContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <ResponsiveContainer width="100%" height={isMobile ? 220 : 350}>
             <PieChart margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
               <defs>
@@ -3140,8 +3134,6 @@ const Dashboard = () => {
                 animationDuration={800}
                 animationBegin={200}
                 animationEasing="ease-out"
-                startAngle={90}
-                endAngle={-270}
               >
                 {bankData.map((entry, index) => (
                   <Cell 
