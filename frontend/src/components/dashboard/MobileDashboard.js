@@ -28,6 +28,38 @@ import {
   BsBullseye
 } from 'react-icons/bs';
 
+// Função para calcular as marcações do eixo Y
+const calculateTicks = (data, valueAccessor) => {
+  if (!data || !Array.isArray(data) || data.length === 0) {
+    return [0, 100, 200, 300, 400, 500];
+  }
+  
+  const values = data.map(valueAccessor);
+  const max = Math.max(...values);
+  const min = Math.min(...values);
+  const range = max - min;
+  
+  // Calcular 5 ticks uniformemente distribuídos
+  const step = range / 4;
+  return [0, step, step * 2, step * 3, max];
+};
+
+// Função para calcular o caminho do gráfico de linha/área
+const calculatePath = (data, xAccessor, yAccessor, width, height) => {
+  if (!data || !Array.isArray(data) || data.length === 0) {
+    return '';
+  }
+  
+  const xScale = index => (index / (data.length - 1)) * width;
+  const yScale = value => height - (value / Math.max(...data.map(yAccessor))) * height;
+  
+  return data.map((d, i) => {
+    const x = xScale(i);
+    const y = yScale(yAccessor(d));
+    return i === 0 ? `M ${x},${y}` : `L ${x},${y}`;
+  }).join(' ');
+};
+
 const motivationalPhrases = [
   "Cuide do seu dinheiro hoje para não precisar se preocupar amanhã.",
   "Cada real economizado é um passo mais perto da sua liberdade financeira.",

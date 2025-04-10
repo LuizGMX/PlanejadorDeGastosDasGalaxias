@@ -2,7 +2,7 @@ import React from 'react';
 import { cn } from '../../lib/utils';
 
 const PieChart = ({
-  data,
+  data = [],
   width = '100%',
   height = 300,
   margin = { top: 10, right: 10, left: 10, bottom: 10 },
@@ -12,6 +12,20 @@ const PieChart = ({
   className,
   ...props
 }) => {
+  if (!data || !Array.isArray(data) || data.length === 0) {
+    return (
+      <div 
+        className={cn('relative w-full overflow-hidden flex items-center justify-center', className)}
+        style={{ height }}
+        {...props}
+      >
+        <div className="text-center text-gray-400">
+          Sem dados para exibir
+        </div>
+      </div>
+    );
+  }
+
   const total = data.reduce((sum, item) => sum + item.value, 0);
   let startAngle = 0;
 
