@@ -434,23 +434,14 @@
 .categoriesPieContainer,
 .bankPieContainer,
 .incomeVsExpensesContainer {
-  width: 100%;
   height: 100%;
   display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 0 auto;
+  flex-direction: column;
 }
 
 /* Container responsivo do Recharts */
 .chartContainer .recharts-responsive-container {
-  width: 100% !important;
-  height: 100% !important;
-  min-height: 300px !important;
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  margin: 0 auto !important;
+  margin: 0 auto;
 }
 
 /* Wrapper do Recharts */
@@ -3342,4 +3333,77 @@ input:checked + .toggleSlider:before {
 
 .timelineProgress {
   width: var(--progress-width, 0%);
+}
+
+/* Novas classes para padronizar a aparência dos gráficos */
+.chartPieContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.pieChartFilter {
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+}
+
+/* Categories and Banks */
+.chartLegend {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+/* Padronizar todos os containers de gráficos de pizza */
+.categoriesPieContainer {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.bankPieContainer {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Classes para padronizar as legendas dos gráficos */
+.pieChartLegendText {
+  color: var(--text-color);
+  font-weight: bold;
+}
+
+.pieChartLegendWrapper {
+  padding-left: 10px;
+  font-size: 12px;
+  overflow-y: auto;
+  max-height: 180px;
+  width: 100%;
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+}
+
+/* Classes para versão mobile */
+@media (max-width: 768px) {
+  .pieChartLegendText {
+    font-size: 10px;
+    max-width: 60px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+  }
+  
+  .pieChartLegendWrapper {
+    padding-left: 0px;
+    font-size: 10px;
+    max-height: 80px;
+    margin-top: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
 }

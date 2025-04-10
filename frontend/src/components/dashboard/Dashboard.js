@@ -1880,8 +1880,8 @@ const Dashboard = () => {
             </span>
           </div>
         </div>
-        <div className={styles.categoriesPieContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <ResponsiveContainer width="100%" height={isMobile ? 220 : 350}>
+        <div className={styles.categoriesPieContainer}>
+          <ResponsiveContainer width="100%" height={isMobile ? 220 : 280}>
             <PieChart margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
               <defs>
                 {categoriesData.map((entry, index) => (
@@ -2770,8 +2770,8 @@ const Dashboard = () => {
           </div>
         </div>
         
-        <div className={styles.categoriesPieContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <ResponsiveContainer width="100%" height={isMobile ? 220 : 350}>
+        <div className={styles.categoriesPieContainer}>
+          <ResponsiveContainer width="100%" height={isMobile ? 220 : 280}>
             <PieChart margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
               <defs>
                 {categoryData.map((entry, index) => (
@@ -2924,8 +2924,8 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className={styles.categoriesPieContainer} >
-          <ResponsiveContainer width="100%" height={isMobile ? 220 : 350}>
+        <div className={styles.categoriesPieContainer}>
+          <ResponsiveContainer width="100%" height={isMobile ? 220 : 280}>
             <PieChart margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
               <defs>
                 {incomeCategoryData.map((entry, index) => (
@@ -3106,8 +3106,8 @@ const Dashboard = () => {
             </span>
           </div>
         </div>
-        <div className={styles.bankPieContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <ResponsiveContainer width="100%" height={isMobile ? 220 : 350}>
+        <div className={styles.bankPieContainer}>
+          <ResponsiveContainer width="100%" height={isMobile ? 220 : 280}>
             <PieChart margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
               <defs>
                 {bankData.map((entry, index) => (
