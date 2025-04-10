@@ -64,10 +64,10 @@ const getGreeting = (userName) => {
   const randomPhrase = motivationalPhrases[Math.floor(Math.random() * motivationalPhrases.length)];
   
   return (
-    <div className={`${styles.greeting} glass-card hover-lift`}>
+    <div className={styles.greeting}>
       <div className={styles.greetingContent}>
-        <h2 className="gradient-text">{greeting}, {userName}!</h2>
-        <p className={`${styles.motivationalPhrase} glow-text`}>"{randomPhrase}"</p>
+      <h2>{greeting}, {userName}!</h2>
+        <p className={styles.motivationalPhrase}>"{randomPhrase}"</p>
       </div>
       <div className={styles.greetingDate}>
         <span>{new Date().toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
@@ -113,15 +113,15 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
     fetchData();
   }, [auth.token, projectionMonths]);
 
-  if (loading) return <div className={`${styles.loadingCard} glass-card pulse-loading`}>
-    <div className={`${styles.loadingSpinner} rotating-icon`}></div>
+  if (loading) return <div className={styles.loadingCard}>
+    <div className={styles.loadingSpinner}></div>
     <p>Carregando projeção financeira...</p>
   </div>;
   
-  if (error) return <div className={`${styles.errorCard} glass-card`}>
+  if (error) return <div className={styles.errorCard}>
     <span className={styles.errorIcon}>⚠️</span>
     <p>Erro: {error}</p>
-    <button className="button-ripple" onClick={() => setLoading(true)}>Tentar novamente</button>
+    <button onClick={() => setLoading(true)}>Tentar novamente</button>
   </div>;
   
   if (!data) return null;
@@ -189,12 +189,12 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
   };
 
   return (
-    <div style={containerStyle} className={`${styles.trendChartContainer} glass-card hover-lift`}>
+    <div style={containerStyle} className={`${styles.trendChartContainer} ${styles.enhancedCard}`}>
       {showTitle && (
         <div className={styles.trendChartHeader}>
-          <h2 className={`${styles.trendChartTitle} gradient-text`}>Projeção de Saldo</h2>
+          <h2 className={styles.trendChartTitle}>Projeção de Saldo</h2>
           <button 
-            className={`${styles.tipsToggle} button-glow`}
+            className={styles.tipsToggle}
             onClick={() => setShowTips(!showTips)}
             title={showTips ? "Ocultar dicas" : "Mostrar dicas"}
           >
@@ -1145,34 +1145,24 @@ const Dashboard = () => {
   };
 
   const renderChart = (chartId, title, chartComponent) => {
-    const isExpanded = expandedCharts[chartId];
-
     return (
-      <>
-        {isExpanded && (
-          <div 
-            className="chart-backdrop" 
-            onClick={() => handleChartExpand(chartId)}
-          />
-        )}
-        <div 
-          className={`chart-container ${isExpanded ? 'chart-expanded' : ''}`}
-          ref={chartRefs[chartId] || null}
-        >
-          <div className="chart-header">
-            <h3 className="chart-title gradient-text">{title}</h3>
-            <button 
-              className="expand-button"
-              onClick={() => handleChartExpand(chartId)}
-            >
-              <i className="material-icons">
-                {isExpanded ? 'fullscreen_exit' : 'fullscreen'}
-              </i>
-            </button>
+      <div
+        className={`${styles.chartContainer} ${chartId === 'bank-trend' ? styles.trendChart : ''}`}
+      >
+        <div className={styles.chartHeader}>
+          <h3>{title}</h3>
+          <div className={styles.chartSubtitle}>
+            <span className={styles.dateFilterBadge}>
+              <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
+            </span>
           </div>
-          {chartComponent}
         </div>
-      </>
+        <div ref={chartRefs[chartId]} className={styles.chartWrapper} style={{ height: '400px' }}>
+          <ResponsiveContainer width="100%" height="100%">
+            {chartComponent}
+          </ResponsiveContainer>
+        </div>
+      </div>
     );
   };
 
@@ -4039,72 +4029,164 @@ const Dashboard = () => {
 
   return (
     <div className={styles.dashboardContainer}>
-      {auth.user && getGreeting(auth.user.name)}
-      
-      {!loading && !error && !noExpensesMessage && (
-        <div className={`${styles.filtersContainer} glass-card`}>
-          {/* Filtro de Período */}
-          <div className={styles.filterRow}>
-            <div className={styles.filterSelector}>
-              <label className={styles.filterLabel}>Período</label>
-              <div 
-                className={`${styles.filterDisplay} ${showPeriodOptions ? styles.active : ''} highlight-border`}
-                onClick={() => setShowPeriodOptions(!showPeriodOptions)}
-              >
-                <span>{formatCurrentDateFilter()}</span>
-                <FaChevronDown className={`${styles.arrowIcon} ${showPeriodOptions ? styles.rotated : ''}`} />
-              </div>
-              
-              {showPeriodOptions && (
-                <div className={`${styles.filterOptions} glass-card`}>
-                  <div 
-                    className={`${styles.filterOption} ${selectedPeriod === 'current' ? styles.selected : ''}`}
-                    onClick={() => handlePeriodChange('current')}
-                  >
-                    Mês atual
-                  </div>
-                  <div 
-                    className={`${styles.filterOption} ${selectedPeriod === 'last' ? styles.selected : ''}`}
-                    onClick={() => handlePeriodChange('last')}
-                  >
-                    Mês anterior
-                  </div>
-                  <div 
-                    className={`${styles.filterOption} ${selectedPeriod === 'year' ? styles.selected : ''}`}
-                    onClick={() => handlePeriodChange('year')}
-                  >
-                    Este ano
-                  </div>
-                  <div 
-                    className={`${styles.filterOption} ${selectedPeriod === 'custom' ? styles.selected : ''}`}
-                    onClick={() => handlePeriodChange('custom')}
-                  >
-                    Período personalizado
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            {/* Seletor de Categorias */}
-            <FilterSelector
-              label="Categorias"
-              options={categories}
-              selected={selectedCategories}
-              onSelect={handleCategoryChange}
-              multiple={true}
-            />
-            
-            {/* Seletor de Bancos */}
-            <FilterSelector
-              label="Bancos"
-              options={banks}
-              selected={selectedBanks}
-              onSelect={handleBankChange}
-              multiple={true}
-            />
-          </div>
+      {getGreeting(auth.user?.name)}
+      <div className={styles.dashboardHeader}>
+        <div className={styles.navigationTabs}>
+          <button
+            className={`${styles.navTab} ${activeSection === 'overview' ? styles.activeTab : ''}`}
+            onClick={() => setActiveSection('overview')}
+          >
+            <span className={styles.tabIcon}>📊</span>
+            Visão Geral
+          </button>
+          {/* Aba Transações oculta conforme solicitado 
+          <button
+            className={`${styles.navTab} ${activeSection === 'transactions' ? styles.activeTab : ''}`}
+            onClick={() => setActiveSection('transactions')}
+          >
+            <span className={styles.tabIcon}>💸</span>
+            Transações
+          </button>
+          */}
         </div>
-      )}
+      </div>
+
+      {/* Filtros */}
+      <div className={styles.filterRow}>
+        <div className={styles.filtersContainer}>
+          <div className={styles.filterSelector}>
+            <div className={styles.filterLabel}>Período</div>
+            <div 
+              className={`${styles.filterDisplay} ${showPeriodOptions ? styles.active : ''}`}
+              onClick={() => setShowPeriodOptions(!showPeriodOptions)}
+            >
+              {selectedPeriod === 'custom' && customDateRange
+                ? `${formatDateStringWithTimezone(customDateRange.start)} - ${formatDateStringWithTimezone(customDateRange.end)}`
+                : getActiveFilterLabel()
+              }
+              <FaChevronDown className={`${styles.arrowIcon} ${showPeriodOptions ? styles.rotated : ''}`} />
+            </div>
+            {showPeriodOptions && (
+              <div className={styles.filterOptions}>
+                <div 
+                  className={styles.filterOption}
+                  onClick={() => handlePeriodChange('current')}
+                >
+                  Mês Atual
+                </div>
+                <div 
+                  className={styles.filterOption}
+                  onClick={() => handlePeriodChange('last')}
+                >
+                  Mês Anterior
+                </div>
+                <div 
+                  className={styles.filterOption}
+                  onClick={() => handlePeriodChange('next')}
+                >
+                  Mês que vem
+                </div>
+                <div 
+                  className={styles.filterOption}
+                  onClick={() => handlePeriodChange('custom')}
+                >
+                  Personalizado
+                </div>
+              </div>
+            )}
+          </div>
+          {showDateRangePicker && (
+            <div className={styles.dateRangePickerContainer}>
+              <DateRangePicker onDateRangeSelect={handleDateRangeSelect} onCancel={handleDateRangeCancel} />
+            </div>
+          )}
+          <FilterSelector
+            label="Categoria"
+            options={categories}
+            selected={selectedCategories}
+            onSelect={handleCategoryChange}
+            multiple
+          />
+          <FilterSelector
+            label="Banco"
+            options={banks}
+            selected={selectedBanks}
+            onSelect={handleBankChange}
+            multiple
+          />
+        </div>
+        {!hasExpenses && !hasIncome && (
+          <div className={styles.emptyStateContainer}>
+            <FaChartLine className={styles.emptyStateIcon} />
+            <div className={styles.emptyStateContent}>
+              <div className={styles.emptyStateMessage}>
+                Você ainda não tem despesas ou receitas cadastradas para este período.
+              </div>
+              <div className={styles.emptyStateSuggestion}>
+                Que tal começar adicionando sua primeira transação?
+              </div>
+              <div className={styles.emptyStateButtons}>
+                <button 
+                  className={styles.addExpenseButton}
+                  onClick={() => navigate('/add-expense')}
+                >
+                  <BsPlusLg /> Adicionar Despesa
+                </button>
+                <button 
+                  className={styles.addIncomeButton}
+                  onClick={() => navigate('/add-income')}
+                >
+                  <BsCash /> Adicionar Receita
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {hasExpenses === false && hasIncome === true && (
+          <div className={styles.emptyStateContainer}>
+            <FaChartLine className={styles.emptyStateIcon} />
+            <div className={styles.emptyStateContent}>
+              <div className={styles.emptyStateMessage}>
+                Você tem receitas cadastradas, mas ainda não tem despesas para este período.
+              </div>
+              <div className={styles.emptyStateSuggestion}>
+                Que tal adicionar sua primeira despesa?
+              </div>
+              <div className={styles.emptyStateButtons}>
+                <button 
+                  className={styles.addExpenseButton}
+                  onClick={() => navigate('/add-expense')}
+                >
+                  <BsPlusLg /> Adicionar Despesa
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {hasExpenses === true && hasIncome === false && (
+          <div className={styles.emptyStateContainer}>
+            <FaChartLine className={styles.emptyStateIcon} />
+            <div className={styles.emptyStateContent}>
+              <div className={styles.emptyStateMessage}>
+                Você tem despesas cadastradas, mas ainda não tem receitas para este período.
+              </div>
+              <div className={styles.emptyStateSuggestion}>
+                Que tal adicionar sua primeira receita?
+              </div>
+              <div className={styles.emptyStateButtons}>
+                <button 
+                  className={styles.addIncomeButton}
+                  onClick={() => navigate('/add-income')}
+                >
+                  <BsCash /> Adicionar Receita
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Conteúdo baseado na seção selecionada - só mostra se tiver despesas E receitas */}
       {(hasExpenses && hasIncome) && (

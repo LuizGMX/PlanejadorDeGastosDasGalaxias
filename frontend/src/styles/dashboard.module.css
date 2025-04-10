@@ -18,8 +18,6 @@
 
 .title {
   color: var(--primary-color) !important;
-  font-weight: 700;
-  letter-spacing: 0.5px;
 }
 
 .dashboardContainer {
@@ -37,48 +35,34 @@
   margin-bottom: 2rem;
   flex-wrap: wrap;
   gap: 1rem;
-  position: relative;
 }
 
 .header h1 {
   margin: 0;
   color: var(--text-color);
   font-size: 2rem;
-  font-weight: 700;
-  background: var(--primary-gradient);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
 }
 
 .noExpensesContainer {
   text-align: center;
   padding: 3rem;
-  background: var(--card-gradient);
-  border-radius: var(--card-radius);
-  box-shadow: var(--card-shadow);
+  background-color: var(--card-background);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   margin: 2rem 0;
   border: 1px solid var(--border-color);
-  transition: var(--animation-speed) ease;
-}
-
-.noExpensesContainer:hover {
-  box-shadow: var(--hover-shadow);
-  transform: translateY(-5px);
 }
 
 .noExpensesContainer h2 {
   color: var(--text-color);
   margin-bottom: 1rem;
   font-size: 1.5rem;
-  font-weight: 600;
 }
 
 .noExpensesContainer p {
   color: var(--text-secondary);
   margin-bottom: 2rem;
   font-size: 1.1rem;
-  line-height: 1.6;
 }
 
 .buttonGroup {
@@ -91,43 +75,39 @@
 .backButton {
   padding: 1rem 2rem;
   border: none;
-  border-radius: var(--button-radius);
+  border-radius: 8px;
   font-size: 1.1rem;
   cursor: pointer;
-  transition: all var(--animation-speed);
-  box-shadow: var(--subtle-shadow);
-  font-weight: 600;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .addFirstExpenseButton {
-  background: var(--primary-gradient);
+  background-color: var(--primary-color);
   color: var(--secondary-color);
-  position: relative;
-  overflow: hidden;
 }
 
 .addFirstExpenseButton:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--hover-shadow);
+  background-color: var(--hover-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
 .backButton {
   background-color: var(--input-background);
   color: var(--text-color);
-  border: 1px solid var(--border-color);
 }
 
 .backButton:hover {
-  background-color: var(--card-background);
-  transform: translateY(-3px);
-  box-shadow: var(--subtle-shadow);
+  background-color: var(--border-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
 .filters {
   display: flex;
   gap: 1rem;
   align-items: center;
-  flex-wrap: wrap;
 }
 
 .filterSelector {
@@ -143,7 +123,6 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 0.5rem;
-  display: block;
 }
 
 .filterDisplay {
@@ -151,32 +130,29 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem 1rem;
-  background: var(--glass-effect);
-  border: 1px solid var(--border-color);
-  border-radius: var(--button-radius);
+  background: rgba(42, 43, 51, 0.5);
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
   cursor: pointer;
-  transition: all var(--animation-speed);
+  transition: all 0.3s ease;
   color: var(--text-color);
   font-size: 0.95rem;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
 }
 
 .filterDisplay:hover {
   border-color: var(--primary-color);
-  background: rgba(42, 43, 51, 0.9);
-  box-shadow: 0 0 15px rgba(0, 255, 133, 0.15);
+  background: rgba(42, 43, 51, 0.8);
 }
 
 .filterDisplay.active {
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(0, 255, 133, 0.2);
+  box-shadow: 0 0 0 3px rgba(0, 255, 133, 0.1);
 }
 
 .arrowIcon {
   color: var(--primary-color);
   font-size: 0.8rem;
-  transition: transform var(--animation-speed);
+  transition: transform 0.3s ease;
 }
 
 .arrowIcon.rotated {
@@ -188,16 +164,14 @@
   top: calc(100% + 5px);
   left: 0;
   right: 0;
-  background: var(--card-gradient);
+  background: var(--card-background);
   border: 1px solid var(--border-color);
-  border-radius: var(--card-radius);
-  box-shadow: var(--card-shadow);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   z-index: 1000;
   max-height: 300px;
   overflow-y: auto;
-  animation: slideDown var(--animation-speed) ease;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  animation: slideDown 0.3s ease;
 }
 
 .selectAllOption {
@@ -424,115 +398,155 @@
 
 .chartsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-  gap: 24px;
-  margin-bottom: 30px;
+  grid-template-columns: repeat(auto-fill, minmax(32%, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
   width: 100%;
-}
-
-.chartContainer {
-  background: var(--card-gradient);
-  border-radius: var(--card-radius);
-  padding: 20px;
-  box-shadow: var(--subtle-shadow);
-  position: relative;
-  overflow: hidden;
-  transition: all var(--animation-speed);
-  border: 1px solid var(--border-color);
-  height: 100%;
-}
-
-.chartContainer:hover {
-  box-shadow: var(--hover-shadow);
-  transform: translateY(-5px);
-  border-color: var(--glass-border);
-}
-
-.chartHeader {
-  display: flex;
-  justify-content: space-between;
+  justify-content: center;
+  justify-items: center;
   align-items: center;
-  margin-bottom: 16px;
-  border-bottom: 1px solid var(--border-color);
-  padding-bottom: 12px;
 }
 
-.chartHeader h3 {
-  margin: 0;
-  color: var(--text-color);
-  font-size: 1.2rem;
-  font-weight: 600;
+/* Estilo especial para a primeira grid - orçamento e objetivo lado a lado */
+.chartsGrid:first-of-type {
+  grid-template-columns: repeat(2, 1fr);
+  justify-content: center;
+  justify-items: center;
 }
 
-/* Componente de saudação melhorado */
-.greeting {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 2rem;
-  padding: 25px;
-  background: var(--card-gradient);
-  border-radius: var(--card-radius);
-  box-shadow: var(--subtle-shadow);
-  border: 1px solid var(--border-color);
-  transition: all var(--animation-speed);
-  position: relative;
-  overflow: hidden;
-}
-
-.greeting:hover {
-  box-shadow: var(--hover-shadow);
-  transform: translateY(-5px);
-}
-
-.greeting::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
+/* Container principal do gráfico */
+.chartContainer {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
+  min-height: 400px;
   width: 100%;
-  height: 5px;
-  background: var(--primary-gradient);
-}
-
-.greetingContent {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-}
-
-.greetingContent h2 {
-  color: var(--text-color);
-  font-size: 1.8rem;
-  font-weight: 700;
-  margin: 0;
-}
-
-.motivationalPhrase {
-  color: var(--text-secondary);
-  font-size: 1.1rem;
-  font-style: italic;
-  line-height: 1.6;
-  margin: 10px 0;
+  align-items: center;
+  justify-content: center;
   position: relative;
-  padding-left: 20px;
 }
 
-.motivationalPhrase::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  background: var(--primary-gradient);
-  border-radius: 4px;
+/* Wrapper do gráfico */
+.chartWrapper {
+  width: 100%;
+  height: 100%;
+  min-height: 300px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
 }
 
-.greetingDate {
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  margin-top: 10px;
+/* Containers específicos dos tipos de gráficos */
+.categoriesPieContainer,
+.bankPieContainer,
+.incomeVsExpensesContainer {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto;
+  position: relative;
+}
+
+/* Container responsivo do Recharts */
+.chartContainer .recharts-responsive-container {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 300px !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  margin: 0 auto !important;
+}
+
+/* Wrapper do Recharts */
+.chartContainer .recharts-wrapper {
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  margin: 0 auto !important;
+}
+
+/* SVG do Recharts */
+.chartContainer .recharts-wrapper svg {
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+  margin: 0 auto !important;
+}
+
+/* Ajuste específico para gráficos de pizza */
+.categoriesPieContainer .recharts-pie,
+.bankPieContainer .recharts-pie,
+.incomeVsExpensesContainer .recharts-pie {
+  transform-origin: center center;
+}
+
+.categoriesPieContainer {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  position: relative !important;
+}
+
+.bankPieContainer,
+.incomeVsExpensesContainer {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  position: relative !important;
+}
+
+.recharts-wrapper {
+  margin: 0 auto !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+
+/* Ajuste para o elemento pie dentro do SVG */
+.categoriesPieContainer .recharts-pie,
+.bankPieContainer .recharts-pie,
+.incomeVsExpensesContainer .recharts-pie {
+  transform-origin: center center;
+}
+
+/* Ajuste do corpo do gráfico */
+.chartBody {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto;
+}
+
+/* Para telas menores */
+@media (max-width: 1200px) {
+  .chartsGrid {
+    grid-template-columns: repeat(auto-fill, minmax(45%, 1fr));
+    justify-content: center;
+    justify-items: center;
+  }
+  
+  .chartsGrid:first-of-type {
+    grid-template-columns: repeat(2, 1fr);
+    justify-content: center;
+    justify-items: center;
+  }
 }
 
 /* Chart grid layout for desktop */
