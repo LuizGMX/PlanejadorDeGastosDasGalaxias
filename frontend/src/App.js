@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import Login from './components/auth/Login';
@@ -14,10 +14,11 @@ import SpreadsheetUpload from './components/spreadsheet/SpreadsheetUpload';
 import Layout from './components/layout/Layout';
 import EditRecurringIncomes from './components/incomes/EditRecurringIncomes';
 import { checkApiHealth, diagnoseProblem } from './utils/apiHealth';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, AuthContext } from './contexts/AuthContext';
 import { initIOSSupport, isIOS } from './utils/iosSupport';
 import MobileNavbar from './components/layout/MobileNavbar';
 import './styles/ios.css';
+import './styles/charts.css';
 
 // Configurações do React Router v7
 const routerConfig = {

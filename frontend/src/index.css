@@ -1,13 +1,5 @@
 @import './styles/variables.css';
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-@layer base {
-  :root {
-    --radius: 0.5rem;
-  }
-}
+@import './styles/effects.css';
 
 /* Estilos globais */
 * {
@@ -19,7 +11,7 @@
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -75,9 +67,12 @@ main {
   left: 0;
   right: 0;
   z-index: 1000;
-  background-color: #ffffff;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  background: var(--card-gradient);
+  box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.2);
   padding-bottom: env(safe-area-inset-bottom, 0);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-top: 1px solid var(--glass-border);
 }
 
 /* Ajustes para dispositivos iOS */
@@ -136,28 +131,49 @@ body {
 }
 
 button {
-  background-color: var(--primary-color);
+  background: var(--primary-gradient);
   color: var(--secondary-color);
   border: none;
   padding: 10px 20px;
-  border-radius: 5px;
+  border-radius: var(--button-radius);
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: all var(--animation-speed);
   /* iOS button fixes */
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
+  font-weight: 600;
+  position: relative;
+  overflow: hidden;
 }
 
 button:hover {
-  background-color: var(--hover-color);
+  box-shadow: var(--hover-shadow);
+  transform: translateY(-2px);
+}
+
+button::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 60%);
+  opacity: 0;
+  transition: opacity var(--animation-speed);
+  pointer-events: none;
+}
+
+button:hover::after {
+  opacity: 1;
 }
 
 input, select {
-  padding: 10px;
+  padding: 12px 15px;
   margin: 5px 0;
   border: 1px solid var(--border-color);
-  border-radius: 5px;
+  border-radius: var(--button-radius);
   width: 100%;
   box-sizing: border-box;
   background-color: var(--input-background);
@@ -166,6 +182,13 @@ input, select {
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
+  transition: border var(--animation-speed), box-shadow var(--animation-speed);
+}
+
+input:focus, select:focus {
+  border-color: var(--primary-color);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.2);
 }
 
 /* iOS specific form element fixes */
@@ -227,7 +250,13 @@ input[type="datetime-local"] {
     max-width: 95% !important;
     overflow: visible !important;
     overflow-x: hidden !important;
-    border-radius: 10px !important;
+    border-radius: var(--card-radius) !important;
+    background: var(--card-gradient) !important;
+    backdrop-filter: blur(15px) !important;
+    -webkit-backdrop-filter: blur(15px) !important;
+    border: 1px solid var(--glass-border) !important;
+    box-shadow: var(--card-shadow) !important;
+    animation: fadeIn var(--animation-speed) !important;
   }
 }
 
@@ -240,6 +269,31 @@ input[type="datetime-local"] {
   .mobile-scroll-container {
     height: calc(100vh - 70px - max(env(safe-area-inset-bottom), 0px));
   }
+}
+
+/* Scrollbar customizada */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--border-color);
+  border-radius: 10px;
+  border: 2px solid transparent;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--primary-color);
 }
 
 /* Ajustes para o app */
@@ -262,18 +316,10 @@ input[type="datetime-local"] {
   left: 0;
   right: 0;
   z-index: 1000;
-  background-color: #ffffff;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  background: var(--card-gradient);
+  box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.2);
   padding-bottom: env(safe-area-inset-bottom, 0);
-}
-
-/* Ajustes para dispositivos iOS */
-.ios-device .app .mobileNavbar {
-  display: block !important;
-  position: fixed !important;
-  bottom: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  z-index: 1000 !important;
-  padding-bottom: env(safe-area-inset-bottom, 0) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-top: 1px solid var(--glass-border);
 }

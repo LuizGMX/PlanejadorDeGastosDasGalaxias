@@ -1,24 +1,27 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
-import { 
-  BarChart,
+import {  
+  Line,
   PieChart,
-  LineChart,
-  AreaChart,
-  ComposedChart,
-  ResponsiveContainer,
-  CartesianGrid,
+  Pie,
+  BarChart,
+  Bar,
+  Area,
   XAxis,
   YAxis,
-  Bar,
-  Pie,
+  CartesianGrid,
   Tooltip,
-  Cell,
-  Legend
-} from '../charts';
+  Legend,
+  ResponsiveContainer,
+  ComposedChart,
+  AreaChart,
+  ReferenceLine,
+  Cell
+} from 'recharts';
 import styles from '../../styles/dashboard.module.css';
 import { FaChevronDown} from 'react-icons/fa';
+
 
 import { 
   BsPlusLg, 
@@ -27,105 +30,6 @@ import {
   BsEye,
   BsBullseye
 } from 'react-icons/bs';
-
-// Função para calcular as marcações do eixo Y
-const calculateTicks = (data, valueAccessor) => {
-  if (!data || !Array.isArray(data) || data.length === 0) {
-    return [0, 100, 200, 300, 400, 500];
-  }
-  
-  try {
-    // Extrair valores válidos usando o valueAccessor
-    const values = data
-      .map(d => {
-        try {
-          return valueAccessor(d);
-        } catch (e) {
-          console.error("Erro ao acessar valor:", e);
-          return 0;
-        }
-      })
-      .filter(val => val !== undefined && val !== null && !isNaN(val));
-    
-    if (values.length === 0) {
-      return [0, 100, 200, 300, 400, 500];
-    }
-    
-    const max = Math.max(...values);
-    const min = 0; // Começar do zero para facilitar a leitura
-    const range = max - min;
-    
-    // Se o range for 0, retorna valores padrão
-    if (range === 0 || isNaN(range)) {
-      return [0, 20, 40, 60, 80, 100];
-    }
-    
-    // Calcular 5 ticks uniformemente distribuídos
-    const step = range / 4;
-    return [min, min + step, min + step * 2, min + step * 3, max];
-  } catch (error) {
-    console.error("Erro ao calcular ticks:", error);
-    return [0, 100, 200, 300, 400, 500];
-  }
-};
-
-// Função para calcular o caminho do gráfico de linha/área
-const calculatePath = (data, xAccessor, yAccessor, width, height) => {
-  if (!data || !Array.isArray(data) || data.length === 0) {
-    return '';
-  }
-  
-  try {
-    // Validar dados e acessores
-    if (typeof xAccessor !== 'function' || typeof yAccessor !== 'function') {
-      console.error("xAccessor ou yAccessor não são funções válidas");
-      return '';
-    }
-    
-    if (isNaN(width) || isNaN(height) || width <= 0 || height <= 0) {
-      console.error("Dimensões inválidas:", width, height);
-      return '';
-    }
-    
-    // Extrair valores válidos
-    const validData = data.filter(d => {
-      try {
-        const x = xAccessor(d);
-        const y = yAccessor(d);
-        return x !== undefined && y !== undefined && !isNaN(y);
-      } catch (e) {
-        return false;
-      }
-    });
-    
-    if (validData.length === 0) {
-      return '';
-    }
-    
-    // Calcular valores máximos para escala
-    const yValues = validData.map(d => yAccessor(d));
-    const maxY = Math.max(...yValues, 0);
-    
-    // Funções de escala
-    const xScale = (index) => (index / Math.max(validData.length - 1, 1)) * width;
-    
-    // Prevenir divisão por zero
-    const yScale = (value) => {
-      if (maxY === 0) return height;
-      return height - (value / maxY) * height;
-    };
-    
-    // Construir o caminho SVG
-    return validData.map((d, i) => {
-      const x = xScale(i);
-      const y = yScale(yAccessor(d));
-      return i === 0 ? `M ${x},${y}` : `L ${x},${y}`;
-    }).join(' ');
-  } catch (error) {
-    console.error("Erro ao calcular caminho:", error);
-    return '';
-  }
-};
 
 const motivationalPhrases = [
   "Cuide do seu dinheiro hoje para não precisar se preocupar amanhã.",
@@ -347,19 +251,124 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
       )}
 
       <ResponsiveContainer width="100%" height={height}>
-        <ComposedChart
-          data={data.projectionData.map(item => ({
-            ...item,
-            date: new Date(item.date).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })
-          }))}
-          types={{
-            receitas: 'line',
-            despesas: 'line',
-            saldo: 'area'
-          }}
-          strokeWidth={2}
-          fillOpacity={0.3}
-        />
+        <ComposedChart 
+          data={data.projectionData} 
+          margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+          onMouseLeave={handleMouseLeave}
+        >
+          <defs>
+            <linearGradient id="colorGanhos" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="var(--success-color)" stopOpacity={0.8}/>
+              <stop offset="95%" stopColor="var(--success-color)" stopOpacity={0}/>
+            </linearGradient>
+            <linearGradient id="colorDespesas" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="var(--error-color)" stopOpacity={0.8}/>
+              <stop offset="95%" stopColor="var(--error-color)" stopOpacity={0}/>
+            </linearGradient>
+            <linearGradient id="colorSaldo" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#1E90FF" stopOpacity={0.8}/>
+              <stop offset="95%" stopColor="#1E90FF" stopOpacity={0}/>
+            </linearGradient>
+          </defs>
+          
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+          <XAxis
+            dataKey="date"
+            tickFormatter={(date) => {
+              const d = new Date(date);
+              const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 
+                           'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+              return `${months[d.getMonth()]}/${d.getFullYear()}`;
+            }}
+            stroke="var(--text-color)"
+          />
+          <YAxis
+            tickFormatter={formatFullCurrency}
+            stroke="var(--text-color)"
+            tick={{ fill: 'var(--text-color)', fontSize: 11 }}
+          />
+          <Tooltip
+            formatter={formatFullCurrency}
+            labelFormatter={(date) => {
+              const d = new Date(date);
+              const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                           'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+              return `${months[d.getMonth()]} de ${d.getFullYear()}`;
+            }}
+            contentStyle={{
+              backgroundColor: 'var(--card-background)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '8px',
+              padding: '10px'
+            }}
+          />
+          <Legend 
+            verticalAlign="top"
+            height={36}
+            formatter={(value) => {
+              let color;
+              switch(value) {
+                case 'receitas':
+                  color = 'var(--success-color)';
+                  value = 'Receitas';
+                  break;
+                case 'despesas':
+                  color = 'var(--error-color)';
+                  value = 'Despesas';
+                  break;
+                case 'saldo':
+                  color = '#1E90FF';
+                  value = 'Saldo';
+                  break;
+                default:
+                  color = 'var(--text-color)';
+              }
+              return <span style={{ color }}>{value}</span>;
+            }}
+          />
+          
+          <Area
+            type="monotone"
+            dataKey="receitas"
+            stroke="var(--success-color)"
+            fillOpacity={1}
+            fill="url(#colorGanhos)"
+            strokeWidth={2}
+          />
+          <Area
+            type="monotone"
+            dataKey="despesas"
+            stroke="var(--error-color)"
+            fillOpacity={1}
+            fill="url(#colorDespesas)"
+            strokeWidth={2}
+          />
+          <Line
+            type="monotone"
+            dataKey="saldo"
+            stroke="#1E90FF"
+            strokeWidth={3}
+            dot={(props) => {
+              const { cx, cy, index } = props;
+              const isActive = activeDot === index;
+              
+              return (
+                <circle
+                  cx={cx}
+                  cy={cy}
+                  r={isActive ? 6 : 4}
+                  fill="#1E90FF"
+                  stroke={isActive ? "#fff" : "none"}
+            strokeWidth={2}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => handleDotClick(index)}
+                  onMouseEnter={() => handleMouseEnter(props.payload, index)}
+                />
+              );
+            }}
+            activeDot={{ r: 8, fill: '#1E90FF', stroke: '#fff', strokeWidth: 2 }}
+          />
+        </ComposedChart>
       </ResponsiveContainer>
 
       <div className={styles.trendChartSummary}>
@@ -1423,10 +1432,9 @@ const MobileDashboard = () => {
             <ResponsiveContainer width="100%" height={120}>
               <BarChart
                 data={chartData}
+                layout="vertical"
                 barSize={20}
-                barGap={8}
-                barCategoryGap={35}
-                maxBarSize={50}
+                margin={{ top: 5, right: 0, left: 0, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                 <XAxis 
@@ -1694,12 +1702,70 @@ const MobileDashboard = () => {
         <div className={styles.incomeVsExpensesContainer}>
           <div className={styles.pieChartContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
             <ResponsiveContainer width="100%" height={220}>
-              <PieChart
-                data={chartData}
-                innerRadius={60}
-                outerRadius={80}
-                paddingAngle={2}
-              />
+              <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
+                <defs>
+                  <filter id="income-vs-expense-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="0" stdDeviation="3" floodOpacity="0.3" />
+                  </filter>
+                </defs>
+                <Pie
+                  data={chartData}
+                        dataKey="value"
+                        nameKey="category"
+                        cx="50%"
+                        cy="50%"
+                  outerRadius={isMobile ? 80 : 100}
+                  innerRadius={0}
+                        startAngle={90}
+                        endAngle={-270}
+                  filter="url(#income-vs-expense-shadow)"
+                  animationDuration={800}
+                  animationBegin={200}
+                  animationEasing="ease-out"
+                  label={incomePieLabel}
+                  labelLine={false}
+                >
+                  {chartData.map((entry, index) => (
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={entry.color} 
+                      stroke="#ffffff" 
+                      strokeWidth={2} 
+                    />
+                  ))}
+                      </Pie>
+                      <Tooltip
+                  formatter={(value) => formatCurrency(value)}
+                        contentStyle={{
+                          backgroundColor: 'var(--card-background)',
+                          border: '1px solid var(--border-color)',
+                          color: 'var(--text-color)',
+                          padding: '10px',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 8px rgba(0,0,0,0.15)'
+                        }}
+                      />
+                      <Legend
+                  layout={isMobile ? "horizontal" : "vertical"}
+                        align="center"
+                  verticalAlign="bottom"
+                  iconType="circle"
+                  iconSize={isMobile ? 8 : 10}
+                  formatter={(value, entry) => (
+                    <span style={{ 
+                      color: 'var(--text-color)', 
+                      fontSize: isMobile ? '10px' : '12px', 
+                      fontWeight: 'bold'
+                    }}>
+                      {value}{isMobile ? '' : `: ${formatCurrency(entry.payload.value)}`} ({(entry.payload.percent * 100).toFixed(0)}%)
+                    </span>
+                  )}
+                  wrapperStyle={{
+                    paddingTop: isMobile ? '8px' : '10px',
+                    fontSize: isMobile ? '10px' : '12px'
+                  }}
+                      />
+                    </PieChart>
             </ResponsiveContainer>
           </div>
         </div>
@@ -2707,7 +2773,7 @@ const MobileDashboard = () => {
                 animationBegin={200}
                 animationEasing="ease-out"
               >
-                {categoriesData.map((entry, index) => (
+                {categoryData.map((entry, index) => (
                   <Cell 
                     key={`cell-${index}`} 
                     fill={COLORS[index % COLORS.length]} 
@@ -2728,7 +2794,7 @@ const MobileDashboard = () => {
                   <span style={{ 
                     color: 'var(--text-color)', 
                     fontSize: '10px', 
-                    fontWeight: entry.payload.name === categoriesData[0]?.name ? 'bold' : 'normal',
+                    fontWeight: entry.payload.name === categoryData[0]?.name ? 'bold' : 'normal',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -3324,104 +3390,286 @@ const MobileDashboard = () => {
   };
 
   const renderExpensesTrend = () => {
-    // Verificar se temos dados válidos
-    if (!data || !Array.isArray(data) || data.length === 0) {
+    // Usando todos os dados de despesas, independente dos filtros
+    if (!expenseData?.length) {
       return (
         <div className={styles.emptyChart}>
-          <p>Sem dados para exibir</p>
-        </div>
+          <p>Não há dados de despesas para exibir</p>
+          </div>
       );
     }
+
+    // Agrupando despesas por mês
+    const groupedData = {};
     
-    const width = 800;
-    const height = 350;
+    // Obtendo a data atual e a data limite de 5 anos no futuro
+    const currentDate = new Date();
+    const futureDate = new Date();
+    futureDate.setFullYear(currentDate.getFullYear() + 5);
     
-    // Garantir que os dados tenham formato correto
-    const validData = data.filter(d => d && d.date && d.value !== undefined && d.value !== null);
+    expenseData.forEach(expense => {
+      const date = new Date(expense.date);
+      
+      // Ignorar datas que estão além dos próximos 5 anos
+      if (date > futureDate) return;
+      
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      
+      if (!groupedData[monthKey]) {
+        groupedData[monthKey] = {
+          date: monthKey,
+          total: 0
+        };
+      }
+      
+      groupedData[monthKey].total += parseFloat(expense.amount || 0);
+    });
     
-    if (validData.length === 0) {
-      return (
-        <div className={styles.emptyChart}>
-          <p>Sem dados válidos para exibir</p>
-        </div>
-      );
+    // Convertendo para array e ordenando por data
+    const chartData = Object.values(groupedData).sort((a, b) => 
+      new Date(a.date) - new Date(b.date)
+    );
+    
+    // Gerando meses futuros (projeção) até completar 5 anos a partir de hoje
+    const lastDataPoint = chartData.length > 0 ? new Date(chartData[chartData.length - 1].date) : new Date();
+    let projectionDate = new Date(lastDataPoint);
+    
+    // Calcular média dos últimos 6 meses ou o que estiver disponível
+    const recentMonths = chartData.slice(-6);
+    const avgExpense = recentMonths.length > 0 
+      ? recentMonths.reduce((sum, item) => sum + item.total, 0) / recentMonths.length 
+      : 0;
+    
+    // Adicionar projeção para completar 5 anos a partir de hoje
+    while (projectionDate < futureDate) {
+      projectionDate.setMonth(projectionDate.getMonth() + 1);
+      
+      // Pular se já existe um dado para este mês (evitar duplicações)
+      const projMonthKey = `${projectionDate.getFullYear()}-${String(projectionDate.getMonth() + 1).padStart(2, '0')}`;
+      if (groupedData[projMonthKey]) continue;
+      
+      chartData.push({
+        date: projMonthKey,
+        total: avgExpense,
+        isProjection: true
+      });
     }
-    
-    const xAxis = {
-      ticks: validData.map(d => formatDate(d.date)),
-      max: width
-    };
-    
-    const yAxis = {
-      ticks: calculateTicks(validData, d => d.value),
-      max: Math.max(...validData.map(d => d.value), 0), // Garantir um valor mínimo de 0
-      formatter: formatCurrency
-    };
-    
-    const series = {
-      path: calculatePath(validData, d => d.date, d => d.value, width, height),
-      color: 'var(--primary-color)'
-    };
+
+    // Ordenando novamente após adicionar projeções
+    chartData.sort((a, b) => new Date(a.date) - new Date(b.date));
 
     return (
-      <AreaChart
-        data={validData}
-        xAxis={xAxis}
-        yAxis={yAxis}
-        series={series}
-        height={height}
-      />
+      <div className={styles.chartContainer}>
+        <div className={styles.chartHeader}>
+          <h3>Despesas ao longo do tempo</h3>
+          <div className={styles.chartSubtitle}>
+            <span className={styles.dateFilterBadge}>
+              <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
+            </span>
+          </div>
+        </div>
+        <div className={styles.chartBody}>
+          <ResponsiveContainer width="100%" height={220}>
+            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
+              <defs>
+                <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#f44336" stopOpacity={0.8} />
+                  <stop offset="95%" stopColor="#f44336" stopOpacity={0.1} />
+                </linearGradient>
+                <linearGradient id="colorProjectedExpenses" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#f44336" stopOpacity={0.5} />
+                  <stop offset="95%" stopColor="#f44336" stopOpacity={0.05} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis 
+                dataKey="date" 
+                tickFormatter={(tick) => {
+                  if (typeof tick !== 'string') {
+                    // Se o tick for um objeto Date ou outro tipo, converta para string
+                    if (tick instanceof Date) {
+                      const month = tick.getMonth() + 1;
+                      const year = tick.getFullYear();
+                      return `${months.find(m => m.value === month)?.shortLabel || month}/${year.toString().slice(2)}`;
+                    }
+                    return String(tick);
+                  }
+                  
+                  // Verifica se o formato é YYYY-MM ou YYYY-MM-DD
+                  const parts = tick.split('-');
+                  if (parts.length >= 2) {
+                    const year = parts[0];
+                    const month = parseInt(parts[1], 10);
+                    return `${months.find(m => m.value === month)?.shortLabel || month}/${year.slice(2)}`;
+                  }
+                  
+                  return tick;
+                }}
+                angle={-30}
+                textAnchor="end"
+                height={60}
+                interval="preserveStartEnd"
+                tickMargin={10}
+              />
+              <YAxis 
+                tickFormatter={formatCurrency} 
+                width={65}
+                tickMargin={5}
+              />
+              <Tooltip 
+                formatter={value => formatCurrency(value)} 
+                labelFormatter={(label) => {
+                  if (typeof label !== 'string') {
+                    if (label instanceof Date) {
+                      const month = label.getMonth() + 1;
+                      const year = label.getFullYear();
+                      const dataPoint = chartData.find(d => {
+                        if (d.date instanceof Date) {
+                          return d.date.getMonth() === label.getMonth() && 
+                                 d.date.getFullYear() === label.getFullYear();
+                        }
+                        return false;
+                      });
+                      const monthName = months.find(m => m.value === month)?.label || month;
+                      return `${monthName}/${year}${dataPoint?.isProjection ? ' (Projeção)' : ''}`;
+                    }
+                    return String(label);
+                  }
+                  
+                  const parts = label.split('-');
+                  if (parts.length >= 2) {
+                    const year = parts[0];
+                    const month = parseInt(parts[1], 10);
+                    const dataPoint = chartData.find(d => d.date === label);
+                    const monthName = months.find(m => m.value === month)?.label || month;
+                    return `${monthName}/${year}${dataPoint?.isProjection ? ' (Projeção)' : ''}`;
+                  }
+                  
+                  return label;
+                }}
+              />
+              <Area 
+                type="monotone" 
+                dataKey="total" 
+                stroke="#f44336" 
+                fillOpacity={1} 
+                fill="url(#colorExpenses)" 
+                name="Despesas"
+                strokeDasharray={(d) => d.isProjection ? "5 5" : "0"}
+              />
+              <ReferenceLine 
+                x={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`}
+                stroke="#666" 
+                strokeDasharray="3 3" 
+                label={{ value: 'Hoje', position: 'insideTopRight', fill: '#666' }} 
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
     );
   };
 
   const renderIncomeTrend = () => {
-    // Verificar se temos dados válidos
-    if (!data || !Array.isArray(data) || data.length === 0) {
-      return (
-        <div className={styles.emptyChart}>
-          <p>Sem dados para exibir</p>
-        </div>
-      );
-    }
+    const chartData = filterData(incomeData).map(item => {
+      // Garantir que a data esteja no formato correto
+      let formattedDate;
+      if (item.date instanceof Date) {
+        // Se já for um objeto Date, formatar como YYYY-MM
+        const year = item.date.getFullYear();
+        const month = String(item.date.getMonth() + 1).padStart(2, '0');
+        formattedDate = `${year}-${month}`;
+      } else if (typeof item.date === 'string') {
+        // Se for string, verificar o formato
+        if (item.date.includes('T')) {
+          // Se for ISO string (com timestamp), extrair apenas a data
+          formattedDate = item.date.split('T')[0].substring(0, 7); // YYYY-MM
+        } else if (item.date.includes('-')) {
+          // Se já for no formato YYYY-MM-DD, extrair apenas ano e mês
+          formattedDate = item.date.substring(0, 7); // YYYY-MM
+        } else {
+          formattedDate = item.date;
+        }
+      } else {
+        formattedDate = String(item.date);
+      }
+      
+      return {
+        date: formattedDate,
+        value: item.amount
+      };
+    });
     
-    const width = 800;
-    const height = 350;
-    
-    // Garantir que os dados tenham formato correto
-    const validData = data.filter(d => d && d.date && d.value !== undefined && d.value !== null);
-    
-    if (validData.length === 0) {
-      return (
-        <div className={styles.emptyChart}>
-          <p>Sem dados válidos para exibir</p>
-        </div>
-      );
-    }
-    
-    const xAxis = {
-      ticks: validData.map(d => formatDate(d.date)),
-      max: width
-    };
-    
-    const yAxis = {
-      ticks: calculateTicks(validData, d => d.value),
-      max: Math.max(...validData.map(d => d.value), 0), // Garantir um valor mínimo de 0
-      formatter: formatCurrency
-    };
-    
-    const series = {
-      path: calculatePath(validData, d => d.date, d => d.value, width, height),
-      color: 'var(--secondary-color)'
-    };
-
     return (
-      <AreaChart
-        data={validData}
-        xAxis={xAxis}
-        yAxis={yAxis}
-        series={series}
-        height={height}
-      />
+      <div className={styles.chartContainer}>
+        <div className={styles.chartHeader}>
+          <h3>Receitas ao longo do tempo</h3>
+          <div className={styles.chartSubtitle}>
+            <span className={styles.dateFilterBadge}>
+              <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
+            </span>
+          </div>
+        </div>
+        <div className={styles.chartBody}>
+          <ResponsiveContainer width="100%" height={220}>
+            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
+              <defs>
+                <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#2196F3" stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor="#2196F3" stopOpacity={0.1}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis 
+                dataKey="date" 
+                tickFormatter={(tick) => {
+                  if (typeof tick !== 'string') {
+                    // Se o tick for um objeto Date ou outro tipo, converta para string
+                    if (tick instanceof Date) {
+                      const month = tick.getMonth() + 1;
+                      const year = tick.getFullYear();
+                      return `${months.find(m => m.value === month)?.shortLabel || month}/${year.toString().slice(2)}`;
+                    }
+                    return String(tick);
+                  }
+                  
+                  // Verifica se o formato é YYYY-MM ou YYYY-MM-DD
+                  const parts = tick.split('-');
+                  if (parts.length >= 2) {
+                    const year = parts[0];
+                    const month = parseInt(parts[1], 10);
+                    return `${months.find(m => m.value === month)?.shortLabel || month}/${year.slice(2)}`;
+                  }
+                  
+                  return tick;
+                }}
+                angle={-30}
+                textAnchor="end"
+                height={60}
+                interval="preserveStartEnd"
+                tickMargin={10}
+              />
+              <YAxis 
+                tickFormatter={formatCurrency} 
+                width={65}
+                tickMargin={5}
+              />
+              <Tooltip 
+                formatter={(value) => [formatCurrency(value), 'Receita']} 
+                labelFormatter={(label) => formatDateLabel(label)}
+                contentStyle={{ background: '#fff', border: '1px solid #ddd', borderRadius: '8px' }}
+              />
+              <Area 
+                type="monotone" 
+                dataKey="value" 
+                stroke="#2196F3" 
+                fillOpacity={1} 
+                fill="url(#colorIncome)" 
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
     );
   };
 
