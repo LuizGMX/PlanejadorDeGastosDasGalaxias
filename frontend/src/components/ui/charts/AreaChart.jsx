@@ -1,6 +1,6 @@
 import React from 'react';
 import * as d3 from 'd3';
-import { Card } from "@/components/ui/card";
+import { Card } from "../card";
 
 const AreaChart = ({
   data,
@@ -27,6 +27,10 @@ const AreaChart = ({
   const svgRef = React.useRef(null);
   const tooltipRef = React.useRef(null);
   const [activeIndex, setActiveIndex] = React.useState(null);
+  
+  // Garantir que width e height são números
+  const numericWidth = typeof width === 'number' ? width : parseInt(width) || 600;
+  const numericHeight = typeof height === 'number' ? height : parseInt(height) || 400;
 
   React.useEffect(() => {
     if (!data || !data.length) return;
@@ -34,8 +38,8 @@ const AreaChart = ({
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
-    const chartWidth = width - margin.left - margin.right;
-    const chartHeight = height - margin.top - margin.bottom;
+    const chartWidth = numericWidth - margin.left - margin.right;
+    const chartHeight = numericHeight - margin.top - margin.bottom;
 
     const xScale = d3.scaleTime()
       .domain(d3.extent(data, xAccessor))
@@ -187,7 +191,7 @@ const AreaChart = ({
         }
       });
 
-  }, [data, width, height, margin, xAccessor, yAccessor, xTickFormat, yTickFormat, colors, gradientColors, showGrid, showTooltip]);
+  }, [data, numericWidth, numericHeight, margin, xAccessor, yAccessor, xTickFormat, yTickFormat, colors, gradientColors, showGrid, showTooltip]);
 
   return (
     <Card className={`w-full p-4 ${className}`}>
@@ -200,10 +204,11 @@ const AreaChart = ({
       <div className="relative">
         <svg
           ref={svgRef}
-          width={width}
-          height={height}
+          width={numericWidth}
+          height={numericHeight}
           className="w-full h-full"
-          style={{ maxHeight: height }}
+          viewBox={`0 0 ${numericWidth} ${numericHeight}`}
+          style={{ maxHeight: numericHeight }}
         />
         <div
           ref={tooltipRef}

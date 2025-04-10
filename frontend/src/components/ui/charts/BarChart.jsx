@@ -12,7 +12,7 @@ import { cn } from '../../../lib/utils';
 import { Card } from "../card";
 
 const BarChart = ({
-  data,
+  data = [],
   width = 600,
   height = 400,
   margin = { top: 20, right: 20, bottom: 50, left: 50 },
@@ -32,19 +32,55 @@ const BarChart = ({
 }) => {
   const { showTooltip: visxShowTooltip, hideTooltip, tooltipData, tooltipLeft, tooltipTop } = useTooltip();
 
+  // Verificar se temos dados válidos
+  if (!data || !Array.isArray(data) || data.length === 0) {
+    return (
+      <Card className={cn('relative flex items-center justify-center', className)} {...props}>
+        <div className="text-center text-gray-400 p-4">
+          Sem dados para exibir
+        </div>
+      </Card>
+    );
+  }
+
+  // Garantir que width e height são números
+  const numericWidth = typeof width === 'number' ? width : parseInt(width) || 600;
+  const numericHeight = typeof height === 'number' ? height : parseInt(height) || 400;
+  
   // Dimensions
-  const innerWidth = width - margin.left - margin.right;
-  const innerHeight = height - margin.top - margin.bottom;
+  const innerWidth = numericWidth - margin.left - margin.right;
+  const innerHeight = numericHeight - margin.top - margin.bottom;
+
+  // Filtrar dados inválidos
+  const validData = data.filter(d => {
+    try {
+      const x = xAccessor(d);
+      const y = yAccessor(d);
+      return x !== undefined && y !== undefined && !isNaN(y);
+    } catch (e) {
+      return false;
+    }
+  });
+
+  if (validData.length === 0) {
+    return (
+      <Card className={cn('relative flex items-center justify-center', className)} {...props}>
+        <div className="text-center text-gray-400 p-4">
+          Dados inválidos
+        </div>
+      </Card>
+    );
+  }
 
   // Scales
   const xScale = scaleBand()
     .range([0, innerWidth])
-    .domain(data.map(xAccessor))
+    .domain(validData.map(xAccessor))
     .padding(0.2);
 
   const yScale = scaleLinear()
     .range([innerHeight, 0])
-    .domain([0, Math.max(...data.map(yAccessor))])
+    .domain([0, Math.max(...validData.map(yAccessor))])
     .nice();
 
   // Tooltip handler
@@ -66,22 +102,26 @@ const BarChart = ({
         </div>
       )}
       <div className="relative">
-        <svg width={width} height={height}>
+        <svg width={numericWidth} height={numericHeight} viewBox={`0 0 ${numericWidth} ${numericHeight}`}>
           <Group left={margin.left} top={margin.top}>
-            <GridRows
-              scale={yScale}
-              width={innerWidth}
-              height={innerHeight}
-              stroke="#e0e0e0"
-              strokeOpacity={0.2}
-            />
-            <GridColumns
-              scale={xScale}
-              width={innerWidth}
-              height={innerHeight}
-              stroke="#e0e0e0"
-              strokeOpacity={0.2}
-            />
+            {showGrid && (
+              <>
+                <GridRows
+                  scale={yScale}
+                  width={innerWidth}
+                  height={innerHeight}
+                  stroke="#e0e0e0"
+                  strokeOpacity={0.2}
+                />
+                <GridColumns
+                  scale={xScale}
+                  width={innerWidth}
+                  height={innerHeight}
+                  stroke="#e0e0e0"
+                  strokeOpacity={0.2}
+                />
+              </>
+            )}
             <AxisBottom
               scale={xScale}
               top={innerHeight}
@@ -105,7 +145,7 @@ const BarChart = ({
                 dy: 4,
               }}
             />
-            {data.map((d, i) => {
+            {validData.map((d, i) => {
               const barHeight = innerHeight - yScale(yAccessor(d));
               const barX = xScale(xAccessor(d));
               const barY = innerHeight - barHeight;
@@ -120,6 +160,7 @@ const BarChart = ({
                   fill={fill}
                   onMouseMove={(e) => handleTooltip(e, d)}
                   onMouseLeave={hideTooltip}
+                  onClick={() => onBarClick && onBarClick(d, i)}
                 />
               );
             })}

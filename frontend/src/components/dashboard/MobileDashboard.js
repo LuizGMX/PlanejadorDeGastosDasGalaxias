@@ -34,14 +34,39 @@ const calculateTicks = (data, valueAccessor) => {
     return [0, 100, 200, 300, 400, 500];
   }
   
-  const values = data.map(valueAccessor);
-  const max = Math.max(...values);
-  const min = Math.min(...values);
-  const range = max - min;
-  
-  // Calcular 5 ticks uniformemente distribuídos
-  const step = range / 4;
-  return [0, step, step * 2, step * 3, max];
+  try {
+    // Extrair valores válidos usando o valueAccessor
+    const values = data
+      .map(d => {
+        try {
+          return valueAccessor(d);
+        } catch (e) {
+          console.error("Erro ao acessar valor:", e);
+          return 0;
+        }
+      })
+      .filter(val => val !== undefined && val !== null && !isNaN(val));
+    
+    if (values.length === 0) {
+      return [0, 100, 200, 300, 400, 500];
+    }
+    
+    const max = Math.max(...values);
+    const min = 0; // Começar do zero para facilitar a leitura
+    const range = max - min;
+    
+    // Se o range for 0, retorna valores padrão
+    if (range === 0 || isNaN(range)) {
+      return [0, 20, 40, 60, 80, 100];
+    }
+    
+    // Calcular 5 ticks uniformemente distribuídos
+    const step = range / 4;
+    return [min, min + step, min + step * 2, min + step * 3, max];
+  } catch (error) {
+    console.error("Erro ao calcular ticks:", error);
+    return [0, 100, 200, 300, 400, 500];
+  }
 };
 
 // Função para calcular o caminho do gráfico de linha/área
@@ -50,14 +75,56 @@ const calculatePath = (data, xAccessor, yAccessor, width, height) => {
     return '';
   }
   
-  const xScale = index => (index / (data.length - 1)) * width;
-  const yScale = value => height - (value / Math.max(...data.map(yAccessor))) * height;
-  
-  return data.map((d, i) => {
-    const x = xScale(i);
-    const y = yScale(yAccessor(d));
-    return i === 0 ? `M ${x},${y}` : `L ${x},${y}`;
-  }).join(' ');
+  try {
+    // Validar dados e acessores
+    if (typeof xAccessor !== 'function' || typeof yAccessor !== 'function') {
+      console.error("xAccessor ou yAccessor não são funções válidas");
+      return '';
+    }
+    
+    if (isNaN(width) || isNaN(height) || width <= 0 || height <= 0) {
+      console.error("Dimensões inválidas:", width, height);
+      return '';
+    }
+    
+    // Extrair valores válidos
+    const validData = data.filter(d => {
+      try {
+        const x = xAccessor(d);
+        const y = yAccessor(d);
+        return x !== undefined && y !== undefined && !isNaN(y);
+      } catch (e) {
+        return false;
+      }
+    });
+    
+    if (validData.length === 0) {
+      return '';
+    }
+    
+    // Calcular valores máximos para escala
+    const yValues = validData.map(d => yAccessor(d));
+    const maxY = Math.max(...yValues, 0);
+    
+    // Funções de escala
+    const xScale = (index) => (index / Math.max(validData.length - 1, 1)) * width;
+    
+    // Prevenir divisão por zero
+    const yScale = (value) => {
+      if (maxY === 0) return height;
+      return height - (value / maxY) * height;
+    };
+    
+    // Construir o caminho SVG
+    return validData.map((d, i) => {
+      const x = xScale(i);
+      const y = yScale(yAccessor(d));
+      return i === 0 ? `M ${x},${y}` : `L ${x},${y}`;
+    }).join(' ');
+  } catch (error) {
+    console.error("Erro ao calcular caminho:", error);
+    return '';
+  }
 };
 
 const motivationalPhrases = [
@@ -3257,28 +3324,48 @@ const MobileDashboard = () => {
   };
 
   const renderExpensesTrend = () => {
+    // Verificar se temos dados válidos
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      return (
+        <div className={styles.emptyChart}>
+          <p>Sem dados para exibir</p>
+        </div>
+      );
+    }
+    
     const width = 800;
     const height = 350;
     
+    // Garantir que os dados tenham formato correto
+    const validData = data.filter(d => d && d.date && d.value !== undefined && d.value !== null);
+    
+    if (validData.length === 0) {
+      return (
+        <div className={styles.emptyChart}>
+          <p>Sem dados válidos para exibir</p>
+        </div>
+      );
+    }
+    
     const xAxis = {
-      ticks: data.map(d => formatDate(d.date)),
+      ticks: validData.map(d => formatDate(d.date)),
       max: width
     };
     
     const yAxis = {
-      ticks: calculateTicks(data, d => d.value),
-      max: Math.max(...data.map(d => d.value)),
+      ticks: calculateTicks(validData, d => d.value),
+      max: Math.max(...validData.map(d => d.value), 0), // Garantir um valor mínimo de 0
       formatter: formatCurrency
     };
     
     const series = {
-      path: calculatePath(data, d => d.date, d => d.value, width, height),
+      path: calculatePath(validData, d => d.date, d => d.value, width, height),
       color: 'var(--primary-color)'
     };
 
     return (
       <AreaChart
-        data={data}
+        data={validData}
         xAxis={xAxis}
         yAxis={yAxis}
         series={series}
@@ -3288,28 +3375,48 @@ const MobileDashboard = () => {
   };
 
   const renderIncomeTrend = () => {
+    // Verificar se temos dados válidos
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      return (
+        <div className={styles.emptyChart}>
+          <p>Sem dados para exibir</p>
+        </div>
+      );
+    }
+    
     const width = 800;
     const height = 350;
     
+    // Garantir que os dados tenham formato correto
+    const validData = data.filter(d => d && d.date && d.value !== undefined && d.value !== null);
+    
+    if (validData.length === 0) {
+      return (
+        <div className={styles.emptyChart}>
+          <p>Sem dados válidos para exibir</p>
+        </div>
+      );
+    }
+    
     const xAxis = {
-      ticks: data.map(d => formatDate(d.date)),
+      ticks: validData.map(d => formatDate(d.date)),
       max: width
     };
     
     const yAxis = {
-      ticks: calculateTicks(data, d => d.value),
-      max: Math.max(...data.map(d => d.value)),
+      ticks: calculateTicks(validData, d => d.value),
+      max: Math.max(...validData.map(d => d.value), 0), // Garantir um valor mínimo de 0
       formatter: formatCurrency
     };
     
     const series = {
-      path: calculatePath(data, d => d.date, d => d.value, width, height),
+      path: calculatePath(validData, d => d.date, d => d.value, width, height),
       color: 'var(--secondary-color)'
     };
 
     return (
       <AreaChart
-        data={data}
+        data={validData}
         xAxis={xAxis}
         yAxis={yAxis}
         series={series}
