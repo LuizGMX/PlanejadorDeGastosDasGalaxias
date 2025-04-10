@@ -380,6 +380,7 @@ const FinancialHealthScore = ({ data }) => {
   
   const tips = getFinancialTips();
   
+  
   return (
     <div className={styles.healthScoreContainer}>
       <div className={styles.healthScoreHeader}>
