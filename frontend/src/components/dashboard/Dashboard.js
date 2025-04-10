@@ -2925,11 +2925,11 @@ const Dashboard = () => {
         </div>
 
         <div className={styles.categoriesPieContainer}>
-          <ResponsiveContainer width="100%" height={isMobile ? 220 : 280}>
-            <PieChart margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
+          <ResponsiveContainer width="100%" height={isMobile ? 200 : 260}>
+            <PieChart margin={{ top: 5, right: isMobile ? 5 : 50, left: 5, bottom: 5 }}>
               <defs>
                 {incomeCategoryData.map((entry, index) => (
-                  <filter key={`shadow-${index}`} id={`shadow-income-${index}`} x="-20%" y="-20%" width="140%" height="140%">
+                  <filter key={`shadow-${index}`} id={`shadow-${index}`} x="-20%" y="-20%" width="140%" height="140%">
                     <feDropShadow dx="0" dy="0" stdDeviation="3" floodOpacity="0.3" />
                   </filter>
                 ))}
@@ -2939,8 +2939,8 @@ const Dashboard = () => {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                outerRadius={isMobile ? 70 : 130}
-                innerRadius={isMobile ? 30 : 60}
+                outerRadius={isMobile ? 65 : 110}
+                innerRadius={isMobile ? 30 : 50}
                 paddingAngle={2}
                 fill="#8884d8"
                 dataKey="amount"
@@ -2957,7 +2957,7 @@ const Dashboard = () => {
                     fill={entry.color || COLORS[index % COLORS.length]} 
                     stroke="#ffffff" 
                     strokeWidth={1} 
-                    filter={`url(#shadow-income-${index})`} 
+                    filter={`url(#shadow-${index})`} 
                   />
                 ))}
               </Pie>
@@ -2987,9 +2987,9 @@ const Dashboard = () => {
                   paddingLeft: isMobile ? '0px' : '10px', 
                   fontSize: isMobile ? '10px' : '12px',
                   overflowY: 'auto', 
-                  maxHeight: isMobile ? '80px' : '180px',
+                  maxHeight: isMobile ? '60px' : '140px',
                   width: '100%',
-                  marginTop: isMobile ? '10px' : '0',
+                  marginTop: isMobile ? '5px' : '0',
                   justifyContent: isMobile ? 'center' : 'flex-start',
                   flexWrap: isMobile ? 'wrap' : 'nowrap',
                   gap: isMobile ? '5px' : '0'

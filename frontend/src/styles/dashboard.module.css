@@ -410,20 +410,21 @@
   padding: 20px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   margin-bottom: 24px;
-  min-height: 400px;
+  min-height: 380px; /* Reduzido de 400px para 380px */
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start; /* Alterado de center para flex-start para melhor alinhamento */
   position: relative;
+  overflow: visible; /* Garantir que o conteúdo não seja cortado */
 }
 
 /* Wrapper do gráfico */
 .chartWrapper {
   width: 100%;
   height: 100%;
-  min-height: 300px;
+  min-height: 280px; /* Reduzido de 300px para 280px */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -435,6 +436,7 @@
 .bankPieContainer,
 .incomeVsExpensesContainer {
   height: 100%;
+  max-height: 320px; /* Adicionado max-height para evitar que o gráfico fique muito alto */
   display: flex;
   flex-direction: column;
 }
@@ -442,12 +444,14 @@
 /* Container responsivo do Recharts */
 .chartContainer .recharts-responsive-container {
   margin: 0 auto;
+  max-height: 320px; /* Adicionado max-height */
 }
 
 /* Wrapper do Recharts */
 .chartContainer .recharts-wrapper {
   width: 100% !important;
   height: 100% !important;
+  max-height: 320px !important; /* Adicionado max-height */
   display: flex !important;
   justify-content: center !important;
   align-items: center !important;
@@ -458,6 +462,7 @@
 .chartContainer .recharts-wrapper svg {
   width: 100% !important;
   height: 100% !important;
+  max-height: 320px !important; /* Adicionado max-height */
   display: block !important;
   margin: 0 auto !important;
 }
@@ -465,7 +470,7 @@
 /* Ajuste específico para gráficos de pizza */
 .categoriesPieContainer .recharts-pie,
 .bankPieContainer .recharts-pie {
-  transform: scale(0.85);
+  transform: scale(0.8); /* Reduzido de 0.85 para 0.8 para diminuir o tamanho do gráfico */
 }
 
 .categoriesPieContainer {
@@ -474,6 +479,7 @@
   align-items: center !important;
   width: 100% !important;
   height: 100% !important;
+  max-height: 320px !important; /* Adicionado max-height */
   position: relative !important;
 }
 
@@ -3340,6 +3346,7 @@ input:checked + .toggleSlider:before {
   display: flex;
   justify-content: center;
   align-items: center;
+  max-height: 320px; /* Adicionado max-height */
 }
 
 .pieChartFilter {
@@ -3360,12 +3367,14 @@ input:checked + .toggleSlider:before {
 /* Padronizar todos os containers de gráficos de pizza */
 .categoriesPieContainer {
   height: 100%;
+  max-height: 320px; /* Adicionado max-height */
   display: flex;
   flex-direction: column;
 }
 
 .bankPieContainer {
   height: 100%;
+  max-height: 320px; /* Adicionado max-height */
   display: flex;
   flex-direction: column;
 }
