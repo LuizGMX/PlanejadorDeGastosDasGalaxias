@@ -7,7 +7,15 @@ import {
   LineChart,
   AreaChart,
   ComposedChart,
-  ResponsiveContainer
+  ResponsiveContainer,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Bar,
+  Pie,
+  Tooltip,
+  Cell,
+  Legend
 } from '../charts';
 import styles from '../../styles/dashboard.module.css';
 import { FaChevronDown} from 'react-icons/fa';
