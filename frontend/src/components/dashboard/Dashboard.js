@@ -2985,10 +2985,10 @@ const Dashboard = () => {
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    maxWidth: isMobile ? '80px' : '150px', // Aumentado para melhor legibilidade
+                    maxWidth: isMobile ? '60px' : '110px',
                     display: 'inline-block'
                   }}>
-                    {value} 
+                    {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
                     {!isMobile && ` (${entry.payload.percentage.toFixed(1)}%)`}
                   </span>
                 )}
@@ -3168,10 +3168,10 @@ const Dashboard = () => {
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    maxWidth: isMobile ? '80px' : '150px', // Aumentado para melhor legibilidade
+                    maxWidth: isMobile ? '60px' : '110px',
                     display: 'inline-block'
                   }}>
-                    {value} 
+                    {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
                     {!isMobile && ` (${(entry.payload.percent * 100).toFixed(1)}%)`}
                   </span>
                 )}
