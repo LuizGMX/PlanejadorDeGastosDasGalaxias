@@ -868,7 +868,7 @@ const Dashboard = () => {
       <text
         x={x}
         y={y}
-        fill="#000000"
+        fill="#FFFFF"
         textAnchor="middle"
         dominantBaseline="central"        
         fontSize={isMobile ? "15px" : "25px"}        
@@ -1685,31 +1685,6 @@ const Dashboard = () => {
         color: 'var(--error-color)'
       }
     ];
-
-    // Função personalizada para rótulos do gráfico Receitas vs Despesas
-    const incomePieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
-      // Este é um gráfico especial de apenas 2 partes, podemos sempre mostrar os rótulos
-      const RADIAN = Math.PI / 180;
-      const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-      const x = cx + radius * Math.cos(-midAngle * RADIAN);
-      const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-      return (
-        <text
-          x={x}
-          y={y}
-          fill="#ffffff"
-          textAnchor="middle"
-          dominantBaseline="central"
-          fontWeight="bold"
-          fontSize={isMobile ? "12px" : "14px"}
-          strokeWidth="0.5px"
-          stroke="#000000"
-        >
-          {`${(percent * 100).toFixed(0)}%`}
-        </text>
-      );
-    };
 
     return (
       <div className={styles.chartContainer}>
