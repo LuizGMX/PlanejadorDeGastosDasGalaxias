@@ -248,130 +248,127 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
           </div>
         </div>
       )}
-      
-      <div className={styles.trendChartContent} style={{ overflow: 'visible' }}>
-        <ResponsiveContainer width="100%" height={height} style={{ overflow: 'visible' }}>
-          {/* Conteúdo da projeção */}
-          <ComposedChart 
-            data={data.projectionData} 
-            margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-            onMouseLeave={handleMouseLeave}
-          >
-            <defs>
-              <linearGradient id="colorGanhos" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="var(--success-color)" stopOpacity={0.8}/>
-                <stop offset="95%" stopColor="var(--success-color)" stopOpacity={0}/>
-              </linearGradient>
-              <linearGradient id="colorDespesas" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="var(--error-color)" stopOpacity={0.8}/>
-                <stop offset="95%" stopColor="var(--error-color)" stopOpacity={0}/>
-              </linearGradient>
-              <linearGradient id="colorSaldo" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#1E90FF" stopOpacity={0.8}/>
-                <stop offset="95%" stopColor="#1E90FF" stopOpacity={0}/>
-              </linearGradient>
-            </defs>
-            
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
-            <XAxis
-              dataKey="date"
-              tickFormatter={(date) => {
-                const d = new Date(date);
-                const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 
-                             'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-                return `${months[d.getMonth()]}/${d.getFullYear()}`;
-              }}
-              stroke="var(--text-color)"
-            />
-            <YAxis
-              tickFormatter={formatFullCurrency}
-              stroke="var(--text-color)"
-              tick={{ fill: 'var(--text-color)', fontSize: 11 }}
-            />
-            <Tooltip
-              formatter={formatFullCurrency}
-              labelFormatter={(date) => {
-                const d = new Date(date);
-                const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
-                             'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-                return `${months[d.getMonth()]} de ${d.getFullYear()}`;
-              }}
-              contentStyle={{
-                backgroundColor: 'var(--card-background)',
-                border: '1px solid var(--border-color)',
-                borderRadius: '8px',
-                padding: '10px'
-              }}
-            />
-            <Legend 
-              verticalAlign="top"
-              height={36}
-              formatter={(value) => {
-                let color;
-                switch(value) {
-                  case 'receitas':
-                    color = 'var(--success-color)';
-                    value = 'Receitas';
-                    break;
-                  case 'despesas':
-                    color = 'var(--error-color)';
-                    value = 'Despesas';
-                    break;
-                  case 'saldo':
-                    color = '#1E90FF';
-                    value = 'Saldo';
-                    break;
-                  default:
-                    color = 'var(--text-color)';
-                }
-                return <span style={{ color }}>{value}</span>;
-              }}
-            />
-            
-            <Area
-              type="monotone"
-              dataKey="receitas"
-              stroke="var(--success-color)"
-              fillOpacity={1}
-              fill="url(#colorGanhos)"
-              strokeWidth={2}
-            />
-            <Area
-              type="monotone"
-              dataKey="despesas"
-              stroke="var(--error-color)"
-              fillOpacity={1}
-              fill="url(#colorDespesas)"
-              strokeWidth={2}
-            />
-            <Line
-              type="monotone"
-              dataKey="saldo"
-              stroke="#1E90FF"
-              strokeWidth={3}
-              dot={(props) => {
-                const { cx, cy, index } = props;
-                const isActive = activeDot === index;
-                
-                return (
-                  <circle
-                    cx={cx}
-                    cy={cy}
-                    r={isActive ? 6 : 4}
-                    fill="#1E90FF"
-                    stroke={isActive ? "#fff" : "none"}
+
+      <ResponsiveContainer width="100%" height={height}>
+        <ComposedChart 
+          data={data.projectionData} 
+          margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+          onMouseLeave={handleMouseLeave}
+        >
+          <defs>
+            <linearGradient id="colorGanhos" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="var(--success-color)" stopOpacity={0.8}/>
+              <stop offset="95%" stopColor="var(--success-color)" stopOpacity={0}/>
+            </linearGradient>
+            <linearGradient id="colorDespesas" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="var(--error-color)" stopOpacity={0.8}/>
+              <stop offset="95%" stopColor="var(--error-color)" stopOpacity={0}/>
+            </linearGradient>
+            <linearGradient id="colorSaldo" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#1E90FF" stopOpacity={0.8}/>
+              <stop offset="95%" stopColor="#1E90FF" stopOpacity={0}/>
+            </linearGradient>
+          </defs>
+          
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+          <XAxis
+            dataKey="date"
+            tickFormatter={(date) => {
+              const d = new Date(date);
+              const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 
+                           'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+              return `${months[d.getMonth()]}/${d.getFullYear()}`;
+            }}
+            stroke="var(--text-color)"
+          />
+          <YAxis
+            tickFormatter={formatFullCurrency}
+            stroke="var(--text-color)"
+            tick={{ fill: 'var(--text-color)', fontSize: 11 }}
+          />
+          <Tooltip
+            formatter={formatFullCurrency}
+            labelFormatter={(date) => {
+              const d = new Date(date);
+              const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                           'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+              return `${months[d.getMonth()]} de ${d.getFullYear()}`;
+            }}
+            contentStyle={{
+              backgroundColor: 'var(--card-background)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '8px',
+              padding: '10px'
+            }}
+          />
+          <Legend 
+            verticalAlign="top"
+            height={36}
+            formatter={(value) => {
+              let color;
+              switch(value) {
+                case 'receitas':
+                  color = 'var(--success-color)';
+                  value = 'Receitas';
+                  break;
+                case 'despesas':
+                  color = 'var(--error-color)';
+                  value = 'Despesas';
+                  break;
+                case 'saldo':
+                  color = '#1E90FF';
+                  value = 'Saldo';
+                  break;
+                default:
+                  color = 'var(--text-color)';
+              }
+              return <span style={{ color }}>{value}</span>;
+            }}
+          />
+          
+          <Area
+            type="monotone"
+            dataKey="receitas"
+            stroke="var(--success-color)"
+            fillOpacity={1}
+            fill="url(#colorGanhos)"
             strokeWidth={2}
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => handleDotClick(index)}
-                    onMouseEnter={() => handleMouseEnter(props.payload, index)}
-                  />
-                );
-              }}
-              activeDot={{ r: 8, fill: '#1E90FF', stroke: '#fff', strokeWidth: 2 }}
-            />
-          </ComposedChart>
-        </ResponsiveContainer>
-      </div>
+          />
+          <Area
+            type="monotone"
+            dataKey="despesas"
+            stroke="var(--error-color)"
+            fillOpacity={1}
+            fill="url(#colorDespesas)"
+            strokeWidth={2}
+          />
+          <Line
+            type="monotone"
+            dataKey="saldo"
+            stroke="#1E90FF"
+            strokeWidth={3}
+            dot={(props) => {
+              const { cx, cy, index } = props;
+              const isActive = activeDot === index;
+              
+              return (
+                <circle
+                  cx={cx}
+                  cy={cy}
+                  r={isActive ? 6 : 4}
+                  fill="#1E90FF"
+                  stroke={isActive ? "#fff" : "none"}
+            strokeWidth={2}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => handleDotClick(index)}
+                  onMouseEnter={() => handleMouseEnter(props.payload, index)}
+                />
+              );
+            }}
+            activeDot={{ r: 8, fill: '#1E90FF', stroke: '#fff', strokeWidth: 2 }}
+          />
+        </ComposedChart>
+      </ResponsiveContainer>
 
       <div className={styles.trendChartSummary}>
         <div className={styles.trendChartSummaryItem}>
@@ -871,10 +868,13 @@ const Dashboard = () => {
       <text 
         x={x} 
         y={y} 
-        fill="#FFFFFF" 
+        fill="#000000" 
         textAnchor="middle" 
-        dominantBaseline="central"        
-        fontSize={"30px"}                
+        dominantBaseline="central"
+        fontWeight="bold"
+        fontSize={isMobile ? "10px" : "12px"}
+        strokeWidth="0.5px"
+        stroke="#ffffff"
       >
         {`${(percent * 100).toFixed(0)}%`}
       </text>
@@ -1023,28 +1023,17 @@ const Dashboard = () => {
         
         // Processar receitas
         if (result.incomes && Array.isArray(result.incomes)) {
-          const processedIncomes = result.incomes.map(income => {
-            // Garantir que a categoria seja capturada corretamente
-            let category = 'Sem categoria';
-            let categoryId = null;
-            
-            if (income.Category && income.Category.name) {
-              category = income.Category.name;
-              categoryId = income.Category.id;
-            }
-            
-            return {
-              id: income.id,
-              description: income.description || 'Sem descrição',
-              amount: parseFloat(income.amount),
-              date: new Date(income.date),
-              category: category,
-              categoryId: categoryId || income.category_id,
-              bank: income.bank ? income.bank.name : 'Sem banco',
-              type: 'income',
-              is_recurring: Boolean(income.is_recurring)
-            };
-          });
+          const processedIncomes = result.incomes.map(income => ({
+            id: income.id,
+            description: income.description || 'Sem descrição',
+            amount: parseFloat(income.amount),
+            date: new Date(income.date),
+            category: income.Category ? income.Category.name : 'Sem categoria',
+            categoryId: income.category_id,
+            bank: income.bank ? income.bank.name : 'Sem banco',
+            type: 'income',
+            is_recurring: false
+          }));
           
           setAllIncomes(processedIncomes);
         }
@@ -1057,34 +1046,21 @@ const Dashboard = () => {
             amount: parseFloat(expense.amount),
             date: new Date(expense.expense_date),
             category: expense.Category ? expense.Category.name : 'Sem categoria',
-            categoryId: expense.Category ? expense.Category.id : null,
             bank: expense.bank ? expense.bank.name : 'Sem banco',
             type: 'expense',
             is_recurring: expense.recurrence !== null,
             payment_method: expense.payment_method || 'Não especificado'
           })),
-          ...(result.incomes || []).map(income => {
-            // Garantir que a categoria seja capturada corretamente
-            let category = 'Sem categoria';
-            let categoryId = null;
-            
-            if (income.Category && income.Category.name) {
-              category = income.Category.name;
-              categoryId = income.Category.id;
-            }
-            
-            return {
-              id: `income-${income.id}`,
-              description: income.description || 'Sem descrição',
-              amount: parseFloat(income.amount),
-              date: new Date(income.date),
-              category: category,
-              categoryId: categoryId || income.category_id,
-              bank: income.bank ? income.bank.name : 'Sem banco',
-              type: 'income',
-              is_recurring: Boolean(income.is_recurring)
-            };
-          })
+          ...(result.incomes || []).map(income => ({
+            id: `income-${income.id}`,
+            description: income.description || 'Sem descrição',
+            amount: parseFloat(income.amount),
+            date: new Date(income.date),
+            category: income.Category ? income.Category.name : 'Sem categoria',
+            bank: income.bank ? income.bank.name : 'Sem banco',
+            type: 'income',
+            is_recurring: false
+          }))
         ];
         
         // Ordenar por data (mais recente primeiro)
@@ -1181,8 +1157,8 @@ const Dashboard = () => {
             </span>
           </div>
         </div>
-        <div ref={chartRefs[chartId]} className={styles.chartWrapper} style={{ height: '400px', overflow: 'visible' }}>
-          <ResponsiveContainer width="100%" height="100%" style={{ overflow: 'visible' }}>
+        <div ref={chartRefs[chartId]} className={styles.chartWrapper} style={{ height: '400px' }}>
+          <ResponsiveContainer width="100%" height="100%">
             {chartComponent}
           </ResponsiveContainer>
         </div>
@@ -1477,8 +1453,8 @@ const Dashboard = () => {
             </div>
           </div>
           
-          <div className={styles.projectionData} style={{ overflow: 'visible' }}>
-            <ResponsiveContainer width="100%" height={120} style={{ overflow: 'visible' }}>
+          <div className={styles.projectionData}>
+            <ResponsiveContainer width="100%" height={120}>
               <BarChart
                 data={chartData}
                 layout="vertical"
@@ -1748,10 +1724,9 @@ const Dashboard = () => {
             </span>
           </div>
         </div>
-    
-        <div className={styles.incomeVsExpensesContainer} style={{ width: '100%', maxWidth: isMobile ? 300 : 400, height: isMobile ? 250 : 320, overflow: 'visible' }}>
-          <div style={{ width: '100%', maxWidth: isMobile ? 300 : 400, height: isMobile ? 250 : 320, overflow: 'visible' }}>
-            <PieChart width={isMobile ? 300 : 400} height={isMobile ? 250 : 320} margin={{ top: 20, right: 20, left: 20, bottom: 20 }}>
+        <div className={styles.incomeVsExpensesContainer}>
+          <ResponsiveContainer width="100%" height={isMobile ? 220 : 280}>
+            <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
               <defs>
                 <filter id="income-vs-expense-shadow" x="-20%" y="-20%" width="140%" height="140%">
                   <feDropShadow dx="0" dy="0" stdDeviation="3" floodOpacity="0.3" />
@@ -1759,51 +1734,51 @@ const Dashboard = () => {
               </defs>
               <Pie
                 data={chartData}
-                dataKey="value"
-                nameKey="category"
-                cx="50%"
-                cy="50%"
-                outerRadius={isMobile ? 90 : 120}
+                      dataKey="value"
+                      nameKey="category"
+                      cx="50%"
+                      cy="50%"
+                outerRadius={isMobile ? 80 : 100}
                 innerRadius={0}
-                startAngle={90}
-                endAngle={-270}
+                      startAngle={90}
+                      endAngle={-270}
                 filter="url(#income-vs-expense-shadow)"
                 animationDuration={800}
                 animationBegin={200}
                 animationEasing="ease-out"
-                label={getCustomizedPieLabel}
+                label={incomePieLabel}
                 labelLine={false}
               >
                 {chartData.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={entry.color}
-                    stroke="#ffffff"
-                    strokeWidth={2}
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={entry.color} 
+                    stroke="#ffffff" 
+                    strokeWidth={2} 
                   />
                 ))}
-              </Pie>
-              <Tooltip
+                    </Pie>
+                    <Tooltip
                 formatter={(value) => formatCurrency(value)}
-                contentStyle={{
-                  backgroundColor: 'var(--card-background)',
-                  border: '1px solid var(--border-color)',
-                  color: 'var(--text-color)',
-                  padding: '10px',
+                      contentStyle={{
+                        backgroundColor: 'var(--card-background)',
+                        border: '1px solid var(--border-color)',
+                        color: 'var(--text-color)',
+                        padding: '10px',
                   borderRadius: '8px',
                   boxShadow: '0 4px 8px rgba(0,0,0,0.15)'
-                }}
-              />
-              <Legend
+                      }}
+                    />
+                    <Legend
                 layout={isMobile ? "horizontal" : "vertical"}
-                align="center"
+                      align="center"
                 verticalAlign="bottom"
                 iconType="circle"
                 iconSize={isMobile ? 8 : 10}
                 formatter={(value, entry) => (
-                  <span style={{
-                    color: 'var(--text-color)',
-                    fontSize: isMobile ? '10px' : '12px',
+                  <span style={{ 
+                    color: 'var(--text-color)', 
+                    fontSize: isMobile ? '10px' : '12px', 
                     fontWeight: 'bold'
                   }}>
                     {value}{isMobile ? '' : `: ${formatCurrency(entry.payload.value)}`} ({(entry.payload.percent * 100).toFixed(0)}%)
@@ -1813,11 +1788,11 @@ const Dashboard = () => {
                   paddingTop: isMobile ? '8px' : '10px',
                   fontSize: isMobile ? '10px' : '12px'
                 }}
-              />
-            </PieChart>
-          </div>
+                    />
+                  </PieChart>
+          </ResponsiveContainer>
         </div>
-    
+        
         <div className={styles.incomeVsExpensesSummary}>
           <div className={styles.infoItem}>
             <span>Receitas totais:</span>
@@ -1833,7 +1808,7 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-    );    
+    );
   };
 
   // Improved renderExpensesByCategoryChart with better visualization and mobile optimization
@@ -1908,9 +1883,8 @@ const Dashboard = () => {
             </span>
           </div>
         </div>
-    
-        <div className={styles.categoriesPieContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'visible' }}>
-          <ResponsiveContainer width="100%" height={isMobile ? 220 : 350} style={{ overflow: 'visible' }}>
+        <div className={styles.categoriesPieContainer}>
+          <ResponsiveContainer width="100%" height={isMobile ? 220 : 350}>
             <PieChart margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
               <defs>
                 {categoriesData.map((entry, index) => (
@@ -1931,31 +1905,34 @@ const Dashboard = () => {
                 dataKey="value"
                 nameKey="category"
                 label={getCustomizedPieLabel}
+                filter="url(#shadow)"
                 animationDuration={800}
                 animationBegin={200}
                 animationEasing="ease-out"
+                startAngle={90}
+                endAngle={-270}
               >
                 {categoriesData.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={entry.color}
-                    stroke="#ffffff"
-                    strokeWidth={1}
-                    filter={`url(#shadow-${index})`}
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={entry.color} 
+                    stroke="#ffffff" 
+                    strokeWidth={1} 
+                    filter={`url(#shadow-${index})`} 
                   />
                 ))}
               </Pie>
               <Tooltip content={<CustomPieTooltip />} />
-              <Legend
+              <Legend 
                 layout={isMobile ? "horizontal" : "vertical"}
                 align={isMobile ? "center" : "right"}
                 verticalAlign={isMobile ? "bottom" : "middle"}
                 iconType="circle"
                 iconSize={isMobile ? 8 : 10}
                 formatter={(value, entry) => (
-                  <span style={{
-                    color: 'var(--text-color)',
-                    fontSize: isMobile ? '10px' : '12px',
+                  <span style={{ 
+                    color: 'var(--text-color)', 
+                    fontSize: isMobile ? '10px' : '12px', 
                     fontWeight: entry.payload.name === categoriesData[0]?.name ? 'bold' : 'normal',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
@@ -1963,19 +1940,26 @@ const Dashboard = () => {
                     maxWidth: isMobile ? '60px' : '110px',
                     display: 'inline-block'
                   }}>
-                    {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value}
+                    {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
                     {!isMobile && ` (${(entry.payload.percent * 100).toFixed(1)}%)`}
                   </span>
                 )}
-                wrapperStyle={{
-                paddingTop: isMobile ? '8px' : '10px',
-                  fontSize: isMobile ? '10px' : '12px'
+                wrapperStyle={{ 
+                  paddingLeft: isMobile ? '0px' : '10px', 
+                  fontSize: isMobile ? '10px' : '12px',
+                  overflowY: 'auto', 
+                  maxHeight: isMobile ? '80px' : '180px',
+                  width: '100%',
+                  marginTop: isMobile ? '10px' : '0',
+                  justifyContent: isMobile ? 'center' : 'flex-start',
+                  flexWrap: isMobile ? 'wrap' : 'nowrap',
+                  gap: isMobile ? '5px' : '0'
                 }}
               />
             </PieChart>
           </ResponsiveContainer>
         </div>
-    
+        
         <div className={styles.categoriesInsights}>
           <h4>Categoria principal: {categoriesData[0]?.name || 'Nenhuma'}</h4>
           <p>
@@ -1987,7 +1971,7 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-    );    
+    );
   };
 
   const renderTimelineChart = () => {
@@ -2613,7 +2597,6 @@ const Dashboard = () => {
       setIncomeLoading(true);
       try {
         console.log("Processing income category data, transactions:", transactions?.length);
-        
         if (!transactions || transactions.length === 0) {
           console.log("No transactions for income categories");
           setIncomeCategoryData([]);
@@ -2621,39 +2604,25 @@ const Dashboard = () => {
           return;
         }
         
-        // Filter only income transactions
+        // Use only the transactions filtered by the API (no additional filtering needed)
+        // The transactions are already filtered based on the queryParams sent to the API
         const filteredTransactions = transactions.filter(transaction => 
           transaction.type === 'income'
         );
         
         console.log("Filtered income transactions:", filteredTransactions.length);
         
-        if (filteredTransactions.length === 0) {
-          console.log("No income transactions found");
-          setIncomeCategoryData([]);
-          setIncomeLoading(false);
-          return;
-        }
-        
         // Group by category and calculate totals
         const categoryTotals = {};
         filteredTransactions.forEach(transaction => {
-          // Verifica todos os possíveis locais da categoria
-          let category = 'Sem categoria';
-          
-          if (typeof transaction.category === 'string' && transaction.category.trim()) {
-            category = transaction.category;
-          } else if (transaction.Category && transaction.Category.name) {
-            category = transaction.Category.name;
-          }
-          
+          const category = transaction.category || 'Sem categoria';
           if (!categoryTotals[category]) {
             categoryTotals[category] = {
               total: 0,
               transactions: []
             };
           }
-          categoryTotals[category].total += parseFloat(transaction.amount) || 0;
+          categoryTotals[category].total += transaction.amount;
           categoryTotals[category].transactions.push(transaction);
         });
         
@@ -2806,8 +2775,8 @@ const Dashboard = () => {
           </div>
         </div>
         
-        <div className={styles.categoriesPieContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'visible' }}>
-          <ResponsiveContainer width="100%" height={isMobile ? 220 : 350} style={{ overflow: 'visible' }}>
+        <div className={styles.categoriesPieContainer}>
+          <ResponsiveContainer width="100%" height={isMobile ? 220 : 350}>
             <PieChart margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
               <defs>
                 {categoryData.map((entry, index) => (
@@ -2818,8 +2787,8 @@ const Dashboard = () => {
               </defs>
               <Pie
                 data={categoryData}
-                      cx="50%"
-                      cy="50%"
+                cx="50%"
+                cy="50%"
                 labelLine={false}
                 outerRadius={isMobile ? 70 : 130}
                 innerRadius={isMobile ? 30 : 60}
@@ -2832,6 +2801,8 @@ const Dashboard = () => {
                 animationDuration={800}
                 animationBegin={200}
                 animationEasing="ease-out"
+                startAngle={90}
+                endAngle={-270}
               >
                 {categoryData.map((entry, index) => (
                   <Cell 
@@ -2866,8 +2837,15 @@ const Dashboard = () => {
                   </span>
                 )}
                 wrapperStyle={{ 
-              paddingTop: isMobile ? '8px' : '10px',
-                  fontSize: isMobile ? '10px' : '12px'
+                  paddingLeft: isMobile ? '0px' : '20px', 
+                  fontSize: isMobile ? '10px' : '12px',
+                  overflowY: 'auto', 
+                  maxHeight: isMobile ? '80px' : '180px',
+                  width: '100%',
+                  marginTop: isMobile ? '10px' : '0',
+                  justifyContent: isMobile ? 'center' : 'flex-start',
+                  flexWrap: isMobile ? 'wrap' : 'nowrap',
+                  gap: isMobile ? '5px' : '0'
                 }}
               />
                   </PieChart>
@@ -2953,8 +2931,8 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className={styles.categoriesPieContainer} style={{ overflow: 'visible' }}>
-          <ResponsiveContainer width="100%" height={isMobile ? 220 : 350} style={{ overflow: 'visible' }}>
+        <div className={styles.categoriesPieContainer}>
+          <ResponsiveContainer width="100%" height={isMobile ? 220 : 350}>
             <PieChart margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
               <defs>
                 {incomeCategoryData.map((entry, index) => (
@@ -2979,6 +2957,8 @@ const Dashboard = () => {
                 animationDuration={800}
                 animationBegin={200}
                 animationEasing="ease-out"
+                startAngle={90}
+                endAngle={-270}
               >
                 {incomeCategoryData.map((entry, index) => (
                   <Cell 
@@ -3013,8 +2993,15 @@ const Dashboard = () => {
                   </span>
                 )}
                 wrapperStyle={{ 
-               paddingTop: isMobile ? '8px' : '10px',
-                  fontSize: isMobile ? '10px' : '12px'
+                  paddingLeft: isMobile ? '0px' : '10px', 
+                  fontSize: isMobile ? '10px' : '12px',
+                  overflowY: 'auto', 
+                  maxHeight: isMobile ? '80px' : '180px',
+                  width: '100%',
+                  marginTop: isMobile ? '10px' : '0',
+                  justifyContent: isMobile ? 'center' : 'flex-start',
+                  flexWrap: isMobile ? 'wrap' : 'nowrap',
+                  gap: isMobile ? '5px' : '0'
                 }}
               />
             </PieChart>
@@ -3128,9 +3115,9 @@ const Dashboard = () => {
             </span>
           </div>
         </div>
-        <div className={styles.bankPieContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'visible' }}>
-          <ResponsiveContainer width="100%" height={isMobile ? 300 : 400} style={{ overflow: 'visible' }}>
-            <PieChart margin={{ top: 20, right: isMobile ? 20 : 60, left: 20, bottom: 20 }}>
+        <div className={styles.bankPieContainer}>
+          <ResponsiveContainer width="100%" height={isMobile ? 220 : 350}>
+            <PieChart margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
               <defs>
                 {bankData.map((entry, index) => (
                   <filter key={`shadow-${index}`} id={`bank-shadow-${index}`} x="-20%" y="-20%" width="140%" height="140%">
@@ -3143,8 +3130,8 @@ const Dashboard = () => {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                outerRadius={isMobile ? 90 : 140}
-                innerRadius={isMobile ? 40 : 70}
+                outerRadius={isMobile ? 70 : 130}
+                innerRadius={isMobile ? 30 : 60}
                 paddingAngle={2}
                 fill="#8884d8"
                 dataKey="value"
@@ -3153,6 +3140,8 @@ const Dashboard = () => {
                 animationDuration={800}
                 animationBegin={200}
                 animationEasing="ease-out"
+                startAngle={90}
+                endAngle={-270}
               >
                 {bankData.map((entry, index) => (
                   <Cell 
@@ -3187,8 +3176,15 @@ const Dashboard = () => {
                   </span>
                 )}
                 wrapperStyle={{ 
-                 paddingTop: isMobile ? '8px' : '10px',
-                  fontSize: isMobile ? '10px' : '12px'
+                  paddingLeft: isMobile ? '0px' : '10px', 
+                  fontSize: isMobile ? '10px' : '12px',
+                  overflowY: 'auto', 
+                  maxHeight: isMobile ? '80px' : '180px',
+                  width: '100%',
+                  marginTop: isMobile ? '10px' : '0',
+                  justifyContent: isMobile ? 'center' : 'flex-start',
+                  flexWrap: isMobile ? 'wrap' : 'nowrap',
+                  gap: isMobile ? '5px' : '0'
                 }}
               />
             </PieChart>
@@ -3508,8 +3504,8 @@ const Dashboard = () => {
             </span>
           </div>
         </div>
-        <div className={styles.chartBody} style={{ overflow: 'visible' }}>
-          <ResponsiveContainer width="100%" height={300} style={{ overflow: 'visible' }}>
+        <div className={styles.chartBody}>
+          <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 10, bottom: 20 }}>
               <defs>
                 <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
@@ -3650,8 +3646,8 @@ const Dashboard = () => {
             </span>
           </div>
         </div>
-        <div className={styles.chartBody} style={{ overflow: 'visible' }}>
-          <ResponsiveContainer width="100%" height={300} style={{ overflow: 'visible' }}>
+        <div className={styles.chartBody}>
+          <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 10, bottom: 20 }}>
               <defs>
                 <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
@@ -3895,28 +3891,17 @@ const Dashboard = () => {
                 
                 // Processar receitas
                 if (result.incomes && Array.isArray(result.incomes)) {
-                  const processedIncomes = result.incomes.map(income => {
-                    // Garantir que a categoria seja capturada corretamente
-                    let category = 'Sem categoria';
-                    let categoryId = null;
-                    
-                    if (income.Category && income.Category.name) {
-                      category = income.Category.name;
-                      categoryId = income.Category.id;
-                    }
-                    
-                    return {
-                      id: income.id,
-                      description: income.description || 'Sem descrição',
-                      amount: parseFloat(income.amount),
-                      date: new Date(income.date),
-                      category: category,
-                      categoryId: categoryId || income.category_id,
-                      bank: income.bank ? income.bank.name : 'Sem banco',
-                      type: 'income',
-                      is_recurring: Boolean(income.is_recurring)
-                    };
-                  });
+                  const processedIncomes = result.incomes.map(income => ({
+                    id: income.id,
+                    description: income.description || 'Sem descrição',
+                    amount: parseFloat(income.amount),
+                    date: new Date(income.date),
+                    category: income.Category ? income.Category.name : 'Sem categoria',
+                    categoryId: income.category_id,
+                    bank: income.bank ? income.bank.name : 'Sem banco',
+                    type: 'income',
+                    is_recurring: false
+                  }));
                   
                   setAllIncomes(processedIncomes);
                 }
@@ -3929,34 +3914,21 @@ const Dashboard = () => {
                     amount: parseFloat(expense.amount),
                     date: new Date(expense.expense_date),
                     category: expense.Category ? expense.Category.name : 'Sem categoria',
-                    categoryId: expense.Category ? expense.Category.id : null,
                     bank: expense.bank ? expense.bank.name : 'Sem banco',
                     type: 'expense',
                     is_recurring: expense.recurrence !== null,
                     payment_method: expense.payment_method || 'Não especificado'
                   })),
-                  ...(result.incomes || []).map(income => {
-                    // Garantir que a categoria seja capturada corretamente
-                    let category = 'Sem categoria';
-                    let categoryId = null;
-                    
-                    if (income.Category && income.Category.name) {
-                      category = income.Category.name;
-                      categoryId = income.Category.id;
-                    }
-                    
-                    return {
-                      id: `income-${income.id}`,
-                      description: income.description || 'Sem descrição',
-                      amount: parseFloat(income.amount),
-                      date: new Date(income.date),
-                      category: category,
-                      categoryId: categoryId || income.category_id,
-                      bank: income.bank ? income.bank.name : 'Sem banco',
-                      type: 'income',
-                      is_recurring: Boolean(income.is_recurring)
-                    };
-                  })
+                  ...(result.incomes || []).map(income => ({
+                    id: `income-${income.id}`,
+                    description: income.description || 'Sem descrição',
+                    amount: parseFloat(income.amount),
+                    date: new Date(income.date),
+                    category: income.Category ? income.Category.name : 'Sem categoria',
+                    bank: income.bank ? income.bank.name : 'Sem banco',
+                    type: 'income',
+                    is_recurring: false
+                  }))
                 ];
                 
                 // Ordenar por data (mais recente primeiro)

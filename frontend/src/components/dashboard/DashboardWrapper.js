@@ -14,7 +14,7 @@ const DashboardWrapper = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  return isMobile ? <MobileDashboard /> : <Dashboard />;
+  return <Dashboard />;
 };
 
 export default DashboardWrapper; 
