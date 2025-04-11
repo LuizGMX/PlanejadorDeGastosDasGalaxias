@@ -358,12 +358,12 @@ router.get('/', authenticate, async (req, res) => {
           { 
             model: Category, 
             as: 'Category',
-            attributes: ['id', 'category_name', 'color', 'description'] 
+            attributes: ['id', 'category_name', 'description'] 
           },
           { 
             model: Bank, 
             as: 'bank',
-            attributes: ['id', 'name', 'icon', 'color'] 
+            attributes: ['id', 'name'] 
           }
         ]
       })
@@ -989,12 +989,12 @@ router.get('/all-transactions', authenticate, async (req, res) => {
           { 
             model: Category, 
             as: 'Category',
-            attributes: ['id', 'category_name', 'color', 'description'] 
+            attributes: ['id', 'category_name', 'description'] 
           },
           { 
             model: Bank, 
             as: 'bank',
-            attributes: ['id', 'name', 'icon', 'color'] 
+            attributes: ['id', 'name'] 
           }
         ],
         order: [['date', 'DESC']]
