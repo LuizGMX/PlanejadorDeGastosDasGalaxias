@@ -1971,15 +1971,8 @@ const Dashboard = () => {
                   </span>
                 )}
                 wrapperStyle={{
-                  paddingLeft: isMobile ? '0px' : '10px',
-                  fontSize: isMobile ? '10px' : '12px',
-                  overflowY: 'auto',
-                  maxHeight: isMobile ? '80px' : '180px',
-                  width: '100%',
-                  marginTop: isMobile ? '10px' : '0',
-                  justifyContent: isMobile ? 'center' : 'flex-start',
-                  flexWrap: isMobile ? 'wrap' : 'nowrap',
-                  gap: isMobile ? '5px' : '0'
+                paddingTop: isMobile ? '8px' : '10px',
+                  fontSize: isMobile ? '10px' : '12px'
                 }}
               />
             </PieChart>
@@ -2876,15 +2869,8 @@ const Dashboard = () => {
                   </span>
                 )}
                 wrapperStyle={{ 
-                  paddingLeft: isMobile ? '0px' : '20px', 
-                  fontSize: isMobile ? '10px' : '12px',
-                  overflowY: 'auto', 
-                  maxHeight: isMobile ? '80px' : '180px',
-                  width: '100%',
-                  marginTop: isMobile ? '10px' : '0',
-                  justifyContent: isMobile ? 'center' : 'flex-start',
-                  flexWrap: isMobile ? 'wrap' : 'nowrap',
-                  gap: isMobile ? '5px' : '0'
+              paddingTop: isMobile ? '8px' : '10px',
+                  fontSize: isMobile ? '10px' : '12px'
                 }}
               />
                   </PieChart>
@@ -3030,15 +3016,8 @@ const Dashboard = () => {
                   </span>
                 )}
                 wrapperStyle={{ 
-                  paddingLeft: isMobile ? '0px' : '10px', 
-                  fontSize: isMobile ? '10px' : '12px',
-                  overflowY: 'auto', 
-                  maxHeight: isMobile ? '80px' : '180px',
-                  width: '100%',
-                  marginTop: isMobile ? '10px' : '0',
-                  justifyContent: isMobile ? 'center' : 'flex-start',
-                  flexWrap: isMobile ? 'wrap' : 'nowrap',
-                  gap: isMobile ? '5px' : '0'
+               paddingTop: isMobile ? '8px' : '10px',
+                  fontSize: isMobile ? '10px' : '12px'
                 }}
               />
             </PieChart>
@@ -3211,15 +3190,8 @@ const Dashboard = () => {
                   </span>
                 )}
                 wrapperStyle={{ 
-                  paddingLeft: isMobile ? '0px' : '10px', 
-                  fontSize: isMobile ? '10px' : '12px',
-                  overflowY: 'auto', 
-                  maxHeight: isMobile ? '80px' : '180px',
-                  width: '100%',
-                  marginTop: isMobile ? '10px' : '0',
-                  justifyContent: isMobile ? 'center' : 'flex-start',
-                  flexWrap: isMobile ? 'wrap' : 'nowrap',
-                  gap: isMobile ? '5px' : '0'
+                 paddingTop: isMobile ? '8px' : '10px',
+                  fontSize: isMobile ? '10px' : '12px'
                 }}
               />
             </PieChart>

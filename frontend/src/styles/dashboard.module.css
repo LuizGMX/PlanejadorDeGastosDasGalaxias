@@ -3371,9 +3371,11 @@ input:checked + .toggleSlider:before {
 /* Padronizar todos os containers de gráficos de pizza */
 .categoriesPieContainer {
   height: 100%;
-  max-height: 320px; /* Adicionado max-height */
+  max-height: 320px;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;  
 }
 
 .bankPieContainer {
