@@ -877,7 +877,7 @@ const Dashboard = () => {
       </text>
     );
   };
-  
+
 
   useEffect(() => {
     const resizeObserver = new ResizeObserver(entries => {
@@ -3974,13 +3974,13 @@ const Dashboard = () => {
       {getGreeting(auth.user?.name)}
       <div className={styles.dashboardHeader}>
         <div className={styles.navigationTabs}>
-          <button
+          {/* <button
             className={`${styles.navTab} ${activeSection === 'overview' ? styles.activeTab : ''}`}
             onClick={() => setActiveSection('overview')}
           >
             <span className={styles.tabIcon}>📊</span>
             Visão Geral
-          </button>
+          </button> */}
           {/* Aba Transações oculta conforme solicitado 
           <button
             className={`${styles.navTab} ${activeSection === 'transactions' ? styles.activeTab : ''}`}
