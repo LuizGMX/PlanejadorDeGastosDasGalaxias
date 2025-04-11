@@ -388,123 +388,110 @@
 
 .chartsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(32%, 1fr));
-  gap: 1.5rem;
-  margin-top: 1.5rem;
-  width: 100%;
-  justify-content: center;
-  justify-items: center;
-  align-items: center;
-}
-
-/* Estilo especial para a primeira grid - orçamento e objetivo lado a lado */
-.chartsGrid:first-of-type {
   grid-template-columns: repeat(2, 1fr);
-  justify-content: center;
-  justify-items: center;
-}
-
-/* Container principal do gráfico */
-.chartContainer {
-  background: var(--card-bg);
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-bottom: 24px;
-  min-height: 380px; /* Reduzido de 400px para 380px */
+  gap: 2rem;
+  margin-bottom: 2rem;
   width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start; /* Alterado de center para flex-start para melhor alinhamento */
-  position: relative;
-  overflow: visible; /* Garantir que o conteúdo não seja cortado */
 }
 
-/* Wrapper do gráfico */
-.chartWrapper {
-  width: 100%;
-  height: 100%;
-  min-height: 280px; /* Reduzido de 300px para 280px */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: relative;
-}
-
-/* Containers específicos dos tipos de gráficos */
-.categoriesPieContainer,
-.bankPieContainer,
-.incomeVsExpensesContainer {
-  height: 100%;
-  max-height: 320px; /* Adicionado max-height para evitar que o gráfico fique muito alto */
-  display: flex;
-  flex-direction: column;
-}
-
-/* Container responsivo do Recharts */
-.chartContainer .recharts-responsive-container {
-  margin: 0 auto;
-  max-height: 320px; /* Adicionado max-height */
-}
-
-/* Wrapper do Recharts */
-.chartContainer .recharts-wrapper {
-  width: 100% !important;
-  height: 100% !important;
-  max-height: 320px !important; /* Adicionado max-height */
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  margin: 0 auto !important;
-}
-
-/* SVG do Recharts */
-.chartContainer .recharts-wrapper svg {
-  width: 100% !important;
-  height: 100% !important;
-  max-height: 320px !important; /* Adicionado max-height */
-  display: block !important;
-  margin: 0 auto !important;
-}
-
-.recharts-wrapper {
-  margin: 0 auto !important;
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-}
-
-
-/* Ajuste para o elemento pie dentro do SVG */
-.categoriesPieContainer .recharts-pie,
-.bankPieContainer .recharts-pie {
-  transform-origin: center center;
-}
-
-/* Ajuste do corpo do gráfico */
-.chartBody {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 0 auto;
-}
-
-/* Para telas menores */
 @media (max-width: 1200px) {
   .chartsGrid {
-    grid-template-columns: repeat(auto-fill, minmax(45%, 1fr));
-    justify-content: center;
-    justify-items: center;
-  }
-  
-  .chartsGrid:first-of-type {
     grid-template-columns: repeat(2, 1fr);
-    justify-content: center;
-    justify-items: center;
+    gap: 1.5rem;
   }
+}
+
+@media (max-width: 768px) {
+  .chartsGrid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
+
+/* Ajustando a grade de gráficos para melhorar o layout */
+.chartContainer {
+  background: var(--card-background);
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  padding: 1.5rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: 1px solid var(--border-color);
+  height: 100%;
+}
+
+/* Melhorando o estilo dos gráficos de tendência */
+.chartContainer.trendChart {
+  height: 400px;
+}
+
+/* Melhorando o estilo do comparativo mensal */
+.insightsContainer {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background-color: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+
+.insightsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 992px) {
+  .insightsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 576px) {
+  .insightsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.insightItem {
+  display: flex;
+  padding: 1rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  align-items: flex-start;
+}
+
+.insightIcon {
+  font-size: 1.5rem;
+  margin-right: 0.75rem;
+}
+
+.insightContent {
+  flex: 1;
+}
+
+.insightContent h5 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.insightContent p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-color);
+}
+
+.trendUp {
+  color: var(--success-color);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.trendDown {
+  color: var(--error-color);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 
 /* Chart grid layout for desktop */
@@ -602,19 +589,6 @@
 
 .dateFilterBadge i {
   margin-right: 5px;
-}
-
-.categoriesPieContainer,
-.bankPieContainer,
-.incomeVsExpensesContainer {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 0 auto;
-  position: relative;
-  width: 100%;
-  height: 100%;
 }
 
 .categoriesInsights {
@@ -3400,4 +3374,32 @@ input:checked + .toggleSlider:before {
     flex-wrap: wrap;
     gap: 5px;
   }
+}
+
+/* Removendo estilos dos componentes que não são mais usados */
+.categoriesPieContainer,
+.bankPieContainer {
+  display: none;
+}
+
+.categoriesInsights {
+  display: none;
+}
+
+.categoriesLegend {
+  display: none;
+}
+
+.categoryItem,
+.categoryHeader,
+.categoryColor,
+.categoryName,
+.categoryValue,
+.subcategories,
+.subcategoryItem,
+.subcategoryName,
+.subcategoryValues,
+.recurringValue,
+.normalValue {
+  display: none;
 }
