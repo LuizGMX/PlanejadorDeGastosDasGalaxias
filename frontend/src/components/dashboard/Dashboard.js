@@ -877,6 +877,7 @@ const Dashboard = () => {
       </text>
     );
   };
+  
 
   useEffect(() => {
     const resizeObserver = new ResizeObserver(entries => {
