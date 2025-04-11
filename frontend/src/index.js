@@ -16,8 +16,6 @@ import './styles/profile.module.css';
 import './styles/telegramLinking.module.css';
 
 // Estilos mobile
-import './styles/mobile/dashboard.mobile.module.css';
-import './styles/mobile/dashboard.mobile.css';
 import './styles/mobile/dataTable.mobile.module.css';
 import './styles/mobile/addIncomeAndExpense.mobile.module.css';
 import './styles/mobile/incomes.mobile.css';
