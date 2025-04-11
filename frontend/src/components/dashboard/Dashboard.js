@@ -1771,7 +1771,7 @@ const Dashboard = () => {
                 animationDuration={800}
                 animationBegin={200}
                 animationEasing="ease-out"
-                label={incomePieLabel}
+                label={getCustomizedPieLabel}
                 labelLine={false}
               >
                 {chartData.map((entry, index) => (
