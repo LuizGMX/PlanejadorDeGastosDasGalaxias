@@ -1,4 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 
 // Criar o contexto de autenticação
 export const AuthContext = createContext();
@@ -8,8 +10,50 @@ export const AuthProvider = ({ children }) => {
   const [auth, setAuth] = useState(() => {
     // Verificar se há um token armazenado no localStorage
     const token = localStorage.getItem('token');
-    return { token, user: null, loading: !!token };
+    return { 
+      token, 
+      user: null, 
+      loading: !!token, 
+      subscriptionExpired: false 
+    };
   });
+
+  // Hook para redirecionamento
+  const navigate = useNavigate();
+
+  // Interceptor para tratar erros de API, especialmente para assinatura expirada
+  const apiInterceptor = async (url, options = {}) => {
+    try {
+      const response = await fetch(url, options);
+      
+      // Verificar se a resposta é um erro de assinatura expirada
+      if (response.status === 403) {
+        const data = await response.json();
+        
+        if (data.subscriptionExpired) {
+          // Definir status de assinatura expirada sem remover o token
+          setAuth(prev => ({ 
+            ...prev, 
+            subscriptionExpired: true 
+          }));
+          
+          // Redirecionar para a página de pagamento
+          navigate('/payment');
+          
+          // Exibir notificação
+          toast.error('Sua assinatura expirou. Por favor, renove para continuar usando o sistema.');
+          
+          // Retornar um erro personalizado
+          throw new Error('Assinatura expirada');
+        }
+      }
+      
+      return response;
+    } catch (error) {
+      // Repassar o erro para ser tratado pelo chamador
+      throw error;
+    }
+  };
 
   // Função para buscar os dados do usuário quando houver um token
   useEffect(() => {
@@ -19,7 +63,7 @@ export const AuthProvider = ({ children }) => {
       if (token) {
         try {
           console.log('Tentando buscar dados do usuário com token armazenado');
-          const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/auth/me`, {
+          const response = await apiInterceptor(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/auth/me`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -48,7 +92,8 @@ export const AuthProvider = ({ children }) => {
               setAuth({ 
                 token: token, 
                 user: userData, 
-                loading: false 
+                loading: false,
+                subscriptionExpired: false
               });
             } catch (jsonError) {
               console.error('Erro ao parsear JSON da resposta:', jsonError);
@@ -62,7 +107,7 @@ export const AuthProvider = ({ children }) => {
             if (response.status === 401) {
               console.log('Token inválido ou expirado, removendo do localStorage');
               localStorage.removeItem('token');
-              setAuth({ token: null, user: null, loading: false });
+              setAuth({ token: null, user: null, loading: false, subscriptionExpired: false });
             } else {
               // Para outros erros, mantemos o token para permitir novas tentativas
               setAuth(prev => ({ ...prev, loading: false }));
@@ -77,7 +122,7 @@ export const AuthProvider = ({ children }) => {
           setAuth(prev => ({ ...prev, loading: false }));
         }
       } else {
-        setAuth({ token: null, user: null, loading: false });
+        setAuth({ token: null, user: null, loading: false, subscriptionExpired: false });
       }
     };
 
@@ -89,7 +134,7 @@ export const AuthProvider = ({ children }) => {
         if (e.newValue) {
           fetchUser();
         } else {
-          setAuth({ token: null, user: null, loading: false });
+          setAuth({ token: null, user: null, loading: false, subscriptionExpired: false });
         }
       }
     };
@@ -99,7 +144,7 @@ export const AuthProvider = ({ children }) => {
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, []);
+  }, [navigate]);
 
   // Função para fazer login
   const login = async (email, password) => {
@@ -116,7 +161,12 @@ export const AuthProvider = ({ children }) => {
 
       if (response.ok) {
         localStorage.setItem('token', data.token);
-        setAuth({ token: data.token, user: data.user, loading: false });
+        setAuth({ 
+          token: data.token, 
+          user: data.user, 
+          loading: false,
+          subscriptionExpired: false
+        });
         return { success: true };
       } else {
         return { success: false, message: data.message || 'Erro ao fazer login' };
@@ -130,7 +180,7 @@ export const AuthProvider = ({ children }) => {
   // Função para fazer logout
   const logout = () => {
     localStorage.removeItem('token');
-    setAuth({ token: null, user: null, loading: false });
+    setAuth({ token: null, user: null, loading: false, subscriptionExpired: false });
   };
 
   // Função para registrar um novo usuário
@@ -164,6 +214,7 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     register,
+    apiInterceptor
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,13 +1,21 @@
 import express from 'express';
-const router = express.Router();
+import { Router } from 'express';
 import { Income, Category, Bank } from '../models/index.js';
 import { v4 as uuidv4 } from 'uuid';
 import { Op } from 'sequelize';
 import { authenticate } from '../middleware/auth.js';
 import { Sequelize } from 'sequelize';
+import checkSubscription from '../middleware/subscriptionCheck.js';
+import moment from 'moment';
+
+const router = Router();
+
+// Todas as rotas usam o middleware de autenticação seguido do middleware de verificação de assinatura
+router.use(authenticate);
+router.use(checkSubscription);
 
 // Listar todas as receitas do usuário
-router.get('/', authenticate, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const { months, years, description, category_id, is_recurring } = req.query;
     const where = { user_id: req.user.id };
@@ -140,7 +148,7 @@ router.get('/', authenticate, async (req, res) => {
 });
 
 // Adicionar nova ganho
-router.post('/', authenticate, async (req, res) => {
+router.post('/', async (req, res) => {
   const t = await Income.sequelize.transaction();
   try {
     const {
@@ -263,7 +271,7 @@ router.post('/', authenticate, async (req, res) => {
 });
 
 // Atualizar ganho
-router.put('/:id', authenticate, async (req, res) => {
+router.put('/:id', async (req, res) => {
   const t = await Income.sequelize.transaction();
 
   try {
@@ -511,7 +519,7 @@ router.put('/:id', authenticate, async (req, res) => {
 });
 
 // Excluir receitas em lote
-router.delete('/bulk', authenticate, async (req, res) => {
+router.delete('/bulk', async (req, res) => {
   const transaction = await Income.sequelize.transaction();
   console.log('Iniciando deleção em lote');
   try {
@@ -552,7 +560,7 @@ router.delete('/bulk', authenticate, async (req, res) => {
 });
 
 // Excluir ganho
-router.delete('/:id', authenticate, async (req, res) => {
+router.delete('/:id', async (req, res) => {
   const t = await Income.sequelize.transaction();
 
   try {
@@ -624,7 +632,7 @@ router.delete('/:id', authenticate, async (req, res) => {
 });
 
 // Listar categorias de ganho
-router.get('/categories', authenticate, async (req, res) => {
+router.get('/categories', async (req, res) => {
   try {
     const categories = await Category.findAll({
       where: { type: 'income' },
@@ -641,7 +649,7 @@ router.get('/categories', authenticate, async (req, res) => {
 });
 
 // Rota para excluir ganho fixo
-router.delete('/:id/recurring', authenticate, async (req, res) => {
+router.delete('/:id/recurring', async (req, res) => {
   try {
     const { id } = req.params;
     const { deleteType } = req.body;
@@ -693,7 +701,7 @@ router.delete('/:id/recurring', authenticate, async (req, res) => {
 });
 
 // Rota para criar ganho
-router.post('/', authenticate, async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const incomeData = {
       ...req.body,
@@ -715,7 +723,7 @@ router.post('/', authenticate, async (req, res) => {
 });
 
 // Rota para atualizar ganho
-router.put('/:id', authenticate, async (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const income = await Income.findByPk(id);
@@ -747,7 +755,7 @@ router.put('/:id', authenticate, async (req, res) => {
 });
 
 // Rota para buscar um único ganho
-router.get('/:id', authenticate, async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     const income = await Income.findOne({
       where: {

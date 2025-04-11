@@ -7,10 +7,15 @@ import { Sequelize } from 'sequelize';
 import { literal } from 'sequelize';
 import { Router } from 'express';
 import sequelize from '../config/db.js';
+import checkSubscription from '../middleware/subscriptionCheck.js';
 
 const router = Router();
 
-router.get('/', authenticate, async (req, res) => {
+// Todas as rotas usam o middleware de autenticação seguido do middleware de verificação de assinatura
+router.use(authenticate);
+router.use(checkSubscription);
+
+router.get('/', async (req, res) => {
   try {
     const { months, years, category_id, payment_method, has_installments, description, is_recurring } = req.query;
     const where = { user_id: req.user.id };
@@ -86,7 +91,7 @@ router.get('/', authenticate, async (req, res) => {
   }
 });
 
-router.post('/', authenticate, async (req, res) => {
+router.post('/', async (req, res) => {
   const t = await Expense.sequelize.transaction();
   try {
     const {
@@ -267,7 +272,7 @@ router.post('/', authenticate, async (req, res) => {
   }
 });
 
-router.get('/categories', authenticate, async (req, res) => {
+router.get('/categories', async (req, res) => {
   try {
     console.log('Buscando categorias...');
     const categories = await Category.findAll({
@@ -285,7 +290,7 @@ router.get('/categories', authenticate, async (req, res) => {
   }
 });
 
-router.put('/:id', authenticate, async (req, res) => {
+router.put('/:id', async (req, res) => {
   const transaction = await Expense.sequelize.transaction();
 
   try {
@@ -406,7 +411,7 @@ router.put('/:id', authenticate, async (req, res) => {
   }
 });
 
-router.delete('/installments', authenticate, async (req, res) => {
+router.delete('/installments', async (req, res) => {
   const transaction = await Expense.sequelize.transaction();
 
   try {
@@ -495,7 +500,7 @@ router.delete('/installments', authenticate, async (req, res) => {
   }
 });
 
-router.delete('/bulk', authenticate, async (req, res) => {
+router.delete('/bulk', async (req, res) => {
   const transaction = await Expense.sequelize.transaction();
   
   try {
@@ -532,7 +537,7 @@ router.delete('/bulk', authenticate, async (req, res) => {
 });
 
 // Rota para buscar uma única despesa
-router.get('/:id', authenticate, async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     const expense = await Expense.findOne({
       where: {
@@ -557,7 +562,7 @@ router.get('/:id', authenticate, async (req, res) => {
 });
 
 // Rota para excluir uma única despesa (deve vir por último)
-router.delete('/:id', authenticate, async (req, res) => {
+router.delete('/:id', async (req, res) => {
   const transaction = await Expense.sequelize.transaction();
 
   try {
@@ -646,7 +651,7 @@ router.delete('/:id', authenticate, async (req, res) => {
 });
 
 // Rota para excluir despesa fixa
-router.delete('/:id/recurring', authenticate, async (req, res) => {
+router.delete('/:id/recurring', async (req, res) => {
   try {
     const { id } = req.params;
     const { deleteType } = req.body;
@@ -714,7 +719,7 @@ router.delete('/:id/recurring', authenticate, async (req, res) => {
 });
 
 // Rota para criar despesa
-router.post('/', authenticate, async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const expenseData = {
       ...req.body,
@@ -736,7 +741,7 @@ router.post('/', authenticate, async (req, res) => {
 });
 
 // Rota para atualizar despesa
-router.put('/:id', authenticate, async (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const expense = await Expense.findByPk(id);
@@ -768,7 +773,7 @@ router.put('/:id', authenticate, async (req, res) => {
 });
 
 // Rota para estatísticas dos gráficos
-router.get('/stats', authenticate, async (req, res) => {
+router.get('/stats', async (req, res) => {
   try {
     const { month, year, category, bank, paymentMethod } = req.query;
     const where = { user_id: req.user.id };

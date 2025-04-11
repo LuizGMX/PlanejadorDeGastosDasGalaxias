@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import Login from './components/auth/Login';
 
 import Dashboard from './components/dashboard/Dashboard';
+import SubscriptionStatus from './components/payment/SubscriptionStatus';
 import ExpensesWrapper from './components/expenses/ExpensesWrapper';
 import AddExpenseWrapper from './components/expenses/AddExpenseWrapper';
 import EditExpense from './components/expenses/EditExpense';
@@ -14,6 +15,7 @@ import EditIncome from './components/incomes/EditIncome';
 import SpreadsheetUpload from './components/spreadsheet/SpreadsheetUpload';
 import Layout from './components/layout/Layout';
 import EditRecurringIncomes from './components/incomes/EditRecurringIncomes';
+import Payment from './components/payment/Payment';
 import { checkApiHealth, diagnoseProblem } from './utils/apiHealth';
 import { AuthProvider } from './contexts/AuthContext';
 import { initIOSSupport, isIOS } from './utils/iosSupport';
@@ -114,7 +116,12 @@ function App() {
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/" element={<Navigate to="/dashboard" />} />
-              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/dashboard" element={
+                <>
+                  <SubscriptionStatus />
+                  <Dashboard />
+                </>
+              } />
               <Route path="/expenses" element={
                 <Layout>
                   <ExpensesWrapper />
@@ -158,6 +165,11 @@ function App() {
               <Route path="/upload-spreadsheet" element={
                 <Layout>
                   <SpreadsheetUpload />
+                </Layout>
+              } />
+              <Route path="/payment" element={
+                <Layout>
+                  <Payment />
                 </Layout>
               } />
               <Route path="*" element={<Navigate to="/dashboard" />} />

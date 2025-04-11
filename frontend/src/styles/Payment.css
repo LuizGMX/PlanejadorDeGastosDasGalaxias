@@ -1,0 +1,124 @@
+.payment-container {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.payment-card {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+  margin-bottom: 20px;
+}
+
+.payment-card h1 {
+  color: #333;
+  margin-bottom: 20px;
+  font-size: 24px;
+  text-align: center;
+}
+
+.subscription-info {
+  margin-bottom: 30px;
+}
+
+.subscription-status {
+  font-size: 18px;
+  margin-bottom: 15px;
+}
+
+.subscription-status .active {
+  color: #28a745;
+  font-weight: bold;
+}
+
+.subscription-status .inactive {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+.subscription-expired {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.renewal-warning {
+  background-color: #fff3cd;
+  border-left: 4px solid #ffc107;
+  padding: 15px;
+  margin-top: 20px;
+  border-radius: 4px;
+}
+
+.payment-button {
+  background-color: #4CAF50;
+  color: var(--secondary-color);
+  border: none;
+  border-radius: 5px;
+  padding: 12px 20px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 15px;
+  width: 100%;
+  transition: background-color 0.3s;
+}
+
+.payment-button:hover {
+  background-color: #388e3c;
+}
+
+.payment-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.subscription-benefits {
+  margin-top: 25px;
+}
+
+.subscription-benefits h3 {
+  color: #333;
+  margin-bottom: 10px;
+  font-size: 18px;
+}
+
+.subscription-benefits ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.subscription-benefits li {
+  margin-bottom: 8px;
+  padding-left: 20px;
+  position: relative;
+}
+
+.subscription-benefits li:before {
+  content: "✓";
+  color: #4CAF50;
+  position: absolute;
+  left: 0;
+}
+
+.payment-info {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 15px;
+  margin-top: 30px;
+}
+
+.payment-info h3 {
+  color: #333;
+  margin-bottom: 10px;
+  font-size: 18px;
+}
+
+.payment-info p {
+  margin-bottom: 5px;
+  color: #666;
+} 

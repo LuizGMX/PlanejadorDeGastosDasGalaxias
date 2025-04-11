@@ -22,6 +22,7 @@ import {
 import styles from '../../styles/dashboard.module.css';
 import { FaChartLine, FaChevronDown } from 'react-icons/fa';
 import DateRangePicker from '../shared/DateRangePicker';
+import SubscriptionStatus from '../payment/SubscriptionStatus';
 
 import {
   BsPlusLg,
@@ -3948,118 +3949,100 @@ const Dashboard = () => {
   };
 
   return (
-    <div className={styles.dashboardContainer}>
+    <div className={styles.dashboard}>
+      {/* Banner de saudação */}
       {getGreeting(auth.user?.name)}
-      <div className={styles.dashboardHeader}>
-        <div className={styles.navigationTabs}>
-          {/* <button
-            className={`${styles.navTab} ${activeSection === 'overview' ? styles.activeTab : ''}`}
-            onClick={() => setActiveSection('overview')}
-          >
-            <span className={styles.tabIcon}>📊</span>
-            Visão Geral
-          </button>
-          <button
-            className={`${styles.navTab} ${activeSection === 'transactions' ? styles.activeTab : ''}`}
-            onClick={() => setActiveSection('transactions')}
-          >
-            <span className={styles.tabIcon}>💸</span>
-            Transações
-          </button> */}
-        </div>
-      </div>
 
-      {/* Filtros */}
-      <div className={styles.filterRow}>
-        <div className={styles.filtersContainer}>
-          <div className={styles.filterSelector}>
-            <div className={styles.filterLabel}>Período</div>
-            <div
-              className={`${styles.filterDisplay} ${showPeriodOptions ? styles.active : ''}`}
-              onClick={() => setShowPeriodOptions(!showPeriodOptions)}
-            >
-              {selectedPeriod === 'custom' && customDateRange
-                ? `${formatDateStringWithTimezone(customDateRange.start)} - ${formatDateStringWithTimezone(customDateRange.end)}`
-                : getActiveFilterLabel()
-              }
-              <FaChevronDown className={`${styles.arrowIcon} ${showPeriodOptions ? styles.rotated : ''}`} />
+      {/* Status da assinatura */}
+      <SubscriptionStatus />
+
+      <div className={styles.dashboardContainer}>
+        {/* Filtros */}
+        <div className={styles.filterRow}>
+          <div className={styles.filtersContainer}>
+            <div className={styles.filterSelector}>
+              <div className={styles.filterLabel}>Período</div>
+              <div
+                className={`${styles.filterDisplay} ${showPeriodOptions ? styles.active : ''}`}
+                onClick={() => setShowPeriodOptions(!showPeriodOptions)}
+              >
+                {selectedPeriod === 'custom' && customDateRange
+                  ? `${formatDateStringWithTimezone(customDateRange.start)} - ${formatDateStringWithTimezone(customDateRange.end)}`
+                  : getActiveFilterLabel()
+                }
+                <FaChevronDown className={`${styles.arrowIcon} ${showPeriodOptions ? styles.rotated : ''}`} />
+              </div>
+              {showPeriodOptions && (
+                <div className={styles.filterOptions}>
+                  <div
+                    className={styles.filterOption}
+                    onClick={() => handlePeriodChange('current')}
+                  >
+                    Mês Atual
+                  </div>
+                  <div
+                    className={styles.filterOption}
+                    onClick={() => handlePeriodChange('last')}
+                  >
+                    Mês Anterior
+                  </div>
+                  <div
+                    className={styles.filterOption}
+                    onClick={() => handlePeriodChange('next')}
+                  >
+                    Mês que vem
+                  </div>
+                  <div
+                    className={styles.filterOption}
+                    onClick={() => handlePeriodChange('custom')}
+                  >
+                    Personalizado
+                  </div>
+                </div>
+              )}
             </div>
-            {showPeriodOptions && (
-              <div className={styles.filterOptions}>
-                <div
-                  className={styles.filterOption}
-                  onClick={() => handlePeriodChange('current')}
-                >
-                  Mês Atual
-                </div>
-                <div
-                  className={styles.filterOption}
-                  onClick={() => handlePeriodChange('last')}
-                >
-                  Mês Anterior
-                </div>
-                <div
-                  className={styles.filterOption}
-                  onClick={() => handlePeriodChange('next')}
-                >
-                  Mês que vem
-                </div>
-                <div
-                  className={styles.filterOption}
-                  onClick={() => handlePeriodChange('custom')}
-                >
-                  Personalizado
-                </div>
+            {showDateRangePicker && (
+              <div className={styles.dateRangePickerContainer}>
+                <DateRangePicker onDateRangeSelect={handleDateRangeSelect} onCancel={handleDateRangeCancel} />
               </div>
             )}
+            <FilterSelector
+              label="Categoria"
+              options={categories}
+              selected={selectedCategories}
+              onSelect={handleCategoryChange}
+              multiple
+            />
+            <FilterSelector
+              label="Banco"
+              options={banks}
+              selected={selectedBanks}
+              onSelect={handleBankChange}
+              multiple
+            />
           </div>
-          {showDateRangePicker && (
-            <div className={styles.dateRangePickerContainer}>
-              <DateRangePicker onDateRangeSelect={handleDateRangeSelect} onCancel={handleDateRangeCancel} />
+          {!hasExpenses && !hasIncome && (
+            <div className={styles.emptyStateContainer}>
+              <FaChartLine className={styles.emptyStateIcon} />
+              <div className={styles.emptyStateContent}>
+                <div className={styles.emptyStateMessage}>
+                  Você ainda não tem despesas ou receitas cadastradas para este período.
+                </div>
+                <div className={styles.emptyStateSuggestion}>
+                  Que tal começar adicionando sua primeira transação?
+                </div>
+                <div className={styles.emptyStateButtons}>
+                  <button
+                    className={styles.addExpenseButton}
+                    onClick={() => navigate('/add-expense')}
+                  >
+                    <BsPlusLg /> Adicionar Despesa
+                  </button>
+                </div>
+              </div>
             </div>
           )}
-          <FilterSelector
-            label="Categoria"
-            options={categories}
-            selected={selectedCategories}
-            onSelect={handleCategoryChange}
-            multiple
-          />
-          <FilterSelector
-            label="Banco"
-            options={banks}
-            selected={selectedBanks}
-            onSelect={handleBankChange}
-            multiple
-          />
         </div>
-        {!hasExpenses && !hasIncome && (
-          <div className={styles.emptyStateContainer}>
-            <FaChartLine className={styles.emptyStateIcon} />
-            <div className={styles.emptyStateContent}>
-              <div className={styles.emptyStateMessage}>
-                Você ainda não tem despesas ou receitas cadastradas para este período.
-              </div>
-              <div className={styles.emptyStateSuggestion}>
-                Que tal começar adicionando sua primeira transação?
-              </div>
-              <div className={styles.emptyStateButtons}>
-                <button
-                  className={styles.addExpenseButton}
-                  onClick={() => navigate('/add-expense')}
-                >
-                  <BsPlusLg /> Adicionar Despesa
-                </button>
-                <button
-                  className={styles.addIncomeButton}
-                  onClick={() => navigate('/add-income')}
-                >
-                  <BsCash /> Adicionar Receita
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {hasExpenses === false && hasIncome === true && (
           <div className={styles.emptyStateContainer}>

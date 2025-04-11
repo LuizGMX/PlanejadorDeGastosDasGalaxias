@@ -205,12 +205,46 @@ const seedIncomeCategories = async () => {
   }
 };
 
+const seedPayments = async (forceUpdate = false) => {
+  console.log('Verificando se é necessário adicionar dados de pagamento...');
+  
+  const count = await models.Payment.count();
+  
+  if (count > 0 && !forceUpdate) {
+    console.log('Dados de pagamento já existem, pulando...');
+    return;
+  }
+  
+  console.log('Adicionando dados de pagamento...');
+  
+  // Buscar todos os usuários
+  const users = await models.User.findAll();
+  
+  for (const user of users) {
+    // Criar um pagamento para cada usuário
+    const trialExpirationDate = new Date();
+    trialExpirationDate.setDate(trialExpirationDate.getDate() + 7); // 7 dias de teste
+    
+    await models.Payment.create({
+      user_id: user.id,
+      subscription_expiration: trialExpirationDate,
+      payment_status: 'approved',
+      payment_method: 'trial',
+      payment_amount: 0,
+      payment_date: new Date()
+    });
+  }
+  
+  console.log('Dados de pagamento adicionados com sucesso!');
+};
+
 const seedDatabase = async () => {
   try {
     const results = await Promise.allSettled([
       seedIncomeCategories(),
       seedBanks(),
-      seedExpenseCategories()
+      seedExpenseCategories(),
+      seedPayments()
     ]);
     
     const failures = results.filter(result => result.status === 'rejected' || (result.status === 'fulfilled' && result.value === false));

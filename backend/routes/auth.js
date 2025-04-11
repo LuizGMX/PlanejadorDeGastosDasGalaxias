@@ -2,7 +2,7 @@ import { Router } from 'express';
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
 import sgMail from '@sendgrid/mail';
-import { User, VerificationCode, UserBank, Bank } from '../models/index.js';
+import { User, VerificationCode, UserBank, Bank, Payment } from '../models/index.js';
 import { Op } from 'sequelize';
 import sequelize from '../config/db.js';
 
@@ -429,6 +429,20 @@ router.post('/verify-code', async (req, res) => {
         financial_goal_start_date: startDate,
         financial_goal_end_date: endDate
       }, { transaction: t });
+      
+      // Criar registro de pagamento inicial com 7 dias gratuitos
+      const trialExpirationDate = new Date();
+      trialExpirationDate.setDate(trialExpirationDate.getDate() + 7); // 7 dias de teste
+      
+      await Payment.create({
+        user_id: user.id,
+        subscription_expiration: trialExpirationDate,
+        payment_status: 'approved',
+        payment_method: 'trial',
+        payment_amount: 0,
+        payment_date: new Date()
+      }, { transaction: t });
+      
     } else {
       // Se for um usuário existente, apenas verifica se existe
       if (!user) {

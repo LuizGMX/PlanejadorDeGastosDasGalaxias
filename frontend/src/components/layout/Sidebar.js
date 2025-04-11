@@ -2,7 +2,7 @@ import React, { useContext, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 import styles from '../../styles/sidebar.module.css';
-import { BsGraphUp, BsListUl, BsPlusCircle, BsDoorOpen, BsCashCoin, BsChevronDown, BsPerson, BsPencil } from 'react-icons/bs';
+import { BsGraphUp, BsListUl, BsPlusCircle, BsDoorOpen, BsCashCoin, BsChevronDown, BsPerson, BsPencil, BsCreditCard } from 'react-icons/bs';
 import logo from '../../assets/logo.svg';
 import { GiPayMoney, GiReceiveMoney, } from "react-icons/gi";
 
@@ -70,6 +70,11 @@ const Sidebar = ({ className }) => {
       label: 'Perfil',
       path: '/profile',
       icon: <BsPerson size={20} />
+    },
+    {
+      label: 'Assinatura',
+      path: '/payment',
+      icon: <BsCreditCard size={20} />
     }
   ];
 
