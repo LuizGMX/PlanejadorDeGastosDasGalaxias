@@ -3140,7 +3140,7 @@ const Dashboard = () => {
       prev.value > current.value ? prev : current, { value: 0, name: '' });
 
     return (
-      <div className={styles.chartContainer}>
+      <div>
         <div className={styles.chartHeader}>
           <h3>Distribuição por Banco</h3>
           <div className={styles.chartSubtitle}>
