@@ -169,7 +169,7 @@ router.get('/users', authenticate, async (req, res) => {
 //   }
 // });
 
-// Rota para gerenciar bancos favoritos
+// Rota para gerenciar bancos favoritos (POST)
 router.post('/favorites', authenticate, async (req, res) => {
   const { bank_id, is_active } = req.body;
   const user_id = req.user.id;
@@ -180,6 +180,62 @@ router.post('/favorites', authenticate, async (req, res) => {
 
   try {
     console.log('Atualizando banco favorito:', { bank_id, is_active, user_id });
+
+    const bank = await Bank.findByPk(bank_id);
+    if (!bank) {
+      return res.status(404).json({ message: 'Banco não encontrado' });
+    }
+
+    // Primeiro verifica se já existe essa relação
+    let userBank = await UserBank.findOne({
+      where: { user_id, bank_id }
+    });
+
+    if (userBank) {
+      // Se já existe, apenas atualiza
+      await userBank.update({ is_active });
+      console.log(`Relação UserBank atualizada: ${userBank.id}, is_active=${is_active}`);
+    } else {
+      // Se não existe, cria uma nova
+      userBank = await UserBank.create({
+        user_id,
+        bank_id,
+        is_active
+      });
+      console.log(`Nova relação UserBank criada: ${userBank.id}, is_active=${is_active}`);
+    }
+
+    // Busca os dados atualizados para retornar
+    const updatedUserBank = await UserBank.findOne({
+      where: { user_id, bank_id },
+      include: [{
+        model: Bank,
+        attributes: ['id', 'name', 'code']
+      }]
+    });
+
+    res.json({
+      message: 'Banco favorito atualizado com sucesso',
+      bank: updatedUserBank.Bank,
+      is_active: updatedUserBank.is_active
+    });
+  } catch (error) {
+    console.error('Erro ao atualizar banco favorito:', error);
+    res.status(500).json({ message: 'Erro ao atualizar banco favorito' });
+  }
+});
+
+// Rota para atualizar bancos favoritos (PUT)
+router.put('/favorites', authenticate, async (req, res) => {
+  const { bank_id, is_active } = req.body;
+  const user_id = req.user.id;
+
+  if (!bank_id) {
+    return res.status(400).json({ message: 'ID do banco é obrigatório' });
+  }
+
+  try {
+    console.log('Atualizando banco favorito (PUT):', { bank_id, is_active, user_id });
 
     const bank = await Bank.findByPk(bank_id);
     if (!bank) {
