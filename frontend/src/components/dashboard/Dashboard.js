@@ -868,13 +868,10 @@ const Dashboard = () => {
       <text 
         x={x} 
         y={y} 
-        fill="#000000" 
+        fill="#FFFFF" 
         textAnchor="middle" 
         dominantBaseline="central"
-        fontWeight="bold"
-        fontSize={isMobile ? "10px" : "12px"}
-        strokeWidth="0.5px"
-        stroke="#ffffff"
+        fontSize={isMobile ? "15px" : "20px"}
       >
         {`${(percent * 100).toFixed(0)}%`}
       </text>
@@ -1687,32 +1684,7 @@ const Dashboard = () => {
         percent: totalSpent / total,
         color: 'var(--error-color)'
       }
-    ];
-
-    // Função personalizada para rótulos do gráfico Receitas vs Despesas
-    const incomePieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
-      // Este é um gráfico especial de apenas 2 partes, podemos sempre mostrar os rótulos
-      const RADIAN = Math.PI / 180;
-      const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-      const x = cx + radius * Math.cos(-midAngle * RADIAN);
-      const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-      return (
-        <text 
-          x={x} 
-          y={y} 
-          fill="#ffffff" 
-          textAnchor="middle" 
-          dominantBaseline="central"
-          fontWeight="bold"
-          fontSize={isMobile ? "12px" : "14px"}
-          strokeWidth="0.5px"
-          stroke="#000000"
-        >
-          {`${(percent * 100).toFixed(0)}%`}
-        </text>
-      );
-    };
+    ];    
 
     return (
       <div className={styles.chartContainer}>
@@ -1746,7 +1718,7 @@ const Dashboard = () => {
                 animationDuration={800}
                 animationBegin={200}
                 animationEasing="ease-out"
-                label={incomePieLabel}
+                label={getCustomizedPieLabel}
                 labelLine={false}
               >
                 {chartData.map((entry, index) => (
