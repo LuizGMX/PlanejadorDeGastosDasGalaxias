@@ -1897,7 +1897,7 @@ const Dashboard = () => {
               <Legend
                 layout="horizontal"
                 align="center"
-                verticalAlign={isMobile ? "bottom" : "middle"}
+                verticalAlign="bottom"
                 iconType="circle"
                 iconSize={isMobile ? 8 : 10}
                 formatter={(value, entry) => (
@@ -2777,7 +2777,7 @@ const Dashboard = () => {
               <Legend
                 layout="horizontal"
                 align="center"
-                verticalAlign={isMobile ? "bottom" : "middle"}
+                verticalAlign="bottom"
                 iconType="circle"
                 iconSize={isMobile ? 8 : 10}
                 formatter={(value, entry) => (
@@ -2924,7 +2924,7 @@ const Dashboard = () => {
               <Legend
                 layout="horizontal"
                 align="center"
-                verticalAlign={isMobile ? "bottom" : "middle"}
+                verticalAlign="bottom"
                 iconType="circle"
                 iconSize={isMobile ? 8 : 10}
                 formatter={(value, entry) => (
@@ -3098,7 +3098,7 @@ const Dashboard = () => {
               <Legend
                 layout="horizontal"
                 align="center"
-                verticalAlign={isMobile ? "bottom" : "middle"}
+                verticalAlign="bottom"
                 iconType="circle"
                 iconSize={isMobile ? 8 : 10}
                 formatter={(value, entry) => (
