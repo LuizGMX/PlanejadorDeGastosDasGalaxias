@@ -719,13 +719,12 @@ const MobileDashboard = () => {
       <text 
         x={x} 
         y={y} 
-        fill="#000000" 
+        fill="#FFFFFF" 
         textAnchor="middle" 
-        dominantBaseline="central"
-        fontWeight="bold"
-        fontSize="10px"
+        dominantBaseline="central"        
+        fontSize="30px"
         strokeWidth="0.5px"
-        stroke="#ffffff"
+        
       >
         {`${(percent * 100).toFixed(0)}%`}
       </text>
@@ -1722,7 +1721,7 @@ const MobileDashboard = () => {
                   animationDuration={800}
                   animationBegin={200}
                   animationEasing="ease-out"
-                  label={incomePieLabel}
+                  label={getCustomizedPieLabel}
                   labelLine={false}
                 >
                   {chartData.map((entry, index) => (

@@ -858,53 +858,26 @@ const Dashboard = () => {
   }, []);
 
   // Shared function for customizing label rendering based on device
-  const getCustomizedPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, name, value }) => {
-    if (percent < 0.04) return null; // Não mostrar rótulos para fatias muito pequenas
+  const getCustomizedPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }) => {
+    // Removi a verificação de dispositivos móveis para sempre mostrar as porcentagens
+    if (percent < 0.05) return null; // Apenas não mostrar para fatias muito pequenas
     
     const RADIAN = Math.PI / 180;
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.65; // Posicionamento melhorado
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
-    
-    // Determinar cor do texto com base no ângulo para melhor legibilidade
-    const isRightSide = midAngle <= 90 || midAngle >= 270;
-    const textAnchor = isRightSide ? 'start' : 'end';
-    const xOffset = isRightSide ? 5 : -5;
 
-    // Formatando valor para mostrar apenas para fatias maiores
-    const formattedValue = percent > 0.1 ? formatCurrency(value) : '';
-    const formattedPercent = `${(percent * 100).toFixed(0)}%`;
-    
     return (
-      <g>
-        <text 
-          x={x + xOffset} 
-          y={y - 12} 
-          fill="#FFFFFF"
-          textAnchor={textAnchor}
-          dominantBaseline="bottom"
-          fontWeight="bold"
-          fontSize={isMobile ? "11px" : "12px"}
-          stroke="#000000"
-          strokeWidth="0.5"
-        >
-          {formattedPercent}
-        </text>
-        {percent > 0.1 && (
-          <text 
-            x={x + xOffset} 
-            y={y + 5} 
-            fill="#FFFFFF"
-            textAnchor={textAnchor}
-            dominantBaseline="top"
-            fontSize={isMobile ? "9px" : "10px"}
-            stroke="#000000"
-            strokeWidth="0.3"
-          >
-            {name.length > 12 ? `${name.substring(0, 10)}...` : name}
-          </text>
-        )}
-      </g>
+      <text 
+        x={x} 
+        y={y} 
+        fill="#FFFFFF" 
+        textAnchor="middle" 
+        dominantBaseline="central"        
+        fontSize={"30px"}                
+      >
+        {`${(percent * 100).toFixed(0)}%`}
+      </text>
     );
   };
 
@@ -1973,44 +1946,30 @@ const Dashboard = () => {
                 ))}
               </Pie>
               <Tooltip content={<CustomPieTooltip />} />
-              <Legend 
+              <Legend
                 layout={isMobile ? "horizontal" : "vertical"}
                 align={isMobile ? "center" : "right"}
                 verticalAlign={isMobile ? "bottom" : "middle"}
                 iconType="circle"
-                iconSize={isMobile ? 10 : 12}
+                iconSize={isMobile ? 8 : 10}
                 formatter={(value, entry) => (
-                  <span style={{ 
+                  <span style={{
                     color: 'var(--text-color)',
                     fontSize: isMobile ? '10px' : '12px',
                     fontWeight: entry.payload.name === categoriesData[0]?.name ? 'bold' : 'normal',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    maxWidth: isMobile ? '80px' : '150px',
-                    display: 'inline-block',
-                    padding: '4px 0'
+                    maxWidth: isMobile ? '60px' : '110px',
+                    display: 'inline-block'
                   }}>
-                    {isMobile ? 
-                      (value.length > 12 ? `${value.substring(0, 10)}...` : value) : 
-                      value} 
-                    {!isMobile && ` (${formatCurrency(entry.payload.value)})`}
+                    {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value}
+                    {!isMobile && ` (${(entry.payload.percent * 100).toFixed(1)}%)`}
                   </span>
                 )}
-                wrapperStyle={{ 
-                  paddingLeft: isMobile ? '0px' : '20px',
-                  paddingTop: isMobile ? '15px' : '0',
-                  fontSize: isMobile ? '10px' : '12px',
-                  overflowY: 'auto',
-                  maxHeight: isMobile ? '80px' : '200px',
-                  width: '100%',
-                  backgroundColor: 'rgba(255, 255, 255, 0.02)',
-                  borderRadius: '8px',
-                  margin: isMobile ? '10px auto 0' : '0 0 0 15px',
-                  justifyContent: isMobile ? 'center' : 'flex-start',
-                  flexWrap: isMobile ? 'wrap' : 'nowrap',
-                  gap: isMobile ? '5px' : '0',
-                  boxShadow: 'var(--card-box-shadow)'
+                wrapperStyle={{
+                paddingTop: isMobile ? '8px' : '10px',
+                  fontSize: isMobile ? '10px' : '12px'
                 }}
               />
             </PieChart>
@@ -2890,39 +2849,25 @@ const Dashboard = () => {
                 align={isMobile ? "center" : "right"}
                 verticalAlign={isMobile ? "bottom" : "middle"}
                 iconType="circle"
-                iconSize={isMobile ? 10 : 12}
+                iconSize={isMobile ? 8 : 10}
                 formatter={(value, entry) => (
                   <span style={{ 
-                    color: 'var(--text-color)',
-                    fontSize: isMobile ? '10px' : '12px',
+                    color: 'var(--text-color)', 
+                    fontSize: isMobile ? '10px' : '12px', 
                     fontWeight: entry.payload.category === categoryData[0]?.category ? 'bold' : 'normal',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    maxWidth: isMobile ? '80px' : '150px',
-                    display: 'inline-block',
-                    padding: '4px 0'
+                    maxWidth: isMobile ? '60px' : '150px',
+                    display: 'inline-block'
                   }}>
-                    {isMobile ? 
-                      (value.length > 12 ? `${value.substring(0, 10)}...` : value) : 
-                      value} 
-                    {!isMobile && ` (${formatCurrency(entry.payload.value)})`}
+                    {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
+                    {!isMobile && ` (${entry.payload.percentage.toFixed(1)}%)`}
                   </span>
                 )}
                 wrapperStyle={{ 
-                  paddingLeft: isMobile ? '0px' : '20px',
-                  paddingTop: isMobile ? '15px' : '0',
-                  fontSize: isMobile ? '10px' : '12px',
-                  overflowY: 'auto',
-                  maxHeight: isMobile ? '80px' : '200px',
-                  width: '100%',
-                  backgroundColor: 'rgba(255, 255, 255, 0.02)',
-                  borderRadius: '8px',
-                  margin: isMobile ? '10px auto 0' : '0 0 0 15px',
-                  justifyContent: isMobile ? 'center' : 'flex-start',
-                  flexWrap: isMobile ? 'wrap' : 'nowrap',
-                  gap: isMobile ? '5px' : '0',
-                  boxShadow: 'var(--card-box-shadow)'
+              paddingTop: isMobile ? '8px' : '10px',
+                  fontSize: isMobile ? '10px' : '12px'
                 }}
               />
                   </PieChart>
@@ -2930,98 +2875,12 @@ const Dashboard = () => {
         </div>
         
         <div className={styles.categoriesInsights}>
-          <h4>Principal fonte de despesa: {categoriesData[0]?.name || 'Nenhuma'}</h4>
+          <h4>Categoria principal: {categoryData[0]?.category || 'Nenhuma'}</h4>
           <p>
-            {categoriesData[0] && `${categoriesData[0].name} representa ${(categoriesData[0].percent * 100).toFixed(1)}% dos seus gastos.`}
+            Representa {categoryData[0]?.percentage ? categoryData[0].percentage.toFixed(1) : 0}% dos seus despesas
+            {selectedPeriod === 'month' ? ' neste mês' : 
+             selectedPeriod === 'year' ? ' neste ano' : ' no total'}.
           </p>
-          
-          {categoriesData.length > 1 && (
-            <div className={styles.insightBlock} style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.03)',
-              padding: '10px 15px',
-              borderRadius: '8px',
-              marginTop: '15px',
-              marginBottom: '15px',
-              border: '1px solid var(--border-color)'
-            }}>
-              <div className={styles.insightItem} style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                marginBottom: '8px',
-                padding: '5px 0'
-              }}>
-                <span className={styles.insightIcon} style={{
-                  fontSize: '16px',
-                  marginRight: '8px',
-                  minWidth: '24px',
-                  textAlign: 'center'
-                }}>🔍</span>
-                <span className={styles.insightText} style={{
-                  fontSize: '13px',
-                  lineHeight: '1.4',
-                  color: 'var(--text-color)'
-                }}>
-                  {categoriesData[0].percent > 0.4 
-                    ? `${categoriesData[0].name} é responsável por uma grande parte dos seus gastos (${(categoriesData[0].percent * 100).toFixed(0)}%). Considere analisar este item com mais atenção.` 
-                    : `Seus gastos estão bem distribuídos entre ${categoriesData.length} categorias.`}
-                </span>
-              </div>
-              
-              {categoriesData[0].percent - categoriesData[1].percent > 0.2 && (
-                <div className={styles.insightItem} style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  marginBottom: '8px',
-                  padding: '5px 0'
-                }}>
-                  <span className={styles.insightIcon} style={{
-                    fontSize: '16px',
-                    marginRight: '8px',
-                    minWidth: '24px',
-                    textAlign: 'center'
-                  }}>💡</span>
-                  <span className={styles.insightText} style={{
-                    fontSize: '13px',
-                    lineHeight: '1.4',
-                    color: 'var(--text-color)'
-                  }}>
-                    Existe uma grande diferença entre sua principal categoria ({categoriesData[0].name}) 
-                    e a segunda ({categoriesData[1].name}). Isto pode indicar uma oportunidade de economia.
-                  </span>
-                </div>
-              )}
-              
-              {categoriesData.find(cat => cat.name.toLowerCase().includes('lazer') || 
-                                     cat.name.toLowerCase().includes('entreten')) && (
-                <div className={styles.insightItem} style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  marginBottom: '8px',
-                  padding: '5px 0'
-                }}>
-                  <span className={styles.insightIcon} style={{
-                    fontSize: '16px',
-                    marginRight: '8px',
-                    minWidth: '24px',
-                    textAlign: 'center'
-                  }}>🎯</span>
-                  <span className={styles.insightText} style={{
-                    fontSize: '13px',
-                    lineHeight: '1.4',
-                    color: 'var(--text-color)'
-                  }}>
-                    Despesas com lazer e entretenimento são importantes para seu bem-estar, 
-                    mas mantenha-as dentro do seu orçamento!
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
-          
-          <div className={styles.infoItem}>
-            <span>Total de despesas:</span>
-            <strong className={styles.negative}>{formatCurrency(totalExpenses)}</strong>
-          </div>
         </div>
       </div>
     );
@@ -3137,7 +2996,7 @@ const Dashboard = () => {
                 align={isMobile ? "center" : "right"}
                 verticalAlign={isMobile ? "bottom" : "middle"}
                 iconType="circle"
-                iconSize={isMobile ? 10 : 12}
+                iconSize={isMobile ? 8 : 10}
                 formatter={(value, entry) => (
                   <span style={{ 
                   color: 'var(--text-color)',
@@ -3146,28 +3005,16 @@ const Dashboard = () => {
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    maxWidth: isMobile ? '80px' : '150px',
-                    display: 'inline-block',
-                    padding: '4px 0'
+                    maxWidth: isMobile ? '60px' : '110px',
+                    display: 'inline-block'
                   }}>
                     {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
-                    {!isMobile && ` (${formatCurrency(entry.payload.value)})`}
+                    {!isMobile && ` (${entry.payload.percentage.toFixed(1)}%)`}
                   </span>
                 )}
                 wrapperStyle={{ 
-                  paddingLeft: isMobile ? '0px' : '20px', 
-                  paddingTop: isMobile ? '15px' : '0',
-                  fontSize: isMobile ? '10px' : '12px',
-                  overflowY: 'auto', 
-                  maxHeight: isMobile ? '80px' : '200px',
-                  width: '100%',
-                  backgroundColor: 'rgba(255, 255, 255, 0.02)',
-                  borderRadius: '8px',
-                  margin: isMobile ? '10px auto 0' : '0 0 0 15px',
-                  justifyContent: isMobile ? 'center' : 'flex-start',
-                  flexWrap: isMobile ? 'wrap' : 'nowrap',
-                  gap: isMobile ? '5px' : '0',
-                  boxShadow: 'var(--card-box-shadow)'
+               paddingTop: isMobile ? '8px' : '10px',
+                  fontSize: isMobile ? '10px' : '12px'
                 }}
               />
             </PieChart>
@@ -3177,63 +3024,8 @@ const Dashboard = () => {
         <div className={styles.categoriesInsights}>
           <h4>Principal fonte de renda: {incomeCategoryData[0]?.category || 'Nenhuma'}</h4>
           <p>
-            {incomeCategoryData[0] && `${incomeCategoryData[0].category} representa ${incomeCategoryData[0].percentage.toFixed(1)}% da sua renda.`}
+            Representa {incomeCategoryData[0]?.percentage ? incomeCategoryData[0].percentage.toFixed(1) : 0}% da sua renda no período.
           </p>
-          
-          {incomeCategoryData.length > 0 && (
-            <div className={styles.insightBlock} style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.03)',
-              padding: '10px 15px',
-              borderRadius: '8px',
-              marginTop: '15px',
-              marginBottom: '15px',
-              border: '1px solid var(--border-color)'
-            }}>
-              {incomeCategoryData[0]?.percentage > 80 && (
-                <div className={styles.insightItem}>
-                  <span className={styles.insightIcon}>⚠️</span>
-                  <span className={styles.insightText}>
-                    {incomeCategoryData[0].percentage > 90 
-                      ? `Quase toda sua renda (${incomeCategoryData[0].percentage.toFixed(0)}%) vem de uma única fonte. Considere diversificar para maior segurança financeira.`
-                      : `Sua renda está muito concentrada em ${incomeCategoryData[0].category} (${incomeCategoryData[0].percentage.toFixed(0)}%). Busque diversificar suas fontes de renda.`}
-                  </span>
-                </div>
-              )}
-              
-              {incomeCategoryData.length >= 3 && (
-                <div className={styles.insightItem}>
-                  <span className={styles.insightIcon}>🌟</span>
-                  <span className={styles.insightText}>
-                    Você tem {incomeCategoryData.length} fontes de renda diferentes. Diversificação é excelente para sua segurança financeira!
-                  </span>
-                </div>
-              )}
-              
-              {incomeCategoryData.length === 2 && incomeCategoryData[1].percentage > 30 && (
-                <div className={styles.insightItem} style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  marginBottom: '8px',
-                  padding: '5px 0'
-                }}>
-                  <span className={styles.insightIcon} style={{
-                    fontSize: '16px',
-                    marginRight: '8px',
-                    minWidth: '24px',
-                    textAlign: 'center'
-                  }}>👍</span>
-                  <span className={styles.insightText} style={{
-                    fontSize: '13px',
-                    lineHeight: '1.4',
-                    color: 'var(--text-color)'
-                  }}>
-                    Sua segunda fonte de renda ({incomeCategoryData[1].category}) representa {incomeCategoryData[1].percentage.toFixed(0)}% do total, o que é um bom sinal de diversificação.
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
-          
           <div className={styles.infoItem}>
             <span>Receita total:</span>
             <strong className={styles.positive}>{formatCurrency(totalIncome)}</strong>
@@ -3378,7 +3170,7 @@ const Dashboard = () => {
                 align={isMobile ? "center" : "right"}
                 verticalAlign={isMobile ? "bottom" : "middle"}
                 iconType="circle"
-                iconSize={isMobile ? 10 : 12}
+                iconSize={isMobile ? 8 : 10}
                 formatter={(value, entry) => (
                   <span style={{ 
                   color: 'var(--text-color)',
@@ -3387,28 +3179,16 @@ const Dashboard = () => {
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    maxWidth: isMobile ? '80px' : '150px',
-                    display: 'inline-block',
-                    padding: '4px 0'
+                    maxWidth: isMobile ? '60px' : '110px',
+                    display: 'inline-block'
                   }}>
                     {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
                     {!isMobile && ` (${(entry.payload.percent * 100).toFixed(1)}%)`}
                   </span>
                 )}
                 wrapperStyle={{ 
-                  paddingLeft: isMobile ? '0px' : '20px', 
-                  paddingTop: isMobile ? '15px' : '0',
-                  fontSize: isMobile ? '10px' : '12px',
-                  overflowY: 'auto', 
-                  maxHeight: isMobile ? '80px' : '200px',
-                  width: '100%',
-                  backgroundColor: 'rgba(255, 255, 255, 0.02)',
-                  borderRadius: '8px',
-                  margin: isMobile ? '10px auto 0' : '0 0 0 15px',
-                  justifyContent: isMobile ? 'center' : 'flex-start',
-                  flexWrap: isMobile ? 'wrap' : 'nowrap',
-                  gap: isMobile ? '5px' : '0',
-                  boxShadow: 'var(--card-box-shadow)'
+                 paddingTop: isMobile ? '8px' : '10px',
+                  fontSize: isMobile ? '10px' : '12px'
                 }}
               />
             </PieChart>
@@ -3418,91 +3198,8 @@ const Dashboard = () => {
         <div className={styles.categoriesInsights}>
           <h4>Banco principal: {primaryBank.name || 'Nenhum'}</h4>
           <p>
-            {primaryBank.name && `${primaryBank.name} é seu banco mais utilizado com ${(primaryBank.percent * 100).toFixed(1)}% das despesas.`}
+            {primaryBank.name} é seu banco mais utilizado. {(primaryBank.percent * 100).toFixed(1)}% das despesas estão neste banco.
           </p>
-          
-          {bankData.length > 0 && (
-            <div className={styles.insightBlock} style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.03)',
-              padding: '10px 15px',
-              borderRadius: '8px',
-              marginTop: '15px',
-              marginBottom: '15px',
-              border: '1px solid var(--border-color)'
-            }}>
-              {bankData.length > 3 && (
-                <div className={styles.insightItem} style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  marginBottom: '8px',
-                  padding: '5px 0'
-                }}>
-                  <span className={styles.insightIcon} style={{
-                    fontSize: '16px',
-                    marginRight: '8px',
-                    minWidth: '24px',
-                    textAlign: 'center'
-                  }}>💼</span>
-                  <span className={styles.insightText} style={{
-                    fontSize: '13px',
-                    lineHeight: '1.4',
-                    color: 'var(--text-color)'
-                  }}>
-                    Você utiliza {bankData.length} bancos diferentes. Considere consolidar contas para facilitar o controle e possivelmente reduzir tarifas.
-                  </span>
-                </div>
-              )}
-              
-              {primaryBank.percent > 0.7 && (
-                <div className={styles.insightItem} style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  marginBottom: '8px',
-                  padding: '5px 0'
-                }}>
-                  <span className={styles.insightIcon} style={{
-                    fontSize: '16px',
-                    marginRight: '8px',
-                    minWidth: '24px',
-                    textAlign: 'center'
-                  }}>🏦</span>
-                  <span className={styles.insightText} style={{
-                    fontSize: '13px',
-                    lineHeight: '1.4',
-                    color: 'var(--text-color)'
-                  }}>
-                    {primaryBank.percent > 0.9 
-                      ? `Quase todas suas transações são feitas pelo ${primaryBank.name}. Isto simplifica seu controle financeiro!`
-                      : `A maioria das suas transações passa pelo ${primaryBank.name}. Isto facilita o controle dos seus gastos.`}
-                  </span>
-                </div>
-              )}
-              
-              {bankData.length === 2 && bankData[0].percent - bankData[1].percent < 0.2 && (
-                <div className={styles.insightItem} style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  marginBottom: '8px',
-                  padding: '5px 0'
-                }}>
-                  <span className={styles.insightIcon} style={{
-                    fontSize: '16px',
-                    marginRight: '8px',
-                    minWidth: '24px',
-                    textAlign: 'center'
-                  }}>⚖️</span>
-                  <span className={styles.insightText} style={{
-                    fontSize: '13px',
-                    lineHeight: '1.4',
-                    color: 'var(--text-color)'
-                  }}>
-                    Você tem uma boa distribuição entre seus dois bancos principais. Isto pode ser útil para separar despesas por finalidade.
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
-          
           <div className={styles.infoItem}>
             <span>Total gasto via bancos:</span>
             <strong>{formatCurrency(totalExpensesByBank)}</strong>
@@ -4328,65 +4025,30 @@ const Dashboard = () => {
   // Custom tooltip component for all charts
   const CustomPieTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
-      // Criar insight contextual baseado nos dados
-      let insight = '';
-      const value = payload[0].value;
-      const percent = payload[0].payload.percent;
-      const name = payload[0].name;
-      
-      if (percent > 0.30) {
-        insight = `${name} representa uma parte significativa (${(percent * 100).toFixed(1)}%)`;
-      } else if (percent > 0.15) {
-        insight = `${name} é uma categoria importante no seu orçamento`;
-      } else if (percent < 0.05) {
-        insight = `${name} representa uma pequena parte do total`;
-      }
-      
       return (
         <div style={{ 
           backgroundColor: 'var(--card-background)', 
           border: '1px solid var(--border-color)',
-          borderRadius: '8px',
-          padding: isMobile ? '8px 10px' : '12px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-          maxWidth: isMobile ? '180px' : '250px'
+          borderRadius: '6px',
+          padding: isMobile ? '6px 8px' : '10px',
+          boxShadow: '0 4px 8px rgba(0,0,0,0.15)',
+          maxWidth: isMobile ? '150px' : '180px'
         }}>
           <p style={{ 
             margin: '0 0 5px 0', 
             fontWeight: 'bold', 
             color: 'var(--text-color)',
-            fontSize: isMobile ? '11px' : '13px',
-            borderBottom: '1px solid var(--border-color)',
-            paddingBottom: '4px'
+            fontSize: isMobile ? '10px' : '12px' 
           }}>
             {payload[0].name}
           </p>
           <p style={{ 
-            margin: '0 0 5px 0', 
-            color: payload[0].color || 'var(--text-color)',
-            fontSize: isMobile ? '12px' : '14px',
-            fontWeight: 'bold'
-          }}>
-            {formatCurrency(payload[0].value)}
-          </p>
-          <p style={{ 
-            margin: '0 0 4px 0', 
-            color: 'var(--text-color)',
+            margin: '0', 
+            color: payload[0].color,
             fontSize: isMobile ? '10px' : '12px'
           }}>
-            {(payload[0].payload.percent * 100).toFixed(1)}% do total
+            {formatCurrency(payload[0].value)} ({(payload[0].payload.percent * 100).toFixed(1)}%)
           </p>
-          {insight && (
-            <p style={{ 
-              margin: '5px 0 0 0', 
-              color: 'var(--text-color)',
-              fontSize: isMobile ? '9px' : '11px',
-              fontStyle: 'italic',
-              opacity: 0.8
-            }}>
-              {insight}
-            </p>
-          )}
         </div>
       );
     }
