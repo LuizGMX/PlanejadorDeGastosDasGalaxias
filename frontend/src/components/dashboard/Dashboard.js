@@ -1559,9 +1559,9 @@ const Dashboard = () => {
     const idealSpentPercentage = dayPercentage;
 
     // Determinar o status de orçamento
-    const isBehindBudget = spentPercentage < idealSpentPercentage - 5; // Está gastando menos que o ideal
-    const isAheadBudget = spentPercentage > idealSpentPercentage + 5 && spentPercentage < 90; // Está gastando mais que o ideal
-    const isDangerZone = spentPercentage >= 90 && spentPercentage < 100; // Está em zona de perigo
+    const isBehindBudget = spentPercentage < idealSpentPercentage - 5;
+    const isAheadBudget = spentPercentage > idealSpentPercentage + 5 && spentPercentage < 90;
+    const isDangerZone = spentPercentage >= 90 && spentPercentage < 100;
 
     // Status e avisos
     let statusColor, advice, statusIcon;
@@ -1588,8 +1588,6 @@ const Dashboard = () => {
       statusIcon = '✅';
     }
 
-    const formattedDate = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-
     return (
       <div className={styles.budgetInfoContainer}>
         <div className={styles.budgetHeader}>
@@ -1600,26 +1598,7 @@ const Dashboard = () => {
         </div>
 
         <div className={styles.budgetStatsContainer}>
-          <div className={styles.budgetStats}>
-            <div className={styles.budgetStat}>
-              <span>Orçamento Total</span>
-              <strong>{formatCurrency(total_budget)}</strong>
-            </div>
-            <div className={styles.budgetStat}>
-              <span>Despesa até agora</span>
-              <strong className={isOverBudget ? styles.overBudget : ''}>{formatCurrency(total_spent)}</strong>
-            </div>
-            <div className={styles.budgetStat}>
-              <span>Disponível</span>
-              <strong>{formatCurrency(remainingBudget)}</strong>
-            </div>
-          </div>
-
-          <div className={styles.budgetProgressContainer}>
-            <div className={styles.budgetProgressLabel}>
-              <span>Progresso do orçamento</span>
-              <span>{spentPercentage.toFixed(1)}%</span>
-            </div>
+          <div className={styles.budgetProgressSection}>
             <div className={styles.budgetProgressBar}>
               <div
                 className={`${styles.budgetProgress} ${styles[statusColor]}`}
@@ -1631,34 +1610,40 @@ const Dashboard = () => {
                 title={`Ideal: ${idealSpentPercentage.toFixed(1)}%`}
               />
             </div>
-          </div>
-
-          <div className={styles.dailySpendingInfo}>
-            <div className={styles.daysInfo}>
-              <span>Dias restantes</span>
-              <strong>{daysRemaining}</strong>
-            </div>
-            <div className={styles.dailyLimitInfo}>
-              <span>Despesa diário ideal</span>
-              <strong>{formatCurrency(remainingBudget / (daysRemaining || 1))}</strong>
+            <div className={styles.budgetProgressLabel}>
+              <span>{spentPercentage.toFixed(1)}% utilizado</span>
+              <span>{daysRemaining} dias restantes</span>
             </div>
           </div>
-        </div>
 
-        <div className={`${styles.budgetAdvice} ${styles[statusColor]}`}>
-          <div className={styles.adviceContent}>
-            <span className={styles.adviceIcon}>{statusIcon}</span>
-            <p>{advice}</p>
+          <div className={styles.budgetStats}>
+            <div className={styles.budgetStatColumn}>
+              <div className={styles.budgetStat}>
+                <span>Orçamento</span>
+                <strong>{formatCurrency(total_budget)}</strong>
+              </div>
+              <div className={styles.budgetStat}>
+                <span>Gasto</span>
+                <strong className={isOverBudget ? styles.overBudget : ''}>
+                  {formatCurrency(total_spent)}
+                </strong>
+              </div>
+              <div className={styles.budgetStat}>
+                <span>Disponível</span>
+                <strong>{formatCurrency(remainingBudget)}</strong>
+              </div>
+            </div>
+            <div className={styles.budgetStatColumn}>
+              <div className={styles.budgetAdvice}>
+                <span className={styles.adviceIcon}>{statusIcon}</span>
+                <p>{advice}</p>
+              </div>
+              <div className={styles.dailyLimitInfo}>
+                <span>Limite diário ideal:</span>
+                <strong>{formatCurrency(remainingBudget / (daysRemaining || 1))}</strong>
+              </div>
+            </div>
           </div>
-        </div>
-
-        <div className={styles.budgetActions}>
-          <button
-            className={styles.budgetActionButton}
-            onClick={() => navigate('/expenses')}
-          >
-            Ver Despesas
-          </button>
         </div>
       </div>
     );
