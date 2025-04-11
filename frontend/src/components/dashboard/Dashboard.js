@@ -27,6 +27,8 @@ import {
   BsPencil, 
   BsEye,
 } from 'react-icons/bs';
+import { ResponsiveContainer } from 'recharts';
+
 
 // Substituição para todas as classes CSS removidas
 const styles = {};
