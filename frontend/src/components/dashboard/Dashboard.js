@@ -1749,22 +1749,8 @@ const Dashboard = () => {
           </div>
         </div>
     
-        <div className={styles.incomeVsExpensesContainer} style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center', 
-          width: '100%', 
-          height: '100%',
-          margin: '0 auto' 
-        }}>
-          <div style={{ 
-            width: '100%', 
-            maxWidth: isMobile ? 300 : 400, 
-            height: isMobile ? 250 : 320,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center'
-          }}>
+        <div className={styles.incomeVsExpensesContainer}>
+          <div style={{ width: '100%', maxWidth: isMobile ? 300 : 400, height: isMobile ? 250 : 320 }}>
             <PieChart width={isMobile ? 300 : 400} height={isMobile ? 250 : 320} margin={{ top: 20, right: 20, left: 20, bottom: 20 }}>
               <defs>
                 <filter id="income-vs-expense-shadow" x="-20%" y="-20%" width="140%" height="140%">
@@ -1923,9 +1909,9 @@ const Dashboard = () => {
           </div>
         </div>
     
-        <div className={styles.categoriesPieContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', margin: '0 auto' }}>
-          <div style={{ width: '100%', maxWidth: isMobile ? 300 : 400, height: isMobile ? 250 : 350 }}>
-            <PieChart width={isMobile ? 300 : 400} height={isMobile ? 250 : 350} margin={{ top: 20, right: isMobile ? 20 : 60, left: 20, bottom: 20 }}>
+        <div className={styles.categoriesPieContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <div style={{ width: isMobile ? 300 : 400, height: isMobile ? 220 : 350 }}>
+            <PieChart width={isMobile ? 300 : 400} height={isMobile ? 220 : 350} margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
               <defs>
                 {categoriesData.map((entry, index) => (
                   <filter key={`shadow-${index}`} id={`shadow-${index}`} x="-20%" y="-20%" width="140%" height="140%">
@@ -2827,9 +2813,9 @@ const Dashboard = () => {
           </div>
         </div>
         
-        <div className={styles.categoriesPieContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', margin: '0 auto' }}>
-          <div style={{ width: '100%', maxWidth: isMobile ? 300 : 400, height: isMobile ? 250 : 350 }}>
-            <PieChart width={isMobile ? 300 : 400} height={isMobile ? 250 : 350} margin={{ top: 20, right: isMobile ? 20 : 60, left: 20, bottom: 20 }}>
+        <div className={styles.categoriesPieContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <ResponsiveContainer width="100%" height={isMobile ? 220 : 350}>
+            <PieChart margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
               <defs>
                 {categoryData.map((entry, index) => (
                   <filter key={`shadow-${index}`} id={`shadow-cat-${index}`} x="-20%" y="-20%" width="140%" height="140%">
@@ -2899,7 +2885,7 @@ const Dashboard = () => {
                 }}
               />
                   </PieChart>
-          </div>
+          </ResponsiveContainer>
         </div>
         
         <div className={styles.categoriesInsights}>
@@ -3163,7 +3149,7 @@ const Dashboard = () => {
             </span>
           </div>
         </div>
-        <div className={styles.bankPieContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', margin: '0 auto' }}>
+        <div className={styles.bankPieContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <ResponsiveContainer width="100%" height={isMobile ? 300 : 400}>
             <PieChart margin={{ top: 20, right: isMobile ? 20 : 60, left: 20, bottom: 20 }}>
               <defs>
