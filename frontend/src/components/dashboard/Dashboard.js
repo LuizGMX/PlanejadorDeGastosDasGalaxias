@@ -1895,7 +1895,7 @@ const Dashboard = () => {
               <Tooltip content={<CustomPieTooltip />} />
               <Legend 
                 layout="horizontal"
-                align={isMobile ? "center" : "right"}
+                align="center"
                 verticalAlign={isMobile ? "bottom" : "middle"}
                 iconType="circle"
                 iconSize={isMobile ? 8 : 10}
@@ -2778,7 +2778,7 @@ const Dashboard = () => {
               <Tooltip content={<CustomPieTooltip />} />
               <Legend 
                 layout="horizontal"
-                align={isMobile ? "center" : "right"}
+                align="center"
                 verticalAlign={isMobile ? "bottom" : "middle"}
                 iconType="circle"
                 iconSize={isMobile ? 8 : 10}
@@ -2794,6 +2794,7 @@ const Dashboard = () => {
                     display: 'inline-block'
                   }}>
                     {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
+                    {!isMobile && ` (${entry.payload.percentage.toFixed(1)}%)`}
                   </span>
                 )}
                 wrapperStyle={{ 
@@ -2924,7 +2925,7 @@ const Dashboard = () => {
               <Tooltip content={<CustomPieTooltip />} />
               <Legend 
                 layout="horizontal"
-                align={isMobile ? "center" : "right"}
+                align="center"
                 verticalAlign={isMobile ? "bottom" : "middle"}
                 iconType="circle"
                 iconSize={isMobile ? 8 : 10}
@@ -2940,6 +2941,7 @@ const Dashboard = () => {
                     display: 'inline-block'
                   }}>
                     {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
+                    {!isMobile && ` (${entry.payload.percentage.toFixed(1)}%)`}
                   </span>
                 )}
                 wrapperStyle={{ 
@@ -3097,7 +3099,7 @@ const Dashboard = () => {
               <Tooltip content={<CustomPieTooltip />} />
               <Legend 
                 layout="horizontal"
-                align={isMobile ? "center" : "right"}
+                align="center"
                 verticalAlign={isMobile ? "bottom" : "middle"}
                 iconType="circle"
                 iconSize={isMobile ? 8 : 10}
@@ -3113,6 +3115,7 @@ const Dashboard = () => {
                     display: 'inline-block'
                   }}>
                     {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
+                    {!isMobile && ` (${(entry.payload.percent * 100).toFixed(1)}%)`}
                   </span>
                 )}
                 wrapperStyle={{ 
