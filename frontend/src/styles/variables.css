@@ -26,3 +26,7 @@
   --chart-color-6: #3bc9db;
   --chart-color-7: #ff922b;
 }
+
+h1{
+  background: linear-gradient(90deg, var(--primary-color) 0%, var(--gradient-end) 100%) !important;
+}
