@@ -355,16 +355,8 @@ router.get('/', authenticate, async (req, res) => {
           })
         },
         include: [
-          { 
-            model: Category, 
-            as: 'Category',
-            attributes: ['id', 'category_name', 'color', 'description'] 
-          },
-          { 
-            model: Bank, 
-            as: 'bank',
-            attributes: ['id', 'name', 'icon', 'color'] 
-          }
+          { model: Category, as: 'Category' },
+          { model: Bank, as: 'bank' }
         ]
       })
     ]).catch(error => {
@@ -986,29 +978,12 @@ router.get('/all-transactions', authenticate, async (req, res) => {
       incomes = await Income.findAll({
         where: { user_id: req.user.id },
         include: [
-          { 
-            model: Category, 
-            as: 'Category',
-            attributes: ['id', 'category_name', 'color', 'description'] 
-          },
-          { 
-            model: Bank, 
-            as: 'bank',
-            attributes: ['id', 'name', 'icon', 'color'] 
-          }
+          { model: Category, as: 'Category' },
+          { model: Bank, as: 'bank' }
         ],
         order: [['date', 'DESC']]
       });
       console.log(`Total de receitas encontradas: ${incomes.length}`);
-      // Adicionar log para verificar se as categorias estão vindo corretamente
-      if (incomes.length > 0) {
-        console.log('Amostra de receita com categoria:', JSON.stringify({
-          id: incomes[0].id,
-          description: incomes[0].description,
-          category_id: incomes[0].category_id,
-          categoryObj: incomes[0].Category
-        }, null, 2));
-      }
     } catch (error) {
       console.error('Erro detalhado ao buscar receitas:', error);
       console.error('Erro SQL (se disponível):', error.sql);
@@ -1030,102 +1005,6 @@ router.get('/all-transactions', authenticate, async (req, res) => {
       error: error.message,
       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
-  }
-});
-
-// Rota para obter dados para o comparativo mensal
-router.get('/monthly-comparison', authenticate, async (req, res) => {
-  try {
-    const user = req.user;
-    const today = new Date();
-    
-    // Por padrão, buscar os últimos 6 meses
-    let monthsToShow = req.query.months ? parseInt(req.query.months) : 6;
-    monthsToShow = Math.min(12, Math.max(3, monthsToShow)); // Limitar entre 3 e 12 meses
-    
-    // Calcular a data de início (6 meses atrás por padrão)
-    const startDate = new Date(today.getFullYear(), today.getMonth() - (monthsToShow - 1), 1);
-    const endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    
-    console.log('\n=== INÍCIO DA BUSCA DE COMPARATIVO MENSAL ===\n');
-    console.log('Período de busca:');
-    console.log('De:', startDate);
-    console.log('Até:', endDate);
-    console.log('\n');
-    
-    // Buscar todas as despesas do período
-    const expenses = await Expense.findAll({
-      where: {
-        user_id: user.id,
-        expense_date: {
-          [Op.between]: [startDate, endDate]
-        }
-      }
-    });
-    
-    // Buscar todas as receitas do período
-    const incomes = await Income.findAll({
-      where: {
-        user_id: user.id,
-        date: {
-          [Op.between]: [startDate, endDate]
-        }
-      }
-    });
-    
-    console.log('Despesas encontradas:', expenses.length);
-    console.log('Receitas encontradas:', incomes.length);
-    
-    // Criar um mapa para armazenar dados mensais
-    const monthlyData = {};
-    
-    // Inicializar o mapa com todos os meses no período
-    for (let i = 0; i < monthsToShow; i++) {
-      const currentDate = new Date(today.getFullYear(), today.getMonth() - i, 1);
-      const monthKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
-      
-      monthlyData[monthKey] = {
-        year: currentDate.getFullYear(),
-        month: String(currentDate.getMonth() + 1).padStart(2, '0'),
-        expenses: 0,
-        income: 0
-      };
-    }
-    
-    // Processar despesas
-    expenses.forEach(expense => {
-      const expenseDate = new Date(expense.expense_date);
-      const monthKey = `${expenseDate.getFullYear()}-${String(expenseDate.getMonth() + 1).padStart(2, '0')}`;
-      
-      if (monthlyData[monthKey]) {
-        monthlyData[monthKey].expenses += parseFloat(expense.amount || 0);
-      }
-    });
-    
-    // Processar receitas
-    incomes.forEach(income => {
-      const incomeDate = new Date(income.date);
-      const monthKey = `${incomeDate.getFullYear()}-${String(incomeDate.getMonth() + 1).padStart(2, '0')}`;
-      
-      if (monthlyData[monthKey]) {
-        monthlyData[monthKey].income += parseFloat(income.amount || 0);
-      }
-    });
-    
-    // Converter o mapa para array e ordenar por data
-    const result = Object.values(monthlyData).sort((a, b) => {
-      const dateA = new Date(parseInt(a.year), parseInt(a.month) - 1, 1);
-      const dateB = new Date(parseInt(b.year), parseInt(b.month) - 1, 1);
-      return dateA - dateB;
-    });
-    
-    console.log('Resultado do comparativo mensal:', result.length, 'meses');
-    
-    res.json(result);
-    
-  } catch (error) {
-    console.error('Erro ao buscar comparativo mensal:', error);
-    res.status(500).json({ message: 'Erro ao buscar comparativo mensal' });
   }
 });
 
