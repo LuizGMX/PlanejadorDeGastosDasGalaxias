@@ -355,8 +355,16 @@ router.get('/', authenticate, async (req, res) => {
           })
         },
         include: [
-          { model: Category, as: 'Category' },
-          { model: Bank, as: 'bank' }
+          { 
+            model: Category, 
+            as: 'Category',
+            attributes: ['id', 'category_name', 'color', 'description'] 
+          },
+          { 
+            model: Bank, 
+            as: 'bank',
+            attributes: ['id', 'name', 'icon', 'color'] 
+          }
         ]
       })
     ]).catch(error => {
@@ -978,8 +986,16 @@ router.get('/all-transactions', authenticate, async (req, res) => {
       incomes = await Income.findAll({
         where: { user_id: req.user.id },
         include: [
-          { model: Category, as: 'Category' },
-          { model: Bank, as: 'bank' }
+          { 
+            model: Category, 
+            as: 'Category',
+            attributes: ['id', 'category_name', 'color', 'description'] 
+          },
+          { 
+            model: Bank, 
+            as: 'bank',
+            attributes: ['id', 'name', 'icon', 'color'] 
+          }
         ],
         order: [['date', 'DESC']]
       });

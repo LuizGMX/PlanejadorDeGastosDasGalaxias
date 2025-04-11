@@ -671,7 +671,7 @@ ${balance >= 0
       await this.setUserState(ctx.chat.id, 'AWAITING_EXPENSE_BANK', {
         ...userState.data,
         category_id: category.id,
-        category_name: category.name,
+        category_name: category.category_name,
         banks: userBanks.map(userBank => ({
           id: userBank.bank.id,
           name: userBank.bank.name,
@@ -904,7 +904,7 @@ Digite SIM para confirmar ou NÃO para cancelar.
       await this.setUserState(ctx.chat.id, 'AWAITING_INCOME_BANK', {
         ...userState.data,
         category_id: category.id,
-        category_name: category.name,
+        category_name: category.category_name,
         banks: userBanks.map(userBank => ({
           id: userBank.bank.id,
           name: userBank.bank.name,
