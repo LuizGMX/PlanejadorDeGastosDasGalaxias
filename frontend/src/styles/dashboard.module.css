@@ -428,8 +428,25 @@
 /* Ajustando o container responsivo do Recharts */
 .chartContainer .recharts-responsive-container {
   width: 100% !important;
-  max-width: 100% !important;
-  max-height: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  margin: 0 auto !important;
+}
+
+/* Adicionar regra específica para o SVG dentro dos gráficos */
+.chartContainer .recharts-wrapper svg {
+  overflow: visible !important;
+  display: block !important;
+  margin: 0 auto !important;
+}
+
+/* Garantir que as legendas fiquem visíveis */
+.recharts-legend-wrapper {
+  display: flex !important;
+  justify-content: center !important;
+  width: 100% !important;
 }
 
 /* Melhorando o estilo dos gráficos de tendência */
@@ -637,6 +654,7 @@
   padding: 15px;
   margin-top: 10px;
   border-top: 1px solid var(--border-color);
+  display: block !important;
 }
 
 .categoriesInsights h4 {
@@ -3424,7 +3442,12 @@ input:checked + .toggleSlider:before {
 /* Removendo estilos dos componentes que não são mais usados */
 .categoriesPieContainer,
 .bankPieContainer {
-  /* display: none; */ /* Removendo essa propriedade para exibir os gráficos de pizza */
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  width: 100% !important;
+  height: 350px !important;
+  margin: 0 auto !important;
 }
 
 .categoriesInsights {
@@ -3447,4 +3470,48 @@ input:checked + .toggleSlider:before {
 .recurringValue,
 .normalValue {
   display: none;
+}
+
+/* Regra SUPER IMPORTANTE para centralizar TUDO nos gráficos - nunca remover */
+.chartContainer,
+.chartContainer > div,
+.chartContainer > div > div,
+.PieChart,
+.categoriesPieContainer,
+.bankPieContainer,
+.incomeVsExpensesContainer,
+.chartContainer .recharts-wrapper {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  text-align: center !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+}
+
+/* Garantir que o Pie dentro dos charts seja centralizado */
+.recharts-pie {
+  transform: translateX(0) !important;
+}
+
+/* Ajustes extras para gráficos de pizza */
+.recharts-wrapper {
+  margin: 0 auto !important;
+}
+
+.recharts-default-legend {
+  display: flex !important;
+  justify-content: center !important;
+  width: 100% !important;
+  flex-wrap: wrap !important;
+}
+
+.recharts-layer.recharts-pie {
+  transform: translate(0, 0) !important;
+}
+
+/* Forçando o overflow para garantir que nada fique cortado */
+.recharts-wrapper svg,
+.recharts-surface {
+  overflow: visible !important;
 }
