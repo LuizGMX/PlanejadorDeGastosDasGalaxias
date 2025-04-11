@@ -870,11 +870,8 @@ const Dashboard = () => {
         y={y}
         fill="#000000"
         textAnchor="middle"
-        dominantBaseline="central"
-        fontWeight="bold"
-        fontSize={isMobile ? "10px" : "12px"}
-        strokeWidth="0.5px"
-        stroke="#ffffff"
+        dominantBaseline="central"        
+        fontSize={isMobile ? "15px" : "25px"}        
       >
         {`${(percent * 100).toFixed(0)}%`}
       </text>
@@ -1746,7 +1743,7 @@ const Dashboard = () => {
                 animationDuration={800}
                 animationBegin={200}
                 animationEasing="ease-out"
-                label={incomePieLabel}
+                label={getCustomizedPieLabel}
                 labelLine={false}
               >
                 {chartData.map((entry, index) => (
