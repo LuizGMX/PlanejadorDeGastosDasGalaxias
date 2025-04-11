@@ -13,7 +13,6 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer,
   Cell,
   ComposedChart,
   AreaChart,
@@ -224,7 +223,7 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
       {showControls && (
         <div className={styles.trendChartControls}>
           <div className={styles.controlGroup}>
-            <label>Período de Projeção: </label>
+            <span>Projeção para:</span>
             <div className={styles.buttonSelector}>
               <button 
                 className={projectionMonths === 3 ? styles.active : ''}
@@ -248,11 +247,18 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
           </div>
         </div>
       )}
-
-      <ResponsiveContainer width="100%" height={height}>
+      
+      <div style={{ width: '100%', height: height }}>
         <ComposedChart 
-          data={data.projectionData} 
-          margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+          width={900} 
+          height={height} 
+          data={data.projectionData}
+          margin={{ top: 30, right: 30, left: 0, bottom: 5 }}
+          onMouseMove={(e) => {
+            if (e && e.activeTooltipIndex) {
+              handleMouseEnter(data.projectionData[e.activeTooltipIndex], e.activeTooltipIndex);
+            }
+          }}
           onMouseLeave={handleMouseLeave}
         >
           <defs>
@@ -368,7 +374,7 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
             activeDot={{ r: 8, fill: '#1E90FF', stroke: '#fff', strokeWidth: 2 }}
           />
         </ComposedChart>
-      </ResponsiveContainer>
+      </div>
 
       <div className={styles.trendChartSummary}>
         <div className={styles.trendChartSummaryItem}>
@@ -1165,9 +1171,9 @@ const Dashboard = () => {
           </div>
         </div>
         <div ref={chartRefs[chartId]} className={styles.chartWrapper} style={{ height: '400px' }}>
-          <ResponsiveContainer width="100%" height="100%">
+          <div style={{ width: '100%', height: '100%' }}>
             {chartComponent}
-          </ResponsiveContainer>
+          </div>
         </div>
       </div>
     );
@@ -1461,7 +1467,7 @@ const Dashboard = () => {
           </div>
           
           <div className={styles.projectionData}>
-            <ResponsiveContainer className={styles.projectionDataBarWidth}>
+            <div className={styles.projectionDataBarWidth}>
               <BarChart
                 data={chartData}
                 layout="vertical"
@@ -1488,7 +1494,7 @@ const Dashboard = () => {
                 <Bar dataKey="projecao" stackId="a" fill="#2196F3" name="Projeção Futura" />
                 <Bar dataKey="faltante" stackId="a" fill="var(--error-color)" name="Faltante" />
               </BarChart>
-            </ResponsiveContainer>
+            </div>
             
             <div className={styles.projectionLegend}>
               <div className={styles.legendItem}>
@@ -1730,7 +1736,7 @@ const Dashboard = () => {
           </div>
         </div>
         <div className={styles.incomeVsExpensesContainer}>
-          <ResponsiveContainer width="100%" height={isMobile ? 220 : 280}>
+          <div style={{ width: '100%', height: isMobile ? 220 : 280 }}>
             <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
               <defs>
                 <filter id="income-vs-expense-shadow" x="-20%" y="-20%" width="140%" height="140%">
@@ -1795,7 +1801,7 @@ const Dashboard = () => {
                 }}
                     />
                   </PieChart>
-          </ResponsiveContainer>
+          </div>
         </div>
         
         <div className={styles.incomeVsExpensesSummary}>
@@ -1889,7 +1895,7 @@ const Dashboard = () => {
           </div>
         </div>
         <div className={styles.categoriesPieContainer}>
-          <ResponsiveContainer width="100%" height={isMobile ? 220 : 280}>
+          <div style={{ width: '100%', height: isMobile ? 220 : 280 }}>
             <PieChart margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
               <defs>
                 {categoriesData.map((entry, index) => (
@@ -1960,7 +1966,7 @@ const Dashboard = () => {
                 }}
               />
             </PieChart>
-          </ResponsiveContainer>
+          </div>
         </div>
         
         <div className={styles.categoriesInsights}>
@@ -2741,7 +2747,7 @@ const Dashboard = () => {
           </div>
         </div>
         <div className={styles.chartBody}>
-          <ResponsiveContainer width="100%" height={300}>
+          <div style={{ width: '100%', height: 300 }}>
             <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 10, bottom: 20 }}>
               <defs>
                 <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
@@ -2809,7 +2815,7 @@ const Dashboard = () => {
                 label={{ value: 'Hoje', position: 'insideTopRight', fill: '#666' }} 
               />
             </AreaChart>
-          </ResponsiveContainer>
+          </div>
         </div>
       </div>
     );
@@ -2895,7 +2901,7 @@ const Dashboard = () => {
           </div>
         </div>
         <div className={styles.chartBody}>
-          <ResponsiveContainer width="100%" height={300}>
+          <div style={{ width: '100%', height: 300 }}>
             <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 10, bottom: 20 }}>
               <defs>
                 <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
@@ -2959,7 +2965,7 @@ const Dashboard = () => {
                 label={{ value: 'Hoje', position: 'insideTopRight', fill: '#666' }} 
               />
             </AreaChart>
-          </ResponsiveContainer>
+          </div>
         </div>
       </div>
     );
@@ -3375,7 +3381,7 @@ const Dashboard = () => {
           </div>
         </div>
         <div className={styles.categoriesPieContainer}>
-          <ResponsiveContainer width="100%" height={isMobile ? 200 : 260}>
+          <div style={{ width: '100%', height: isMobile ? 200 : 260 }}>
             <PieChart margin={{ top: 5, right: isMobile ? 5 : 50, left: 5, bottom: 5 }}>
               <Pie
                 data={chartData}
@@ -3436,7 +3442,7 @@ const Dashboard = () => {
                 }}
               />
             </PieChart>
-          </ResponsiveContainer>
+          </div>
         </div>
         
         <div className={styles.categoriesInsights}>
@@ -3566,7 +3572,7 @@ const Dashboard = () => {
         </div>
 
         <div className={styles.categoriesPieContainer}>
-          <ResponsiveContainer width="100%" height={isMobile ? 200 : 260}>
+          <div style={{ width: '100%', height: isMobile ? 200 : 260 }}>
             <PieChart margin={{ top: 5, right: isMobile ? 5 : 50, left: 5, bottom: 5 }}>
               <defs>
                 {incomeCategoryData.map((entry, index) => (
@@ -3637,7 +3643,7 @@ const Dashboard = () => {
                 }}
               />
             </PieChart>
-          </ResponsiveContainer>
+          </div>
         </div>
         
         <div className={styles.categoriesInsights}>
@@ -3748,7 +3754,7 @@ const Dashboard = () => {
           </div>
         </div>
         <div className={styles.bankPieContainer}>
-          <ResponsiveContainer width="100%" height={isMobile ? 200 : 260}>
+          <div style={{ width: '100%', height: isMobile ? 200 : 260 }}>
             <PieChart margin={{ top: 5, right: isMobile ? 5 : 50, left: 5, bottom: 5 }}>
               <defs>
                 {bankData.map((entry, index) => (
@@ -3818,7 +3824,7 @@ const Dashboard = () => {
                 }}
               />
             </PieChart>
-          </ResponsiveContainer>
+          </div>
         </div>
         
         <div className={styles.categoriesInsights}>

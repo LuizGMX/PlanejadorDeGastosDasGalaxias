@@ -1,5 +1,6 @@
 @import './variables.css';
 
+
 .container {
   width: 100%;
   max-width: 1200px;
@@ -465,22 +466,6 @@
   max-height: 320px !important; /* Adicionado max-height */
   display: block !important;
   margin: 0 auto !important;
-}
-
-/* Ajuste específico para gráficos de pizza */
-.categoriesPieContainer .recharts-pie,
-.bankPieContainer .recharts-pie {
-  transform: scale(0.8); /* Reduzido de 0.85 para 0.8 para diminuir o tamanho do gráfico */
-}
-
-.categoriesPieContainer {
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  width: 100% !important;
-  height: 100% !important;
-  max-height: 320px !important; /* Adicionado max-height */
-  position: relative !important;
 }
 
 .recharts-wrapper {
