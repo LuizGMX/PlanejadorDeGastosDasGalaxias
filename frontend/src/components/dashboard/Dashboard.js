@@ -1750,8 +1750,8 @@ const Dashboard = () => {
         </div>
     
         <div className={styles.incomeVsExpensesContainer}>
-          <div style={{ width: isMobile ? 300 : 400, height: isMobile ? 220 : 280 }}>
-            <PieChart width={isMobile ? 300 : 400} height={isMobile ? 220 : 280} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
+          <div style={{ width: '100%', maxWidth: isMobile ? 300 : 400, height: isMobile ? 250 : 320 }}>
+            <PieChart width={isMobile ? 300 : 400} height={isMobile ? 250 : 320} margin={{ top: 20, right: 20, left: 20, bottom: 20 }}>
               <defs>
                 <filter id="income-vs-expense-shadow" x="-20%" y="-20%" width="140%" height="140%">
                   <feDropShadow dx="0" dy="0" stdDeviation="3" floodOpacity="0.3" />
@@ -1763,7 +1763,7 @@ const Dashboard = () => {
                 nameKey="category"
                 cx="50%"
                 cy="50%"
-                outerRadius={isMobile ? 80 : 100}
+                outerRadius={isMobile ? 90 : 120}
                 innerRadius={0}
                 startAngle={90}
                 endAngle={-270}
@@ -3150,8 +3150,8 @@ const Dashboard = () => {
           </div>
         </div>
         <div className={styles.bankPieContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <ResponsiveContainer width="100%" height={isMobile ? 220 : 350}>
-            <PieChart margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
+          <ResponsiveContainer width="100%" height={isMobile ? 300 : 400}>
+            <PieChart margin={{ top: 20, right: isMobile ? 20 : 60, left: 20, bottom: 20 }}>
               <defs>
                 {bankData.map((entry, index) => (
                   <filter key={`shadow-${index}`} id={`bank-shadow-${index}`} x="-20%" y="-20%" width="140%" height="140%">
@@ -3164,8 +3164,8 @@ const Dashboard = () => {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                outerRadius={isMobile ? 70 : 130}
-                innerRadius={isMobile ? 30 : 60}
+                outerRadius={isMobile ? 90 : 140}
+                innerRadius={isMobile ? 40 : 70}
                 paddingAngle={2}
                 fill="#8884d8"
                 dataKey="value"
