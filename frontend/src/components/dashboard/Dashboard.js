@@ -250,7 +250,7 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
       
       <div style={{ width: '100%', height: height }}>
         <ComposedChart 
-          width={900} 
+          width={700} 
           height={height} 
           data={data.projectionData}
           margin={{ top: 30, right: 30, left: 0, bottom: 5 }}
@@ -1172,7 +1172,10 @@ const Dashboard = () => {
         </div>
         <div ref={chartRefs[chartId]} className={styles.chartWrapper} style={{ height: '400px' }}>
           <div style={{ width: '100%', height: '100%' }}>
-            {chartComponent}
+            {React.cloneElement(chartComponent, {
+              width: chartRefs[chartId]?.current?.clientWidth || 800,
+              height: chartRefs[chartId]?.current?.clientHeight || 400,
+            })}
           </div>
         </div>
       </div>
@@ -1467,8 +1470,10 @@ const Dashboard = () => {
           </div>
           
           <div className={styles.projectionData}>
-            <div className={styles.projectionDataBarWidth}>
+            <div className={styles.projectionDataBarWidth} style={{ width: '100%', height: '100px' }}>
               <BarChart
+                width={400}
+                height={100}
                 data={chartData}
                 layout="vertical"
                 barSize={20}
@@ -1737,7 +1742,11 @@ const Dashboard = () => {
         </div>
         <div className={styles.incomeVsExpensesContainer}>
           <div style={{ width: '100%', height: isMobile ? 220 : 280 }}>
-            <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
+            <PieChart 
+              width={isMobile ? 300 : 500} 
+              height={isMobile ? 220 : 280} 
+              margin={{ top: 10, right: 10, left: 10, bottom: 10 }}
+            >
               <defs>
                 <filter id="income-vs-expense-shadow" x="-20%" y="-20%" width="140%" height="140%">
                   <feDropShadow dx="0" dy="0" stdDeviation="3" floodOpacity="0.3" />
@@ -1896,7 +1905,11 @@ const Dashboard = () => {
         </div>
         <div className={styles.categoriesPieContainer}>
           <div style={{ width: '100%', height: isMobile ? 220 : 280 }}>
-            <PieChart margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
+            <PieChart 
+              width={isMobile ? 300 : 500} 
+              height={isMobile ? 220 : 280} 
+              margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}
+            >
               <defs>
                 {categoriesData.map((entry, index) => (
                   <filter key={`shadow-${index}`} id={`shadow-${index}`} x="-20%" y="-20%" width="140%" height="140%">
@@ -2748,7 +2761,12 @@ const Dashboard = () => {
         </div>
         <div className={styles.chartBody}>
           <div style={{ width: '100%', height: 300 }}>
-            <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 10, bottom: 20 }}>
+            <AreaChart 
+              width={700} 
+              height={300} 
+              data={chartData} 
+              margin={{ top: 10, right: 30, left: 10, bottom: 20 }}
+            >
               <defs>
                 <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#f44336" stopOpacity={0.8} />
@@ -2902,7 +2920,12 @@ const Dashboard = () => {
         </div>
         <div className={styles.chartBody}>
           <div style={{ width: '100%', height: 300 }}>
-            <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 10, bottom: 20 }}>
+            <AreaChart 
+              width={700} 
+              height={300} 
+              data={chartData} 
+              margin={{ top: 10, right: 30, left: 10, bottom: 20 }}
+            >
               <defs>
                 <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#2196F3" stopOpacity={0.8}/>
@@ -3382,7 +3405,11 @@ const Dashboard = () => {
         </div>
         <div className={styles.categoriesPieContainer}>
           <div style={{ width: '100%', height: isMobile ? 200 : 260 }}>
-            <PieChart margin={{ top: 5, right: isMobile ? 5 : 50, left: 5, bottom: 5 }}>
+            <PieChart 
+              width={isMobile ? 300 : 500} 
+              height={isMobile ? 200 : 260} 
+              margin={{ top: 5, right: isMobile ? 5 : 50, left: 5, bottom: 5 }}
+            >
               <Pie
                 data={chartData}
                 cx="50%"
@@ -3573,7 +3600,11 @@ const Dashboard = () => {
 
         <div className={styles.categoriesPieContainer}>
           <div style={{ width: '100%', height: isMobile ? 200 : 260 }}>
-            <PieChart margin={{ top: 5, right: isMobile ? 5 : 50, left: 5, bottom: 5 }}>
+            <PieChart 
+              width={isMobile ? 300 : 500} 
+              height={isMobile ? 200 : 260} 
+              margin={{ top: 5, right: isMobile ? 5 : 50, left: 5, bottom: 5 }}
+            >
               <defs>
                 {incomeCategoryData.map((entry, index) => (
                   <filter key={`shadow-${index}`} id={`shadow-income-${index}`} x="-20%" y="-20%" width="140%" height="140%">
@@ -3755,7 +3786,11 @@ const Dashboard = () => {
         </div>
         <div className={styles.bankPieContainer}>
           <div style={{ width: '100%', height: isMobile ? 200 : 260 }}>
-            <PieChart margin={{ top: 5, right: isMobile ? 5 : 50, left: 5, bottom: 5 }}>
+            <PieChart 
+              width={isMobile ? 300 : 500} 
+              height={isMobile ? 200 : 260} 
+              margin={{ top: 5, right: isMobile ? 5 : 50, left: 5, bottom: 5 }}
+            >
               <defs>
                 {bankData.map((entry, index) => (
                   <filter key={`shadow-${index}`} id={`bank-shadow-${index}`} x="-20%" y="-20%" width="140%" height="140%">
