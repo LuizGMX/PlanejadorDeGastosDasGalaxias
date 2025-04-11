@@ -13,11 +13,13 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
+  ResponsiveContainer,
   Cell,
   ComposedChart,
   AreaChart,
   ReferenceLine  
 } from 'recharts';
+import styles from '../../styles/dashboard.module.css';
 import { FaChartLine, FaChevronDown} from 'react-icons/fa';
 import DateRangePicker from '../shared/DateRangePicker';
 
@@ -27,11 +29,6 @@ import {
   BsPencil, 
   BsEye,
 } from 'react-icons/bs';
-import { ResponsiveContainer } from 'recharts';
-
-
-// Substituição para todas as classes CSS removidas
-const styles = {};
 
 const motivationalPhrases = [
   "Cuide do seu dinheiro hoje para não precisar se preocupar amanhã.",
@@ -41,7 +38,7 @@ const motivationalPhrases = [
   "Quem controla seu dinheiro, controla seu futuro.",
   "Gaste menos do que ganha e invista a diferença.",
   "Disciplina financeira hoje significa tranquilidade amanhã.",
-  "Pequenos despesas diárias podem se tornar grandes perdas anuais.",
+  "Pequenos despesas diários podem se tornar grandes perdas anuais.",
   "A riqueza começa na sua mentalidade antes de chegar à sua conta bancária.",
   "Orçamento não é prisão, é liberdade.",
   "Dinheiro é um ótimo servo, mas um péssimo mestre.",
@@ -67,12 +64,12 @@ const getGreeting = (userName) => {
   const randomPhrase = motivationalPhrases[Math.floor(Math.random() * motivationalPhrases.length)];
   
   return (
-    <div>
-      <div>
+    <div className={styles.greeting}>
+      <div className={styles.greetingContent}>
       <h2>{greeting}, {userName}!</h2>
-        <p>"{randomPhrase}"</p>
+        <p className={styles.motivationalPhrase}>"{randomPhrase}"</p>
       </div>
-      <div>
+      <div className={styles.greetingDate}>
         <span>{new Date().toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
       </div>
     </div>
@@ -116,13 +113,13 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
     fetchData();
   }, [auth.token, projectionMonths]);
 
-  if (loading) return <div>
-    <div></div>
+  if (loading) return <div className={styles.loadingCard}>
+    <div className={styles.loadingSpinner}></div>
     <p>Carregando projeção financeira...</p>
   </div>;
   
-  if (error) return <div>
-    <span>⚠️</span>
+  if (error) return <div className={styles.errorCard}>
+    <span className={styles.errorIcon}>⚠️</span>
     <p>Erro: {error}</p>
     <button onClick={() => setLoading(true)}>Tentar novamente</button>
   </div>;
@@ -192,11 +189,12 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
   };
 
   return (
-    <div>
+    <div style={containerStyle} className={`${styles.trendChartContainer} ${styles.enhancedCard}`}>
       {showTitle && (
-        <div>
-          <h2>Projeção de Saldo</h2>
+        <div className={styles.trendChartHeader}>
+          <h2 className={styles.trendChartTitle}>Projeção de Saldo</h2>
           <button 
+            className={styles.tipsToggle}
             onClick={() => setShowTips(!showTips)}
             title={showTips ? "Ocultar dicas" : "Mostrar dicas"}
           >
@@ -206,17 +204,17 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
       )}
       
       {showTips && (
-        <div>
+        <div className={styles.insightCard}>
           <p>{insight}</p>
           {trend && (
-            <div>
+            <div className={styles.trendIndicator}>
               <span>Tendência: </span>
               {trend.direction === "up" ? (
-                <span>↗️ +{trend.percentage}%</span>
+                <span className={styles.trendUp}>↗️ +{trend.percentage}%</span>
               ) : trend.direction === "down" ? (
-                <span>↘️ -{trend.percentage}%</span>
+                <span className={styles.trendDown}>↘️ -{trend.percentage}%</span>
               ) : (
-                <span>→ Estável</span>
+                <span className={styles.trendStable}>→ Estável</span>
               )}
             </div>
           )}
@@ -224,21 +222,24 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
       )}
       
       {showControls && (
-        <div>
-          <div>
-            <span>Projeção para:</span>
-            <div>
+        <div className={styles.trendChartControls}>
+          <div className={styles.controlGroup}>
+            <label>Período de Projeção: </label>
+            <div className={styles.buttonSelector}>
               <button 
+                className={projectionMonths === 3 ? styles.active : ''}
                 onClick={() => setProjectionMonths(3)}
               >
                 3 meses
               </button>
               <button 
+                className={projectionMonths === 6 ? styles.active : ''}
                 onClick={() => setProjectionMonths(6)}
               >
                 6 meses
               </button>
               <button 
+                className={projectionMonths === 12 ? styles.active : ''}
                 onClick={() => setProjectionMonths(12)}
               >
                 12 meses
@@ -247,32 +248,25 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
           </div>
         </div>
       )}
-      
-      <div>
+
+      <ResponsiveContainer width="100%" height={height}>
         <ComposedChart 
-          width={700} 
-          height={height} 
-          data={data.projectionData}
-          margin={{ top: 30, right: 30, left: 0, bottom: 5 }}
-          onMouseMove={(e) => {
-            if (e && e.activeTooltipIndex) {
-              handleMouseEnter(data.projectionData[e.activeTooltipIndex], e.activeTooltipIndex);
-            }
-          }}
+          data={data.projectionData} 
+          margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
           onMouseLeave={handleMouseLeave}
         >
           <defs>
             <linearGradient id="colorGanhos" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="var(--success-color)" stopOpacity={1}/>
-              <stop offset="95%" stopColor="var(--success-color)" stopOpacity={1}/>
+              <stop offset="5%" stopColor="var(--success-color)" stopOpacity={0.8}/>
+              <stop offset="95%" stopColor="var(--success-color)" stopOpacity={0}/>
             </linearGradient>
             <linearGradient id="colorDespesas" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="var(--error-color)" stopOpacity={1}/>
-              <stop offset="95%" stopColor="var(--error-color)" stopOpacity={1}/>
+              <stop offset="5%" stopColor="var(--error-color)" stopOpacity={0.8}/>
+              <stop offset="95%" stopColor="var(--error-color)" stopOpacity={0}/>
             </linearGradient>
             <linearGradient id="colorSaldo" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#1E90FF" stopOpacity={1}/>
-              <stop offset="95%" stopColor="#1E90FF" stopOpacity={1}/>
+              <stop offset="5%" stopColor="#1E90FF" stopOpacity={0.8}/>
+              <stop offset="95%" stopColor="#1E90FF" stopOpacity={0}/>
             </linearGradient>
           </defs>
           
@@ -300,6 +294,12 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
                            'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
               return `${months[d.getMonth()]} de ${d.getFullYear()}`;
             }}
+            contentStyle={{
+              backgroundColor: 'var(--card-background)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '8px',
+              padding: '10px'
+            }}
           />
           <Legend 
             verticalAlign="top"
@@ -322,7 +322,7 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
                 default:
                   color = 'var(--text-color)';
               }
-              return <span>{value}</span>;
+              return <span style={{ color }}>{value}</span>;
             }}
           />
           
@@ -331,7 +331,7 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
             dataKey="receitas"
             stroke="var(--success-color)"
             fillOpacity={1}
-            fill="var(--success-color)"
+            fill="url(#colorGanhos)"
             strokeWidth={2}
           />
           <Area
@@ -339,7 +339,7 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
             dataKey="despesas"
             stroke="var(--error-color)"
             fillOpacity={1}
-            fill="var(--error-color)"
+            fill="url(#colorDespesas)"
             strokeWidth={2}
           />
           <Line
@@ -358,7 +358,8 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
                   r={isActive ? 6 : 4}
                   fill="#1E90FF"
                   stroke={isActive ? "#fff" : "none"}
-                  strokeWidth={2}
+            strokeWidth={2}
+                  style={{ cursor: 'pointer' }}
                   onClick={() => handleDotClick(index)}
                   onMouseEnter={() => handleMouseEnter(props.payload, index)}
                 />
@@ -367,36 +368,36 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
             activeDot={{ r: 8, fill: '#1E90FF', stroke: '#fff', strokeWidth: 2 }}
           />
         </ComposedChart>
-      </div>
+      </ResponsiveContainer>
 
-      <div>
-        <div>
+      <div className={styles.trendChartSummary}>
+        <div className={styles.trendChartSummaryItem}>
           <span>Receitas Projetados </span>
-          <strong>
+          <strong className={styles.positive}>
             {formatFullCurrency(data.summary.totalProjectedIncomes)}
           </strong>
         </div>
-        <div>
+        <div className={styles.trendChartSummaryItem}>
           <span>Despesas Projetadas </span>
-          <strong>
+          <strong className={styles.negative}>
             {formatFullCurrency(data.summary.totalProjectedExpenses)}
           </strong>
         </div>
-        <div>
+        <div className={styles.trendChartSummaryItem}>
           <span>Saldo Final Projetado </span>
-          <strong>
+          <strong className={data.summary.finalBalance >= 0 ? styles.positive : styles.negative}>
             {formatFullCurrency(data.summary.finalBalance)}
           </strong>
         </div>
       </div>
       
       {activeDot !== null && (
-        <div>
+        <div className={styles.monthDetailCard}>
           <h4>Detalhe do Mês</h4>
-          <div>
+          <div className={styles.monthDetail}>
             {data.projectionData[activeDot] && (
               <>
-                <div>
+                <div className={styles.detailRow}>
                   <span>Mês:</span>
                   <strong>
                     {(() => {
@@ -407,25 +408,25 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
                     })()}
                   </strong>
                 </div>
-                <div>
+                <div className={styles.detailRow}>
                   <span>Receitas:</span>
-                  <strong>
+                  <strong className={styles.positive}>
                     {formatFullCurrency(data.projectionData[activeDot].receitas)}
                   </strong>
                 </div>
-                <div>
+                <div className={styles.detailRow}>
                   <span>Despesas:</span>
-                  <strong>
+                  <strong className={styles.negative}>
                     {formatFullCurrency(data.projectionData[activeDot].despesas)}
                   </strong>
                 </div>
-                <div>
+                <div className={styles.detailRow}>
                   <span>Saldo:</span>
-                  <strong>
+                  <strong className={data.projectionData[activeDot].saldo >= 0 ? styles.positive : styles.negative}>
                     {formatFullCurrency(data.projectionData[activeDot].saldo)}
                   </strong>
                 </div>
-                <div>
+                <div className={styles.detailRow}>
                   <span>Economia:</span>
                   <strong>
                     {((data.projectionData[activeDot].receitas - data.projectionData[activeDot].despesas) / 
@@ -518,24 +519,27 @@ const FinancialHealthScore = ({ data }) => {
   const tips = getFinancialTips();
   
   return (
-    <div>
-      <div>
+    <div className={styles.healthScoreContainer}>
+      <div className={styles.healthScoreHeader}>
         <h3>Saúde Financeira</h3>
-        <div>
+        <div className={styles.scoreValue} style={{ color: healthColor }}>
           {healthScore}
           <span>/100</span>
         </div>
       </div>
       
-      <div>
-        <div></div>
+      <div className={styles.healthScoreBar}>
+        <div 
+          className={styles.healthScoreProgress} 
+          style={{ width: `${healthScore}%`, backgroundColor: healthColor }}
+        />
       </div>
       
-      <div>
-        Status: <span>{healthStatus}</span>
+      <div className={styles.healthStatus}>
+        Status: <span style={{ color: healthColor }}>{healthStatus}</span>
       </div>
       
-      <div>
+      <div className={styles.healthTips}>
         <h4>Dicas Personalizadas:</h4>
         <ul>
           {tips.map((tip, index) => (
@@ -597,19 +601,20 @@ const FilterSelector = ({ label, options, selected, onSelect, multiple = false }
   }, []);
 
   return (
-    <div ref={filterRef}>
-      <div>{label}</div>
+    <div className={styles.filterSelector} ref={filterRef}>
+      <div className={styles.filterLabel}>{label}</div>
       <div 
+        className={`${styles.filterDisplay} ${isOpen ? styles.active : ''}`}
         onClick={handleToggle}
       >
         <span>{getDisplayText()}</span>
-        <FaChevronDown />
+        <FaChevronDown className={`${styles.arrowIcon} ${isOpen ? styles.rotated : ''}`} />
       </div>
       {isOpen && (
-        <div>
+        <div className={styles.filterOptions}>
           {multiple && (
             <>
-              <div onClick={handleSelectAll}>
+              <div className={styles.selectAllOption} onClick={handleSelectAll}>
                 <input 
                   type="checkbox" 
                   checked={selected.length === options.length}
@@ -617,13 +622,14 @@ const FilterSelector = ({ label, options, selected, onSelect, multiple = false }
                 />
                 <span>Selecionar Todos</span>
               </div>
-              <div />
+              <div className={styles.optionsDivider} />
             </>
           )}
-          <div>
+          <div className={styles.optionsList}>
             {options.map(option => (
               <div 
                 key={option.value}
+                className={`${styles.filterOption} ${selected.includes(option.value) ? styles.selected : ''}`}
                 onClick={() => handleSelect(option.value)}
               >
                 {multiple && (
@@ -694,13 +700,6 @@ const Dashboard = () => {
   const [incomeLoading, setIncomeLoading] = useState(false);
   const [categoriesError, setCategoriesError] = useState(null);
   const [incomeError, setIncomeError] = useState(null);
-  const [username, setUsername] = useState(null);
-  const [revenueStatsByCategory, setRevenueStatsByCategory] = useState([]);
-  const [revenueByCategoryLoading, setRevenueByCategoryLoading] = useState(true);
-  const [revenueByCategoryError, setRevenueByCategoryError] = useState(null);
-  const [expensesByCategory, setExpensesByCategory] = useState([]);
-  const [expensesByCategoryLoading, setExpensesByCategoryLoading] = useState(true);
-  const [expensesByCategoryError, setExpensesByCategoryError] = useState(null);
 
   // Lista de categorias para o filtro
   const categories = [
@@ -1128,10 +1127,10 @@ const Dashboard = () => {
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
-        <div>
+        <div className="custom-tooltip">
           <p>{`Data: ${formatDate(label)}`}</p>
           {payload.map((entry, index) => (
-            <p key={index}>
+            <p key={index} style={{ color: entry.color }}>
               {`${entry.name}: ${formatCurrency(entry.value)}`}
             </p>
           ))}
@@ -1147,20 +1146,22 @@ const Dashboard = () => {
 
   const renderChart = (chartId, title, chartComponent) => {
     return (
-      <div>
-        <div>
+      <div
+        className={`${styles.chartContainer} ${chartId === 'bank-trend' ? styles.trendChart : ''}`}
+      >
+        <div className={styles.chartHeader}>
           <h3>{title}</h3>
-          <div>
-            <span>
+          <div className={styles.chartSubtitle}>
+            <span className={styles.dateFilterBadge}>
               <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
             </span>
           </div>
         </div>
-        
-        {React.cloneElement(chartComponent, {
-          width: 800,
-          height: 400
-        })}
+        <div ref={chartRefs[chartId]} className={styles.chartWrapper} style={{ height: '400px' }}>
+          <ResponsiveContainer width="100%" height="100%">
+            {chartComponent}
+          </ResponsiveContainer>
+        </div>
       </div>
     );
   };
@@ -1263,12 +1264,13 @@ const Dashboard = () => {
   const renderFinancialGoalChart = () => {
     if (!data?.financial_goal) {
       return (
-        <div>
+        <div className={`${styles.chartContainer} ${styles.emptyGoalCard}`}>
           <h3>Objetivo Financeiro</h3>
-          <div>
-            <span>🎯</span>
+          <div className={styles.emptyGoalContent}>
+            <span className={styles.emptyGoalIcon}>🎯</span>
             <p>Você ainda não definiu um objetivo financeiro.</p>
             <button 
+              className={styles.createGoalButton}
               onClick={() => navigate('/profile')}
             >
               Definir Objetivo
@@ -1354,177 +1356,166 @@ const Dashboard = () => {
         : new Date(completionDate).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 
     return (
-      <div>
-        <div>
-          <div>
+      <div className={`${styles.chartContainer} ${styles.goalCard}`}>
+        <div className={styles.goalCardHeader}>
+          <div className={styles.goalCardTitle}>
             <h3>Objetivo: {goal.name}</h3>
-            <div>
+            <div className={styles.targetDate}>
               <span>Meta para:</span> {new Date(goal.end_date).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
             </div>
           </div>
-          <div>
-            <div>Meta Total</div>
-            <div>{formatCurrency(goal.amount)}</div>
+          <div className={styles.goalTargetAmount}>
+            <div className={styles.targetAmountLabel}>Meta Total</div>
+            <div className={styles.targetAmountValue}>{formatCurrency(goal.amount)}</div>
           </div>
         </div>
         
-        <div>
-          <div>
-            <div>
-              <div>
-                <div>{percentageSaved}%</div>
-                <div>concluído</div>
+        <div className={styles.goalProgressSection}>
+          <div className={styles.progressCircleContainer}>
+            <div 
+              className={styles.progressCircle}
+              style={{
+                background: `conic-gradient(
+                  ${savingsPace.color} ${percentageSaved * 3.6}deg, 
+                  var(--background-color) ${percentageSaved * 3.6}deg
+                )`
+              }}
+            >
+              <div className={styles.progressInner}>
+                <div className={styles.progressPercentage}>{percentageSaved}%</div>
+                <div className={styles.progressLabel}>concluído</div>
               </div>
             </div>
-            <div>
-              <div>⏱️</div>
-              <div>{timeRemaining}</div>
+            <div className={styles.timeRemainingBadge}>
+              <div className={styles.timeIcon}>⏱️</div>
+              <div className={styles.timeText}>{timeRemaining}</div>
             </div>
           </div>
           
-          <div>
-            <div>
-              <div>
-                <span>💰</span> Economizado
+          <div className={styles.goalStatsContainer}>
+            <div className={styles.statCard}>
+              <div className={styles.statLabel}>
+                <span className={styles.statIcon}>💰</span> Economizado
               </div>
-              <div>{formatCurrency(goal.total_saved)}</div>
+              <div className={`${styles.statValue} ${styles.savedValue}`}>{formatCurrency(goal.total_saved)}</div>
             </div>
-            <div>
-              <div>
-                <span>📊</span> Faltando
+            <div className={styles.statCard}>
+              <div className={styles.statLabel}>
+                <span className={styles.statIcon}>📊</span> Faltando
               </div>
-              <div>{formatCurrency(goal.amount - goal.total_saved)}</div>
+              <div className={styles.statValue}>{formatCurrency(goal.amount - goal.total_saved)}</div>
             </div>
-            <div>
-              <div>
-                <span>💸</span> Economia Mensal
+            <div className={styles.statCard}>
+              <div className={styles.statLabel}>
+                <span className={styles.statIcon}>💸</span> Economia Mensal
               </div>
-              <div>
+              <div className={`${styles.statValue} ${goal.monthly_balance >= goal.monthly_needed ? styles.positiveValue : styles.negativeValue}`}>
                 {formatCurrency(goal.monthly_balance)}
               </div>
-              <div>
+              <div className={styles.statSource}>
                 {Math.abs(goal.current_month_balance) > 0 ? "mês atual" : "média histórica"}
               </div>
             </div>
-            <div>
-              <div>
-                <span>🎯</span> Necessário/Mês
+            <div className={styles.statCard}>
+              <div className={styles.statLabel}>
+                <span className={styles.statIcon}>🎯</span> Necessário/Mês
               </div>
-              <div>{formatCurrency(goal.monthly_needed)}</div>
+              <div className={styles.statValue}>{formatCurrency(goal.monthly_needed)}</div>
             </div>
           </div>
         </div>
         
-        <div>
-          <div>{savingsPace.icon}</div>
-          <div>{savingsPace.message}</div>
+        <div className={`${styles.savingsPaceIndicator} ${styles[`pace-${savingsPace.status}`]}`}>
+          <div className={styles.paceIcon}>{savingsPace.icon}</div>
+          <div className={styles.paceMessage}>{savingsPace.message}</div>
         </div>
         
-        <div>
-          <div>
+        <div className={styles.projectionSection}>
+          <div className={styles.projectionHeader}>
             <h4>Projeção de Conclusão</h4>
-            <div>
-              <div>
-                <div></div>
-                <div>Hoje</div>
+            <div className={styles.projectionTimeline}>
+              <div className={styles.timelineStart}>
+                <div className={styles.timelinePoint}></div>
+                <div className={styles.timelineDate}>Hoje</div>
               </div>
-              <div>
-                <div></div>
+              <div className={styles.timelineBar}>
+                <div 
+                  className={`${styles.timelineProgress} ${!goal.is_achievable ? styles.timelineWarning : ''}`}
+                  style={{ width: `${Math.min((goal.months_remaining / goal.months_needed_with_current_savings) * 100, 100)}%` }}
+                ></div>
               </div>
-              <div>
-                <div></div>
-                <div>
+              <div className={styles.timelineEnd}>
+                <div className={styles.timelinePoint}></div>
+                <div className={styles.timelineDate}>
                   {formattedCompletionDate}
                 </div>
               </div>
             </div>
           </div>
           
-          <div>
-            <BarChart
-              width={400}
-              height={100}
-              data={chartData}
-              layout="vertical"
-              barSize={20}
-              margin={{ top: 5, right: 0, left: 0, bottom: 5 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-              <XAxis 
-                type="number" 
-                tickFormatter={formatCurrency} 
-                tick={{ fill: 'var(--text-color)', fontSize: 10 }}
-              />
-              <YAxis 
-                type="category" 
-                dataKey="name" 
-                hide={true}
-              />
-              <Tooltip 
-                formatter={value => formatCurrency(value)} 
-                labelFormatter={(label) => formatDateLabel(label, chartData)}
-                contentStyle={{ background: '#fff', border: '1px solid #ddd', borderRadius: '8px' }}
-              />
-              <Legend 
-                verticalAlign="top"
-                height={36}
-                formatter={(value) => {
-                  let color;
-                  switch(value) {
-                    case 'receitas':
-                      color = 'var(--success-color)';
-                      value = 'Receitas';
-                      break;
-                    case 'despesas':
-                      color = 'var(--error-color)';
-                      value = 'Despesas';
-                      break;
-                    case 'saldo':
-                      color = '#1E90FF';
-                      value = 'Saldo';
-                      break;
-                    default:
-                      color = 'var(--text-color)';
-                  }
-                  return <span>{value}</span>;
-                }}
-              />
-              <Bar dataKey="economia" stackId="a" fill="var(--success-color)" name="Economizado" />
-              <Bar dataKey="projecao" stackId="a" fill="#2196F3" name="Projeção Futura" />
-              <Bar dataKey="faltante" stackId="a" fill="var(--error-color)" name="Faltante" />
-            </BarChart>
+          <div className={styles.projectionData}>
+            <ResponsiveContainer width="100%" height={120}>
+              <BarChart
+                data={chartData}
+                layout="vertical"
+                barSize={20}
+                margin={{ top: 5, right: 0, left: 0, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                <XAxis 
+                  type="number" 
+                  tickFormatter={formatCurrency} 
+                  tick={{ fill: 'var(--text-color)', fontSize: 10 }}
+                />
+                <YAxis 
+                  type="category" 
+                  dataKey="name" 
+                  hide={true}
+                />
+                <Tooltip 
+                  formatter={(value) => [formatCurrency(value), '']}
+                  contentStyle={{
+                    backgroundColor: 'var(--card-background)',
+                    border: '1px solid var(--border-color)',
+                  }}
+                />
+                <Bar dataKey="economia" stackId="a" fill="var(--success-color)" name="Economizado" />
+                <Bar dataKey="projecao" stackId="a" fill="#2196F3" name="Projeção Futura" />
+                <Bar dataKey="faltante" stackId="a" fill="var(--error-color)" name="Faltante" />
+              </BarChart>
+            </ResponsiveContainer>
             
-            <div>
-              <div>
-                <div></div>
-                <div>Economizado</div>
+            <div className={styles.projectionLegend}>
+              <div className={styles.legendItem}>
+                <div className={styles.legendColor} style={{ backgroundColor: 'var(--success-color)' }}></div>
+                <div className={styles.legendLabel}>Economizado</div>
               </div>
-              <div>
-                <div></div>
-                <div>Projeção Futura</div>
+              <div className={styles.legendItem}>
+                <div className={styles.legendColor} style={{ backgroundColor: '#2196F3' }}></div>
+                <div className={styles.legendLabel}>Projeção Futura</div>
               </div>
-              <div>
-                <div></div>
-                <div>Faltante</div>
+              <div className={styles.legendItem}>
+                <div className={styles.legendColor} style={{ backgroundColor: 'var(--error-color)' }}></div>
+                <div className={styles.legendLabel}>Faltante</div>
               </div>
             </div>
           </div>
         </div>
         
         {!goal.is_achievable && (
-          <div>
-            <div>
+          <div className={styles.alertMessage}>
+            <div className={styles.alertTitle}>
               <span>⚠️</span> Objetivo em risco
             </div>
-            <div>
+            <div className={styles.alertContent}>
               Com seu ritmo atual de economia, esta meta não será atingida no prazo estabelecido. 
               Considere aumentar o valor mensal economizado ou ajustar a data de conclusão da meta.
             </div>
-            <div>
-              <button onClick={() => navigate('/expenses')}>
+            <div className={styles.alertActions}>
+              <button className={styles.actionButton} onClick={() => navigate('/expenses')}>
                 <span>📊</span> Revisar Despesas
               </button>
-              <button onClick={() => navigate('/profile')}>
+              <button className={styles.actionButton} onClick={() => navigate('/profile')}>
                 <span>⚙️</span> Ajustar Meta
               </button>
             </div>
@@ -1538,10 +1529,11 @@ const Dashboard = () => {
     // Verificar se existem dados de orçamento
     if (!data?.budget_info) {
       return (
-        <div>
-          <div>💰</div>
+        <div className={styles.emptyState}>
+          <div className={styles.emptyIcon}>💰</div>
           <p>Você ainda não tem um orçamento definido para este período.</p>
           <button 
+            className={styles.createGoalButton}
             onClick={() => navigate('/settings')}
           >
             Definir Orçamento
@@ -1578,7 +1570,7 @@ const Dashboard = () => {
     
     if (isOverBudget) {
       statusColor = 'dangerProgress';
-      advice = 'Você ultrapassou seu orçamento! Evite novas despesas até o próximo mês.';
+      advice = 'Você ultrapassou seu orçamento! Evite novos despesas até o próximo mês.';
       statusIcon = '⚠️';
     } else if (isDangerZone) {
       statusColor = 'warningProgress';
@@ -1601,62 +1593,70 @@ const Dashboard = () => {
     const formattedDate = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
     
     return (
-      <div>
-        <div>
+      <div className={styles.budgetInfoContainer}>
+        <div className={styles.budgetHeader}>
           <h3>Resumo do Orçamento</h3>
-          <div>
+          <div className={styles.budgetDate}>
             {formatCurrentDateFilter()}
           </div>
         </div>
         
-        <div>
-          <div>
-            <div>
+        <div className={styles.budgetStatsContainer}>
+          <div className={styles.budgetStats}>
+            <div className={styles.budgetStat}>
               <span>Orçamento Total</span>
               <strong>{formatCurrency(total_budget)}</strong>
             </div>
-            <div>
+            <div className={styles.budgetStat}>
               <span>Despesa até agora</span>
-              <strong>{formatCurrency(total_spent)}</strong>
+              <strong className={isOverBudget ? styles.overBudget : ''}>{formatCurrency(total_spent)}</strong>
             </div>
-            <div>
+            <div className={styles.budgetStat}>
               <span>Disponível</span>
               <strong>{formatCurrency(remainingBudget)}</strong>
             </div>
           </div>
           
-          <div>
-            <div>
+          <div className={styles.budgetProgressContainer}>
+            <div className={styles.budgetProgressLabel}>
               <span>Progresso do orçamento</span>
               <span>{spentPercentage.toFixed(1)}%</span>
             </div>
-            <div>
-              <div></div>
-              <div></div>
+            <div className={styles.budgetProgressBar}>
+              <div 
+                className={`${styles.budgetProgress} ${styles[statusColor]}`} 
+                style={{ width: `${Math.min(spentPercentage, 100)}%` }}
+              />
+              <div 
+                className={styles.idealMarker}
+                style={{ left: `${idealSpentPercentage}%` }}
+                title={`Ideal: ${idealSpentPercentage.toFixed(1)}%`}
+              />
             </div>
           </div>
           
-          <div>
-            <div>
+          <div className={styles.dailySpendingInfo}>
+            <div className={styles.daysInfo}>
               <span>Dias restantes</span>
               <strong>{daysRemaining}</strong>
             </div>
-            <div>
+            <div className={styles.dailyLimitInfo}>
               <span>Despesa diário ideal</span>
               <strong>{formatCurrency(remainingBudget / (daysRemaining || 1))}</strong>
             </div>
           </div>
         </div>
         
-        <div>
-          <div>
-            <span>{statusIcon}</span>
+        <div className={`${styles.budgetAdvice} ${styles[statusColor]}`}>
+          <div className={styles.adviceContent}>
+            <span className={styles.adviceIcon}>{statusIcon}</span>
             <p>{advice}</p>
           </div>
         </div>
         
-        <div>
-          <button
+        <div className={styles.budgetActions}>
+          <button 
+            className={styles.budgetActionButton}
             onClick={() => navigate('/expenses')}
           >
             Ver Despesas
@@ -1677,16 +1677,16 @@ const Dashboard = () => {
     const chartData = [
                         {
                           name: 'Disponível',
-                          value: available,
-                          percent: available / total,
-                          color: 'var(--primary-color)'
+        value: available,
+        percent: available / total,
+        color: 'var(--primary-color)'
                         },
                         {
                           name: 'Total Despesa',
-                          value: totalSpent,
-                          percent: totalSpent / total,
-                          color: 'var(--error-color)'
-                        }
+        value: totalSpent,
+        percent: totalSpent / total,
+        color: 'var(--error-color)'
+      }
     ];
 
     // Função personalizada para rótulos do gráfico Receitas vs Despesas
@@ -1715,102 +1715,119 @@ const Dashboard = () => {
     };
 
     return (
-      <div>
-        <div>
+      <div className={styles.chartContainer}>
+        <div className={styles.chartHeader}>
           <h3>Receitas vs Despesas</h3>
-          <div>
-            <span>
+          <div className={styles.chartSubtitle}>
+            <span className={styles.dateFilterBadge}>
               <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
             </span>
           </div>
         </div>
-        
-        <PieChart 
-          width={isMobile ? 300 : 500} 
-          height={isMobile ? 220 : 280} 
-          margin={{ top: 10, right: 10, left: 10, bottom: 10 }}
-        >
-          <defs>
-            <filter id="income-vs-expense-shadow" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="0" stdDeviation="3" floodOpacity="0.3" />
-            </filter>
-          </defs>
-          <Pie
-            data={chartData}
-            dataKey="value"
-            nameKey="category"
-            cx="50%"
-            cy="50%"
-            outerRadius={isMobile ? 80 : 100}
-            innerRadius={0}
-            startAngle={90}
-            endAngle={-270}
-            filter="url(#income-vs-expense-shadow)"
-            animationDuration={800}
-            animationBegin={200}
-            animationEasing="ease-out"
-            label={incomePieLabel}
-            labelLine={false}
-          >
-            {chartData.map((entry, index) => (
-              <Cell 
-                key={`cell-${index}`} 
-                fill={entry.color} 
-                stroke="#ffffff" 
-                strokeWidth={2} 
+    
+        <div className={styles.incomeVsExpensesContainer}>
+          <div style={{ width: isMobile ? 300 : 400, height: isMobile ? 220 : 280 }}>
+            <PieChart width={isMobile ? 300 : 400} height={isMobile ? 220 : 280} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
+              <defs>
+                <filter id="income-vs-expense-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feDropShadow dx="0" dy="0" stdDeviation="3" floodOpacity="0.3" />
+                </filter>
+              </defs>
+              <Pie
+                data={chartData}
+                dataKey="value"
+                nameKey="category"
+                cx="50%"
+                cy="50%"
+                outerRadius={isMobile ? 80 : 100}
+                innerRadius={0}
+                startAngle={90}
+                endAngle={-270}
+                filter="url(#income-vs-expense-shadow)"
+                animationDuration={800}
+                animationBegin={200}
+                animationEasing="ease-out"
+                label={incomePieLabel}
+                labelLine={false}
+              >
+                {chartData.map((entry, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={entry.color}
+                    stroke="#ffffff"
+                    strokeWidth={2}
+                  />
+                ))}
+              </Pie>
+              <Tooltip
+                formatter={(value) => formatCurrency(value)}
+                contentStyle={{
+                  backgroundColor: 'var(--card-background)',
+                  border: '1px solid var(--border-color)',
+                  color: 'var(--text-color)',
+                  padding: '10px',
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 8px rgba(0,0,0,0.15)'
+                }}
               />
-            ))}
-          </Pie>
-          <Tooltip
-            formatter={(value) => formatCurrency(value)}
-          />
-          <Legend
-            layout={isMobile ? "horizontal" : "vertical"}
-            align="center"
-            verticalAlign="bottom"
-            iconType="circle"
-            iconSize={isMobile ? 8 : 10}
-            formatter={(value, entry) => (
-              <span>
-                {value}{isMobile ? '' : `: ${formatCurrency(entry.payload.value)}`} ({(entry.payload.percent * 100).toFixed(0)}%)
-              </span>
-            )}
-          />
-        </PieChart>
-        
-        <div>
-          <div>
+              <Legend
+                layout={isMobile ? "horizontal" : "vertical"}
+                align="center"
+                verticalAlign="bottom"
+                iconType="circle"
+                iconSize={isMobile ? 8 : 10}
+                formatter={(value, entry) => (
+                  <span style={{
+                    color: 'var(--text-color)',
+                    fontSize: isMobile ? '10px' : '12px',
+                    fontWeight: 'bold'
+                  }}>
+                    {value}{isMobile ? '' : `: ${formatCurrency(entry.payload.value)}`} ({(entry.payload.percent * 100).toFixed(0)}%)
+                  </span>
+                )}
+                wrapperStyle={{
+                  paddingTop: isMobile ? '8px' : '10px',
+                  fontSize: isMobile ? '10px' : '12px'
+                }}
+              />
+            </PieChart>
+          </div>
+        </div>
+    
+        <div className={styles.incomeVsExpensesSummary}>
+          <div className={styles.infoItem}>
             <span>Receitas totais:</span>
-            <strong>{formatCurrency(total)}</strong>
+            <strong className={styles.positive}>{formatCurrency(total)}</strong>
           </div>
-          <div>
+          <div className={styles.infoItem}>
             <span>Despesas totais:</span>
-            <strong>{formatCurrency(totalSpent)}</strong>
+            <strong className={styles.negative}>{formatCurrency(totalSpent)}</strong>
           </div>
-          <div>
+          <div className={styles.infoItem}>
             <span>Saldo disponível:</span>
-            <strong>{formatCurrency(available)}</strong>
+            <strong className={styles.positive}>{formatCurrency(available)}</strong>
           </div>
         </div>
       </div>
     );
+    
   };
 
   // Improved renderExpensesByCategoryChart with better visualization and mobile optimization
   const renderExpensesByCategoryChart = () => {
     if (!data || !data.expenses_by_category || data.expenses_by_category.length === 0) {
       return (
-        <div>
-          <div>
+        <div className={styles.chartContainer}>
+          <div className={styles.chartHeader}>
             <h3>Despesas por Categoria</h3>
-            <div>
-              <span>
+            <div className={styles.chartSubtitle}>
+              <span className={styles.dateFilterBadge}>
                 <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
               </span>
             </div>
           </div>
-          <div>
-            <span>📊</span>
+          <div className={styles.emptyChartContent}>
+            <span className={styles.emptyChartIcon}>📊</span>
             <p>Não há despesas no período selecionado.</p>
           </div>
         </div>
@@ -1859,77 +1876,96 @@ const Dashboard = () => {
     });
 
     return (
-      <div>
-        <div>
+      <div className={styles.chartContainer}>
+        <div className={styles.chartHeader}>
           <h3>Despesas por Categoria</h3>
-          <div>
-            <span>
+          <div className={styles.chartSubtitle}>
+            <span className={styles.dateFilterBadge}>
               <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
             </span>
           </div>
         </div>
-        
-        <PieChart 
-          width={isMobile ? 300 : 500} 
-          height={isMobile ? 220 : 280} 
-          margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}
-        >
-          <defs>
-            {categoriesData.map((entry, index) => (
-              <filter key={`shadow-${index}`} id={`shadow-${index}`} x="-20%" y="-20%" width="140%" height="140%">
-                <feDropShadow dx="0" dy="0" stdDeviation="3" floodOpacity="0.3" />
-              </filter>
-            ))}
-          </defs>
-          <Pie
-            data={categoriesData}
-            cx="50%"
-            cy="50%"
-            labelLine={false}
-            outerRadius={isMobile ? 70 : 130}
-            innerRadius={isMobile ? 30 : 60}
-            paddingAngle={2}
-            fill="#8884d8"
-            dataKey="value"
-            nameKey="category"
-            label={getCustomizedPieLabel}
-            filter="url(#shadow)"
-            animationDuration={800}
-            animationBegin={200}
-            animationEasing="ease-out"
-          >
-            {categoriesData.map((entry, index) => (
-              <Cell 
-                key={`cell-${index}`} 
-                fill={entry.color} 
-                stroke="#ffffff" 
-                strokeWidth={1} 
-                filter={`url(#shadow-${index})`} 
+        <div className={styles.categoriesPieContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <ResponsiveContainer width="100%" height={isMobile ? 220 : 350}>
+            <PieChart margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
+              <defs>
+                {categoriesData.map((entry, index) => (
+                  <filter key={`shadow-${index}`} id={`shadow-${index}`} x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="0" stdDeviation="3" floodOpacity="0.3" />
+                  </filter>
+                ))}
+              </defs>
+              <Pie
+                data={categoriesData}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                outerRadius={isMobile ? 70 : 130}
+                innerRadius={isMobile ? 30 : 60}
+                paddingAngle={2}
+                fill="#8884d8"
+                dataKey="value"
+                nameKey="category"
+                label={getCustomizedPieLabel}
+                filter="url(#shadow)"
+                animationDuration={800}
+                animationBegin={200}
+                animationEasing="ease-out"
+              >
+                {categoriesData.map((entry, index) => (
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={entry.color} 
+                    stroke="#ffffff" 
+                    strokeWidth={1} 
+                    filter={`url(#shadow-${index})`} 
+                  />
+                ))}
+              </Pie>
+              <Tooltip content={<CustomPieTooltip />} />
+              <Legend 
+                layout={isMobile ? "horizontal" : "vertical"}
+                align={isMobile ? "center" : "right"}
+                verticalAlign={isMobile ? "bottom" : "middle"}
+                iconType="circle"
+                iconSize={isMobile ? 8 : 10}
+                formatter={(value, entry) => (
+                  <span style={{ 
+                    color: 'var(--text-color)', 
+                    fontSize: isMobile ? '10px' : '12px', 
+                    fontWeight: entry.payload.name === categoriesData[0]?.name ? 'bold' : 'normal',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: isMobile ? '60px' : '110px',
+                    display: 'inline-block'
+                  }}>
+                    {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
+                    {!isMobile && ` (${(entry.payload.percent * 100).toFixed(1)}%)`}
+                  </span>
+                )}
+                wrapperStyle={{ 
+                  paddingLeft: isMobile ? '0px' : '10px', 
+                  fontSize: isMobile ? '10px' : '12px',
+                  overflowY: 'auto', 
+                  maxHeight: isMobile ? '80px' : '180px',
+                  width: '100%',
+                  marginTop: isMobile ? '10px' : '0',
+                  justifyContent: isMobile ? 'center' : 'flex-start',
+                  flexWrap: isMobile ? 'wrap' : 'nowrap',
+                  gap: isMobile ? '5px' : '0'
+                }}
               />
-            ))}
-          </Pie>
-          <Tooltip content={<CustomPieTooltip />} />
-          <Legend 
-            layout={isMobile ? "horizontal" : "vertical"}
-            align={isMobile ? "center" : "right"}
-            verticalAlign={isMobile ? "bottom" : "middle"}
-            iconType="circle"
-            iconSize={isMobile ? 8 : 10}
-            formatter={(value, entry) => (
-              <span>
-                {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
-                {!isMobile && ` (${(entry.payload.percent * 100).toFixed(1)}%)`}
-              </span>
-            )}
-          />
-        </PieChart>
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
         
-        <div>
+        <div className={styles.categoriesInsights}>
           <h4>Categoria principal: {categoriesData[0]?.name || 'Nenhuma'}</h4>
           <p>
             Representa {categoriesData[0]?.percent ? (categoriesData[0].percent * 100).toFixed(1) : 0}% dos seus despesas.
           </p>
-          <div>
+          <div className={styles.infoItem}>
             <span>Total de Despesas:</span>
             <strong>{formatCurrency(totalExpenses)}</strong>
           </div>
@@ -1946,15 +1982,16 @@ const Dashboard = () => {
     // Verificar se temos transações
     if (!allExpenses.length && !allIncomes.length) {
       return (
-        <div>
-          <div>
+        <div className={styles.timelineContainer}>
+          <div className={styles.timelineHeader}>
             <h3>Linha do Tempo de Transações</h3>
           </div>
-          <div>
-            <div>💰</div>
+          <div className={styles.emptyTimeline}>
+            <div className={styles.emptyIcon}>💰</div>
             <p>Ainda não existem transações registradas.</p>
-            <div>
+            <div className={styles.emptyStateButtons}>
               <button 
+                className={styles.addExpenseButton}
                 onClick={() => navigate('/expenses/add')}
               >
                 Adicionar Despesa
@@ -2179,20 +2216,22 @@ const Dashboard = () => {
     };
 
     return (
-      <div>
-        <div>
+      <div className={styles.timelineContainer}>
+        <div className={styles.timelineHeader}>
           <h3>Linha do Tempo de Transações</h3>
           
-          <div>
-            <div>
+          <div className={styles.timelineControls}>
+            <div className={styles.searchBox}>
               <input
                 type="text"
                 placeholder="Buscar transações..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                className={styles.searchInput}
               />
               {searchTerm && (
                 <button
+                  className={styles.clearSearch}
                   onClick={() => setSearchTerm('')}
                 >
                   ×
@@ -2200,29 +2239,33 @@ const Dashboard = () => {
               )}
             </div>
             
-            <div>
+            <div className={styles.filterButtons}>
               <button
+                className={`${styles.filterButton} ${timelineFilter === 'all' ? styles.activeFilter : ''}`}
                 onClick={() => setTimelineFilter('all')}
               >
                 Todos
               </button>
               <button
+                className={`${styles.filterButton} ${timelineFilter === 'income' ? styles.activeFilter : ''}`}
                 onClick={() => setTimelineFilter('income')}
               >
                 Receitas
               </button>
               <button
+                className={`${styles.filterButton} ${timelineFilter === 'expense' ? styles.activeFilter : ''}`}
                 onClick={() => setTimelineFilter('expense')}
               >
                 Despesas
               </button>
             </div>
+            
           </div>
         </div>
         
         {filteredData.length === 0 ? (
-          <div>
-            <div>💸</div>
+          <div className={styles.emptyTimeline}>
+            <div className={styles.emptyIcon}>💸</div>
             <p>Nenhuma transação encontrada{
               timelineFilter !== 'all' 
                 ? ` para o tipo "${timelineFilter === 'income' ? 'receita' : 'despesa'}"` 
@@ -2234,6 +2277,7 @@ const Dashboard = () => {
             }.</p>
             {(timelineFilter !== 'all' || searchTerm) && (
               <button
+                className={styles.clearFilterButton}
                 onClick={() => {
                   console.log('Limpando todos os filtros da timeline');
                   setTimelineFilter('all');
@@ -2245,32 +2289,36 @@ const Dashboard = () => {
             )}
           </div>
         ) : groupByDate ? (
-          <div>
+          <div className={styles.timeline}>
             {groupedArray.map(group => (
-              <div key={group.date.toISOString()}>
-                <div>
-                  <div>
-                    <span>{getRelativeDate(group.date)}</span>
-                    <span>{formatDate(group.date)}</span>
+              <div key={group.date.toISOString()} className={styles.timelineGroup}>
+                <div className={styles.timelineGroupHeader}>
+                  <div className={styles.timelineDate}>
+                    <span className={styles.relativeDate}>{getRelativeDate(group.date)}</span>
+                    <span className={styles.actualDate}>{formatDate(group.date)}</span>
                   </div>
                   
                   {hasDailyTotal(group.items) && (
-                    <div>
-                      <div>
-                        <span>Receitas:</span>
-                        <span>
+                    <div className={styles.dailyTotal}>
+                      <div className={styles.dailyTotalItem}>
+                        <span className={styles.dailyTotalLabel}>Receitas:</span>
+                        <span className={styles.dailyTotalValue}>
                           {formatCurrency(calculateDailyTotal(group.items).income)}
-                        </span>
+                          </span>
                       </div>
-                      <div>
-                        <span>Despesas:</span>
-                        <span>
+                      <div className={styles.dailyTotalItem}>
+                        <span className={styles.dailyTotalLabel}>Despesas:</span>
+                        <span className={styles.dailyTotalValue}>
                           {formatCurrency(calculateDailyTotal(group.items).expense)}
                         </span>
                       </div>
-                      <div>
-                        <span>Saldo:</span>
-                        <span>
+                      <div className={styles.dailyTotalItem}>
+                        <span className={styles.dailyTotalLabel}>Saldo:</span>
+                        <span className={`${styles.dailyTotalValue} ${
+                          calculateDailyTotal(group.items).balance >= 0 
+                            ? styles.positiveBalance 
+                            : styles.negativeBalance
+                        }`}>
                           {formatCurrency(calculateDailyTotal(group.items).balance)}
                         </span>
                       </div>
@@ -2278,138 +2326,146 @@ const Dashboard = () => {
                   )}
                 </div>
                 
-                <div>
+                <div className={styles.timelineItems}>
                   {group.items.map(item => (
                     <div 
-                      key={item.id}
+                      key={item.id} 
+                      className={`${styles.timelineItem} ${
+                        item.type === 'income' ? styles.incomeItem : styles.expenseItem
+                      }`}
                       onClick={() => toggleExpand(item.id)}
                     >
-                      <div>
-                        <div>
+                      <div className={styles.timelineItemHeader}>
+                        <div className={styles.timelineItemIcon}>
                           {item.type === 'income' ? '💰' : '💸'}
                         </div>
-                        <div>
-                          <div>
+                        <div className={styles.timelineItemInfo}>
+                          <div className={styles.timelineItemDescription}>
                             {item.description}
                             {item.is_recurring && (
-                              <span>Recorrente</span>
+                              <span className={styles.recurringTag}>Recorrente</span>
                             )}
                           </div>
-                          <div>
-                            <span>{item.category}</span>
+                          <div className={styles.timelineItemMeta}>
+                            <span className={styles.timelineItemCategory}>{item.category}</span>
                             {item.bank !== 'Sem banco' && (
                               <>
-                                <span>•</span>
-                                <span>{item.bank}</span>
+                                <span className={styles.metaSeparator}>•</span>
+                                <span className={styles.timelineItemBank}>{item.bank}</span>
                               </>
                             )}
                           </div>
                         </div>
-                        <div>
-                          <span>
+                        <div className={styles.timelineItemAmount}>
+                          <span className={`${item.type === 'income' ? styles.incomeAmount : styles.expenseAmount}`}>
                             {item.type === 'income' ? '+' : '-'} {formatCurrency(item.amount)}
                           </span>
                         </div>
-                        <div>
+                        <div className={styles.expandIcon}>
                           {expandedItems.includes(item.id) ? '▼' : '▶'}
                         </div>
                       </div>
                       
                       {expandedItems.includes(item.id) && (
-                        <div>
-                          <div>
-                            <div>
-                              <span>Tipo:</span>
-                              <span>
+                        <div className={styles.timelineItemDetails}>
+                          <div className={styles.detailsGrid}>
+                            <div className={styles.detailItem}>
+                              <span className={styles.detailLabel}>Tipo:</span>
+                              <span className={styles.detailValue}>
                                 {item.type === 'income' ? 'Receita' : 'Despesa'}
                               </span>
                             </div>
-                            <div>
-                              <span>Data:</span>
-                              <span>{formatDate(item.date)}</span>
+                            <div className={styles.detailItem}>
+                              <span className={styles.detailLabel}>Data:</span>
+                              <span className={styles.detailValue}>{formatDate(item.date)}</span>
                             </div>
-                            <div>
-                              <span>Categoria:</span>
-                              <span>{item.category}</span>
+                            <div className={styles.detailItem}>
+                              <span className={styles.detailLabel}>Categoria:</span>
+                              <span className={styles.detailValue}>{item.category}</span>
                             </div>
-                            <div>
-                              <span>Banco:</span>
-                              <span>{item.bank}</span>
+                            <div className={styles.detailItem}>
+                              <span className={styles.detailLabel}>Banco:</span>
+                              <span className={styles.detailValue}>{item.bank}</span>
                             </div>
-                            <div>
-                              <span>Recorrente:</span>
-                              <span>{item.is_recurring ? 'Sim' : 'Não'}</span>
+                            <div className={styles.detailItem}>
+                              <span className={styles.detailLabel}>Recorrente:</span>
+                              <span className={styles.detailValue}>{item.is_recurring ? 'Sim' : 'Não'}</span>
                             </div>
                           </div>
                           
-                          <div>
+                          <div className={styles.detailActions}>
                             <button 
+                              className={styles.detailActionButton}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 navigate(`/${item.type === 'income' ? 'incomes' : 'expenses'}/edit/${item.id}`);
                               }}
                             >
-                              <BsPencil size={16} /> Editar
+                              <BsPencil size={16} style={{marginRight: '6px'}} /> Editar
                             </button>
                             <button 
+                              className={styles.detailActionButton}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 // Implementar visualização de detalhes
                               }}
                             >
-                              <BsEye size={16} /> Ver detalhes
+                              <BsEye size={16} style={{marginRight: '6px'}} /> Ver detalhes
                             </button>
                           </div>
                         </div>
                       )}
                     </div>
                   ))}
-                </div>
-              </div>
-            ))}
+                      </div>
+                    </div>
+                  ))}
           </div>
         ) : (
-          <div>
+          <div className={styles.timeline}>
             {filteredData.map(item => (
               <div 
-                key={item.id}
+                key={item.id} 
+                className={`${styles.timelineItem} ${
+                  item.type === 'income' ? styles.incomeItem : styles.expenseItem
+                }`}
                 onClick={() => toggleExpand(item.id)}
               >
-                <div>
-                  <div>
-                    <span>{getRelativeDate(item.date)}</span>
-                    <span>{formatDate(item.date)}</span>
+                {/* Conteúdo do item não agrupado similar ao conteúdo agrupado */}
+                <div className={styles.timelineItemHeader}>
+                  <div className={styles.timelineItemDateNonGrouped}>
+                    <span className={styles.relativeDate}>{getRelativeDate(item.date)}</span>
+                    <span className={styles.actualDate}>{formatDate(item.date)}</span>
                   </div>
-                  <div>
+                  <div className={styles.timelineItemIcon}>
                     {item.type === 'income' ? '💰' : '💸'}
                   </div>
-                  <div>
-                    <div>
+                  <div className={styles.timelineItemInfo}>
+                    <div className={styles.timelineItemDescription}>
                       {item.description}
                       {item.is_recurring && (
-                        <span>Recorrente</span>
+                        <span className={styles.recurringTag}>Recorrente</span>
                       )}
                     </div>
-                    <div>
-                      <span>{item.category}</span>
+                    <div className={styles.timelineItemMeta}>
+                      <span className={styles.timelineItemCategory}>{item.category}</span>
                       {item.bank !== 'Sem banco' && (
                         <>
-                          <span>•</span>
-                          <span>{item.bank}</span>
+                          <span className={styles.metaSeparator}>•</span>
+                          <span className={styles.timelineItemBank}>{item.bank}</span>
                         </>
                       )}
                     </div>
                   </div>
-                  <div>
-                    <span>
+                  <div className={styles.timelineItemAmount}>
+                    <span className={`${item.type === 'income' ? styles.incomeAmount : styles.expenseAmount}`}>
                       {item.type === 'income' ? '+' : '-'} {formatCurrency(item.amount)}
                     </span>
                   </div>
-                  <div>
+                  <div className={styles.expandIcon}>
                     {expandedItems.includes(item.id) ? '▼' : '▶'}
                   </div>
                 </div>
-                
                 
                 {expandedItems.includes(item.id) && (
                   <div className={styles.timelineItemDetails}>
@@ -2601,10 +2657,771 @@ const Dashboard = () => {
     
     processIncomeData();
   }, [transactions]); // Remove selectedPeriod from dependencies
+  
+  const renderCategoriesChart = () => {
+    const handlePeriodChange = (period) => {
+      setSelectedPeriod(period);
+    };
+    
+    if (categoriesLoading) {
+      return (
+        <div className={styles.chartContainer}>
+          <div className={styles.chartHeader}>
+            <h3>Despesas por Categoria</h3>
+            <div className={styles.periodButtons}>
+              <button 
+                className={`${styles.periodButton} ${selectedPeriod === 'month' ? styles.activePeriod : ''}`}
+                onClick={() => handlePeriodChange('month')}
+              >
+                <span className={styles.periodIcon}>📅</span>
+                Mês
+              </button>
+              <button 
+                className={`${styles.periodButton} ${selectedPeriod === 'year' ? styles.activePeriod : ''}`}
+                onClick={() => handlePeriodChange('year')}
+              >
+                <span className={styles.periodIcon}>📆</span>
+                Ano
+              </button>
+              <button 
+                className={`${styles.periodButton} ${selectedPeriod === 'all' ? styles.activePeriod : ''}`}
+                onClick={() => handlePeriodChange('all')}
+              >
+                <span className={styles.periodIcon}>🔍</span>
+                Todos
+              </button>
+            </div>
+          </div>
+          <div className={styles.loadingState}>Carregando dados de categorias...</div>
+        </div>
+      );
+    }
+    
+    if (categoriesError) {
+      return (
+        <div className={styles.chartContainer}>
+          <div className={styles.chartHeader}>
+            <h3>Despesas por Categoria</h3>
+          </div>
+          <div className={styles.errorState}>{categoriesError}</div>
+        </div>
+      );
+    }
+    
+    if (!categoryData?.length) {
+      console.log("No category data to display");
+      return (
+        <div className={styles.chartContainer}>
+          <div className={styles.chartHeader}>
+            <h3>Despesas por Categoria</h3>
+            <div className={styles.periodButtons}>
+              <button 
+                className={`${styles.periodButton} ${selectedPeriod === 'month' ? styles.activePeriod : ''}`}
+                onClick={() => handlePeriodChange('month')}
+              >
+                <span className={styles.periodIcon}>📅</span>
+                Mês
+              </button>
+              <button 
+                className={`${styles.periodButton} ${selectedPeriod === 'year' ? styles.activePeriod : ''}`}
+                onClick={() => handlePeriodChange('year')}
+              >
+                <span className={styles.periodIcon}>📆</span>
+                Ano
+              </button>
+              <button 
+                className={`${styles.periodButton} ${selectedPeriod === 'all' ? styles.activePeriod : ''}`}
+                onClick={() => handlePeriodChange('all')}
+              >
+                <span className={styles.periodIcon}>🔍</span>
+                Todos
+              </button>
+            </div>
+          </div>
+          <div className={styles.emptyState}>
+            Nenhuma despesa encontrada{selectedPeriod === 'month' ? ' neste mês' : 
+            selectedPeriod === 'year' ? ' neste ano' : ''}.
+          </div>
+        </div>
+      );
+    }
+    
+    return (
+      <div className={styles.chartContainer}>
+        <div className={styles.chartHeader}>
+          <h3>Despesas por Categoria</h3>
+          <div className={styles.periodButtons}>
+            <button 
+              className={`${styles.periodButton} ${selectedPeriod === 'month' ? styles.activePeriod : ''}`}
+              onClick={() => handlePeriodChange('month')}
+            >
+              <span className={styles.periodIcon}>📅</span>
+              Mês
+            </button>
+            <button 
+              className={`${styles.periodButton} ${selectedPeriod === 'year' ? styles.activePeriod : ''}`}
+              onClick={() => handlePeriodChange('year')}
+            >
+              <span className={styles.periodIcon}>📆</span>
+              Ano
+            </button>
+            <button 
+              className={`${styles.periodButton} ${selectedPeriod === 'all' ? styles.activePeriod : ''}`}
+              onClick={() => handlePeriodChange('all')}
+            >
+              <span className={styles.periodIcon}>🔍</span>
+              Todos
+            </button>
+          </div>
+        </div>
+        
+        <div className={styles.categoriesPieContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <ResponsiveContainer width="100%" height={isMobile ? 220 : 350}>
+            <PieChart margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
+              <defs>
+                {categoryData.map((entry, index) => (
+                  <filter key={`shadow-${index}`} id={`shadow-cat-${index}`} x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="0" stdDeviation="3" floodOpacity="0.3" />
+                  </filter>
+                ))}
+              </defs>
+              <Pie
+                data={categoryData}
+                      cx="50%"
+                      cy="50%"
+                labelLine={false}
+                outerRadius={isMobile ? 70 : 130}
+                innerRadius={isMobile ? 30 : 60}
+                paddingAngle={2}
+                fill="#8884d8"
+                dataKey="amount"
+                nameKey="category"
+                label={getCustomizedPieLabel}
+                filter="url(#shadow)"
+                animationDuration={800}
+                animationBegin={200}
+                animationEasing="ease-out"
+              >
+                {categoryData.map((entry, index) => (
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={COLORS[index % COLORS.length]} 
+                    stroke="#ffffff" 
+                    strokeWidth={1} 
+                    filter={`url(#shadow-cat-${index})`} 
+                  />
+                      ))}
+                    </Pie>
+              <Tooltip content={<CustomPieTooltip />} />
+              <Legend 
+                layout={isMobile ? "horizontal" : "vertical"}
+                align={isMobile ? "center" : "right"}
+                verticalAlign={isMobile ? "bottom" : "middle"}
+                iconType="circle"
+                iconSize={isMobile ? 8 : 10}
+                formatter={(value, entry) => (
+                  <span style={{ 
+                    color: 'var(--text-color)', 
+                    fontSize: isMobile ? '10px' : '12px', 
+                    fontWeight: entry.payload.category === categoryData[0]?.category ? 'bold' : 'normal',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: isMobile ? '60px' : '150px',
+                    display: 'inline-block'
+                  }}>
+                    {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
+                    {!isMobile && ` (${entry.payload.percentage.toFixed(1)}%)`}
+                  </span>
+                )}
+                wrapperStyle={{ 
+                  paddingLeft: isMobile ? '0px' : '20px', 
+                  fontSize: isMobile ? '10px' : '12px',
+                  overflowY: 'auto', 
+                  maxHeight: isMobile ? '80px' : '180px',
+                  width: '100%',
+                  marginTop: isMobile ? '10px' : '0',
+                  justifyContent: isMobile ? 'center' : 'flex-start',
+                  flexWrap: isMobile ? 'wrap' : 'nowrap',
+                  gap: isMobile ? '5px' : '0'
+                }}
+              />
+                  </PieChart>
+          </ResponsiveContainer>
+        </div>
+        
+        <div className={styles.categoriesInsights}>
+          <h4>Categoria principal: {categoryData[0]?.category || 'Nenhuma'}</h4>
+          <p>
+            Representa {categoryData[0]?.percentage ? categoryData[0].percentage.toFixed(1) : 0}% dos seus despesas
+            {selectedPeriod === 'month' ? ' neste mês' : 
+             selectedPeriod === 'year' ? ' neste ano' : ' no total'}.
+          </p>
+        </div>
+      </div>
+    );
+  };
+
+  // Improved renderIncomeCategoriesChart with better visualization and mobile optimization
+  const renderIncomeCategoriesChart = () => {
+    const handlePeriodChange = (period) => {
+      setSelectedPeriod(period);
+    };
+    
+    if (incomeLoading) {
+      return (
+        <div className={styles.chartContainer}>
+          <div className={styles.chartHeader}>
+            <h3>Receitas por Categoria</h3>
+            <div className={styles.chartSubtitle}>
+              <span className={styles.dateFilterBadge}>
+                <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
+              </span>
+            </div>
+          </div>
+          <div className={styles.loadingState}>Carregando dados de fontes de renda...</div>
+        </div>
+      );
+    }
+    
+    if (incomeError) {
+      return (
+        <div className={styles.chartContainer}>
+          <div className={styles.chartHeader}>
+            <h3>Receitas por Categoria</h3>
+          </div>
+          <div className={styles.errorState}>{incomeError}</div>
+        </div>
+      );
+    }
+    
+    // Avoid rendering with empty or invalid data
+    if (!incomeCategoryData || incomeCategoryData.length === 0) {
+      return (
+        <div className={styles.chartContainer}>
+          <div className={styles.chartHeader}>
+            <h3>Receitas por Categoria</h3>
+            <div className={styles.chartSubtitle}>
+              <span className={styles.dateFilterBadge}>
+                <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
+              </span>
+            </div>
+          </div>
+          <div className={styles.emptyChartContent}>
+            <span className={styles.emptyChartIcon}>📊</span>
+            <p>Não há receitas no período selecionado.</p>
+          </div>
+        </div>
+      );
+    }
+    
+    // Calculate total income for this period to find percentages
+    const totalIncome = incomeCategoryData.reduce((sum, item) => sum + item.amount, 0);
+    
+    return (
+      <div className={styles.chartContainer}>
+        <div className={styles.chartHeader}>
+          <h3>Receitas por Categoria</h3>
+          <div className={styles.chartSubtitle}>
+            <span className={styles.dateFilterBadge}>
+              <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
+            </span>
+          </div>
+        </div>
+
+        <div className={styles.categoriesPieContainer} >
+          <ResponsiveContainer width="100%" height={isMobile ? 220 : 350}>
+            <PieChart margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
+              <defs>
+                {incomeCategoryData.map((entry, index) => (
+                  <filter key={`shadow-${index}`} id={`shadow-income-${index}`} x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="0" stdDeviation="3" floodOpacity="0.3" />
+                  </filter>
+                ))}
+              </defs>
+              <Pie
+                data={incomeCategoryData}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                outerRadius={isMobile ? 70 : 130}
+                innerRadius={isMobile ? 30 : 60}
+                paddingAngle={2}
+                fill="#8884d8"
+                dataKey="amount"
+                nameKey="category"
+                label={getCustomizedPieLabel}
+                filter="url(#shadow)"
+                animationDuration={800}
+                animationBegin={200}
+                animationEasing="ease-out"
+              >
+                {incomeCategoryData.map((entry, index) => (
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={entry.color || COLORS[index % COLORS.length]} 
+                    stroke="#ffffff" 
+                    strokeWidth={1} 
+                    filter={`url(#shadow-income-${index})`} 
+                  />
+                ))}
+              </Pie>
+              <Tooltip content={<CustomPieTooltip />} />
+              <Legend 
+                layout={isMobile ? "horizontal" : "vertical"}
+                align={isMobile ? "center" : "right"}
+                verticalAlign={isMobile ? "bottom" : "middle"}
+                iconType="circle"
+                iconSize={isMobile ? 8 : 10}
+                formatter={(value, entry) => (
+                  <span style={{ 
+                  color: 'var(--text-color)',
+                    fontSize: isMobile ? '10px' : '12px', 
+                    fontWeight: entry.payload.category === incomeCategoryData[0]?.category ? 'bold' : 'normal',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: isMobile ? '60px' : '110px',
+                    display: 'inline-block'
+                  }}>
+                    {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
+                    {!isMobile && ` (${entry.payload.percentage.toFixed(1)}%)`}
+                  </span>
+                )}
+                wrapperStyle={{ 
+                  paddingLeft: isMobile ? '0px' : '10px', 
+                  fontSize: isMobile ? '10px' : '12px',
+                  overflowY: 'auto', 
+                  maxHeight: isMobile ? '80px' : '180px',
+                  width: '100%',
+                  marginTop: isMobile ? '10px' : '0',
+                  justifyContent: isMobile ? 'center' : 'flex-start',
+                  flexWrap: isMobile ? 'wrap' : 'nowrap',
+                  gap: isMobile ? '5px' : '0'
+                }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+        
+        <div className={styles.categoriesInsights}>
+          <h4>Principal fonte de renda: {incomeCategoryData[0]?.category || 'Nenhuma'}</h4>
+          <p>
+            Representa {incomeCategoryData[0]?.percentage ? incomeCategoryData[0].percentage.toFixed(1) : 0}% da sua renda no período.
+          </p>
+          <div className={styles.infoItem}>
+            <span>Receita total:</span>
+            <strong className={styles.positive}>{formatCurrency(totalIncome)}</strong>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Improved renderBanksChart with better visualization and mobile optimization
+  const renderBanksChart = () => {
+    if (!data || !data.expenses_by_bank || data.expenses_by_bank.length === 0) {
+      return (
+        <div className={styles.chartContainer}>
+          <div className={styles.chartHeader}>
+          <h3>Distribuição por Banco</h3>
+            <div className={styles.chartSubtitle}>
+              <span className={styles.dateFilterBadge}>
+                <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
+              </span>
+            </div>
+          </div>
+          <div className={styles.emptyChartContent}>
+            <span className={styles.emptyChartIcon}>🏦</span>
+            <p>Não há despesas por banco no período selecionado.</p>
+          </div>
+        </div>
+      );
+    }
+
+    // Determine bank colors with institution-specific colors when possible
+    const getBankColor = (bankName) => {
+      const bankColors = {
+        'Nubank': '#8a05be',
+        'Itaú': '#ec7000',
+        'Banco do Brasil': '#f9dd16',
+        'Caixa': '#1a5ca7',
+        'Santander': '#ec0000',
+        'Bradesco': '#cc092f',
+        'Inter': '#ff7a00',
+        'PicPay': '#11c76f',
+        'C6 Bank': '#242424',
+        'Next': '#00ff5f',
+        'PagBank': '#1f9d55',
+        'BTG Pactual': '#0d2d40',
+      };
+
+      return bankColors[bankName] || null;
+    };
+
+    // Total expenses by bank
+    const totalExpensesByBank = data.expenses_by_bank.reduce((total, bank) => total + bank.total, 0);
+
+    // Limit the number of banks shown for mobile view
+    const maxBanksToShow = isMobile ? 5 : data.expenses_by_bank.length;
+    
+    // Sort banks by amount and take the top banks
+    const sortedBanks = [...data.expenses_by_bank].sort((a, b) => b.total - a.total);
+    
+    // Create "Outros" category if we're limiting the display
+    let processedBanks = sortedBanks.slice(0, maxBanksToShow);
+    let othersTotal = 0;
+    
+    if (isMobile && sortedBanks.length > maxBanksToShow) {
+      othersTotal = sortedBanks.slice(maxBanksToShow).reduce((sum, bank) => sum + bank.total, 0);
+      
+      if (othersTotal > 0) {
+        processedBanks.push({
+          bank_name: "Outros bancos",
+          total: othersTotal
+        });
+      }
+    }
+
+    // Format data for pie chart
+    const bankData = processedBanks.map((bank, index) => {
+      const customColor = bank.bank_name === "Outros bancos" 
+        ? "#999999" 
+        : getBankColor(bank.bank_name);
+      
+      return {
+      name: bank.bank_name,
+      value: bank.total,
+        color: customColor || COLORS[index % COLORS.length],
+        percent: bank.total / totalExpensesByBank,
+      };
+    });
+
+    // Find the primary bank (highest expenses)
+    const primaryBank = bankData.reduce((prev, current) => 
+      prev.value > current.value ? prev : current, { value: 0, name: '' });
+
+    return (
+      <div className={styles.chartContainer}>
+        <div className={styles.chartHeader}>
+          <h3>Distribuição por Banco</h3>
+          <div className={styles.chartSubtitle}>
+            <span className={styles.dateFilterBadge}>
+              <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
+            </span>
+          </div>
+        </div>
+        <div className={styles.bankPieContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <ResponsiveContainer width="100%" height={isMobile ? 220 : 350}>
+            <PieChart margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
+              <defs>
+                {bankData.map((entry, index) => (
+                  <filter key={`shadow-${index}`} id={`bank-shadow-${index}`} x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="0" stdDeviation="3" floodOpacity="0.3" />
+                  </filter>
+                ))}
+              </defs>
+              <Pie
+                data={bankData}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                outerRadius={isMobile ? 70 : 130}
+                innerRadius={isMobile ? 30 : 60}
+                paddingAngle={2}
+                fill="#8884d8"
+                dataKey="value"
+                nameKey="category"
+                label={getCustomizedPieLabel}
+                animationDuration={800}
+                animationBegin={200}
+                animationEasing="ease-out"
+              >
+                {bankData.map((entry, index) => (
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={entry.color} 
+                    stroke="#ffffff" 
+                    strokeWidth={1}
+                    filter={`url(#bank-shadow-${index})`} 
+                  />
+                ))}
+              </Pie>
+              <Tooltip content={<CustomPieTooltip />} />
+              <Legend 
+                layout={isMobile ? "horizontal" : "vertical"}
+                align={isMobile ? "center" : "right"}
+                verticalAlign={isMobile ? "bottom" : "middle"}
+                iconType="circle"
+                iconSize={isMobile ? 8 : 10}
+                formatter={(value, entry) => (
+                  <span style={{ 
+                  color: 'var(--text-color)',
+                    fontSize: isMobile ? '10px' : '12px', 
+                    fontWeight: entry.payload.name === primaryBank.name ? 'bold' : 'normal',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: isMobile ? '60px' : '110px',
+                    display: 'inline-block'
+                  }}>
+                    {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
+                    {!isMobile && ` (${(entry.payload.percent * 100).toFixed(1)}%)`}
+                  </span>
+                )}
+                wrapperStyle={{ 
+                  paddingLeft: isMobile ? '0px' : '10px', 
+                  fontSize: isMobile ? '10px' : '12px',
+                  overflowY: 'auto', 
+                  maxHeight: isMobile ? '80px' : '180px',
+                  width: '100%',
+                  marginTop: isMobile ? '10px' : '0',
+                  justifyContent: isMobile ? 'center' : 'flex-start',
+                  flexWrap: isMobile ? 'wrap' : 'nowrap',
+                  gap: isMobile ? '5px' : '0'
+                }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+        
+        <div className={styles.categoriesInsights}>
+          <h4>Banco principal: {primaryBank.name || 'Nenhum'}</h4>
+          <p>
+            {primaryBank.name} é seu banco mais utilizado. {(primaryBank.percent * 100).toFixed(1)}% das despesas estão neste banco.
+          </p>
+          <div className={styles.infoItem}>
+            <span>Total gasto via bancos:</span>
+            <strong>{formatCurrency(totalExpensesByBank)}</strong>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // New function to generate financial insights based on the available data
+  const generateFinancialInsights = () => {
+    if (!data) return [];
+    
+    const insights = [];
+    
+    // Budget status
+    if (data.budget_info) {
+      const { percentage_spent } = data.budget_info;
+      
+      if (percentage_spent > 90) {
+        insights.push({
+          type: 'warning',
+          icon: '⚠️',
+          title: 'Orçamento quase esgotado',
+          description: `Você já utilizou ${percentage_spent.toFixed(1)}% do seu orçamento mensal.`,
+          action: {
+            text: 'Ver Orçamento',
+            handler: () => navigate('/budget')
+          }
+        });
+      } else if (percentage_spent > 75) {
+        insights.push({
+          type: 'info',
+          icon: '📊',
+          title: 'Orçamento em alerta',
+          description: `Você já utilizou ${percentage_spent.toFixed(1)}% do seu orçamento mensal.`,
+          action: {
+            text: 'Ver Orçamento',
+            handler: () => navigate('/budget')
+          }
+        });
+      }
+    }
+    
+    // Income diversification
+    if (data.incomes_by_category && data.incomes_by_category.length > 0) {
+      const totalIncome = data.incomes_by_category.reduce((sum, cat) => sum + cat.total, 0);
+      const primaryIncome = data.incomes_by_category[0]; // Assuming sorted by amount
+      
+      if (primaryIncome && (primaryIncome.total / totalIncome) > 0.8) {
+        insights.push({
+          type: 'warning',
+          icon: '💰',
+          title: 'Fonte de renda única',
+          description: `${primaryIncome.category_name} representa ${((primaryIncome.total / totalIncome) * 100).toFixed(0)}% da sua renda.`,
+          action: {
+            text: 'Ver Receitas',
+            handler: () => navigate('/incomes')
+          }
+        });
+      }
+    }
+    
+    // Expense categories
+    if (data.expenses_by_category && data.expenses_by_category.length > 0) {
+      const largestExpense = data.expenses_by_category[0]; // Assuming sorted
+      const totalExpenses = data.expenses_by_category.reduce((sum, cat) => sum + cat.total, 0);
+      
+      if (largestExpense && (largestExpense.total / totalExpenses) > 0.4) {
+        insights.push({
+          type: 'info',
+          icon: '📈',
+          title: 'Categoria de despesa significativa',
+          description: `${largestExpense.category_name} representa ${((largestExpense.total / totalExpenses) * 100).toFixed(0)}% dos seus despesas.`,
+          action: {
+            text: 'Ver Detalhes',
+            handler: () => setActiveSection('analytics')
+          }
+        });
+      }
+    }
+    
+    // Financial goals
+    if (data.financial_goals && data.financial_goals.length > 0) {
+      const unachievableGoals = data.financial_goals.filter(goal => {
+        if (!goal.target_date || !goal.current_amount || !goal.target_amount) 
+          return false;
+          
+        const targetDate = new Date(goal.target_date);
+        const now = new Date();
+        const monthsRemaining = (targetDate.getFullYear() - now.getFullYear()) * 12 + 
+                              (targetDate.getMonth() - now.getMonth());
+                              
+        const amountRemaining = goal.target_amount - goal.current_amount;
+        const requiredMonthlySavings = amountRemaining / monthsRemaining;
+        
+        // If user needs to save more than 40% of monthly income
+        return requiredMonthlySavings > (data.total_incomes * 0.4);
+      });
+      
+      if (unachievableGoals.length > 0) {
+        insights.push({
+          type: 'warning',
+          icon: '🎯',
+          title: 'Meta financeira desafiadora',
+          description: `${unachievableGoals[0].name} pode exigir economia maior que o viável.`,
+          action: {
+            text: 'Revisar Metas',
+            handler: () => navigate('/goals')
+          }
+        });
+      }
+    }
+    
+    // Savings rate
+    if (data.balance !== undefined && data.total_incomes !== undefined) {
+      const savingsRate = (data.balance / data.total_incomes) * 100;
+      
+      if (data.balance < 0) {
+        insights.push({
+          type: 'danger',
+          icon: '❗',
+          title: 'Saldo negativo',
+          description: 'Suas despesas ultrapassaram suas receitas neste período.',
+          action: {
+            text: 'Ver Transações',
+            handler: () => setActiveSection('transactions')
+          }
+        });
+      } else if (savingsRate < 10) {
+        insights.push({
+          type: 'warning',
+          icon: '💸',
+          title: 'Taxa de economia baixa',
+          description: `Você está economizando apenas ${savingsRate.toFixed(1)}% da sua renda.`,
+          action: {
+            text: 'Ver Dicas',
+            handler: () => window.open('/tips', '_blank')
+          }
+        });
+      }
+    }
+    
+    return insights;
+  };
+  
+  const insights = generateFinancialInsights();
+
+  // Adicionar a função filterData antes dos componentes de gráficos que a utilizam
+  const filterData = (data) => {
+    if (!data || !Array.isArray(data)) return [];
+    
+    // Aplicar o filtro global de período
+    let filteredData = [...data];
+    
+    if (selectedPeriod) {
+      let startDate, endDate;
+      
+      if (selectedPeriod === 'month' || selectedPeriod === 'current') {
+        // Mês atual
+        const now = new Date();
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        endDate.setHours(23, 59, 59, 999);
+      } else if (selectedPeriod === 'year') {
+        // Ano atual
+        const now = new Date();
+        startDate = new Date(now.getFullYear(), 0, 1);
+        endDate = new Date(now.getFullYear(), 11, 31);
+        endDate.setHours(23, 59, 59, 999);
+      } else if (selectedPeriod === 'last') {
+        // Mês anterior
+        const now = new Date();
+        startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+        endDate.setHours(23, 59, 59, 999);
+      } else if (selectedPeriod === 'custom' && customDateRange) {
+        // Período personalizado
+        if (customDateRange.startNormalized) {
+          startDate = new Date(customDateRange.startNormalized);
+          endDate = new Date(customDateRange.endNormalized);
+        } else {
+          // Compatibilidade com dados antigos
+          const [startYear, startMonth, startDay] = customDateRange.start.split('-').map(num => parseInt(num, 10));
+          const [endYear, endMonth, endDay] = customDateRange.end.split('-').map(num => parseInt(num, 10));
+          
+          startDate = new Date(startYear, startMonth - 1, startDay, 0, 0, 0, 0);
+          endDate = new Date(endYear, endMonth - 1, endDay, 23, 59, 59, 999);
+        }
+      }
+      
+      // Se temos um período definido, filtramos os dados
+      if (startDate && endDate) {
+        console.log(`Aplicando filtro de período: ${startDate.toISOString()} - ${endDate.toISOString()}`);
+        
+        filteredData = data.filter(item => {
+          const itemDate = new Date(item.date);
+          return itemDate >= startDate && itemDate <= endDate;
+        });
+        
+        console.log(`Dados filtrados: ${filteredData.length} de ${data.length} registros`);
+      }
+    }
+    
+    return filteredData;
+  };
+  
+  // Definir as variáveis de dados para os gráficos
+  const expenseData = allExpenses || [];
+  const incomeData = allIncomes || [];
+
+  // Função para formatar labels de datas
+  const formatDateLabel = (label) => {
+    if (!label) return '';
+    if (typeof label === 'string') {
+      // Se for uma string de data no formato "YYYY-MM-DD"
+      const parts = label.split('-');
+      if (parts.length === 3) {
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      }
+      return label;
+    }
+    if (label instanceof Date) {
+      // Se for um objeto Date
+      return label.toLocaleDateString('pt-BR');
+    }
+    return label.toString();
+  };
 
   const renderExpensesTrend = () => {
     // Usando todos os dados de despesas, independente dos filtros
-    if (!allExpenses?.length) {
+    if (!expenseData?.length) {
       return (
         <div className={styles.emptyChart}>
           <p>Não há dados de despesas para exibir</p>
@@ -2620,7 +3437,7 @@ const Dashboard = () => {
     const futureDate = new Date();
     futureDate.setFullYear(currentDate.getFullYear() + 5);
     
-    allExpenses.forEach(expense => {
+    expenseData.forEach(expense => {
       const date = new Date(expense.date);
       
       // Ignorar datas que estão além dos próximos 5 anos
@@ -2674,487 +3491,213 @@ const Dashboard = () => {
     return (
       <div className={styles.chartContainer}>
         <div className={styles.chartHeader}>
-          <h3>Tendência de Despesas</h3>
+          <h3>Despesas ao longo do tempo</h3>
           <div className={styles.chartSubtitle}>
             <span className={styles.dateFilterBadge}>
               <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
             </span>
           </div>
         </div>
-        
-        <ResponsiveContainer width="100%" height={300}>
-          <AreaChart 
-            data={chartData} 
-            margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
-          >
-            <defs>
-              <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#FF6B6B" stopOpacity={0.8}/>
-                <stop offset="95%" stopColor="#FF6B6B" stopOpacity={0.1}/>
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis 
-              dataKey="date" 
-              tickFormatter={(tick) => {
-                const date = new Date(tick);
-                const month = date.getMonth() + 1;
-                const monthName = months.find(m => m.value === month)?.shortLabel || month;
-                const year = date.getFullYear().toString().slice(2);
-                return `${monthName}/${year}`;
-              }}
-              angle={-30}
-              textAnchor="end"
-              height={60}
-              interval={isMobile ? 1 : "preserveStartEnd"}
-              tickMargin={10}
-              tick={{ fontSize: isMobile ? 10 : 12 }}
-            />
-            <YAxis 
-              tickFormatter={(tick) => `R$${(tick/1000).toFixed(1)}k`} 
-              width={65}
-              tickMargin={5}
-              tick={{ fontSize: isMobile ? 10 : 12 }}
-            />
-            <Tooltip 
-              formatter={(value) => [formatCurrency(value), 'Despesa']} 
-              labelFormatter={(label) => formatDateLabel(label, chartData)}
-              contentStyle={{ background: '#fff', border: '1px solid #ddd', borderRadius: '8px' }}
-            />
-            <Area 
-              type="monotone" 
-              dataKey="value" 
-              stroke="#FF6B6B" 
-              fillOpacity={1} 
-              fill="url(#colorExpense)" 
-              name="Despesas"
-              strokeWidth={2}
-              activeDot={{ r: 6, strokeWidth: 2 }}
-            />
-            <ReferenceLine 
-              x={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`}
-              stroke="#666" 
-              strokeDasharray="3 3" 
-              label={{ value: 'Hoje', position: 'insideTopRight', fill: '#666' }} 
-            />
-          </AreaChart>
-        </ResponsiveContainer>
+        <div className={styles.chartBody}>
+          <ResponsiveContainer width="100%" height={300}>
+            <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 10, bottom: 20 }}>
+              <defs>
+                <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#f44336" stopOpacity={0.8} />
+                  <stop offset="95%" stopColor="#f44336" stopOpacity={0.1} />
+                </linearGradient>
+                <linearGradient id="colorProjectedExpenses" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#f44336" stopOpacity={0.5} />
+                  <stop offset="95%" stopColor="#f44336" stopOpacity={0.05} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis 
+                dataKey="date" 
+                tickFormatter={(tick) => {
+                  if (typeof tick !== 'string') {
+                    // Se o tick for um objeto Date ou outro tipo, converta para string
+                    if (tick instanceof Date) {
+                      const month = tick.getMonth() + 1;
+                      const year = tick.getFullYear();
+                      return `${months.find(m => m.value === month)?.shortLabel || month}/${year.toString().slice(2)}`;
+                    }
+                    return String(tick);
+                  }
+                  
+                  // Verifica se o formato é YYYY-MM ou YYYY-MM-DD
+                  const parts = tick.split('-');
+                  if (parts.length >= 2) {
+                    const year = parts[0];
+                    const month = parseInt(parts[1], 10);
+                    return `${months.find(m => m.value === month)?.shortLabel || month}/${year.slice(2)}`;
+                  }
+                  
+                  return tick;
+                }}
+                angle={-30}
+                textAnchor="end"
+                height={60}
+                interval="preserveStartEnd"
+                tickMargin={10}
+              />
+              <YAxis 
+                tickFormatter={formatCurrency} 
+                width={65}
+                tickMargin={5}
+              />
+              <Tooltip 
+                formatter={value => formatCurrency(value)} 
+                labelFormatter={(label) => {
+                  if (typeof label !== 'string') {
+                    if (label instanceof Date) {
+                      const month = label.getMonth() + 1;
+                      const year = label.getFullYear();
+                      const dataPoint = chartData.find(d => {
+                        if (d.date instanceof Date) {
+                          return d.date.getMonth() === label.getMonth() && 
+                                 d.date.getFullYear() === label.getFullYear();
+                        }
+                        return false;
+                      });
+                      const monthName = months.find(m => m.value === month)?.label || month;
+                      return `${monthName}/${year}${dataPoint?.isProjection ? ' (Projeção)' : ''}`;
+                    }
+                    return String(label);
+                  }
+                  
+                  const parts = label.split('-');
+                  if (parts.length >= 2) {
+                    const year = parts[0];
+                    const month = parseInt(parts[1], 10);
+                    const dataPoint = chartData.find(d => d.date === label);
+                    const monthName = months.find(m => m.value === month)?.label || month;
+                    return `${monthName}/${year}${dataPoint?.isProjection ? ' (Projeção)' : ''}`;
+                  }
+                  
+                  return label;
+                }}
+              />
+              <Area 
+                type="monotone" 
+                dataKey="total" 
+                stroke="#f44336" 
+                fillOpacity={1} 
+                fill="url(#colorExpenses)" 
+                name="Despesas"
+                strokeDasharray={(d) => d.isProjection ? "5 5" : "0"}
+              />
+              <ReferenceLine 
+                x={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`}
+                stroke="#666" 
+                strokeDasharray="3 3" 
+                label={{ value: 'Hoje', position: 'insideTopRight', fill: '#666' }} 
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
       </div>
     );
   };
 
   const renderIncomeTrend = () => {
-    // Verificar se existem receitas para mostrar
-    if (!allIncomes?.length) {
-      return (
-        <div className={styles.emptyChart}>
-          <p>Não há dados de receitas para exibir</p>
-        </div>
-      );
-    }
-
-    // Agrupando receitas por mês
-    const groupedData = {};
-    
-    // Obtendo a data atual e a data limite de 5 anos no futuro
-    const currentDate = new Date();
-    const futureDate = new Date();
-    futureDate.setFullYear(currentDate.getFullYear() + 5);
-    
-    allIncomes.forEach(income => {
-      const date = new Date(income.date);
-      
-      // Ignorar datas que estão além dos próximos 5 anos
-      if (date > futureDate) return;
-      
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      
-      if (!groupedData[monthKey]) {
-        groupedData[monthKey] = {
-          date: monthKey,
-          value: 0
-        };
+    const chartData = filterData(incomeData).map(item => {
+      // Garantir que a data esteja no formato correto
+      let formattedDate;
+      if (item.date instanceof Date) {
+        // Se já for um objeto Date, formatar como YYYY-MM
+        const year = item.date.getFullYear();
+        const month = String(item.date.getMonth() + 1).padStart(2, '0');
+        formattedDate = `${year}-${month}`;
+      } else if (typeof item.date === 'string') {
+        // Se for string, verificar o formato
+        if (item.date.includes('T')) {
+          // Se for ISO string (com timestamp), extrair apenas a data
+          formattedDate = item.date.split('T')[0].substring(0, 7); // YYYY-MM
+        } else if (item.date.includes('-')) {
+          // Se já for no formato YYYY-MM-DD, extrair apenas ano e mês
+          formattedDate = item.date.substring(0, 7); // YYYY-MM
+        } else {
+          formattedDate = item.date;
+        }
+      } else {
+        formattedDate = String(item.date);
       }
       
-      groupedData[monthKey].value += parseFloat(income.amount || 0);
+      return {
+        date: formattedDate,
+        value: item.amount
+      };
     });
     
-    // Convertendo para array e ordenando por data
-    const chartData = Object.values(groupedData).sort((a, b) => 
-      new Date(a.date) - new Date(b.date)
-    );
-    
-    // Gerando meses futuros (projeção) até completar 5 anos a partir de hoje
-    const lastDataPoint = chartData.length > 0 ? new Date(chartData[chartData.length - 1].date) : new Date();
-    let projectionDate = new Date(lastDataPoint);
-    
-    // Calcular média dos últimos 6 meses ou o que estiver disponível
-    const recentMonths = chartData.slice(-6);
-    const avgIncome = recentMonths.length > 0 
-      ? recentMonths.reduce((sum, item) => sum + item.value, 0) / recentMonths.length 
-      : 0;
-    
-    // Adicionar projeção para completar 5 anos a partir de hoje
-    while (projectionDate < futureDate) {
-      projectionDate.setMonth(projectionDate.getMonth() + 1);
-      
-      // Pular se já existe um dado para este mês (evitar duplicações)
-      const projMonthKey = `${projectionDate.getFullYear()}-${String(projectionDate.getMonth() + 1).padStart(2, '0')}`;
-      if (groupedData[projMonthKey]) continue;
-      
-      chartData.push({
-        date: projMonthKey,
-        value: avgIncome,
-        isProjection: true
-      });
-    }
-
-    // Ordenando novamente após adicionar projeções
-    chartData.sort((a, b) => new Date(a.date) - new Date(b.date));
-
     return (
       <div className={styles.chartContainer}>
         <div className={styles.chartHeader}>
-          <h3>Tendência de Receitas</h3>
+          <h3>Receitas ao longo do tempo</h3>
           <div className={styles.chartSubtitle}>
             <span className={styles.dateFilterBadge}>
               <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
             </span>
           </div>
         </div>
-        
-        <ResponsiveContainer width="100%" height={300}>
-          <AreaChart 
-            data={chartData} 
-            margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
-          >
-            <defs>
-              <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#2196F3" stopOpacity={0.8}/>
-                <stop offset="95%" stopColor="#2196F3" stopOpacity={0.1}/>
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis 
-              dataKey="date" 
-              tickFormatter={(tick) => {
-                const date = new Date(tick);
-                const month = date.getMonth() + 1;
-                const monthName = months.find(m => m.value === month)?.shortLabel || month;
-                const year = date.getFullYear().toString().slice(2);
-                return `${monthName}/${year}`;
-              }}
-              angle={-30}
-              textAnchor="end"
-              height={60}
-              interval={isMobile ? 1 : "preserveStartEnd"}
-              tickMargin={10}
-              tick={{ fontSize: isMobile ? 10 : 12 }}
-            />
-            <YAxis 
-              tickFormatter={formatCurrency} 
-              width={65}
-              tickMargin={5}
-              tick={{ fontSize: isMobile ? 10 : 12 }}
-            />
-            <Tooltip 
-              formatter={(value) => [formatCurrency(value), 'Receita']} 
-              labelFormatter={(label) => formatDateLabel(label, chartData)}
-              contentStyle={{ background: '#fff', border: '1px solid #ddd', borderRadius: '8px' }}
-            />
-            <Area 
-              type="monotone" 
-              dataKey="value" 
-              stroke="#2196F3" 
-              fillOpacity={1} 
-              fill="url(#colorIncome)" 
-              name="Receitas"
-              strokeWidth={2}
-              activeDot={{ r: 6, strokeWidth: 2 }}
-              strokeDasharray={(d) => d.isProjection ? "5 5" : "0"}
-            />
-            <ReferenceLine 
-              x={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`}
-              stroke="#666" 
-              strokeDasharray="3 3" 
-              label={{ value: 'Hoje', position: 'insideTopRight', fill: '#666' }} 
-            />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
-    );
-  };
-
-  const renderMonthlyComparisonChart = () => {
-    if (loading) {
-      return (
-        <div className={styles.loadingContainer}>
-          <div className={styles.loadingSpinner}></div>
-          <p>Carregando comparativo mensal...</p>
-        </div>
-      );
-    }
-
-    if (error) {
-      return (
-        <div className={styles.errorContainer}>
-          <div className={styles.errorIcon}>⚠️</div>
-          <p>Erro ao carregar o comparativo mensal: {error}</p>
-        </div>
-      );
-    }
-
-    if (!data || !data.monthly_comparison || data.monthly_comparison.length === 0) {
-      return (
-        <div className={styles.emptyChartContainer}>
-          <div className={styles.emptyChartContent}>
-            <i className={`fas fa-chart-bar ${styles.emptyChartIcon}`}></i>
-            <p>Sem dados suficientes para exibir o comparativo mensal.</p>
-            <p>Adicione receitas e despesas para visualizar este gráfico.</p>
-          </div>
-        </div>
-      );
-    }
-
-    // Formatar os dados para o gráfico
-    const chartData = data.monthly_comparison.map(item => ({
-      name: `${months.find(m => m.value === parseInt(item.month))?.shortLabel || item.month}/${item.year.toString().slice(2)}`,
-      receitas: item.income,
-      despesas: item.expenses,
-      saldo: item.income - item.expenses,
-      month: item.month,
-      year: item.year,
-      monthName: months.find(m => m.value === parseInt(item.month))?.label || `Mês ${item.month}`
-    }));
-
-    return (
-      <div className={styles.chartContainer}>
-        <div className={styles.chartHeader}>
-          <h3>Comparativo Mensal</h3>
-          <div className={styles.chartSubtitle}>
-            <span className={styles.dateFilterBadge}>
-              <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
-            </span>
-          </div>
-        </div>
-        
-        <ResponsiveContainer width="100%" height={300}>
-          <ComposedChart 
-            data={chartData} 
-            margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-            layout="horizontal"
-          >
-            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis 
-              dataKey="name" 
-              angle={-30} 
-              textAnchor="end" 
-              height={60} 
-              interval={isMobile ? 1 : "preserveStartEnd"} 
-              tickMargin={10}
-              tick={{ fontSize: isMobile ? 10 : 12 }}
-            />
-            <YAxis 
-              yAxisId="left"
-              tickFormatter={formatCurrency} 
-              width={65}
-              tickMargin={5}
-              tick={{ fontSize: isMobile ? 10 : 12 }}
-            />
-            <YAxis 
-              yAxisId="right"
-              tickFormatter={formatCurrency} 
-              orientation="right"
-              width={65}
-              tickMargin={5}
-              tick={{ fontSize: isMobile ? 10 : 12 }}
-            />
-            <Tooltip 
-              formatter={(value, name) => {
-                return [formatCurrency(value), name];
-              }} 
-              contentStyle={{ 
-                background: 'var(--card-background)', 
-                border: '1px solid var(--border-color)', 
-                borderRadius: '8px', 
-                color: 'var(--text-color)' 
-              }} 
-            />
-            <Legend 
-              wrapperStyle={{ 
-                paddingTop: '10px', 
-                fontSize: isMobile ? '10px' : '12px',
-                width: '100%'
-              }} 
-            />
-            <Bar 
-              yAxisId="left"
-              dataKey="receitas" 
-              fill="var(--success-color)" 
-              name="Receitas" 
-              radius={[4, 4, 0, 0]} 
-              barSize={isMobile ? 15 : 30} 
-            />
-            <Bar 
-              yAxisId="left"
-              dataKey="despesas" 
-              fill="var(--error-color)" 
-              name="Despesas" 
-              radius={[4, 4, 0, 0]} 
-              barSize={isMobile ? 15 : 30} 
-            />
-            <Line 
-              yAxisId="right"
-              type="monotone" 
-              dataKey="saldo" 
-              stroke="var(--primary-color)" 
-              strokeWidth={2} 
-              name="Saldo" 
-              dot={{ r: 4 }} 
-              activeDot={{ r: 6 }} 
-            />
-          </ComposedChart>
-        </ResponsiveContainer>
-        
-        {renderMonthlyComparisonInsights(chartData)}
-      </div>
-    );
-  };
-  
-  const renderMonthlyComparisonInsights = (chartData) => {
-    if (!chartData || chartData.length === 0) return null;
-    
-    // Encontrar mês com maior receita
-    const maxIncome = chartData.reduce((max, item) => 
-      item.receitas > max.value ? { value: item.receitas, month: item.monthName, year: item.year } : max, 
-      { value: 0, month: '', year: 0 }
-    );
-    
-    // Encontrar mês com maior despesa
-    const maxExpense = chartData.reduce((max, item) => 
-      item.despesas > max.value ? { value: item.despesas, month: item.monthName, year: item.year } : max, 
-      { value: 0, month: '', year: 0 }
-    );
-    
-    // Encontrar mês com melhor saldo
-    const bestBalance = chartData.reduce((max, item) => 
-      item.saldo > max.value ? { value: item.saldo, month: item.monthName, year: item.year } : max, 
-      { value: -Infinity, month: '', year: 0 }
-    );
-    
-    // Encontrar mês com pior saldo
-    const worstBalance = chartData.reduce((min, item) => 
-      item.saldo < min.value ? { value: item.saldo, month: item.monthName, year: item.year } : min, 
-      { value: Infinity, month: '', year: 0 }
-    );
-    
-    // Calcular médias
-    const avgIncome = chartData.reduce((sum, item) => sum + item.receitas, 0) / chartData.length;
-    const avgExpense = chartData.reduce((sum, item) => sum + item.despesas, 0) / chartData.length;
-    
-    // Verificar tendência dos últimos 3 meses (se disponível)
-    let incomeTrend = null;
-    let expenseTrend = null;
-    let balanceTrend = null;
-    
-    if (chartData.length >= 3) {
-      const last3Months = chartData.slice(-3);
-      
-      // Tendência de receitas
-      if (last3Months[2].receitas > last3Months[1].receitas && last3Months[1].receitas > last3Months[0].receitas) {
-        incomeTrend = { trend: 'up', message: 'Suas receitas estão crescendo nos últimos 3 meses' };
-      } else if (last3Months[2].receitas < last3Months[1].receitas && last3Months[1].receitas < last3Months[0].receitas) {
-        incomeTrend = { trend: 'down', message: 'Suas receitas estão diminuindo nos últimos 3 meses' };
-      }
-      
-      // Tendência de despesas
-      if (last3Months[2].despesas > last3Months[1].despesas && last3Months[1].despesas > last3Months[0].despesas) {
-        expenseTrend = { trend: 'up', message: 'Suas despesas estão aumentando nos últimos 3 meses' };
-      } else if (last3Months[2].despesas < last3Months[1].despesas && last3Months[1].despesas < last3Months[0].despesas) {
-        expenseTrend = { trend: 'down', message: 'Suas despesas estão diminuindo nos últimos 3 meses' };
-      }
-      
-      // Tendência de saldo
-      if (last3Months[2].saldo > last3Months[1].saldo && last3Months[1].saldo > last3Months[0].saldo) {
-        balanceTrend = { trend: 'up', message: 'Seu saldo está melhorando nos últimos 3 meses' };
-      } else if (last3Months[2].saldo < last3Months[1].saldo && last3Months[1].saldo < last3Months[0].saldo) {
-        balanceTrend = { trend: 'down', message: 'Seu saldo está piorando nos últimos 3 meses' };
-      }
-    }
-    
-    return (
-      <div className={styles.insightsContainer}>
-        <h4>Insights do Comparativo Mensal</h4>
-        <div className={styles.insightsGrid}>
-          <div className={styles.insightItem}>
-            <div className={styles.insightIcon}>📈</div>
-            <div className={styles.insightContent}>
-              <h5>Maior Receita</h5>
-              <p>{maxIncome.month} de {maxIncome.year}: {formatCurrency(maxIncome.value)}</p>
-            </div>
-          </div>
-          
-          <div className={styles.insightItem}>
-            <div className={styles.insightIcon}>📉</div>
-            <div className={styles.insightContent}>
-              <h5>Maior Despesa</h5>
-              <p>{maxExpense.month} de {maxExpense.year}: {formatCurrency(maxExpense.value)}</p>
-            </div>
-          </div>
-          
-          <div className={styles.insightItem}>
-            <div className={styles.insightIcon}>🏆</div>
-            <div className={styles.insightContent}>
-              <h5>Melhor Saldo</h5>
-              <p>{bestBalance.month} de {bestBalance.year}: {formatCurrency(bestBalance.value)}</p>
-            </div>
-          </div>
-          
-          <div className={styles.insightItem}>
-            <div className={styles.insightIcon}>⚠️</div>
-            <div className={styles.insightContent}>
-              <h5>Pior Saldo</h5>
-              <p>{worstBalance.month} de {worstBalance.year}: {formatCurrency(worstBalance.value)}</p>
-            </div>
-          </div>
-          
-          <div className={styles.insightItem}>
-            <div className={styles.insightIcon}>💰</div>
-            <div className={styles.insightContent}>
-              <h5>Médias</h5>
-              <p>Receita: {formatCurrency(avgIncome)} | Despesa: {formatCurrency(avgExpense)}</p>
-            </div>
-          </div>
-          
-          {(incomeTrend || expenseTrend || balanceTrend) && (
-            <div className={styles.insightItem}>
-              <div className={styles.insightIcon}>📊</div>
-              <div className={styles.insightContent}>
-                <h5>Tendências (últimos 3 meses)</h5>
-                {incomeTrend && (
-                  <p>
-                    <span className={incomeTrend.trend === 'up' ? styles.trendUp : styles.trendDown}>
-                      <i className={`fas fa-arrow-${incomeTrend.trend}`}></i> Receitas
-                    </span>
-                  </p>
-                )}
-                {expenseTrend && (
-                  <p>
-                    <span className={expenseTrend.trend === 'down' ? styles.trendUp : styles.trendDown}>
-                      <i className={`fas fa-arrow-${expenseTrend.trend}`}></i> Despesas
-                    </span>
-                  </p>
-                )}
-                {balanceTrend && (
-                  <p>
-                    <span className={balanceTrend.trend === 'up' ? styles.trendUp : styles.trendDown}>
-                      <i className={`fas fa-arrow-${balanceTrend.trend}`}></i> Saldo
-                    </span>
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
+        <div className={styles.chartBody}>
+          <ResponsiveContainer width="100%" height={300}>
+            <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 10, bottom: 20 }}>
+              <defs>
+                <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#2196F3" stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor="#2196F3" stopOpacity={0.1}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis 
+                dataKey="date" 
+                tickFormatter={(tick) => {
+                  if (typeof tick !== 'string') {
+                    // Se o tick for um objeto Date ou outro tipo, converta para string
+                    if (tick instanceof Date) {
+                      const month = tick.getMonth() + 1;
+                      const year = tick.getFullYear();
+                      return `${months.find(m => m.value === month)?.shortLabel || month}/${year.toString().slice(2)}`;
+                    }
+                    return String(tick);
+                  }
+                  
+                  // Verifica se o formato é YYYY-MM ou YYYY-MM-DD
+                  const parts = tick.split('-');
+                  if (parts.length >= 2) {
+                    const year = parts[0];
+                    const month = parseInt(parts[1], 10);
+                    return `${months.find(m => m.value === month)?.shortLabel || month}/${year.slice(2)}`;
+                  }
+                  
+                  return tick;
+                }}
+                angle={-30}
+                textAnchor="end"
+                height={60}
+                interval="preserveStartEnd"
+                tickMargin={10}
+              />
+              <YAxis 
+                tickFormatter={formatCurrency} 
+                width={65}
+                tickMargin={5}
+              />
+              <Tooltip 
+                formatter={(value) => [formatCurrency(value), 'Receita']} 
+                labelFormatter={(label) => formatDateLabel(label)}
+                contentStyle={{ background: '#fff', border: '1px solid #ddd', borderRadius: '8px' }}
+              />
+              <Area 
+                type="monotone" 
+                dataKey="value" 
+                stroke="#2196F3" 
+                fillOpacity={1} 
+                fill="url(#colorIncome)" 
+              />
+            </AreaChart>
+          </ResponsiveContainer>
         </div>
       </div>
     );
@@ -3185,9 +3728,19 @@ const Dashboard = () => {
           {renderIncomeTrend()}
         </div>
         
-        {/* Monthly Comparison Chart */}
+        {/* Categories Charts */}
         <div className={styles.chartContainer}>
-          {renderMonthlyComparisonChart()}
+          {/* Use renderExpensesByCategoryChart() for the overview section instead of renderCategoriesChart() */}
+          {renderExpensesByCategoryChart()}
+        </div>
+        
+        <div className={styles.chartContainer}>
+          {/* Use directly the income chart here */}
+          {renderIncomeCategoriesChart()}
+        </div>
+        
+        <div className={styles.chartContainer}>
+          {renderBanksChart()}
         </div>
         
         <div className={styles.chartContainer}>
@@ -3435,6 +3988,7 @@ const Dashboard = () => {
     return 'Selecione um período';
   };
 
+  // Custom tooltip component for all charts
   const CustomPieTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
       return (
@@ -3467,232 +4021,207 @@ const Dashboard = () => {
     return null;
   };
 
-  // Função para formatar labels de datas nos gráficos
-  const formatDateLabel = (label, chartDataArray = []) => {
-    if (typeof label !== 'string') {
-      if (label instanceof Date) {
-        const month = label.getMonth() + 1;
-        const year = label.getFullYear();
-        // Procurar um ponto de dados com esta data se ele existir
-        let dataPoint = null;
-        if (chartDataArray && chartDataArray.length > 0) {
-          dataPoint = chartDataArray.find(d => {
-            if (d.date instanceof Date) {
-              return d.date.getMonth() === label.getMonth() && 
-                     d.date.getFullYear() === label.getFullYear();
-            } else if (typeof d.date === 'string') {
-              const parts = d.date.split('-');
-              if (parts.length >= 2) {
-                return parseInt(parts[0]) === year && parseInt(parts[1]) === month;
-              }
-            }
-            return false;
-          });
-        }
-        const monthName = months.find(m => m.value === month)?.label || month;
-        return `${monthName}/${year}${dataPoint?.isProjection ? ' (Projeção)' : ''}`;
-      }
-      return String(label);
-    }
-    
-    const parts = label.split('-');
-    if (parts.length >= 2) {
-      const year = parts[0];
-      const month = parseInt(parts[1], 10);
-      // Procurar um ponto de dados com esta data se ele existir
-      let dataPoint = null;
-      if (chartDataArray && chartDataArray.length > 0) {
-        dataPoint = chartDataArray.find(d => {
-          if (typeof d.date === 'string') {
-            return d.date === label;
-          }
-          return false;
-        });
-      }
-      const monthName = months.find(m => m.value === month)?.label || month;
-      return `${monthName}/${year}${dataPoint?.isProjection ? ' (Projeção)' : ''}`;
-    }
-    
-    return label;
-  };
-
   return (
-    <div>
-      {getGreeting(auth.user ? auth.user.name : 'Usuário')}
-      
-      <div>
-        <div>
-          <h3>Filtros e Período</h3>
-          
-          <div>
-            <button
-              onClick={() => setShowPeriodOptions(!showPeriodOptions)}
-            >
-              {formatCurrentDateFilter()}
-            </button>
-            
-            {showPeriodOptions && (
-              <div>
-                <div>
-                  <button
-                    onClick={() => handlePeriodChange('current')}
-                  >
-                    Mês Atual
-                  </button>
-                  <button
-                    onClick={() => handlePeriodChange('last')}
-                  >
-                    Mês Anterior
-                  </button>
-                  <button
-                    onClick={() => handlePeriodChange('year')}
-                  >
-                    Ano Atual
-                  </button>
-                  <button
-                    onClick={() => handlePeriodChange('custom')}
-                  >
-                    Personalizado
-                  </button>
-                </div>
-              </div>
-            )}
-            
-            {showDateRangePicker && (
-              <DateRangePicker
-                onSelect={handleDateRangeSelect}
-                onCancel={handleDateRangeCancel}
-              />
-            )}
-          </div>
-          
-          <div>
-            <FilterSelector 
-              label="Categorias"
-              options={categories}
-              selected={selectedCategories}
-              onSelect={handleCategoryChange}
-              multiple={true}
-            />
-            
-            <FilterSelector 
-              label="Contas"
-              options={banks}
-              selected={selectedBanks}
-              onSelect={handleBankChange}
-              multiple={true}
-            />
-          </div>
-        </div>
-        
-        <div>
-          {renderOverviewCharts()}
-        </div>
-      </div>
-      
-      {/* Dashboard tabs */}
-      <div>
-        <div>
+    <div className={styles.dashboardContainer}>
+      {getGreeting(auth.user?.name)}
+      <div className={styles.dashboardHeader}>
+        <div className={styles.navigationTabs}>
           <button
+            className={`${styles.navTab} ${activeSection === 'overview' ? styles.activeTab : ''}`}
             onClick={() => setActiveSection('overview')}
           >
+            <span className={styles.tabIcon}>📊</span>
             Visão Geral
           </button>
+          {/* Aba Transações oculta conforme solicitado 
           <button
-            onClick={() => setActiveSection('analytics')}
+            className={`${styles.navTab} ${activeSection === 'transactions' ? styles.activeTab : ''}`}
+            onClick={() => setActiveSection('transactions')}
           >
-            Análises
+            <span className={styles.tabIcon}>💸</span>
+            Transações
           </button>
-          <button
-            onClick={() => setActiveSection('timeline')}
-          >
-            Linha do Tempo
-          </button>
+          */}
         </div>
+      </div>
+
+      {/* Filtros */}
+      <div className={styles.filterRow}>
+        <div className={styles.filtersContainer}>
+          <div className={styles.filterSelector}>
+            <div className={styles.filterLabel}>Período</div>
+            <div 
+              className={`${styles.filterDisplay} ${showPeriodOptions ? styles.active : ''}`}
+              onClick={() => setShowPeriodOptions(!showPeriodOptions)}
+            >
+              {selectedPeriod === 'custom' && customDateRange
+                ? `${formatDateStringWithTimezone(customDateRange.start)} - ${formatDateStringWithTimezone(customDateRange.end)}`
+                : getActiveFilterLabel()
+              }
+              <FaChevronDown className={`${styles.arrowIcon} ${showPeriodOptions ? styles.rotated : ''}`} />
+            </div>
+            {showPeriodOptions && (
+              <div className={styles.filterOptions}>
+                <div 
+                  className={styles.filterOption}
+                  onClick={() => handlePeriodChange('current')}
+                >
+                  Mês Atual
+                </div>
+                <div 
+                  className={styles.filterOption}
+                  onClick={() => handlePeriodChange('last')}
+                >
+                  Mês Anterior
+                </div>
+                <div 
+                  className={styles.filterOption}
+                  onClick={() => handlePeriodChange('next')}
+                >
+                  Mês que vem
+                </div>
+                <div 
+                  className={styles.filterOption}
+                  onClick={() => handlePeriodChange('custom')}
+                >
+                  Personalizado
+                </div>
+              </div>
+            )}
+          </div>
+          {showDateRangePicker && (
+            <div className={styles.dateRangePickerContainer}>
+              <DateRangePicker onDateRangeSelect={handleDateRangeSelect} onCancel={handleDateRangeCancel} />
+            </div>
+          )}
+          <FilterSelector
+            label="Categoria"
+            options={categories}
+            selected={selectedCategories}
+            onSelect={handleCategoryChange}
+            multiple
+          />
+          <FilterSelector
+            label="Banco"
+            options={banks}
+            selected={selectedBanks}
+            onSelect={handleBankChange}
+            multiple
+          />
+        </div>
+        {!hasExpenses && !hasIncome && (
+          <div className={styles.emptyStateContainer}>
+            <FaChartLine className={styles.emptyStateIcon} />
+            <div className={styles.emptyStateContent}>
+              <div className={styles.emptyStateMessage}>
+                Você ainda não tem despesas ou receitas cadastradas para este período.
+              </div>
+              <div className={styles.emptyStateSuggestion}>
+                Que tal começar adicionando sua primeira transação?
+              </div>
+              <div className={styles.emptyStateButtons}>
+                <button 
+                  className={styles.addExpenseButton}
+                  onClick={() => navigate('/add-expense')}
+                >
+                  <BsPlusLg /> Adicionar Despesa
+                </button>
+                <button 
+                  className={styles.addIncomeButton}
+                  onClick={() => navigate('/add-income')}
+                >
+                  <BsCash /> Adicionar Receita
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         
-        <div>
+        {hasExpenses === false && hasIncome === true && (
+          <div className={styles.emptyStateContainer}>
+            <FaChartLine className={styles.emptyStateIcon} />
+            <div className={styles.emptyStateContent}>
+              <div className={styles.emptyStateMessage}>
+                Você tem receitas cadastradas, mas ainda não tem despesas para este período.
+              </div>
+              <div className={styles.emptyStateSuggestion}>
+                Que tal adicionar sua primeira despesa?
+              </div>
+              <div className={styles.emptyStateButtons}>
+                <button 
+                  className={styles.addExpenseButton}
+                  onClick={() => navigate('/add-expense')}
+                >
+                  <BsPlusLg /> Adicionar Despesa
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {hasExpenses === true && hasIncome === false && (
+          <div className={styles.emptyStateContainer}>
+            <FaChartLine className={styles.emptyStateIcon} />
+            <div className={styles.emptyStateContent}>
+              <div className={styles.emptyStateMessage}>
+                Você tem despesas cadastradas, mas ainda não tem receitas para este período.
+              </div>
+              <div className={styles.emptyStateSuggestion}>
+                Que tal adicionar sua primeira receita?
+              </div>
+              <div className={styles.emptyStateButtons}>
+                <button 
+                  className={styles.addIncomeButton}
+                  onClick={() => navigate('/add-income')}
+                >
+                  <BsCash /> Adicionar Receita
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Conteúdo baseado na seção selecionada - só mostra se tiver despesas E receitas */}
+      {(hasExpenses && hasIncome) && (
+        <div className={styles.dashboardContent}>
           {activeSection === 'overview' && (
-            <div>
-              <div>
-                {loading ? (
-                  <div>
-                    <div></div>
-                    <p>Carregando dados do dashboard...</p>
-                  </div>
-                ) : error ? (
-                  <div>
-                    <h3>Erro ao carregar dados</h3>
-                    <p>{error}</p>
-                    <button onClick={() => window.location.reload()}>
-                      Tentar novamente
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <div>
-                      <div>
-                        <BankBalanceTrend />
-                      </div>
-                      <div>
-                        {renderBudgetChart()}
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <div>
-                        {renderExpensesByCategoryChart()}
-                      </div>
-                      <div>
-                        {renderIncomeVsExpensesChart()}
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <div>
-                        {renderFinancialGoalChart()}
-                      </div>
-                      <div>
-                        {data?.financial_health && (
-                          <FinancialHealthScore data={data.financial_health} />
-                        )}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
+            <div className={styles.overviewSection}>
+              {/* Conteúdo original do dashboard */}
+              {renderOverviewCharts()}
             </div>
           )}
           
-          {activeSection === 'analytics' && (
-            <div>
-              <div>
-                <h3>Análise de Despesas e Receitas</h3>
-                
-                <div>
-                  <div>
-                    {renderExpensesTrend()}
-                  </div>
-                  <div>
-                    {renderIncomeTrend()}
-                  </div>
-                </div>
-                
-                <div>
-                  <div>
-                    {renderMonthlyComparisonChart()}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {activeSection === 'timeline' && (
-            <div>
+          {activeSection === 'transactions' && (
+            <div className={styles.transactionsSection}>
               {renderTimelineChart()}
             </div>
           )}
         </div>
-      </div>
+      )}      
+      
+      {/* Mensagem quando há apenas um tipo de transação mas não ambos */}
+      {((hasExpenses && !hasIncome) || (!hasExpenses && hasIncome)) && (
+        <div className={styles.emptyStateContainer}>
+          <FaChartLine className={styles.emptyStateIcon} />
+          <div className={styles.emptyStateContent}>
+            <div className={styles.emptyStateMessage}>
+              Para visualizar os relatórios completos, você precisa ter tanto despesas quanto receitas cadastradas.
+            </div>
+            <div className={styles.emptyStateSuggestion}>
+              {hasExpenses && !hasIncome ? 'Adicione receitas para ver os relatórios completos.' : 'Adicione despesas para ver os relatórios completos.'}
+            </div>
+            <div className={styles.emptyStateButtons}>
+              <button 
+                className={hasExpenses ? styles.addIncomeButton : styles.addExpenseButton}
+                onClick={() => navigate(hasExpenses ? '/add-income' : '/add-expense')}
+              >
+                <BsPlusLg /> {hasExpenses ? 'Adicionar Receita' : 'Adicionar Despesa'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
