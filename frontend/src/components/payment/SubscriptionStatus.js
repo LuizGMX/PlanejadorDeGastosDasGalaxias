@@ -13,6 +13,13 @@ const SubscriptionStatus = () => {
     const fetchSubscriptionStatus = async () => {
       try {
         setLoading(true);
+        
+        // Verificar se já expirou pelo contexto
+        if (auth.subscriptionExpired) {
+          navigate('/payment');
+          return;
+        }
+        
         const response = await apiInterceptor(
           `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/payments/status`,
           {
@@ -21,6 +28,12 @@ const SubscriptionStatus = () => {
             }
           }
         );
+
+        // Verificar se o interceptor detectou expiração
+        if (response.subscriptionExpired) {
+          navigate('/payment');
+          return;
+        }
 
         if (!response.ok) {
           throw new Error('Falha ao obter status da assinatura');
@@ -38,7 +51,7 @@ const SubscriptionStatus = () => {
     if (auth.token) {
       fetchSubscriptionStatus();
     }
-  }, [auth.token, apiInterceptor]);
+  }, [auth.token, auth.subscriptionExpired, apiInterceptor, navigate]);
 
   const formatDate = (dateString) => {
     if (!dateString) return 'Não disponível';

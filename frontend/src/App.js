@@ -117,10 +117,10 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/" element={<Navigate to="/dashboard" />} />
               <Route path="/dashboard" element={
-                <>
+                <Layout>
                   <SubscriptionStatus />
                   <Dashboard />
-                </>
+                </Layout>
               } />
               <Route path="/expenses" element={
                 <Layout>

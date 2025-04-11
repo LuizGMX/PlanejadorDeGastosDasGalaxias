@@ -1,5 +1,4 @@
 import React, { createContext, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 
 // Criar o contexto de autenticação
@@ -18,9 +17,6 @@ export const AuthProvider = ({ children }) => {
     };
   });
 
-  // Hook para redirecionamento
-  const navigate = useNavigate();
-
   // Interceptor para tratar erros de API, especialmente para assinatura expirada
   const apiInterceptor = async (url, options = {}) => {
     try {
@@ -37,14 +33,14 @@ export const AuthProvider = ({ children }) => {
             subscriptionExpired: true 
           }));
           
-          // Redirecionar para a página de pagamento
-          navigate('/payment');
-          
           // Exibir notificação
           toast.error('Sua assinatura expirou. Por favor, renove para continuar usando o sistema.');
           
-          // Retornar um erro personalizado
-          throw new Error('Assinatura expirada');
+          // Retornamos a resposta com um atributo para indicar a expiração
+          return { 
+            ...response, 
+            subscriptionExpired: true 
+          };
         }
       }
       
@@ -63,7 +59,7 @@ export const AuthProvider = ({ children }) => {
       if (token) {
         try {
           console.log('Tentando buscar dados do usuário com token armazenado');
-          const response = await apiInterceptor(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/auth/me`, {
+          const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/auth/me`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -144,7 +140,7 @@ export const AuthProvider = ({ children }) => {
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, [navigate]);
+  }, []);
 
   // Função para fazer login
   const login = async (email, password) => {

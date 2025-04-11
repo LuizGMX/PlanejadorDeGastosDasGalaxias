@@ -5,7 +5,7 @@ import AuthContext from '../../contexts/AuthContext';
 import '../../styles/Payment.css';
 
 const Payment = () => {
-  const { auth } = useContext(AuthContext);
+  const { auth, apiInterceptor } = useContext(AuthContext);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState(null);
@@ -23,11 +23,26 @@ const Payment = () => {
   const fetchSubscriptionStatus = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/payments/status`, {
-        headers: {
-          'Authorization': `Bearer ${auth.token}`
+      const response = await apiInterceptor(
+        `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/payments/status`,
+        {
+          headers: {
+            'Authorization': `Bearer ${auth.token}`
+          }
         }
-      });
+      );
+
+      // Se o interceptor detectou expiração, a resposta terá a flag subscriptionExpired
+      if (response.subscriptionExpired) {
+        // Já estamos na página de pagamento, então não precisamos redirecionar
+        // Apenas atualizar a interface para mostrar que a assinatura expirou
+        setSubscription({ 
+          hasSubscription: false, 
+          message: 'Sua assinatura expirou. Por favor, renove para continuar usando o sistema.' 
+        });
+        setLoading(false);
+        return;
+      }
 
       if (!response.ok) {
         throw new Error('Falha ao obter status da assinatura');
@@ -46,13 +61,22 @@ const Payment = () => {
   const handlePayment = async () => {
     try {
       setProcessingPayment(true);
-      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/payments/create-payment`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${auth.token}`
+      const response = await apiInterceptor(
+        `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/payments/create-payment`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${auth.token}`
+          }
         }
-      });
+      );
+
+      // Verificar se o interceptor detectou algum problema com a assinatura
+      if (response.subscriptionExpired) {
+        setProcessingPayment(false);
+        return;
+      }
 
       if (!response.ok) {
         throw new Error('Falha ao iniciar pagamento');
