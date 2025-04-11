@@ -18,6 +18,7 @@ import { checkApiHealth, diagnoseProblem } from './utils/apiHealth';
 import { AuthProvider } from './contexts/AuthContext';
 import { initIOSSupport, isIOS } from './utils/iosSupport';
 import MobileNavbar from './components/layout/MobileNavbar';
+import Sidebar from './components/layout/Sidebar';
 import './styles/ios.css';
 
 // Configurações do React Router v7
@@ -31,6 +32,7 @@ const routerConfig = {
 function App() {
   const [apiStatus, setApiStatus] = useState(null);
   const [isIOSDevice, setIsIOSDevice] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   // Verificar a saúde da API ao iniciar o aplicativo
   useEffect(() => {
@@ -74,6 +76,15 @@ function App() {
     }
   }, []);
 
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
     <AuthProvider>
       <Router {...routerConfig}>
@@ -96,58 +107,62 @@ function App() {
           </div>
         )}
         <div className={`app ${isIOSDevice ? 'ios-device' : ''}`}>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/" element={<Navigate to="/dashboard" />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/expenses" element={
-              <Layout>
-                <ExpensesWrapper />
-              </Layout>
-            } />
-            <Route path="/expenses/edit/:id" element={
-              <Layout>
-                <EditExpense />
-              </Layout>
-            } />
-            <Route path="/add-expense" element={
-              <Layout>
-                <AddExpenseWrapper />
-              </Layout>
-            } />
-            <Route path="/profile" element={
-              <Layout>
-                <Profile />
-              </Layout>
-            } />
-            <Route path="/income" element={
-              <Layout>
-                <IncomesWrapper />
-              </Layout>
-            } />
-            <Route path="/add-income" element={
-              <Layout>
-                <AddIncomeWrapper />
-              </Layout>
-            } />
-            <Route path="/incomes/edit/:id" element={
-              <Layout>
-                <EditIncome />
-              </Layout>
-            } />
-            <Route path="/edit-recurring-incomes" element={
-              <Layout>
-                <EditRecurringIncomes />
-              </Layout>
-            } />
-            <Route path="/upload-spreadsheet" element={
-              <Layout>
-                <SpreadsheetUpload />
-              </Layout>
-            } />
-            <Route path="*" element={<Navigate to="/dashboard" />} />
-          </Routes>
-          <MobileNavbar />
+          {/* Renderiza Sidebar para desktop e MobileNavbar para mobile */}
+          {isMobile ? <MobileNavbar /> : <Sidebar />}
+          
+          <div className={`mainContent ${isMobile ? 'mobile' : ''}`}>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/" element={<Navigate to="/dashboard" />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/expenses" element={
+                <Layout>
+                  <ExpensesWrapper />
+                </Layout>
+              } />
+              <Route path="/expenses/edit/:id" element={
+                <Layout>
+                  <EditExpense />
+                </Layout>
+              } />
+              <Route path="/add-expense" element={
+                <Layout>
+                  <AddExpenseWrapper />
+                </Layout>
+              } />
+              <Route path="/profile" element={
+                <Layout>
+                  <Profile />
+                </Layout>
+              } />
+              <Route path="/income" element={
+                <Layout>
+                  <IncomesWrapper />
+                </Layout>
+              } />
+              <Route path="/add-income" element={
+                <Layout>
+                  <AddIncomeWrapper />
+                </Layout>
+              } />
+              <Route path="/incomes/edit/:id" element={
+                <Layout>
+                  <EditIncome />
+                </Layout>
+              } />
+              <Route path="/edit-recurring-incomes" element={
+                <Layout>
+                  <EditRecurringIncomes />
+                </Layout>
+              } />
+              <Route path="/upload-spreadsheet" element={
+                <Layout>
+                  <SpreadsheetUpload />
+                </Layout>
+              } />
+              <Route path="*" element={<Navigate to="/dashboard" />} />
+            </Routes>
+          </div>
         </div>
       </Router>
     </AuthProvider>

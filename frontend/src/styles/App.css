@@ -1,0 +1,35 @@
+.app {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--background-color);
+}
+
+.mainContent {
+  flex: 1;
+  padding: 20px;
+  margin-left: 250px; /* Largura da Sidebar */
+  transition: margin-left 0.3s ease;
+}
+
+.mainContent.mobile {
+  margin-left: 0;
+  padding-bottom: 80px; /* Espaço para a MobileNavbar */
+}
+
+@media (max-width: 768px) {
+  .mainContent {
+    margin-left: 0;
+    padding: 15px;
+    padding-bottom: 80px; /* Espaço para a MobileNavbar */
+  }
+}
+
+/* Ajustes para iOS */
+.ios-device .mainContent.mobile {
+  padding-bottom: 100px; /* Mais espaço para a barra do iOS */
+}
+
+/* Garantir que o conteúdo não fique escondido atrás da navbar em dispositivos iOS */
+.ios-device .mobileNavbar {
+  padding-bottom: env(safe-area-inset-bottom);
+} 
