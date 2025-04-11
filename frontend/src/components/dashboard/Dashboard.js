@@ -1742,7 +1742,7 @@ const Dashboard = () => {
                       }}
                     />
                     <Legend
-                layout={isMobile ? "horizontal" : "vertical"}
+                layout="horizontal"
                       align="center"
                 verticalAlign="bottom"
                 iconType="circle"
@@ -1753,7 +1753,7 @@ const Dashboard = () => {
                     fontSize: isMobile ? '10px' : '12px', 
                     fontWeight: 'bold'
                   }}>
-                    {value}{isMobile ? '' : `: ${formatCurrency(entry.payload.value)}`} ({(entry.payload.percent * 100).toFixed(0)}%)
+                    {value}{isMobile ? '' : `: ${formatCurrency(entry.payload.value)}`}
                   </span>
                 )}
                 wrapperStyle={{
@@ -1894,7 +1894,7 @@ const Dashboard = () => {
               </Pie>
               <Tooltip content={<CustomPieTooltip />} />
               <Legend 
-                layout={isMobile ? "horizontal" : "vertical"}
+                layout="horizontal"
                 align={isMobile ? "center" : "right"}
                 verticalAlign={isMobile ? "bottom" : "middle"}
                 iconType="circle"
@@ -1910,8 +1910,7 @@ const Dashboard = () => {
                     maxWidth: isMobile ? '60px' : '110px',
                     display: 'inline-block'
                   }}>
-                    {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
-                    {!isMobile && ` (${(entry.payload.percent * 100).toFixed(1)}%)`}
+                    {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value}                     
                   </span>
                 )}
                 wrapperStyle={{ 
@@ -2778,7 +2777,7 @@ const Dashboard = () => {
                     </Pie>
               <Tooltip content={<CustomPieTooltip />} />
               <Legend 
-                layout={isMobile ? "horizontal" : "vertical"}
+                layout="horizontal"
                 align={isMobile ? "center" : "right"}
                 verticalAlign={isMobile ? "bottom" : "middle"}
                 iconType="circle"
@@ -2795,7 +2794,6 @@ const Dashboard = () => {
                     display: 'inline-block'
                   }}>
                     {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
-                    {!isMobile && ` (${entry.payload.percentage.toFixed(1)}%)`}
                   </span>
                 )}
                 wrapperStyle={{ 
@@ -2925,7 +2923,7 @@ const Dashboard = () => {
               </Pie>
               <Tooltip content={<CustomPieTooltip />} />
               <Legend 
-                layout={isMobile ? "horizontal" : "vertical"}
+                layout="horizontal"
                 align={isMobile ? "center" : "right"}
                 verticalAlign={isMobile ? "bottom" : "middle"}
                 iconType="circle"
@@ -2942,7 +2940,6 @@ const Dashboard = () => {
                     display: 'inline-block'
                   }}>
                     {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
-                    {!isMobile && ` (${entry.payload.percentage.toFixed(1)}%)`}
                   </span>
                 )}
                 wrapperStyle={{ 
@@ -3099,7 +3096,7 @@ const Dashboard = () => {
               </Pie>
               <Tooltip content={<CustomPieTooltip />} />
               <Legend 
-                layout={isMobile ? "horizontal" : "vertical"}
+                layout="horizontal"
                 align={isMobile ? "center" : "right"}
                 verticalAlign={isMobile ? "bottom" : "middle"}
                 iconType="circle"
@@ -3116,7 +3113,6 @@ const Dashboard = () => {
                     display: 'inline-block'
                   }}>
                     {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
-                    {!isMobile && ` (${(entry.payload.percent * 100).toFixed(1)}%)`}
                   </span>
                 )}
                 wrapperStyle={{ 
