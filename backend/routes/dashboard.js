@@ -355,8 +355,16 @@ router.get('/', authenticate, async (req, res) => {
           })
         },
         include: [
-          { model: Category, as: 'Category' },
-          { model: Bank, as: 'bank' }
+          { 
+            model: Category, 
+            as: 'Category',
+            attributes: ['id', 'name', 'color', 'description'] 
+          },
+          { 
+            model: Bank, 
+            as: 'bank',
+            attributes: ['id', 'name', 'icon', 'color'] 
+          }
         ]
       })
     ]).catch(error => {
@@ -978,12 +986,29 @@ router.get('/all-transactions', authenticate, async (req, res) => {
       incomes = await Income.findAll({
         where: { user_id: req.user.id },
         include: [
-          { model: Category, as: 'Category' },
-          { model: Bank, as: 'bank' }
+          { 
+            model: Category, 
+            as: 'Category',
+            attributes: ['id', 'name', 'color', 'description'] 
+          },
+          { 
+            model: Bank, 
+            as: 'bank',
+            attributes: ['id', 'name', 'icon', 'color'] 
+          }
         ],
         order: [['date', 'DESC']]
       });
       console.log(`Total de receitas encontradas: ${incomes.length}`);
+      // Adicionar log para verificar se as categorias estão vindo corretamente
+      if (incomes.length > 0) {
+        console.log('Amostra de receita com categoria:', JSON.stringify({
+          id: incomes[0].id,
+          description: incomes[0].description,
+          category_id: incomes[0].category_id,
+          categoryObj: incomes[0].Category
+        }, null, 2));
+      }
     } catch (error) {
       console.error('Erro detalhado ao buscar receitas:', error);
       console.error('Erro SQL (se disponível):', error.sql);

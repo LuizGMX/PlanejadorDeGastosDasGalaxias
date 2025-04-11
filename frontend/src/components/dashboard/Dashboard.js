@@ -1023,17 +1023,28 @@ const Dashboard = () => {
         
         // Processar receitas
         if (result.incomes && Array.isArray(result.incomes)) {
-          const processedIncomes = result.incomes.map(income => ({
-            id: income.id,
-            description: income.description || 'Sem descrição',
-            amount: parseFloat(income.amount),
-            date: new Date(income.date),
-            category: income.Category ? income.Category.name : 'Sem categoria',
-            categoryId: income.category_id,
-            bank: income.bank ? income.bank.name : 'Sem banco',
-            type: 'income',
-            is_recurring: false
-          }));
+          const processedIncomes = result.incomes.map(income => {
+            // Garantir que a categoria seja capturada corretamente
+            let category = 'Sem categoria';
+            let categoryId = null;
+            
+            if (income.Category && income.Category.name) {
+              category = income.Category.name;
+              categoryId = income.Category.id;
+            }
+            
+            return {
+              id: income.id,
+              description: income.description || 'Sem descrição',
+              amount: parseFloat(income.amount),
+              date: new Date(income.date),
+              category: category,
+              categoryId: categoryId || income.category_id,
+              bank: income.bank ? income.bank.name : 'Sem banco',
+              type: 'income',
+              is_recurring: Boolean(income.is_recurring)
+            };
+          });
           
           setAllIncomes(processedIncomes);
         }
@@ -1046,21 +1057,34 @@ const Dashboard = () => {
             amount: parseFloat(expense.amount),
             date: new Date(expense.expense_date),
             category: expense.Category ? expense.Category.name : 'Sem categoria',
+            categoryId: expense.Category ? expense.Category.id : null,
             bank: expense.bank ? expense.bank.name : 'Sem banco',
             type: 'expense',
             is_recurring: expense.recurrence !== null,
             payment_method: expense.payment_method || 'Não especificado'
           })),
-          ...(result.incomes || []).map(income => ({
-            id: `income-${income.id}`,
-            description: income.description || 'Sem descrição',
-            amount: parseFloat(income.amount),
-            date: new Date(income.date),
-            category: income.Category ? income.Category.name : 'Sem categoria',
-            bank: income.bank ? income.bank.name : 'Sem banco',
-            type: 'income',
-            is_recurring: false
-          }))
+          ...(result.incomes || []).map(income => {
+            // Garantir que a categoria seja capturada corretamente
+            let category = 'Sem categoria';
+            let categoryId = null;
+            
+            if (income.Category && income.Category.name) {
+              category = income.Category.name;
+              categoryId = income.Category.id;
+            }
+            
+            return {
+              id: `income-${income.id}`,
+              description: income.description || 'Sem descrição',
+              amount: parseFloat(income.amount),
+              date: new Date(income.date),
+              category: category,
+              categoryId: categoryId || income.category_id,
+              bank: income.bank ? income.bank.name : 'Sem banco',
+              type: 'income',
+              is_recurring: Boolean(income.is_recurring)
+            };
+          })
         ];
         
         // Ordenar por data (mais recente primeiro)
@@ -1809,8 +1833,7 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-    );
-    
+    );    
   };
 
   // Improved renderExpensesByCategoryChart with better visualization and mobile optimization
@@ -2597,6 +2620,7 @@ const Dashboard = () => {
       setIncomeLoading(true);
       try {
         console.log("Processing income category data, transactions:", transactions?.length);
+        
         if (!transactions || transactions.length === 0) {
           console.log("No transactions for income categories");
           setIncomeCategoryData([]);
@@ -2604,25 +2628,39 @@ const Dashboard = () => {
           return;
         }
         
-        // Use only the transactions filtered by the API (no additional filtering needed)
-        // The transactions are already filtered based on the queryParams sent to the API
+        // Filter only income transactions
         const filteredTransactions = transactions.filter(transaction => 
           transaction.type === 'income'
         );
         
         console.log("Filtered income transactions:", filteredTransactions.length);
         
+        if (filteredTransactions.length === 0) {
+          console.log("No income transactions found");
+          setIncomeCategoryData([]);
+          setIncomeLoading(false);
+          return;
+        }
+        
         // Group by category and calculate totals
         const categoryTotals = {};
         filteredTransactions.forEach(transaction => {
-          const category = transaction.category || 'Sem categoria';
+          // Verifica todos os possíveis locais da categoria
+          let category = 'Sem categoria';
+          
+          if (typeof transaction.category === 'string' && transaction.category.trim()) {
+            category = transaction.category;
+          } else if (transaction.Category && transaction.Category.name) {
+            category = transaction.Category.name;
+          }
+          
           if (!categoryTotals[category]) {
             categoryTotals[category] = {
               total: 0,
               transactions: []
             };
           }
-          categoryTotals[category].total += transaction.amount;
+          categoryTotals[category].total += parseFloat(transaction.amount) || 0;
           categoryTotals[category].transactions.push(transaction);
         });
         
@@ -3885,17 +3923,28 @@ const Dashboard = () => {
                 
                 // Processar receitas
                 if (result.incomes && Array.isArray(result.incomes)) {
-                  const processedIncomes = result.incomes.map(income => ({
-                    id: income.id,
-                    description: income.description || 'Sem descrição',
-                    amount: parseFloat(income.amount),
-                    date: new Date(income.date),
-                    category: income.Category ? income.Category.name : 'Sem categoria',
-                    categoryId: income.category_id,
-                    bank: income.bank ? income.bank.name : 'Sem banco',
-                    type: 'income',
-                    is_recurring: false
-                  }));
+                  const processedIncomes = result.incomes.map(income => {
+                    // Garantir que a categoria seja capturada corretamente
+                    let category = 'Sem categoria';
+                    let categoryId = null;
+                    
+                    if (income.Category && income.Category.name) {
+                      category = income.Category.name;
+                      categoryId = income.Category.id;
+                    }
+                    
+                    return {
+                      id: income.id,
+                      description: income.description || 'Sem descrição',
+                      amount: parseFloat(income.amount),
+                      date: new Date(income.date),
+                      category: category,
+                      categoryId: categoryId || income.category_id,
+                      bank: income.bank ? income.bank.name : 'Sem banco',
+                      type: 'income',
+                      is_recurring: Boolean(income.is_recurring)
+                    };
+                  });
                   
                   setAllIncomes(processedIncomes);
                 }
@@ -3908,21 +3957,34 @@ const Dashboard = () => {
                     amount: parseFloat(expense.amount),
                     date: new Date(expense.expense_date),
                     category: expense.Category ? expense.Category.name : 'Sem categoria',
+                    categoryId: expense.Category ? expense.Category.id : null,
                     bank: expense.bank ? expense.bank.name : 'Sem banco',
                     type: 'expense',
                     is_recurring: expense.recurrence !== null,
                     payment_method: expense.payment_method || 'Não especificado'
                   })),
-                  ...(result.incomes || []).map(income => ({
-                    id: `income-${income.id}`,
-                    description: income.description || 'Sem descrição',
-                    amount: parseFloat(income.amount),
-                    date: new Date(income.date),
-                    category: income.Category ? income.Category.name : 'Sem categoria',
-                    bank: income.bank ? income.bank.name : 'Sem banco',
-                    type: 'income',
-                    is_recurring: false
-                  }))
+                  ...(result.incomes || []).map(income => {
+                    // Garantir que a categoria seja capturada corretamente
+                    let category = 'Sem categoria';
+                    let categoryId = null;
+                    
+                    if (income.Category && income.Category.name) {
+                      category = income.Category.name;
+                      categoryId = income.Category.id;
+                    }
+                    
+                    return {
+                      id: `income-${income.id}`,
+                      description: income.description || 'Sem descrição',
+                      amount: parseFloat(income.amount),
+                      date: new Date(income.date),
+                      category: category,
+                      categoryId: categoryId || income.category_id,
+                      bank: income.bank ? income.bank.name : 'Sem banco',
+                      type: 'income',
+                      is_recurring: Boolean(income.is_recurring)
+                    };
+                  })
                 ];
                 
                 // Ordenar por data (mais recente primeiro)
