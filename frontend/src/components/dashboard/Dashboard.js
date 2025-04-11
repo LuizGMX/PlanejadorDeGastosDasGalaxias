@@ -868,7 +868,7 @@ const Dashboard = () => {
       <text 
         x={x} 
         y={y} 
-        fill="#000000" 
+        fill="#FFFFFF" 
         textAnchor="middle" 
         dominantBaseline="central"
         fontSize={isMobile ? "15px" : "20px"}
@@ -3532,9 +3532,9 @@ const Dashboard = () => {
               />
               <ReferenceLine 
                 x={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`}
-                stroke="#666" 
+                stroke="#7a7878" 
                 strokeDasharray="3 3" 
-                label={{ value: 'Hoje', position: 'insideTopRight', fill: '#666' }} 
+                label={{ value: 'Hoje', position: 'insideTopRight', fill: '#7a7878' }} 
               />
             </AreaChart>
           </ResponsiveContainer>
