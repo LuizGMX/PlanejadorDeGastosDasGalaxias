@@ -358,7 +358,7 @@ router.get('/', authenticate, async (req, res) => {
           { 
             model: Category, 
             as: 'Category',
-            attributes: ['id', 'name', 'color', 'description'] 
+            attributes: ['id', 'category_name', 'color', 'description'] 
           },
           { 
             model: Bank, 
@@ -989,7 +989,7 @@ router.get('/all-transactions', authenticate, async (req, res) => {
           { 
             model: Category, 
             as: 'Category',
-            attributes: ['id', 'name', 'color', 'description'] 
+            attributes: ['id', 'category_name', 'color', 'description'] 
           },
           { 
             model: Bank, 
