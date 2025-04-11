@@ -248,127 +248,130 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
           </div>
         </div>
       )}
-
-      <ResponsiveContainer width="100%" height={height}>
-        <ComposedChart 
-          data={data.projectionData} 
-          margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-          onMouseLeave={handleMouseLeave}
-        >
-          <defs>
-            <linearGradient id="colorGanhos" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="var(--success-color)" stopOpacity={0.8}/>
-              <stop offset="95%" stopColor="var(--success-color)" stopOpacity={0}/>
-            </linearGradient>
-            <linearGradient id="colorDespesas" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="var(--error-color)" stopOpacity={0.8}/>
-              <stop offset="95%" stopColor="var(--error-color)" stopOpacity={0}/>
-            </linearGradient>
-            <linearGradient id="colorSaldo" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#1E90FF" stopOpacity={0.8}/>
-              <stop offset="95%" stopColor="#1E90FF" stopOpacity={0}/>
-            </linearGradient>
-          </defs>
-          
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
-          <XAxis
-            dataKey="date"
-            tickFormatter={(date) => {
-              const d = new Date(date);
-              const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 
-                           'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-              return `${months[d.getMonth()]}/${d.getFullYear()}`;
-            }}
-            stroke="var(--text-color)"
-          />
-          <YAxis
-            tickFormatter={formatFullCurrency}
-            stroke="var(--text-color)"
-            tick={{ fill: 'var(--text-color)', fontSize: 11 }}
-          />
-          <Tooltip
-            formatter={formatFullCurrency}
-            labelFormatter={(date) => {
-              const d = new Date(date);
-              const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
-                           'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-              return `${months[d.getMonth()]} de ${d.getFullYear()}`;
-            }}
-            contentStyle={{
-              backgroundColor: 'var(--card-background)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '8px',
-              padding: '10px'
-            }}
-          />
-          <Legend 
-            verticalAlign="top"
-            height={36}
-            formatter={(value) => {
-              let color;
-              switch(value) {
-                case 'receitas':
-                  color = 'var(--success-color)';
-                  value = 'Receitas';
-                  break;
-                case 'despesas':
-                  color = 'var(--error-color)';
-                  value = 'Despesas';
-                  break;
-                case 'saldo':
-                  color = '#1E90FF';
-                  value = 'Saldo';
-                  break;
-                default:
-                  color = 'var(--text-color)';
-              }
-              return <span style={{ color }}>{value}</span>;
-            }}
-          />
-          
-          <Area
-            type="monotone"
-            dataKey="receitas"
-            stroke="var(--success-color)"
-            fillOpacity={1}
-            fill="url(#colorGanhos)"
+      
+      <div className={styles.trendChartContent} style={{ overflow: 'visible' }}>
+        <ResponsiveContainer width="100%" height={height} style={{ overflow: 'visible' }}>
+          {/* Conteúdo da projeção */}
+          <ComposedChart 
+            data={data.projectionData} 
+            margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+            onMouseLeave={handleMouseLeave}
+          >
+            <defs>
+              <linearGradient id="colorGanhos" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="var(--success-color)" stopOpacity={0.8}/>
+                <stop offset="95%" stopColor="var(--success-color)" stopOpacity={0}/>
+              </linearGradient>
+              <linearGradient id="colorDespesas" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="var(--error-color)" stopOpacity={0.8}/>
+                <stop offset="95%" stopColor="var(--error-color)" stopOpacity={0}/>
+              </linearGradient>
+              <linearGradient id="colorSaldo" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#1E90FF" stopOpacity={0.8}/>
+                <stop offset="95%" stopColor="#1E90FF" stopOpacity={0}/>
+              </linearGradient>
+            </defs>
+            
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+            <XAxis
+              dataKey="date"
+              tickFormatter={(date) => {
+                const d = new Date(date);
+                const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 
+                             'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+                return `${months[d.getMonth()]}/${d.getFullYear()}`;
+              }}
+              stroke="var(--text-color)"
+            />
+            <YAxis
+              tickFormatter={formatFullCurrency}
+              stroke="var(--text-color)"
+              tick={{ fill: 'var(--text-color)', fontSize: 11 }}
+            />
+            <Tooltip
+              formatter={formatFullCurrency}
+              labelFormatter={(date) => {
+                const d = new Date(date);
+                const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                             'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+                return `${months[d.getMonth()]} de ${d.getFullYear()}`;
+              }}
+              contentStyle={{
+                backgroundColor: 'var(--card-background)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '8px',
+                padding: '10px'
+              }}
+            />
+            <Legend 
+              verticalAlign="top"
+              height={36}
+              formatter={(value) => {
+                let color;
+                switch(value) {
+                  case 'receitas':
+                    color = 'var(--success-color)';
+                    value = 'Receitas';
+                    break;
+                  case 'despesas':
+                    color = 'var(--error-color)';
+                    value = 'Despesas';
+                    break;
+                  case 'saldo':
+                    color = '#1E90FF';
+                    value = 'Saldo';
+                    break;
+                  default:
+                    color = 'var(--text-color)';
+                }
+                return <span style={{ color }}>{value}</span>;
+              }}
+            />
+            
+            <Area
+              type="monotone"
+              dataKey="receitas"
+              stroke="var(--success-color)"
+              fillOpacity={1}
+              fill="url(#colorGanhos)"
+              strokeWidth={2}
+            />
+            <Area
+              type="monotone"
+              dataKey="despesas"
+              stroke="var(--error-color)"
+              fillOpacity={1}
+              fill="url(#colorDespesas)"
+              strokeWidth={2}
+            />
+            <Line
+              type="monotone"
+              dataKey="saldo"
+              stroke="#1E90FF"
+              strokeWidth={3}
+              dot={(props) => {
+                const { cx, cy, index } = props;
+                const isActive = activeDot === index;
+                
+                return (
+                  <circle
+                    cx={cx}
+                    cy={cy}
+                    r={isActive ? 6 : 4}
+                    fill="#1E90FF"
+                    stroke={isActive ? "#fff" : "none"}
             strokeWidth={2}
-          />
-          <Area
-            type="monotone"
-            dataKey="despesas"
-            stroke="var(--error-color)"
-            fillOpacity={1}
-            fill="url(#colorDespesas)"
-            strokeWidth={2}
-          />
-          <Line
-            type="monotone"
-            dataKey="saldo"
-            stroke="#1E90FF"
-            strokeWidth={3}
-            dot={(props) => {
-              const { cx, cy, index } = props;
-              const isActive = activeDot === index;
-              
-              return (
-                <circle
-                  cx={cx}
-                  cy={cy}
-                  r={isActive ? 6 : 4}
-                  fill="#1E90FF"
-                  stroke={isActive ? "#fff" : "none"}
-            strokeWidth={2}
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => handleDotClick(index)}
-                  onMouseEnter={() => handleMouseEnter(props.payload, index)}
-                />
-              );
-            }}
-            activeDot={{ r: 8, fill: '#1E90FF', stroke: '#fff', strokeWidth: 2 }}
-          />
-        </ComposedChart>
-      </ResponsiveContainer>
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => handleDotClick(index)}
+                    onMouseEnter={() => handleMouseEnter(props.payload, index)}
+                  />
+                );
+              }}
+              activeDot={{ r: 8, fill: '#1E90FF', stroke: '#fff', strokeWidth: 2 }}
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
 
       <div className={styles.trendChartSummary}>
         <div className={styles.trendChartSummaryItem}>
@@ -1181,8 +1184,8 @@ const Dashboard = () => {
             </span>
           </div>
         </div>
-        <div ref={chartRefs[chartId]} className={styles.chartWrapper} style={{ height: '400px' }}>
-          <ResponsiveContainer width="100%" height="100%">
+        <div ref={chartRefs[chartId]} className={styles.chartWrapper} style={{ height: '400px', overflow: 'visible' }}>
+          <ResponsiveContainer width="100%" height="100%" style={{ overflow: 'visible' }}>
             {chartComponent}
           </ResponsiveContainer>
         </div>
@@ -1477,8 +1480,8 @@ const Dashboard = () => {
             </div>
           </div>
           
-          <div className={styles.projectionData}>
-            <ResponsiveContainer width="100%" height={120}>
+          <div className={styles.projectionData} style={{ overflow: 'visible' }}>
+            <ResponsiveContainer width="100%" height={120} style={{ overflow: 'visible' }}>
               <BarChart
                 data={chartData}
                 layout="vertical"
@@ -1749,8 +1752,8 @@ const Dashboard = () => {
           </div>
         </div>
     
-        <div className={styles.incomeVsExpensesContainer}>
-          <div style={{ width: '100%', maxWidth: isMobile ? 300 : 400, height: isMobile ? 250 : 320 }}>
+        <div className={styles.incomeVsExpensesContainer} style={{ width: '100%', maxWidth: isMobile ? 300 : 400, height: isMobile ? 250 : 320, overflow: 'visible' }}>
+          <div style={{ width: '100%', maxWidth: isMobile ? 300 : 400, height: isMobile ? 250 : 320, overflow: 'visible' }}>
             <PieChart width={isMobile ? 300 : 400} height={isMobile ? 250 : 320} margin={{ top: 20, right: 20, left: 20, bottom: 20 }}>
               <defs>
                 <filter id="income-vs-expense-shadow" x="-20%" y="-20%" width="140%" height="140%">
@@ -1909,9 +1912,9 @@ const Dashboard = () => {
           </div>
         </div>
     
-        <div className={styles.categoriesPieContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <div style={{ width: isMobile ? 300 : 400, height: isMobile ? 220 : 350 }}>
-            <PieChart width={isMobile ? 300 : 400} height={isMobile ? 220 : 350} margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
+        <div className={styles.categoriesPieContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'visible' }}>
+          <ResponsiveContainer width="100%" height={isMobile ? 220 : 350} style={{ overflow: 'visible' }}>
+            <PieChart margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
               <defs>
                 {categoriesData.map((entry, index) => (
                   <filter key={`shadow-${index}`} id={`shadow-${index}`} x="-20%" y="-20%" width="140%" height="140%">
@@ -1980,7 +1983,7 @@ const Dashboard = () => {
                 }}
               />
             </PieChart>
-          </div>
+          </ResponsiveContainer>
         </div>
     
         <div className={styles.categoriesInsights}>
@@ -2813,8 +2816,8 @@ const Dashboard = () => {
           </div>
         </div>
         
-        <div className={styles.categoriesPieContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <ResponsiveContainer width="100%" height={isMobile ? 220 : 350}>
+        <div className={styles.categoriesPieContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'visible' }}>
+          <ResponsiveContainer width="100%" height={isMobile ? 220 : 350} style={{ overflow: 'visible' }}>
             <PieChart margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
               <defs>
                 {categoryData.map((entry, index) => (
@@ -2967,8 +2970,8 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className={styles.categoriesPieContainer} >
-          <ResponsiveContainer width="100%" height={isMobile ? 220 : 350}>
+        <div className={styles.categoriesPieContainer} style={{ overflow: 'visible' }}>
+          <ResponsiveContainer width="100%" height={isMobile ? 220 : 350} style={{ overflow: 'visible' }}>
             <PieChart margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
               <defs>
                 {incomeCategoryData.map((entry, index) => (
@@ -3140,7 +3143,7 @@ const Dashboard = () => {
       prev.value > current.value ? prev : current, { value: 0, name: '' });
 
     return (
-      <div>
+      <div className={styles.chartContainer}>
         <div className={styles.chartHeader}>
           <h3>Distribuição por Banco</h3>
           <div className={styles.chartSubtitle}>
@@ -3149,8 +3152,8 @@ const Dashboard = () => {
             </span>
           </div>
         </div>
-        <div className={styles.bankPieContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <ResponsiveContainer width="100%" height={isMobile ? 300 : 400}>
+        <div className={styles.bankPieContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'visible' }}>
+          <ResponsiveContainer width="100%" height={isMobile ? 300 : 400} style={{ overflow: 'visible' }}>
             <PieChart margin={{ top: 20, right: isMobile ? 20 : 60, left: 20, bottom: 20 }}>
               <defs>
                 {bankData.map((entry, index) => (
@@ -3536,8 +3539,8 @@ const Dashboard = () => {
             </span>
           </div>
         </div>
-        <div className={styles.chartBody}>
-          <ResponsiveContainer width="100%" height={300}>
+        <div className={styles.chartBody} style={{ overflow: 'visible' }}>
+          <ResponsiveContainer width="100%" height={300} style={{ overflow: 'visible' }}>
             <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 10, bottom: 20 }}>
               <defs>
                 <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
@@ -3678,8 +3681,8 @@ const Dashboard = () => {
             </span>
           </div>
         </div>
-        <div className={styles.chartBody}>
-          <ResponsiveContainer width="100%" height={300}>
+        <div className={styles.chartBody} style={{ overflow: 'visible' }}>
+          <ResponsiveContainer width="100%" height={300} style={{ overflow: 'visible' }}>
             <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 10, bottom: 20 }}>
               <defs>
                 <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
