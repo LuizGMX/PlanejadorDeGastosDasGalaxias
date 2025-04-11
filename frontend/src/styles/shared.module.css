@@ -49,7 +49,7 @@
   font-size: 1.75rem;
   font-weight: 600;
   margin: 0;
-  background: linear-gradient(90deg, var(--primary-color) 0%, var(--gradient-end) 100%);
+  /* background: linear-gradient(90deg, var(--primary-color) 0%, var(--gradient-end) 100%); */
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -149,14 +149,6 @@
   color: var(--secondary-color);
   text-transform: uppercase;
 }
-
-button, button * {
-  color: black !important;
-  fill: black !important;
-  stroke: black !important;
-  background: linear-gradient(90deg, var(--gradient-start) 0%, var(--gradient-end) 100%) !important;
-}
-
 
 .button:hover {
   background-color: var(--hover-color);
