@@ -3349,21 +3349,6 @@ const Dashboard = () => {
       color: COLORS[index % COLORS.length]
     }));
 
-    // Tooltip personalizado para o gráfico de pizza
-    const CustomPieTooltip = ({ active, payload }) => {
-      if (active && payload && payload.length) {
-        const data = payload[0].payload;
-        return (
-          <div className={styles.customTooltip}>
-            <h4>{data.name}</h4>
-            <p>{formatCurrency(data.value)}</p>
-            <p>{data.percentage.toFixed(1)}% do total</p>
-          </div>
-        );
-      }
-      return null;
-    };
-
     return (
       <div className={styles.chartContainer}>
         <div className={styles.chartHeader}>
@@ -3515,6 +3500,339 @@ const Dashboard = () => {
     }
     
     return label;
+  };
+
+  // Implementação da função renderIncomeCategoriesChart
+  const renderIncomeCategoriesChart = () => {    
+    if (incomeLoading) {
+      return (
+        <div className={styles.chartContainer}>
+          <div className={styles.chartHeader}>
+            <h3>Receitas por Categoria</h3>
+            <div className={styles.chartSubtitle}>
+              <span className={styles.dateFilterBadge}>
+                <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
+              </span>
+            </div>
+          </div>
+          <div className={styles.loadingState}>Carregando dados de fontes de renda...</div>
+        </div>
+      );
+    }
+    
+    if (incomeError) {
+      return (
+        <div className={styles.chartContainer}>
+          <div className={styles.chartHeader}>
+            <h3>Receitas por Categoria</h3>
+          </div>
+          <div className={styles.errorState}>{incomeError}</div>
+        </div>
+      );
+    }
+    
+    // Avoid rendering with empty or invalid data
+    if (!incomeCategoryData || incomeCategoryData.length === 0) {
+      return (
+        <div className={styles.chartContainer}>
+          <div className={styles.chartHeader}>
+            <h3>Receitas por Categoria</h3>
+            <div className={styles.chartSubtitle}>
+              <span className={styles.dateFilterBadge}>
+                <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
+              </span>
+            </div>
+          </div>
+          <div className={styles.emptyChartContent}>
+            <span className={styles.emptyChartIcon}>📊</span>
+            <p>Não há receitas no período selecionado.</p>
+          </div>
+        </div>
+      );
+    }
+    
+    // Calculate total income for this period to find percentages
+    const totalIncome = incomeCategoryData.reduce((sum, item) => sum + item.amount, 0);
+    
+    return (
+      <div className={styles.chartContainer}>
+        <div className={styles.chartHeader}>
+          <h3>Receitas por Categoria</h3>
+          <div className={styles.chartSubtitle}>
+            <span className={styles.dateFilterBadge}>
+              <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
+            </span>
+          </div>
+        </div>
+
+        <div className={styles.categoriesPieContainer}>
+          <ResponsiveContainer width="100%" height={isMobile ? 200 : 260}>
+            <PieChart margin={{ top: 5, right: isMobile ? 5 : 50, left: 5, bottom: 5 }}>
+              <defs>
+                {incomeCategoryData.map((entry, index) => (
+                  <filter key={`shadow-${index}`} id={`shadow-income-${index}`} x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="0" stdDeviation="3" floodOpacity="0.3" />
+                  </filter>
+                ))}
+              </defs>
+              <Pie
+                data={incomeCategoryData}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                outerRadius={isMobile ? 65 : 110}
+                innerRadius={isMobile ? 30 : 50}
+                paddingAngle={2}
+                fill="#8884d8"
+                dataKey="amount"
+                nameKey="category"
+                label={getCustomizedPieLabel}
+                filter="url(#shadow)"
+                animationDuration={800}
+                animationBegin={200}
+                animationEasing="ease-out"
+              >
+                {incomeCategoryData.map((entry, index) => (
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={entry.color || COLORS[index % COLORS.length]} 
+                    stroke="#ffffff" 
+                    strokeWidth={1} 
+                    filter={`url(#shadow-income-${index})`} 
+                  />
+                ))}
+              </Pie>
+              <Tooltip content={<CustomPieTooltip />} />
+              <Legend 
+                layout={isMobile ? "horizontal" : "vertical"}
+                align={isMobile ? "center" : "right"}
+                verticalAlign={isMobile ? "bottom" : "middle"}
+                iconType="circle"
+                iconSize={isMobile ? 8 : 10}
+                formatter={(value, entry) => (
+                  <span style={{ 
+                    color: 'var(--text-color)', 
+                    fontSize: isMobile ? '10px' : '12px', 
+                    fontWeight: entry.payload.category === incomeCategoryData[0]?.category ? 'bold' : 'normal',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: isMobile ? '60px' : '110px',
+                    display: 'inline-block'
+                  }}>
+                    {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
+                    {!isMobile && ` (${entry.payload.percentage.toFixed(1)}%)`}
+                  </span>
+                )}
+                wrapperStyle={{
+                  paddingLeft: isMobile ? '0px' : '10px', 
+                  fontSize: isMobile ? '10px' : '12px',
+                  overflowY: 'auto', 
+                  maxHeight: isMobile ? '60px' : '140px',
+                  width: '100%',
+                  marginTop: isMobile ? '5px' : '0',
+                  justifyContent: isMobile ? 'center' : 'flex-start',
+                  flexWrap: isMobile ? 'wrap' : 'nowrap',
+                  gap: isMobile ? '5px' : '0'
+                }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+        
+        <div className={styles.categoriesInsights}>
+          <h4>Principal fonte de renda: {incomeCategoryData[0]?.category || 'Nenhuma'}</h4>
+          <p>
+            Representa {incomeCategoryData[0]?.percentage ? incomeCategoryData[0].percentage.toFixed(1) : 0}% da sua renda no período.
+          </p>
+          <div className={styles.infoItem}>
+            <span>Receita total:</span>
+            <strong className={styles.positive}>{formatCurrency(totalIncome)}</strong>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Implementação da função renderBanksChart
+  const renderBanksChart = () => {
+    if (!data || !data.expenses_by_bank || data.expenses_by_bank.length === 0) {
+      return (
+        <div className={styles.chartContainer}>
+          <div className={styles.chartHeader}>
+          <h3>Distribuição por Banco</h3>
+            <div className={styles.chartSubtitle}>
+              <span className={styles.dateFilterBadge}>
+                <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
+              </span>
+            </div>
+          </div>
+          <div className={styles.emptyChartContent}>
+            <span className={styles.emptyChartIcon}>🏦</span>
+            <p>Não há despesas por banco no período selecionado.</p>
+          </div>
+        </div>
+      );
+    }
+
+    // Determine bank colors with institution-specific colors when possible
+    const getBankColor = (bankName) => {
+      const bankColors = {
+        'Nubank': '#8a05be',
+        'Itaú': '#ec7000',
+        'Banco do Brasil': '#f9dd16',
+        'Caixa': '#1a5ca7',
+        'Santander': '#ec0000',
+        'Bradesco': '#cc092f',
+        'Inter': '#ff7a00',
+        'PicPay': '#11c76f',
+        'C6 Bank': '#242424',
+        'Next': '#00ff5f',
+        'PagBank': '#1f9d55',
+        'BTG Pactual': '#0d2d40',
+      };
+
+      return bankColors[bankName] || null;
+    };
+
+    // Total expenses by bank
+    const totalExpensesByBank = data.expenses_by_bank.reduce((total, bank) => total + bank.total, 0);
+
+    // Limit the number of banks shown for mobile view
+    const maxBanksToShow = isMobile ? 5 : data.expenses_by_bank.length;
+    
+    // Sort banks by amount and take the top banks
+    const sortedBanks = [...data.expenses_by_bank].sort((a, b) => b.total - a.total);
+    
+    // Create "Outros" category if we're limiting the display
+    let processedBanks = sortedBanks.slice(0, maxBanksToShow);
+    let othersTotal = 0;
+    
+    if (isMobile && sortedBanks.length > maxBanksToShow) {
+      othersTotal = sortedBanks.slice(maxBanksToShow).reduce((sum, bank) => sum + bank.total, 0);
+      
+      if (othersTotal > 0) {
+        processedBanks.push({
+          bank_name: "Outros bancos",
+          total: othersTotal
+        });
+      }
+    }
+
+    // Format data for pie chart
+    const bankData = processedBanks.map((bank, index) => {
+      const customColor = bank.bank_name === "Outros bancos" 
+        ? "#999999" 
+        : getBankColor(bank.bank_name);
+      
+      return {
+        name: bank.bank_name,
+        value: bank.total,
+        color: customColor || COLORS[index % COLORS.length],
+        percent: bank.total / totalExpensesByBank,
+      };
+    });
+
+    // Find the primary bank (highest expenses)
+    const primaryBank = bankData.reduce((prev, current) => 
+      prev.value > current.value ? prev : current, { value: 0, name: '' });
+
+    return (
+      <div className={styles.chartContainer}>
+        <div className={styles.chartHeader}>
+          <h3>Distribuição por Banco</h3>
+          <div className={styles.chartSubtitle}>
+            <span className={styles.dateFilterBadge}>
+              <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
+            </span>
+          </div>
+        </div>
+        <div className={styles.bankPieContainer}>
+          <ResponsiveContainer width="100%" height={isMobile ? 200 : 260}>
+            <PieChart margin={{ top: 5, right: isMobile ? 5 : 50, left: 5, bottom: 5 }}>
+              <defs>
+                {bankData.map((entry, index) => (
+                  <filter key={`shadow-${index}`} id={`bank-shadow-${index}`} x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="0" stdDeviation="3" floodOpacity="0.3" />
+                  </filter>
+                ))}
+              </defs>
+              <Pie
+                data={bankData}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                outerRadius={isMobile ? 65 : 110}
+                innerRadius={isMobile ? 30 : 50}
+                paddingAngle={2}
+                fill="#8884d8"
+                dataKey="value"
+                nameKey="name"
+                label={getCustomizedPieLabel}
+                animationDuration={800}
+                animationBegin={200}
+                animationEasing="ease-out"
+              >
+                {bankData.map((entry, index) => (
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={entry.color} 
+                    stroke="#ffffff" 
+                    strokeWidth={1}
+                    filter={`url(#bank-shadow-${index})`} 
+                  />
+                ))}
+              </Pie>
+              <Tooltip content={<CustomPieTooltip />} />
+              <Legend 
+                layout={isMobile ? "horizontal" : "vertical"}
+                align={isMobile ? "center" : "right"}
+                verticalAlign={isMobile ? "bottom" : "middle"}
+                iconType="circle"
+                iconSize={isMobile ? 8 : 10}
+                formatter={(value, entry) => (
+                  <span style={{ 
+                    color: 'var(--text-color)', 
+                    fontSize: isMobile ? '10px' : '12px', 
+                    fontWeight: entry.payload.name === primaryBank.name ? 'bold' : 'normal',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: isMobile ? '60px' : '110px',
+                    display: 'inline-block'
+                  }}>
+                    {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
+                    {!isMobile && ` (${(entry.payload.percent * 100).toFixed(1)}%)`}
+                  </span>
+                )}
+                wrapperStyle={{
+                  paddingLeft: isMobile ? '0px' : '10px', 
+                  fontSize: isMobile ? '10px' : '12px',
+                  overflowY: 'auto', 
+                  maxHeight: isMobile ? '60px' : '140px',
+                  width: '100%',
+                  marginTop: isMobile ? '5px' : '0',
+                  justifyContent: isMobile ? 'center' : 'flex-start',
+                  flexWrap: isMobile ? 'wrap' : 'nowrap',
+                  gap: isMobile ? '5px' : '0'
+                }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+        
+        <div className={styles.categoriesInsights}>
+          <h4>Banco principal: {primaryBank.name || 'Nenhum'}</h4>
+          <p>
+            {primaryBank.name} é seu banco mais utilizado. {(primaryBank.percent * 100).toFixed(1)}% das despesas estão neste banco.
+          </p>
+          <div className={styles.infoItem}>
+            <span>Total gasto via bancos:</span>
+            <strong>{formatCurrency(totalExpensesByBank)}</strong>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
