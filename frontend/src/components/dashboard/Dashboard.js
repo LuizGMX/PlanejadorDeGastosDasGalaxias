@@ -1885,9 +1885,10 @@ const Dashboard = () => {
             </span>
           </div>
         </div>
+    
         <div className={styles.categoriesPieContainer} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <ResponsiveContainer width="100%" height={isMobile ? 220 : 350}>
-            <PieChart margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
+          <div style={{ width: isMobile ? 300 : 400, height: isMobile ? 220 : 350 }}>
+            <PieChart width={isMobile ? 300 : 400} height={isMobile ? 220 : 350} margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}>
               <defs>
                 {categoriesData.map((entry, index) => (
                   <filter key={`shadow-${index}`} id={`shadow-${index}`} x="-20%" y="-20%" width="140%" height="140%">
@@ -1907,32 +1908,31 @@ const Dashboard = () => {
                 dataKey="value"
                 nameKey="category"
                 label={getCustomizedPieLabel}
-                filter="url(#shadow)"
                 animationDuration={800}
                 animationBegin={200}
                 animationEasing="ease-out"
               >
                 {categoriesData.map((entry, index) => (
-                  <Cell 
-                    key={`cell-${index}`} 
-                    fill={entry.color} 
-                    stroke="#ffffff" 
-                    strokeWidth={1} 
-                    filter={`url(#shadow-${index})`} 
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={entry.color}
+                    stroke="#ffffff"
+                    strokeWidth={1}
+                    filter={`url(#shadow-${index})`}
                   />
                 ))}
               </Pie>
               <Tooltip content={<CustomPieTooltip />} />
-              <Legend 
+              <Legend
                 layout={isMobile ? "horizontal" : "vertical"}
                 align={isMobile ? "center" : "right"}
                 verticalAlign={isMobile ? "bottom" : "middle"}
                 iconType="circle"
                 iconSize={isMobile ? 8 : 10}
                 formatter={(value, entry) => (
-                  <span style={{ 
-                    color: 'var(--text-color)', 
-                    fontSize: isMobile ? '10px' : '12px', 
+                  <span style={{
+                    color: 'var(--text-color)',
+                    fontSize: isMobile ? '10px' : '12px',
                     fontWeight: entry.payload.name === categoriesData[0]?.name ? 'bold' : 'normal',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
@@ -1940,14 +1940,14 @@ const Dashboard = () => {
                     maxWidth: isMobile ? '60px' : '110px',
                     display: 'inline-block'
                   }}>
-                    {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
+                    {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value}
                     {!isMobile && ` (${(entry.payload.percent * 100).toFixed(1)}%)`}
                   </span>
                 )}
-                wrapperStyle={{ 
-                  paddingLeft: isMobile ? '0px' : '10px', 
+                wrapperStyle={{
+                  paddingLeft: isMobile ? '0px' : '10px',
                   fontSize: isMobile ? '10px' : '12px',
-                  overflowY: 'auto', 
+                  overflowY: 'auto',
                   maxHeight: isMobile ? '80px' : '180px',
                   width: '100%',
                   marginTop: isMobile ? '10px' : '0',
@@ -1957,9 +1957,9 @@ const Dashboard = () => {
                 }}
               />
             </PieChart>
-          </ResponsiveContainer>
+          </div>
         </div>
-        
+    
         <div className={styles.categoriesInsights}>
           <h4>Categoria principal: {categoriesData[0]?.name || 'Nenhuma'}</h4>
           <p>
@@ -1971,7 +1971,7 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-    );
+    );    
   };
 
   const renderTimelineChart = () => {
