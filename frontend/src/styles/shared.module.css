@@ -150,9 +150,13 @@
   text-transform: uppercase;
 }
 
-button{
+button, button * {
+  color: black !important;
+  fill: black !important;
+  stroke: black !important;
   background: linear-gradient(90deg, var(--gradient-start) 0%, var(--gradient-end) 100%) !important;
 }
+
 
 .button:hover {
   background-color: var(--hover-color);
