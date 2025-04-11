@@ -868,7 +868,7 @@ const Dashboard = () => {
       <text 
         x={x} 
         y={y} 
-        fill="#FFFFF" 
+        fill="#000000" 
         textAnchor="middle" 
         dominantBaseline="central"
         fontSize={isMobile ? "15px" : "20px"}
