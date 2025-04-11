@@ -1489,6 +1489,30 @@ const Dashboard = () => {
                 labelFormatter={(label) => formatDateLabel(label, chartData)}
                 contentStyle={{ background: '#fff', border: '1px solid #ddd', borderRadius: '8px' }}
               />
+              <Legend 
+                verticalAlign="top"
+                height={36}
+                formatter={(value) => {
+                  let color;
+                  switch(value) {
+                    case 'receitas':
+                      color = 'var(--success-color)';
+                      value = 'Receitas';
+                      break;
+                    case 'despesas':
+                      color = 'var(--error-color)';
+                      value = 'Despesas';
+                      break;
+                    case 'saldo':
+                      color = '#1E90FF';
+                      value = 'Saldo';
+                      break;
+                    default:
+                      color = 'var(--text-color)';
+                  }
+                  return <span style={{ color }}>{value}</span>;
+                }}
+              />
               <Bar dataKey="economia" stackId="a" fill="var(--success-color)" name="Economizado" />
               <Bar dataKey="projecao" stackId="a" fill="#2196F3" name="Projeção Futura" />
               <Bar dataKey="faltante" stackId="a" fill="var(--error-color)" name="Faltante" />
@@ -2739,7 +2763,7 @@ const Dashboard = () => {
     return (
       <div className={styles.chartContainer}>
         <div className={styles.chartHeader}>
-          <h3>Despesas ao longo do tempo</h3>
+          <h3>Tendência de Despesas</h3>
           <div className={styles.chartSubtitle}>
             <span className={styles.dateFilterBadge}>
               <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
@@ -2747,78 +2771,63 @@ const Dashboard = () => {
           </div>
         </div>
         
-        <AreaChart 
-          width={700} 
-          height={300} 
-          data={chartData} 
-          margin={{ top: 10, right: 30, left: 10, bottom: 20 }}
-        >
-          <defs>
-            <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#f44336" stopOpacity={0.8} />
-              <stop offset="95%" stopColor="#f44336" stopOpacity={0.1} />
-            </linearGradient>
-            <linearGradient id="colorProjectedExpenses" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#f44336" stopOpacity={0.5} />
-              <stop offset="95%" stopColor="#f44336" stopOpacity={0.05} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} />
-          <XAxis 
-            dataKey="date" 
-            tickFormatter={(tick) => {
-              if (typeof tick !== 'string') {
-                // Se o tick for um objeto Date ou outro tipo, converta para string
-                if (tick instanceof Date) {
-                  const month = tick.getMonth() + 1;
-                  const year = tick.getFullYear();
-                  return `${months.find(m => m.value === month)?.shortLabel || month}/${year.toString().slice(2)}`;
-                }
-                return String(tick);
-              }
-              
-              // Verifica se o formato é YYYY-MM ou YYYY-MM-DD
-              const parts = tick.split('-');
-              if (parts.length >= 2) {
-                const year = parts[0];
-                const month = parseInt(parts[1], 10);
-                return `${months.find(m => m.value === month)?.shortLabel || month}/${year.slice(2)}`;
-              }
-              
-              return tick;
-            }}
-            angle={-30}
-            textAnchor="end"
-            height={60}
-            interval="preserveStartEnd"
-            tickMargin={10}
-          />
-          <YAxis 
-            tickFormatter={formatCurrency} 
-            width={65}
-            tickMargin={5}
-          />
-          <Tooltip 
-            formatter={value => formatCurrency(value)} 
-            labelFormatter={(label) => formatDateLabel(label, chartData)}
-            contentStyle={{ background: '#fff', border: '1px solid #ddd', borderRadius: '8px' }}
-          />
-          <Area 
-            type="monotone" 
-            dataKey="total" 
-            stroke="#f44336" 
-            fillOpacity={1} 
-            fill="url(#colorExpenses)" 
-            name="Despesas"
-            strokeDasharray={(d) => d.isProjection ? "5 5" : "0"}
-          />
-          <ReferenceLine 
-            x={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`}
-            stroke="#666" 
-            strokeDasharray="3 3" 
-            label={{ value: 'Hoje', position: 'insideTopRight', fill: '#666' }} 
-          />
-        </AreaChart>
+        <ResponsiveContainer width="100%" height={300}>
+          <AreaChart 
+            data={chartData} 
+            margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
+          >
+            <defs>
+              <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#FF6B6B" stopOpacity={0.8}/>
+                <stop offset="95%" stopColor="#FF6B6B" stopOpacity={0.1}/>
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <XAxis 
+              dataKey="date" 
+              tickFormatter={(tick) => {
+                const date = new Date(tick);
+                const month = date.getMonth() + 1;
+                const monthName = months.find(m => m.value === month)?.shortLabel || month;
+                const year = date.getFullYear().toString().slice(2);
+                return `${monthName}/${year}`;
+              }}
+              angle={-30}
+              textAnchor="end"
+              height={60}
+              interval={isMobile ? 1 : "preserveStartEnd"}
+              tickMargin={10}
+              tick={{ fontSize: isMobile ? 10 : 12 }}
+            />
+            <YAxis 
+              tickFormatter={(tick) => `R$${(tick/1000).toFixed(1)}k`} 
+              width={65}
+              tickMargin={5}
+              tick={{ fontSize: isMobile ? 10 : 12 }}
+            />
+            <Tooltip 
+              formatter={(value) => [formatCurrency(value), 'Despesa']} 
+              labelFormatter={(label) => formatDateLabel(label, chartData)}
+              contentStyle={{ background: '#fff', border: '1px solid #ddd', borderRadius: '8px' }}
+            />
+            <Area 
+              type="monotone" 
+              dataKey="value" 
+              stroke="#FF6B6B" 
+              fillOpacity={1} 
+              fill="url(#colorExpense)" 
+              name="Despesas"
+              strokeWidth={2}
+              activeDot={{ r: 6, strokeWidth: 2 }}
+            />
+            <ReferenceLine 
+              x={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`}
+              stroke="#666" 
+              strokeDasharray="3 3" 
+              label={{ value: 'Hoje', position: 'insideTopRight', fill: '#666' }} 
+            />
+          </AreaChart>
+        </ResponsiveContainer>
       </div>
     );
   };
@@ -2895,7 +2904,7 @@ const Dashboard = () => {
     return (
       <div className={styles.chartContainer}>
         <div className={styles.chartHeader}>
-          <h3>Receitas ao longo do tempo</h3>
+          <h3>Tendência de Receitas</h3>
           <div className={styles.chartSubtitle}>
             <span className={styles.dateFilterBadge}>
               <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
@@ -2903,74 +2912,64 @@ const Dashboard = () => {
           </div>
         </div>
         
-        <AreaChart 
-          width={700} 
-          height={300} 
-          data={chartData} 
-          margin={{ top: 10, right: 30, left: 10, bottom: 20 }}
-        >
-          <defs>
-            <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#2196F3" stopOpacity={0.8}/>
-              <stop offset="95%" stopColor="#2196F3" stopOpacity={0.1}/>
-            </linearGradient>
-          </defs>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} />
-          <XAxis 
-            dataKey="date" 
-            tickFormatter={(tick) => {
-              if (typeof tick !== 'string') {
-                // Se o tick for um objeto Date ou outro tipo, converta para string
-                if (tick instanceof Date) {
-                  const month = tick.getMonth() + 1;
-                  const year = tick.getFullYear();
-                  return `${months.find(m => m.value === month)?.shortLabel || month}/${year.toString().slice(2)}`;
-                }
-                return String(tick);
-              }
-              
-              // Verifica se o formato é YYYY-MM ou YYYY-MM-DD
-              const parts = tick.split('-');
-              if (parts.length >= 2) {
-                const year = parts[0];
-                const month = parseInt(parts[1], 10);
-                return `${months.find(m => m.value === month)?.shortLabel || month}/${year.slice(2)}`;
-              }
-              
-              return tick;
-            }}
-            angle={-30}
-            textAnchor="end"
-            height={60}
-            interval="preserveStartEnd"
-            tickMargin={10}
-          />
-          <YAxis 
-            tickFormatter={formatCurrency} 
-            width={65}
-            tickMargin={5}
-          />
-          <Tooltip 
-            formatter={(value) => [formatCurrency(value), 'Receita']} 
-            labelFormatter={(label) => formatDateLabel(label, chartData)}
-            contentStyle={{ background: '#fff', border: '1px solid #ddd', borderRadius: '8px' }}
-          />
-          <Area 
-            type="monotone" 
-            dataKey="value" 
-            stroke="#2196F3" 
-            fillOpacity={1} 
-            fill="url(#colorIncome)" 
-            name="Receitas"
-            strokeDasharray={(d) => d.isProjection ? "5 5" : "0"}
-          />
-          <ReferenceLine 
-            x={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`}
-            stroke="#666" 
-            strokeDasharray="3 3" 
-            label={{ value: 'Hoje', position: 'insideTopRight', fill: '#666' }} 
-          />
-        </AreaChart>
+        <ResponsiveContainer width="100%" height={300}>
+          <AreaChart 
+            data={chartData} 
+            margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
+          >
+            <defs>
+              <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#2196F3" stopOpacity={0.8}/>
+                <stop offset="95%" stopColor="#2196F3" stopOpacity={0.1}/>
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <XAxis 
+              dataKey="date" 
+              tickFormatter={(tick) => {
+                const date = new Date(tick);
+                const month = date.getMonth() + 1;
+                const monthName = months.find(m => m.value === month)?.shortLabel || month;
+                const year = date.getFullYear().toString().slice(2);
+                return `${monthName}/${year}`;
+              }}
+              angle={-30}
+              textAnchor="end"
+              height={60}
+              interval={isMobile ? 1 : "preserveStartEnd"}
+              tickMargin={10}
+              tick={{ fontSize: isMobile ? 10 : 12 }}
+            />
+            <YAxis 
+              tickFormatter={formatCurrency} 
+              width={65}
+              tickMargin={5}
+              tick={{ fontSize: isMobile ? 10 : 12 }}
+            />
+            <Tooltip 
+              formatter={(value) => [formatCurrency(value), 'Receita']} 
+              labelFormatter={(label) => formatDateLabel(label, chartData)}
+              contentStyle={{ background: '#fff', border: '1px solid #ddd', borderRadius: '8px' }}
+            />
+            <Area 
+              type="monotone" 
+              dataKey="value" 
+              stroke="#2196F3" 
+              fillOpacity={1} 
+              fill="url(#colorIncome)" 
+              name="Receitas"
+              strokeWidth={2}
+              activeDot={{ r: 6, strokeWidth: 2 }}
+              strokeDasharray={(d) => d.isProjection ? "5 5" : "0"}
+            />
+            <ReferenceLine 
+              x={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`}
+              stroke="#666" 
+              strokeDasharray="3 3" 
+              label={{ value: 'Hoje', position: 'insideTopRight', fill: '#666' }} 
+            />
+          </AreaChart>
+        </ResponsiveContainer>
       </div>
     );
   };
@@ -3029,21 +3028,27 @@ const Dashboard = () => {
         </div>
         
         <ResponsiveContainer width="100%" height={300}>
-          <ComposedChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+          <ComposedChart 
+            data={chartData} 
+            margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+            layout="horizontal"
+          >
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis 
               dataKey="name" 
               angle={-30} 
               textAnchor="end" 
               height={60} 
-              interval="preserveStartEnd" 
-              tickMargin={10} 
+              interval={isMobile ? 1 : "preserveStartEnd"} 
+              tickMargin={10}
+              tick={{ fontSize: isMobile ? 10 : 12 }}
             />
             <YAxis 
               yAxisId="left"
               tickFormatter={formatCurrency} 
               width={65}
               tickMargin={5}
+              tick={{ fontSize: isMobile ? 10 : 12 }}
             />
             <YAxis 
               yAxisId="right"
@@ -3051,6 +3056,7 @@ const Dashboard = () => {
               orientation="right"
               width={65}
               tickMargin={5}
+              tick={{ fontSize: isMobile ? 10 : 12 }}
             />
             <Tooltip 
               formatter={(value, name) => {
@@ -3066,7 +3072,8 @@ const Dashboard = () => {
             <Legend 
               wrapperStyle={{ 
                 paddingTop: '10px', 
-                fontSize: isMobile ? '10px' : '12px' 
+                fontSize: isMobile ? '10px' : '12px',
+                width: '100%'
               }} 
             />
             <Bar 
