@@ -150,6 +150,10 @@
   text-transform: uppercase;
 }
 
+button{
+  background: linear-gradient(90deg, var(--gradient-start) 0%, var(--gradient-end) 100%) !important;
+}
+
 .button:hover {
   background-color: var(--hover-color);
   transform: translateY(-1px);

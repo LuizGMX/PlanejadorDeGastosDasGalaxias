@@ -3950,9 +3950,9 @@ const Dashboard = () => {
   return (
     <div className={styles.dashboardContainer}>
       {getGreeting(auth.user?.name)}
-      <div className={styles.dashboardHeader}>
+      {/* <div className={styles.dashboardHeader}>
         <div className={styles.navigationTabs}>
-          {/* <button
+           <button
             className={`${styles.navTab} ${activeSection === 'overview' ? styles.activeTab : ''}`}
             onClick={() => setActiveSection('overview')}
           >
@@ -3965,9 +3965,9 @@ const Dashboard = () => {
           >
             <span className={styles.tabIcon}>💸</span>
             Transações
-          </button> */}
+          </button> 
         </div>
-      </div>
+      </div> */}
 
       {/* Filtros */}
       <div className={styles.filterRow}>
