@@ -1159,9 +1159,7 @@ const Dashboard = () => {
 
   const renderChart = (chartId, title, chartComponent) => {
     return (
-      <div
-        className={`${styles.chartContainer} ${chartId === 'bank-trend' ? styles.trendChart : ''}`}
-      >
+      <div className={`${styles.chartContainer} ${chartId === 'bank-trend' ? styles.trendChart : ''}`}>
         <div className={styles.chartHeader}>
           <h3>{title}</h3>
           <div className={styles.chartSubtitle}>
@@ -1170,14 +1168,11 @@ const Dashboard = () => {
             </span>
           </div>
         </div>
-        <div ref={chartRefs[chartId]} className={styles.chartWrapper} style={{ height: '400px' }}>
-          <div style={{ width: '100%', height: '100%' }}>
-            {React.cloneElement(chartComponent, {
-              width: chartRefs[chartId]?.current?.clientWidth || 800,
-              height: chartRefs[chartId]?.current?.clientHeight || 400,
-            })}
-          </div>
-        </div>
+        
+        {React.cloneElement(chartComponent, {
+          width: 800,
+          height: 400
+        })}
       </div>
     );
   };
@@ -1470,36 +1465,34 @@ const Dashboard = () => {
           </div>
           
           <div className={styles.projectionData}>
-            <div className={styles.projectionDataBarWidth} style={{ width: '100%', height: '100px' }}>
-              <BarChart
-                width={400}
-                height={100}
-                data={chartData}
-                layout="vertical"
-                barSize={20}
-                margin={{ top: 5, right: 0, left: 0, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                <XAxis 
-                  type="number" 
-                  tickFormatter={formatCurrency} 
-                  tick={{ fill: 'var(--text-color)', fontSize: 10 }}
-                />
-                <YAxis 
-                  type="category" 
-                  dataKey="name" 
-                  hide={true}
-                />
-                <Tooltip 
-                  formatter={value => formatCurrency(value)} 
-                  labelFormatter={(label) => formatDateLabel(label, chartData)}
-                  contentStyle={{ background: '#fff', border: '1px solid #ddd', borderRadius: '8px' }}
-                />
-                <Bar dataKey="economia" stackId="a" fill="var(--success-color)" name="Economizado" />
-                <Bar dataKey="projecao" stackId="a" fill="#2196F3" name="Projeção Futura" />
-                <Bar dataKey="faltante" stackId="a" fill="var(--error-color)" name="Faltante" />
-              </BarChart>
-            </div>
+            <BarChart
+              width={400}
+              height={100}
+              data={chartData}
+              layout="vertical"
+              barSize={20}
+              margin={{ top: 5, right: 0, left: 0, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+              <XAxis 
+                type="number" 
+                tickFormatter={formatCurrency} 
+                tick={{ fill: 'var(--text-color)', fontSize: 10 }}
+              />
+              <YAxis 
+                type="category" 
+                dataKey="name" 
+                hide={true}
+              />
+              <Tooltip 
+                formatter={value => formatCurrency(value)} 
+                labelFormatter={(label) => formatDateLabel(label, chartData)}
+                contentStyle={{ background: '#fff', border: '1px solid #ddd', borderRadius: '8px' }}
+              />
+              <Bar dataKey="economia" stackId="a" fill="var(--success-color)" name="Economizado" />
+              <Bar dataKey="projecao" stackId="a" fill="#2196F3" name="Projeção Futura" />
+              <Bar dataKey="faltante" stackId="a" fill="var(--error-color)" name="Faltante" />
+            </BarChart>
             
             <div className={styles.projectionLegend}>
               <div className={styles.legendItem}>
@@ -1586,7 +1579,7 @@ const Dashboard = () => {
     
     if (isOverBudget) {
       statusColor = 'dangerProgress';
-      advice = 'Você ultrapassou seu orçamento! Evite novos despesas até o próximo mês.';
+      advice = 'Você ultrapassou seu orçamento! Evite novas despesas até o próximo mês.';
       statusIcon = '⚠️';
     } else if (isDangerZone) {
       statusColor = 'warningProgress';
@@ -1740,78 +1733,75 @@ const Dashboard = () => {
             </span>
           </div>
         </div>
-        <div className={styles.incomeVsExpensesContainer}>
-          <div style={{ width: '100%', height: isMobile ? 220 : 280 }}>
-            <PieChart 
-              width={isMobile ? 300 : 500} 
-              height={isMobile ? 220 : 280} 
-              margin={{ top: 10, right: 10, left: 10, bottom: 10 }}
-            >
-              <defs>
-                <filter id="income-vs-expense-shadow" x="-20%" y="-20%" width="140%" height="140%">
-                  <feDropShadow dx="0" dy="0" stdDeviation="3" floodOpacity="0.3" />
-                </filter>
-              </defs>
-              <Pie
-                data={chartData}
-                      dataKey="value"
-                      nameKey="category"
-                      cx="50%"
-                      cy="50%"
-                outerRadius={isMobile ? 80 : 100}
-                innerRadius={0}
-                      startAngle={90}
-                      endAngle={-270}
-                filter="url(#income-vs-expense-shadow)"
-                animationDuration={800}
-                animationBegin={200}
-                animationEasing="ease-out"
-                label={incomePieLabel}
-                labelLine={false}
-              >
-                {chartData.map((entry, index) => (
-                  <Cell 
-                    key={`cell-${index}`} 
-                    fill={entry.color} 
-                    stroke="#ffffff" 
-                    strokeWidth={2} 
-                  />
-                ))}
-                    </Pie>
-                    <Tooltip
-                formatter={(value) => formatCurrency(value)}
-                      contentStyle={{
-                        backgroundColor: 'var(--card-background)',
-                        border: '1px solid var(--border-color)',
-                        color: 'var(--text-color)',
-                        padding: '10px',
-                  borderRadius: '8px',
-                  boxShadow: '0 4px 8px rgba(0,0,0,0.15)'
-                      }}
-                    />
-                    <Legend
-                layout={isMobile ? "horizontal" : "vertical"}
-                      align="center"
-                verticalAlign="bottom"
-                iconType="circle"
-                iconSize={isMobile ? 8 : 10}
-                formatter={(value, entry) => (
-                  <span style={{ 
-                    color: 'var(--text-color)', 
-                    fontSize: isMobile ? '10px' : '12px', 
-                    fontWeight: 'bold'
-                  }}>
-                    {value}{isMobile ? '' : `: ${formatCurrency(entry.payload.value)}`} ({(entry.payload.percent * 100).toFixed(0)}%)
-                  </span>
-                )}
-                wrapperStyle={{
-                  paddingTop: isMobile ? '8px' : '10px',
-                  fontSize: isMobile ? '10px' : '12px'
-                }}
-                    />
-                  </PieChart>
-          </div>
-        </div>
+        
+        <PieChart 
+          width={isMobile ? 300 : 500} 
+          height={isMobile ? 220 : 280} 
+          margin={{ top: 10, right: 10, left: 10, bottom: 10 }}
+        >
+          <defs>
+            <filter id="income-vs-expense-shadow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="0" stdDeviation="3" floodOpacity="0.3" />
+            </filter>
+          </defs>
+          <Pie
+            data={chartData}
+            dataKey="value"
+            nameKey="category"
+            cx="50%"
+            cy="50%"
+            outerRadius={isMobile ? 80 : 100}
+            innerRadius={0}
+            startAngle={90}
+            endAngle={-270}
+            filter="url(#income-vs-expense-shadow)"
+            animationDuration={800}
+            animationBegin={200}
+            animationEasing="ease-out"
+            label={incomePieLabel}
+            labelLine={false}
+          >
+            {chartData.map((entry, index) => (
+              <Cell 
+                key={`cell-${index}`} 
+                fill={entry.color} 
+                stroke="#ffffff" 
+                strokeWidth={2} 
+              />
+            ))}
+          </Pie>
+          <Tooltip
+            formatter={(value) => formatCurrency(value)}
+            contentStyle={{
+              backgroundColor: 'var(--card-background)',
+              border: '1px solid var(--border-color)',
+              color: 'var(--text-color)',
+              padding: '10px',
+              borderRadius: '8px',
+              boxShadow: '0 4px 8px rgba(0,0,0,0.15)'
+            }}
+          />
+          <Legend
+            layout={isMobile ? "horizontal" : "vertical"}
+            align="center"
+            verticalAlign="bottom"
+            iconType="circle"
+            iconSize={isMobile ? 8 : 10}
+            formatter={(value, entry) => (
+              <span style={{ 
+                color: 'var(--text-color)', 
+                fontSize: isMobile ? '10px' : '12px', 
+                fontWeight: 'bold'
+              }}>
+                {value}{isMobile ? '' : `: ${formatCurrency(entry.payload.value)}`} ({(entry.payload.percent * 100).toFixed(0)}%)
+              </span>
+            )}
+            wrapperStyle={{
+              paddingTop: isMobile ? '8px' : '10px',
+              fontSize: isMobile ? '10px' : '12px'
+            }}
+          />
+        </PieChart>
         
         <div className={styles.incomeVsExpensesSummary}>
           <div className={styles.infoItem}>
@@ -1903,84 +1893,81 @@ const Dashboard = () => {
             </span>
           </div>
         </div>
-        <div className={styles.categoriesPieContainer}>
-          <div style={{ width: '100%', height: isMobile ? 220 : 280 }}>
-            <PieChart 
-              width={isMobile ? 300 : 500} 
-              height={isMobile ? 220 : 280} 
-              margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}
-            >
-              <defs>
-                {categoriesData.map((entry, index) => (
-                  <filter key={`shadow-${index}`} id={`shadow-${index}`} x="-20%" y="-20%" width="140%" height="140%">
-                    <feDropShadow dx="0" dy="0" stdDeviation="3" floodOpacity="0.3" />
-                  </filter>
-                ))}
-              </defs>
-              <Pie
-                data={categoriesData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                outerRadius={isMobile ? 70 : 130}
-                innerRadius={isMobile ? 30 : 60}
-                paddingAngle={2}
-                fill="#8884d8"
-                dataKey="value"
-                nameKey="category"
-                label={getCustomizedPieLabel}
-                filter="url(#shadow)"
-                animationDuration={800}
-                animationBegin={200}
-                animationEasing="ease-out"
-              >
-                {categoriesData.map((entry, index) => (
-                  <Cell 
-                    key={`cell-${index}`} 
-                    fill={entry.color} 
-                    stroke="#ffffff" 
-                    strokeWidth={1} 
-                    filter={`url(#shadow-${index})`} 
-                  />
-                ))}
-              </Pie>
-              <Tooltip content={<CustomPieTooltip />} />
-              <Legend 
-                layout={isMobile ? "horizontal" : "vertical"}
-                align={isMobile ? "center" : "right"}
-                verticalAlign={isMobile ? "bottom" : "middle"}
-                iconType="circle"
-                iconSize={isMobile ? 8 : 10}
-                formatter={(value, entry) => (
-                  <span style={{ 
-                    color: 'var(--text-color)', 
-                    fontSize: isMobile ? '10px' : '12px', 
-                    fontWeight: entry.payload.name === categoriesData[0]?.name ? 'bold' : 'normal',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    maxWidth: isMobile ? '60px' : '110px',
-                    display: 'inline-block'
-                  }}>
-                    {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
-                    {!isMobile && ` (${(entry.payload.percent * 100).toFixed(1)}%)`}
-                  </span>
-                )}
-                wrapperStyle={{
-                  paddingLeft: isMobile ? '0px' : '10px', 
-                  fontSize: isMobile ? '10px' : '12px',
-                  overflowY: 'auto', 
-                  maxHeight: isMobile ? '80px' : '180px',
-                  width: '100%',
-                  marginTop: isMobile ? '10px' : '0',
-                  justifyContent: isMobile ? 'center' : 'flex-start',
-                  flexWrap: isMobile ? 'wrap' : 'nowrap',
-                  gap: isMobile ? '5px' : '0'
-                }}
+        
+        <PieChart 
+          width={isMobile ? 300 : 500} 
+          height={isMobile ? 220 : 280} 
+          margin={{ top: 10, right: isMobile ? 10 : 60, left: 10, bottom: 10 }}
+        >
+          <defs>
+            {categoriesData.map((entry, index) => (
+              <filter key={`shadow-${index}`} id={`shadow-${index}`} x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="0" stdDeviation="3" floodOpacity="0.3" />
+              </filter>
+            ))}
+          </defs>
+          <Pie
+            data={categoriesData}
+            cx="50%"
+            cy="50%"
+            labelLine={false}
+            outerRadius={isMobile ? 70 : 130}
+            innerRadius={isMobile ? 30 : 60}
+            paddingAngle={2}
+            fill="#8884d8"
+            dataKey="value"
+            nameKey="category"
+            label={getCustomizedPieLabel}
+            filter="url(#shadow)"
+            animationDuration={800}
+            animationBegin={200}
+            animationEasing="ease-out"
+          >
+            {categoriesData.map((entry, index) => (
+              <Cell 
+                key={`cell-${index}`} 
+                fill={entry.color} 
+                stroke="#ffffff" 
+                strokeWidth={1} 
+                filter={`url(#shadow-${index})`} 
               />
-            </PieChart>
-          </div>
-        </div>
+            ))}
+          </Pie>
+          <Tooltip content={<CustomPieTooltip />} />
+          <Legend 
+            layout={isMobile ? "horizontal" : "vertical"}
+            align={isMobile ? "center" : "right"}
+            verticalAlign={isMobile ? "bottom" : "middle"}
+            iconType="circle"
+            iconSize={isMobile ? 8 : 10}
+            formatter={(value, entry) => (
+              <span style={{ 
+                color: 'var(--text-color)', 
+                fontSize: isMobile ? '10px' : '12px', 
+                fontWeight: entry.payload.name === categoriesData[0]?.name ? 'bold' : 'normal',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                maxWidth: isMobile ? '60px' : '110px',
+                display: 'inline-block'
+              }}>
+                {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
+                {!isMobile && ` (${(entry.payload.percent * 100).toFixed(1)}%)`}
+              </span>
+            )}
+            wrapperStyle={{
+              paddingLeft: isMobile ? '0px' : '10px', 
+              fontSize: isMobile ? '10px' : '12px',
+              overflowY: 'auto', 
+              maxHeight: isMobile ? '60px' : '140px',
+              width: '100%',
+              marginTop: isMobile ? '5px' : '0',
+              justifyContent: isMobile ? 'center' : 'flex-start',
+              flexWrap: isMobile ? 'wrap' : 'nowrap',
+              gap: isMobile ? '5px' : '0'
+            }}
+          />
+        </PieChart>
         
         <div className={styles.categoriesInsights}>
           <h4>Categoria principal: {categoriesData[0]?.name || 'Nenhuma'}</h4>
@@ -2759,82 +2746,79 @@ const Dashboard = () => {
             </span>
           </div>
         </div>
-        <div className={styles.chartBody}>
-          <div style={{ width: '100%', height: 300 }}>
-            <AreaChart 
-              width={700} 
-              height={300} 
-              data={chartData} 
-              margin={{ top: 10, right: 30, left: 10, bottom: 20 }}
-            >
-              <defs>
-                <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#f44336" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#f44336" stopOpacity={0.1} />
-                </linearGradient>
-                <linearGradient id="colorProjectedExpenses" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#f44336" stopOpacity={0.5} />
-                  <stop offset="95%" stopColor="#f44336" stopOpacity={0.05} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis 
-                dataKey="date" 
-                tickFormatter={(tick) => {
-                  if (typeof tick !== 'string') {
-                    // Se o tick for um objeto Date ou outro tipo, converta para string
-                    if (tick instanceof Date) {
-                      const month = tick.getMonth() + 1;
-                      const year = tick.getFullYear();
-                      return `${months.find(m => m.value === month)?.shortLabel || month}/${year.toString().slice(2)}`;
-                    }
-                    return String(tick);
-                  }
-                  
-                  // Verifica se o formato é YYYY-MM ou YYYY-MM-DD
-                  const parts = tick.split('-');
-                  if (parts.length >= 2) {
-                    const year = parts[0];
-                    const month = parseInt(parts[1], 10);
-                    return `${months.find(m => m.value === month)?.shortLabel || month}/${year.slice(2)}`;
-                  }
-                  
-                  return tick;
-                }}
-                angle={-30}
-                textAnchor="end"
-                height={60}
-                interval="preserveStartEnd"
-                tickMargin={10}
-              />
-              <YAxis 
-                tickFormatter={formatCurrency} 
-                width={65}
-                tickMargin={5}
-              />
-              <Tooltip 
-                formatter={value => formatCurrency(value)} 
-                labelFormatter={(label) => formatDateLabel(label, chartData)}
-                contentStyle={{ background: '#fff', border: '1px solid #ddd', borderRadius: '8px' }}
-              />
-              <Area 
-                type="monotone" 
-                dataKey="total" 
-                stroke="#f44336" 
-                fillOpacity={1} 
-                fill="url(#colorExpenses)" 
-                name="Despesas"
-                strokeDasharray={(d) => d.isProjection ? "5 5" : "0"}
-              />
-              <ReferenceLine 
-                x={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`}
-                stroke="#666" 
-                strokeDasharray="3 3" 
-                label={{ value: 'Hoje', position: 'insideTopRight', fill: '#666' }} 
-              />
-            </AreaChart>
-          </div>
-        </div>
+        
+        <AreaChart 
+          width={700} 
+          height={300} 
+          data={chartData} 
+          margin={{ top: 10, right: 30, left: 10, bottom: 20 }}
+        >
+          <defs>
+            <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#f44336" stopOpacity={0.8} />
+              <stop offset="95%" stopColor="#f44336" stopOpacity={0.1} />
+            </linearGradient>
+            <linearGradient id="colorProjectedExpenses" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#f44336" stopOpacity={0.5} />
+              <stop offset="95%" stopColor="#f44336" stopOpacity={0.05} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+          <XAxis 
+            dataKey="date" 
+            tickFormatter={(tick) => {
+              if (typeof tick !== 'string') {
+                // Se o tick for um objeto Date ou outro tipo, converta para string
+                if (tick instanceof Date) {
+                  const month = tick.getMonth() + 1;
+                  const year = tick.getFullYear();
+                  return `${months.find(m => m.value === month)?.shortLabel || month}/${year.toString().slice(2)}`;
+                }
+                return String(tick);
+              }
+              
+              // Verifica se o formato é YYYY-MM ou YYYY-MM-DD
+              const parts = tick.split('-');
+              if (parts.length >= 2) {
+                const year = parts[0];
+                const month = parseInt(parts[1], 10);
+                return `${months.find(m => m.value === month)?.shortLabel || month}/${year.slice(2)}`;
+              }
+              
+              return tick;
+            }}
+            angle={-30}
+            textAnchor="end"
+            height={60}
+            interval="preserveStartEnd"
+            tickMargin={10}
+          />
+          <YAxis 
+            tickFormatter={formatCurrency} 
+            width={65}
+            tickMargin={5}
+          />
+          <Tooltip 
+            formatter={value => formatCurrency(value)} 
+            labelFormatter={(label) => formatDateLabel(label, chartData)}
+            contentStyle={{ background: '#fff', border: '1px solid #ddd', borderRadius: '8px' }}
+          />
+          <Area 
+            type="monotone" 
+            dataKey="total" 
+            stroke="#f44336" 
+            fillOpacity={1} 
+            fill="url(#colorExpenses)" 
+            name="Despesas"
+            strokeDasharray={(d) => d.isProjection ? "5 5" : "0"}
+          />
+          <ReferenceLine 
+            x={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`}
+            stroke="#666" 
+            strokeDasharray="3 3" 
+            label={{ value: 'Hoje', position: 'insideTopRight', fill: '#666' }} 
+          />
+        </AreaChart>
       </div>
     );
   };
@@ -2918,77 +2902,341 @@ const Dashboard = () => {
             </span>
           </div>
         </div>
-        <div className={styles.chartBody}>
-          <div style={{ width: '100%', height: 300 }}>
-            <AreaChart 
-              width={700} 
-              height={300} 
-              data={chartData} 
-              margin={{ top: 10, right: 30, left: 10, bottom: 20 }}
-            >
-              <defs>
-                <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#2196F3" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#2196F3" stopOpacity={0.1}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis 
-                dataKey="date" 
-                tickFormatter={(tick) => {
-                  if (typeof tick !== 'string') {
-                    // Se o tick for um objeto Date ou outro tipo, converta para string
-                    if (tick instanceof Date) {
-                      const month = tick.getMonth() + 1;
-                      const year = tick.getFullYear();
-                      return `${months.find(m => m.value === month)?.shortLabel || month}/${year.toString().slice(2)}`;
-                    }
-                    return String(tick);
-                  }
-                  
-                  // Verifica se o formato é YYYY-MM ou YYYY-MM-DD
-                  const parts = tick.split('-');
-                  if (parts.length >= 2) {
-                    const year = parts[0];
-                    const month = parseInt(parts[1], 10);
-                    return `${months.find(m => m.value === month)?.shortLabel || month}/${year.slice(2)}`;
-                  }
-                  
-                  return tick;
-                }}
-                angle={-30}
-                textAnchor="end"
-                height={60}
-                interval="preserveStartEnd"
-                tickMargin={10}
-              />
-              <YAxis 
-                tickFormatter={formatCurrency} 
-                width={65}
-                tickMargin={5}
-              />
-              <Tooltip 
-                formatter={(value) => [formatCurrency(value), 'Receita']} 
-                labelFormatter={(label) => formatDateLabel(label, chartData)}
-                contentStyle={{ background: '#fff', border: '1px solid #ddd', borderRadius: '8px' }}
-              />
-              <Area 
-                type="monotone" 
-                dataKey="value" 
-                stroke="#2196F3" 
-                fillOpacity={1} 
-                fill="url(#colorIncome)" 
-                name="Receitas"
-                strokeDasharray={(d) => d.isProjection ? "5 5" : "0"}
-              />
-              <ReferenceLine 
-                x={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`}
-                stroke="#666" 
-                strokeDasharray="3 3" 
-                label={{ value: 'Hoje', position: 'insideTopRight', fill: '#666' }} 
-              />
-            </AreaChart>
+        
+        <AreaChart 
+          width={700} 
+          height={300} 
+          data={chartData} 
+          margin={{ top: 10, right: 30, left: 10, bottom: 20 }}
+        >
+          <defs>
+            <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#2196F3" stopOpacity={0.8}/>
+              <stop offset="95%" stopColor="#2196F3" stopOpacity={0.1}/>
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+          <XAxis 
+            dataKey="date" 
+            tickFormatter={(tick) => {
+              if (typeof tick !== 'string') {
+                // Se o tick for um objeto Date ou outro tipo, converta para string
+                if (tick instanceof Date) {
+                  const month = tick.getMonth() + 1;
+                  const year = tick.getFullYear();
+                  return `${months.find(m => m.value === month)?.shortLabel || month}/${year.toString().slice(2)}`;
+                }
+                return String(tick);
+              }
+              
+              // Verifica se o formato é YYYY-MM ou YYYY-MM-DD
+              const parts = tick.split('-');
+              if (parts.length >= 2) {
+                const year = parts[0];
+                const month = parseInt(parts[1], 10);
+                return `${months.find(m => m.value === month)?.shortLabel || month}/${year.slice(2)}`;
+              }
+              
+              return tick;
+            }}
+            angle={-30}
+            textAnchor="end"
+            height={60}
+            interval="preserveStartEnd"
+            tickMargin={10}
+          />
+          <YAxis 
+            tickFormatter={formatCurrency} 
+            width={65}
+            tickMargin={5}
+          />
+          <Tooltip 
+            formatter={(value) => [formatCurrency(value), 'Receita']} 
+            labelFormatter={(label) => formatDateLabel(label, chartData)}
+            contentStyle={{ background: '#fff', border: '1px solid #ddd', borderRadius: '8px' }}
+          />
+          <Area 
+            type="monotone" 
+            dataKey="value" 
+            stroke="#2196F3" 
+            fillOpacity={1} 
+            fill="url(#colorIncome)" 
+            name="Receitas"
+            strokeDasharray={(d) => d.isProjection ? "5 5" : "0"}
+          />
+          <ReferenceLine 
+            x={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`}
+            stroke="#666" 
+            strokeDasharray="3 3" 
+            label={{ value: 'Hoje', position: 'insideTopRight', fill: '#666' }} 
+          />
+        </AreaChart>
+      </div>
+    );
+  };
+
+  const renderMonthlyComparisonChart = () => {
+    if (loading) {
+      return (
+        <div className={styles.loadingContainer}>
+          <div className={styles.loadingSpinner}></div>
+          <p>Carregando comparativo mensal...</p>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className={styles.errorContainer}>
+          <div className={styles.errorIcon}>⚠️</div>
+          <p>Erro ao carregar o comparativo mensal: {error}</p>
+        </div>
+      );
+    }
+
+    if (!data || !data.monthly_comparison || data.monthly_comparison.length === 0) {
+      return (
+        <div className={styles.emptyChartContainer}>
+          <div className={styles.emptyChartContent}>
+            <i className={`fas fa-chart-bar ${styles.emptyChartIcon}`}></i>
+            <p>Sem dados suficientes para exibir o comparativo mensal.</p>
+            <p>Adicione receitas e despesas para visualizar este gráfico.</p>
           </div>
+        </div>
+      );
+    }
+
+    // Formatar os dados para o gráfico
+    const chartData = data.monthly_comparison.map(item => ({
+      name: `${months.find(m => m.value === parseInt(item.month))?.shortLabel || item.month}/${item.year.toString().slice(2)}`,
+      receitas: item.income,
+      despesas: item.expenses,
+      saldo: item.income - item.expenses,
+      month: item.month,
+      year: item.year,
+      monthName: months.find(m => m.value === parseInt(item.month))?.label || `Mês ${item.month}`
+    }));
+
+    return (
+      <div className={styles.chartContainer}>
+        <div className={styles.chartHeader}>
+          <h3>Comparativo Mensal</h3>
+          <div className={styles.chartSubtitle}>
+            <span className={styles.dateFilterBadge}>
+              <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
+            </span>
+          </div>
+        </div>
+        
+        <ResponsiveContainer width="100%" height={300}>
+          <ComposedChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <XAxis 
+              dataKey="name" 
+              angle={-30} 
+              textAnchor="end" 
+              height={60} 
+              interval="preserveStartEnd" 
+              tickMargin={10} 
+            />
+            <YAxis 
+              yAxisId="left"
+              tickFormatter={formatCurrency} 
+              width={65}
+              tickMargin={5}
+            />
+            <YAxis 
+              yAxisId="right"
+              tickFormatter={formatCurrency} 
+              orientation="right"
+              width={65}
+              tickMargin={5}
+            />
+            <Tooltip 
+              formatter={(value, name) => {
+                return [formatCurrency(value), name];
+              }} 
+              contentStyle={{ 
+                background: 'var(--card-background)', 
+                border: '1px solid var(--border-color)', 
+                borderRadius: '8px', 
+                color: 'var(--text-color)' 
+              }} 
+            />
+            <Legend 
+              wrapperStyle={{ 
+                paddingTop: '10px', 
+                fontSize: isMobile ? '10px' : '12px' 
+              }} 
+            />
+            <Bar 
+              yAxisId="left"
+              dataKey="receitas" 
+              fill="var(--success-color)" 
+              name="Receitas" 
+              radius={[4, 4, 0, 0]} 
+              barSize={isMobile ? 15 : 30} 
+            />
+            <Bar 
+              yAxisId="left"
+              dataKey="despesas" 
+              fill="var(--error-color)" 
+              name="Despesas" 
+              radius={[4, 4, 0, 0]} 
+              barSize={isMobile ? 15 : 30} 
+            />
+            <Line 
+              yAxisId="right"
+              type="monotone" 
+              dataKey="saldo" 
+              stroke="var(--primary-color)" 
+              strokeWidth={2} 
+              name="Saldo" 
+              dot={{ r: 4 }} 
+              activeDot={{ r: 6 }} 
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+        
+        {renderMonthlyComparisonInsights(chartData)}
+      </div>
+    );
+  };
+  
+  const renderMonthlyComparisonInsights = (chartData) => {
+    if (!chartData || chartData.length === 0) return null;
+    
+    // Encontrar mês com maior receita
+    const maxIncome = chartData.reduce((max, item) => 
+      item.receitas > max.value ? { value: item.receitas, month: item.monthName, year: item.year } : max, 
+      { value: 0, month: '', year: 0 }
+    );
+    
+    // Encontrar mês com maior despesa
+    const maxExpense = chartData.reduce((max, item) => 
+      item.despesas > max.value ? { value: item.despesas, month: item.monthName, year: item.year } : max, 
+      { value: 0, month: '', year: 0 }
+    );
+    
+    // Encontrar mês com melhor saldo
+    const bestBalance = chartData.reduce((max, item) => 
+      item.saldo > max.value ? { value: item.saldo, month: item.monthName, year: item.year } : max, 
+      { value: -Infinity, month: '', year: 0 }
+    );
+    
+    // Encontrar mês com pior saldo
+    const worstBalance = chartData.reduce((min, item) => 
+      item.saldo < min.value ? { value: item.saldo, month: item.monthName, year: item.year } : min, 
+      { value: Infinity, month: '', year: 0 }
+    );
+    
+    // Calcular médias
+    const avgIncome = chartData.reduce((sum, item) => sum + item.receitas, 0) / chartData.length;
+    const avgExpense = chartData.reduce((sum, item) => sum + item.despesas, 0) / chartData.length;
+    
+    // Verificar tendência dos últimos 3 meses (se disponível)
+    let incomeTrend = null;
+    let expenseTrend = null;
+    let balanceTrend = null;
+    
+    if (chartData.length >= 3) {
+      const last3Months = chartData.slice(-3);
+      
+      // Tendência de receitas
+      if (last3Months[2].receitas > last3Months[1].receitas && last3Months[1].receitas > last3Months[0].receitas) {
+        incomeTrend = { trend: 'up', message: 'Suas receitas estão crescendo nos últimos 3 meses' };
+      } else if (last3Months[2].receitas < last3Months[1].receitas && last3Months[1].receitas < last3Months[0].receitas) {
+        incomeTrend = { trend: 'down', message: 'Suas receitas estão diminuindo nos últimos 3 meses' };
+      }
+      
+      // Tendência de despesas
+      if (last3Months[2].despesas > last3Months[1].despesas && last3Months[1].despesas > last3Months[0].despesas) {
+        expenseTrend = { trend: 'up', message: 'Suas despesas estão aumentando nos últimos 3 meses' };
+      } else if (last3Months[2].despesas < last3Months[1].despesas && last3Months[1].despesas < last3Months[0].despesas) {
+        expenseTrend = { trend: 'down', message: 'Suas despesas estão diminuindo nos últimos 3 meses' };
+      }
+      
+      // Tendência de saldo
+      if (last3Months[2].saldo > last3Months[1].saldo && last3Months[1].saldo > last3Months[0].saldo) {
+        balanceTrend = { trend: 'up', message: 'Seu saldo está melhorando nos últimos 3 meses' };
+      } else if (last3Months[2].saldo < last3Months[1].saldo && last3Months[1].saldo < last3Months[0].saldo) {
+        balanceTrend = { trend: 'down', message: 'Seu saldo está piorando nos últimos 3 meses' };
+      }
+    }
+    
+    return (
+      <div className={styles.insightsContainer}>
+        <h4>Insights do Comparativo Mensal</h4>
+        <div className={styles.insightsGrid}>
+          <div className={styles.insightItem}>
+            <div className={styles.insightIcon}>📈</div>
+            <div className={styles.insightContent}>
+              <h5>Maior Receita</h5>
+              <p>{maxIncome.month} de {maxIncome.year}: {formatCurrency(maxIncome.value)}</p>
+            </div>
+          </div>
+          
+          <div className={styles.insightItem}>
+            <div className={styles.insightIcon}>📉</div>
+            <div className={styles.insightContent}>
+              <h5>Maior Despesa</h5>
+              <p>{maxExpense.month} de {maxExpense.year}: {formatCurrency(maxExpense.value)}</p>
+            </div>
+          </div>
+          
+          <div className={styles.insightItem}>
+            <div className={styles.insightIcon}>🏆</div>
+            <div className={styles.insightContent}>
+              <h5>Melhor Saldo</h5>
+              <p>{bestBalance.month} de {bestBalance.year}: {formatCurrency(bestBalance.value)}</p>
+            </div>
+          </div>
+          
+          <div className={styles.insightItem}>
+            <div className={styles.insightIcon}>⚠️</div>
+            <div className={styles.insightContent}>
+              <h5>Pior Saldo</h5>
+              <p>{worstBalance.month} de {worstBalance.year}: {formatCurrency(worstBalance.value)}</p>
+            </div>
+          </div>
+          
+          <div className={styles.insightItem}>
+            <div className={styles.insightIcon}>💰</div>
+            <div className={styles.insightContent}>
+              <h5>Médias</h5>
+              <p>Receita: {formatCurrency(avgIncome)} | Despesa: {formatCurrency(avgExpense)}</p>
+            </div>
+          </div>
+          
+          {(incomeTrend || expenseTrend || balanceTrend) && (
+            <div className={styles.insightItem}>
+              <div className={styles.insightIcon}>📊</div>
+              <div className={styles.insightContent}>
+                <h5>Tendências (últimos 3 meses)</h5>
+                {incomeTrend && (
+                  <p>
+                    <span className={incomeTrend.trend === 'up' ? styles.trendUp : styles.trendDown}>
+                      <i className={`fas fa-arrow-${incomeTrend.trend}`}></i> Receitas
+                    </span>
+                  </p>
+                )}
+                {expenseTrend && (
+                  <p>
+                    <span className={expenseTrend.trend === 'down' ? styles.trendUp : styles.trendDown}>
+                      <i className={`fas fa-arrow-${expenseTrend.trend}`}></i> Despesas
+                    </span>
+                  </p>
+                )}
+                {balanceTrend && (
+                  <p>
+                    <span className={balanceTrend.trend === 'up' ? styles.trendUp : styles.trendDown}>
+                      <i className={`fas fa-arrow-${balanceTrend.trend}`}></i> Saldo
+                    </span>
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -3017,6 +3265,11 @@ const Dashboard = () => {
         
         <div className={styles.chartContainer}>
           {renderIncomeTrend()}
+        </div>
+        
+        {/* Monthly Comparison Chart */}
+        <div className={styles.chartContainer}>
+          {renderMonthlyComparisonChart()}
         </div>
         
         {/* Categories Charts */}
@@ -3403,74 +3656,78 @@ const Dashboard = () => {
             </button>
           </div>
         </div>
-        <div className={styles.categoriesPieContainer}>
-          <div style={{ width: '100%', height: isMobile ? 200 : 260 }}>
-            <PieChart 
-              width={isMobile ? 300 : 500} 
-              height={isMobile ? 200 : 260} 
-              margin={{ top: 5, right: isMobile ? 5 : 50, left: 5, bottom: 5 }}
-            >
-              <Pie
-                data={chartData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                outerRadius={isMobile ? 65 : 110}
-                innerRadius={isMobile ? 30 : 50}
-                paddingAngle={2}
-                dataKey="value"
-                nameKey="name"
-                label={getCustomizedPieLabel}
-                animationDuration={800}
-                animationBegin={200}
-                animationEasing="ease-out"
-              >
-                {chartData.map((entry, index) => (
-                  <Cell 
-                    key={`cell-${index}`} 
-                    fill={entry.color} 
-                    stroke="#ffffff" 
-                    strokeWidth={1} 
-                  />
-                ))}
-              </Pie>
-              <Tooltip content={<CustomPieTooltip />} />
-              <Legend 
-                layout={isMobile ? "horizontal" : "vertical"}
-                align={isMobile ? "center" : "right"}
-                verticalAlign={isMobile ? "bottom" : "middle"}
-                iconType="circle"
-                iconSize={isMobile ? 8 : 10}
-                formatter={(value, entry) => (
-                  <span style={{ 
-                    color: 'var(--text-color)', 
-                    fontSize: isMobile ? '10px' : '12px', 
-                    fontWeight: entry.payload.name === mainCategory.category ? 'bold' : 'normal',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    maxWidth: isMobile ? '60px' : '110px',
-                    display: 'inline-block'
-                  }}>
-                    {isMobile ? value.substring(0, 8) + (value.length > 8 ? '...' : '') : value} 
-                    {!isMobile && ` (${(entry.payload.percentage).toFixed(1)}%)`}
-                  </span>
-                )}
-                wrapperStyle={{
-                  paddingLeft: isMobile ? '0px' : '10px', 
-                  fontSize: isMobile ? '10px' : '12px',
-                  overflowY: 'auto', 
-                  maxHeight: isMobile ? '60px' : '140px',
-                  width: '100%',
-                  marginTop: isMobile ? '5px' : '0',
-                  justifyContent: isMobile ? 'center' : 'flex-start',
-                  flexWrap: isMobile ? 'wrap' : 'nowrap',
-                  gap: isMobile ? '5px' : '0'
-                }}
+        
+        <PieChart 
+          width={isMobile ? 300 : 500} 
+          height={isMobile ? 200 : 260} 
+          margin={{ top: 5, right: isMobile ? 5 : 50, left: 5, bottom: 5 }}
+        >
+          <defs>
+            {categoriesData.map((entry, index) => (
+              <filter key={`shadow-${index}`} id={`shadow-${index}`} x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="0" stdDeviation="3" floodOpacity="0.3" />
+              </filter>
+            ))}
+          </defs>
+          <Pie
+            data={chartData}
+            cx="50%"
+            cy="50%"
+            labelLine={false}
+            outerRadius={isMobile ? 65 : 110}
+            innerRadius={isMobile ? 30 : 50}
+            paddingAngle={2}
+            dataKey="value"
+            nameKey="name"
+            label={getCustomizedPieLabel}
+            animationDuration={800}
+            animationBegin={200}
+            animationEasing="ease-out"
+          >
+            {chartData.map((entry, index) => (
+              <Cell 
+                key={`cell-${index}`} 
+                fill={entry.color} 
+                stroke="#ffffff" 
+                strokeWidth={1} 
               />
-            </PieChart>
-          </div>
-        </div>
+            ))}
+          </Pie>
+          <Tooltip content={<CustomPieTooltip />} />
+          <Legend 
+            layout={isMobile ? "horizontal" : "vertical"}
+            align={isMobile ? "center" : "right"}
+            verticalAlign={isMobile ? "bottom" : "middle"}
+            iconType="circle"
+            iconSize={isMobile ? 8 : 10}
+            formatter={(value, entry) => (
+              <span style={{ 
+                color: 'var(--text-color)', 
+                fontSize: isMobile ? '10px' : '12px', 
+                fontWeight: entry.payload.name === mainCategory.category ? 'bold' : 'normal',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                maxWidth: isMobile ? '60px' : '110px',
+                display: 'inline-block'
+              }}>
+                {isMobile ? value.substring(0, 8) + (value.length > 8 ? '...' : '') : value} 
+                {!isMobile && ` (${(entry.payload.percentage).toFixed(1)}%)`}
+              </span>
+            )}
+            wrapperStyle={{
+              paddingLeft: isMobile ? '0px' : '10px', 
+              fontSize: isMobile ? '10px' : '12px',
+              overflowY: 'auto', 
+              maxHeight: isMobile ? '60px' : '140px',
+              width: '100%',
+              marginTop: isMobile ? '5px' : '0',
+              justifyContent: isMobile ? 'center' : 'flex-start',
+              flexWrap: isMobile ? 'wrap' : 'nowrap',
+              gap: isMobile ? '5px' : '0'
+            }}
+          />
+        </PieChart>
         
         <div className={styles.categoriesInsights}>
           <h4>Categoria principal: {mainCategory.category}</h4>
@@ -3598,84 +3855,80 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className={styles.categoriesPieContainer}>
-          <div style={{ width: '100%', height: isMobile ? 200 : 260 }}>
-            <PieChart 
-              width={isMobile ? 300 : 500} 
-              height={isMobile ? 200 : 260} 
-              margin={{ top: 5, right: isMobile ? 5 : 50, left: 5, bottom: 5 }}
-            >
-              <defs>
-                {incomeCategoryData.map((entry, index) => (
-                  <filter key={`shadow-${index}`} id={`shadow-income-${index}`} x="-20%" y="-20%" width="140%" height="140%">
-                    <feDropShadow dx="0" dy="0" stdDeviation="3" floodOpacity="0.3" />
-                  </filter>
-                ))}
-              </defs>
-              <Pie
-                data={incomeCategoryData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                outerRadius={isMobile ? 65 : 110}
-                innerRadius={isMobile ? 30 : 50}
-                paddingAngle={2}
-                fill="#8884d8"
-                dataKey="amount"
-                nameKey="category"
-                label={getCustomizedPieLabel}
-                filter="url(#shadow)"
-                animationDuration={800}
-                animationBegin={200}
-                animationEasing="ease-out"
-              >
-                {incomeCategoryData.map((entry, index) => (
-                  <Cell 
-                    key={`cell-${index}`} 
-                    fill={entry.color || COLORS[index % COLORS.length]} 
-                    stroke="#ffffff" 
-                    strokeWidth={1} 
-                    filter={`url(#shadow-income-${index})`} 
-                  />
-                ))}
-              </Pie>
-              <Tooltip content={<CustomPieTooltip />} />
-              <Legend 
-                layout={isMobile ? "horizontal" : "vertical"}
-                align={isMobile ? "center" : "right"}
-                verticalAlign={isMobile ? "bottom" : "middle"}
-                iconType="circle"
-                iconSize={isMobile ? 8 : 10}
-                formatter={(value, entry) => (
-                  <span style={{ 
-                    color: 'var(--text-color)', 
-                    fontSize: isMobile ? '10px' : '12px', 
-                    fontWeight: entry.payload.category === incomeCategoryData[0]?.category ? 'bold' : 'normal',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    maxWidth: isMobile ? '60px' : '110px',
-                    display: 'inline-block'
-                  }}>
-                    {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
-                    {!isMobile && ` (${entry.payload.percentage.toFixed(1)}%)`}
-                  </span>
-                )}
-                wrapperStyle={{
-                  paddingLeft: isMobile ? '0px' : '10px', 
-                  fontSize: isMobile ? '10px' : '12px',
-                  overflowY: 'auto', 
-                  maxHeight: isMobile ? '60px' : '140px',
-                  width: '100%',
-                  marginTop: isMobile ? '5px' : '0',
-                  justifyContent: isMobile ? 'center' : 'flex-start',
-                  flexWrap: isMobile ? 'wrap' : 'nowrap',
-                  gap: isMobile ? '5px' : '0'
-                }}
+        <PieChart 
+          width={isMobile ? 300 : 500} 
+          height={isMobile ? 200 : 260} 
+          margin={{ top: 5, right: isMobile ? 5 : 50, left: 5, bottom: 5 }}
+        >
+          <defs>
+            {incomeCategoryData.map((entry, index) => (
+              <filter key={`shadow-${index}`} id={`shadow-income-${index}`} x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="0" stdDeviation="3" floodOpacity="0.3" />
+              </filter>
+            ))}
+          </defs>
+          <Pie
+            data={incomeCategoryData}
+            cx="50%"
+            cy="50%"
+            labelLine={false}
+            outerRadius={isMobile ? 65 : 110}
+            innerRadius={isMobile ? 30 : 50}
+            paddingAngle={2}
+            fill="#8884d8"
+            dataKey="amount"
+            nameKey="category"
+            label={getCustomizedPieLabel}
+            filter="url(#shadow)"
+            animationDuration={800}
+            animationBegin={200}
+            animationEasing="ease-out"
+          >
+            {incomeCategoryData.map((entry, index) => (
+              <Cell 
+                key={`cell-${index}`} 
+                fill={entry.color || COLORS[index % COLORS.length]} 
+                stroke="#ffffff" 
+                strokeWidth={1} 
+                filter={`url(#shadow-income-${index})`} 
               />
-            </PieChart>
-          </div>
-        </div>
+            ))}
+          </Pie>
+          <Tooltip content={<CustomPieTooltip />} />
+          <Legend 
+            layout={isMobile ? "horizontal" : "vertical"}
+            align={isMobile ? "center" : "right"}
+            verticalAlign={isMobile ? "bottom" : "middle"}
+            iconType="circle"
+            iconSize={isMobile ? 8 : 10}
+            formatter={(value, entry) => (
+              <span style={{ 
+                color: 'var(--text-color)', 
+                fontSize: isMobile ? '10px' : '12px', 
+                fontWeight: entry.payload.category === incomeCategoryData[0]?.category ? 'bold' : 'normal',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                maxWidth: isMobile ? '60px' : '110px',
+                display: 'inline-block'
+              }}>
+                {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
+                {!isMobile && ` (${entry.payload.percentage.toFixed(1)}%)`}
+              </span>
+            )}
+            wrapperStyle={{
+              paddingLeft: isMobile ? '0px' : '10px', 
+              fontSize: isMobile ? '10px' : '12px',
+              overflowY: 'auto', 
+              maxHeight: isMobile ? '60px' : '140px',
+              width: '100%',
+              marginTop: isMobile ? '5px' : '0',
+              justifyContent: isMobile ? 'center' : 'flex-start',
+              flexWrap: isMobile ? 'wrap' : 'nowrap',
+              gap: isMobile ? '5px' : '0'
+            }}
+          />
+        </PieChart>
         
         <div className={styles.categoriesInsights}>
           <h4>Principal fonte de renda: {incomeCategoryData[0]?.category || 'Nenhuma'}</h4>
