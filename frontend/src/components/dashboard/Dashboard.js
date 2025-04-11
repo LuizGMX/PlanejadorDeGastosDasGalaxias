@@ -871,13 +871,10 @@ const Dashboard = () => {
       <text 
         x={x} 
         y={y} 
-        fill="#000000" 
+        fill="#FFFFFF" 
         textAnchor="middle" 
-        dominantBaseline="central"
-        fontWeight="bold"
-        fontSize={isMobile ? "10px" : "12px"}
-        strokeWidth="0.5px"
-        stroke="#ffffff"
+        dominantBaseline="central"        
+        fontSize={"30px"}                
       >
         {`${(percent * 100).toFixed(0)}%`}
       </text>
