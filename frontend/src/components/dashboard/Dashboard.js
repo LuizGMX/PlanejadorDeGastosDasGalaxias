@@ -18,7 +18,6 @@ import {
   AreaChart,
   ReferenceLine  
 } from 'recharts';
-import styles from '../../styles/dashboard.module.css';
 import { FaChartLine, FaChevronDown} from 'react-icons/fa';
 import DateRangePicker from '../shared/DateRangePicker';
 
@@ -28,6 +27,9 @@ import {
   BsPencil, 
   BsEye,
 } from 'react-icons/bs';
+
+// Substituição para todas as classes CSS removidas
+const styles = {};
 
 const motivationalPhrases = [
   "Cuide do seu dinheiro hoje para não precisar se preocupar amanhã.",
@@ -63,12 +65,12 @@ const getGreeting = (userName) => {
   const randomPhrase = motivationalPhrases[Math.floor(Math.random() * motivationalPhrases.length)];
   
   return (
-    <div className={styles.greeting}>
-      <div className={styles.greetingContent}>
+    <div>
+      <div>
       <h2>{greeting}, {userName}!</h2>
-        <p className={styles.motivationalPhrase}>"{randomPhrase}"</p>
+        <p>"{randomPhrase}"</p>
       </div>
-      <div className={styles.greetingDate}>
+      <div>
         <span>{new Date().toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
       </div>
     </div>
@@ -112,13 +114,13 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
     fetchData();
   }, [auth.token, projectionMonths]);
 
-  if (loading) return <div className={styles.loadingCard}>
-    <div className={styles.loadingSpinner}></div>
+  if (loading) return <div>
+    <div></div>
     <p>Carregando projeção financeira...</p>
   </div>;
   
-  if (error) return <div className={styles.errorCard}>
-    <span className={styles.errorIcon}>⚠️</span>
+  if (error) return <div>
+    <span>⚠️</span>
     <p>Erro: {error}</p>
     <button onClick={() => setLoading(true)}>Tentar novamente</button>
   </div>;
@@ -188,12 +190,11 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
   };
 
   return (
-    <div style={containerStyle} className={`${styles.trendChartContainer} ${styles.enhancedCard}`}>
+    <div>
       {showTitle && (
-        <div className={styles.trendChartHeader}>
-          <h2 className={styles.trendChartTitle}>Projeção de Saldo</h2>
+        <div>
+          <h2>Projeção de Saldo</h2>
           <button 
-            className={styles.tipsToggle}
             onClick={() => setShowTips(!showTips)}
             title={showTips ? "Ocultar dicas" : "Mostrar dicas"}
           >
@@ -203,17 +204,17 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
       )}
       
       {showTips && (
-        <div className={styles.insightCard}>
+        <div>
           <p>{insight}</p>
           {trend && (
-            <div className={styles.trendIndicator}>
+            <div>
               <span>Tendência: </span>
               {trend.direction === "up" ? (
-                <span className={styles.trendUp}>↗️ +{trend.percentage}%</span>
+                <span>↗️ +{trend.percentage}%</span>
               ) : trend.direction === "down" ? (
-                <span className={styles.trendDown}>↘️ -{trend.percentage}%</span>
+                <span>↘️ -{trend.percentage}%</span>
               ) : (
-                <span className={styles.trendStable}>→ Estável</span>
+                <span>→ Estável</span>
               )}
             </div>
           )}
@@ -221,24 +222,21 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
       )}
       
       {showControls && (
-        <div className={styles.trendChartControls}>
-          <div className={styles.controlGroup}>
+        <div>
+          <div>
             <span>Projeção para:</span>
-            <div className={styles.buttonSelector}>
+            <div>
               <button 
-                className={projectionMonths === 3 ? styles.active : ''}
                 onClick={() => setProjectionMonths(3)}
               >
                 3 meses
               </button>
               <button 
-                className={projectionMonths === 6 ? styles.active : ''}
                 onClick={() => setProjectionMonths(6)}
               >
                 6 meses
               </button>
               <button 
-                className={projectionMonths === 12 ? styles.active : ''}
                 onClick={() => setProjectionMonths(12)}
               >
                 12 meses
@@ -248,7 +246,7 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
         </div>
       )}
       
-      <div style={{ width: '100%', height: height }}>
+      <div>
         <ComposedChart 
           width={700} 
           height={height} 
@@ -300,12 +298,6 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
                            'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
               return `${months[d.getMonth()]} de ${d.getFullYear()}`;
             }}
-            contentStyle={{
-              backgroundColor: 'var(--card-background)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '8px',
-              padding: '10px'
-            }}
           />
           <Legend 
             verticalAlign="top"
@@ -328,7 +320,7 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
                 default:
                   color = 'var(--text-color)';
               }
-              return <span style={{ color }}>{value}</span>;
+              return <span>{value}</span>;
             }}
           />
           
@@ -364,8 +356,7 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
                   r={isActive ? 6 : 4}
                   fill="#1E90FF"
                   stroke={isActive ? "#fff" : "none"}
-            strokeWidth={2}
-                  style={{ cursor: 'pointer' }}
+                  strokeWidth={2}
                   onClick={() => handleDotClick(index)}
                   onMouseEnter={() => handleMouseEnter(props.payload, index)}
                 />
@@ -376,34 +367,34 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
         </ComposedChart>
       </div>
 
-      <div className={styles.trendChartSummary}>
-        <div className={styles.trendChartSummaryItem}>
+      <div>
+        <div>
           <span>Receitas Projetados </span>
-          <strong className={styles.positive}>
+          <strong>
             {formatFullCurrency(data.summary.totalProjectedIncomes)}
           </strong>
         </div>
-        <div className={styles.trendChartSummaryItem}>
+        <div>
           <span>Despesas Projetadas </span>
-          <strong className={styles.negative}>
+          <strong>
             {formatFullCurrency(data.summary.totalProjectedExpenses)}
           </strong>
         </div>
-        <div className={styles.trendChartSummaryItem}>
+        <div>
           <span>Saldo Final Projetado </span>
-          <strong className={data.summary.finalBalance >= 0 ? styles.positive : styles.negative}>
+          <strong>
             {formatFullCurrency(data.summary.finalBalance)}
           </strong>
         </div>
       </div>
       
       {activeDot !== null && (
-        <div className={styles.monthDetailCard}>
+        <div>
           <h4>Detalhe do Mês</h4>
-          <div className={styles.monthDetail}>
+          <div>
             {data.projectionData[activeDot] && (
               <>
-                <div className={styles.detailRow}>
+                <div>
                   <span>Mês:</span>
                   <strong>
                     {(() => {
@@ -414,25 +405,25 @@ const BankBalanceTrend = ({ showTitle = true, showControls = true, height = 300,
                     })()}
                   </strong>
                 </div>
-                <div className={styles.detailRow}>
+                <div>
                   <span>Receitas:</span>
-                  <strong className={styles.positive}>
+                  <strong>
                     {formatFullCurrency(data.projectionData[activeDot].receitas)}
                   </strong>
                 </div>
-                <div className={styles.detailRow}>
+                <div>
                   <span>Despesas:</span>
-                  <strong className={styles.negative}>
+                  <strong>
                     {formatFullCurrency(data.projectionData[activeDot].despesas)}
                   </strong>
                 </div>
-                <div className={styles.detailRow}>
+                <div>
                   <span>Saldo:</span>
-                  <strong className={data.projectionData[activeDot].saldo >= 0 ? styles.positive : styles.negative}>
+                  <strong>
                     {formatFullCurrency(data.projectionData[activeDot].saldo)}
                   </strong>
                 </div>
-                <div className={styles.detailRow}>
+                <div>
                   <span>Economia:</span>
                   <strong>
                     {((data.projectionData[activeDot].receitas - data.projectionData[activeDot].despesas) / 
@@ -525,27 +516,24 @@ const FinancialHealthScore = ({ data }) => {
   const tips = getFinancialTips();
   
   return (
-    <div className={styles.healthScoreContainer}>
-      <div className={styles.healthScoreHeader}>
+    <div>
+      <div>
         <h3>Saúde Financeira</h3>
-        <div className={styles.scoreValue} style={{ color: healthColor }}>
+        <div>
           {healthScore}
           <span>/100</span>
         </div>
       </div>
       
-      <div className={styles.healthScoreBar}>
-        <div 
-          className={styles.healthScoreProgress} 
-          style={{ width: `${healthScore}%`, backgroundColor: healthColor }}
-        />
+      <div>
+        <div></div>
       </div>
       
-      <div className={styles.healthStatus}>
-        Status: <span style={{ color: healthColor }}>{healthStatus}</span>
+      <div>
+        Status: <span>{healthStatus}</span>
       </div>
       
-      <div className={styles.healthTips}>
+      <div>
         <h4>Dicas Personalizadas:</h4>
         <ul>
           {tips.map((tip, index) => (
@@ -607,20 +595,19 @@ const FilterSelector = ({ label, options, selected, onSelect, multiple = false }
   }, []);
 
   return (
-    <div className={styles.filterSelector} ref={filterRef}>
-      <div className={styles.filterLabel}>{label}</div>
+    <div ref={filterRef}>
+      <div>{label}</div>
       <div 
-        className={`${styles.filterDisplay} ${isOpen ? styles.active : ''}`}
         onClick={handleToggle}
       >
         <span>{getDisplayText()}</span>
-        <FaChevronDown className={`${styles.arrowIcon} ${isOpen ? styles.rotated : ''}`} />
+        <FaChevronDown />
       </div>
       {isOpen && (
-        <div className={styles.filterOptions}>
+        <div>
           {multiple && (
             <>
-              <div className={styles.selectAllOption} onClick={handleSelectAll}>
+              <div onClick={handleSelectAll}>
                 <input 
                   type="checkbox" 
                   checked={selected.length === options.length}
@@ -628,14 +615,13 @@ const FilterSelector = ({ label, options, selected, onSelect, multiple = false }
                 />
                 <span>Selecionar Todos</span>
               </div>
-              <div className={styles.optionsDivider} />
+              <div />
             </>
           )}
-          <div className={styles.optionsList}>
+          <div>
             {options.map(option => (
               <div 
                 key={option.value}
-                className={`${styles.filterOption} ${selected.includes(option.value) ? styles.selected : ''}`}
                 onClick={() => handleSelect(option.value)}
               >
                 {multiple && (
@@ -1140,10 +1126,10 @@ const Dashboard = () => {
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
-        <div className={styles.customTooltip}>
+        <div>
           <p>{`Data: ${formatDate(label)}`}</p>
           {payload.map((entry, index) => (
-            <p key={index} style={{ color: entry.color }}>
+            <p key={index}>
               {`${entry.name}: ${formatCurrency(entry.value)}`}
             </p>
           ))}
@@ -1159,11 +1145,11 @@ const Dashboard = () => {
 
   const renderChart = (chartId, title, chartComponent) => {
     return (
-      <div className={`${styles.chartContainer} ${chartId === 'bank-trend' ? styles.trendChart : ''}`}>
-        <div className={styles.chartHeader}>
+      <div>
+        <div>
           <h3>{title}</h3>
-          <div className={styles.chartSubtitle}>
-            <span className={styles.dateFilterBadge}>
+          <div>
+            <span>
               <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
             </span>
           </div>
@@ -1275,13 +1261,12 @@ const Dashboard = () => {
   const renderFinancialGoalChart = () => {
     if (!data?.financial_goal) {
       return (
-        <div className={`${styles.chartContainer} ${styles.emptyGoalCard}`}>
+        <div>
           <h3>Objetivo Financeiro</h3>
-          <div className={styles.emptyGoalContent}>
-            <span className={styles.emptyGoalIcon}>🎯</span>
+          <div>
+            <span>🎯</span>
             <p>Você ainda não definiu um objetivo financeiro.</p>
             <button 
-              className={styles.createGoalButton}
               onClick={() => navigate('/profile')}
             >
               Definir Objetivo
@@ -1367,104 +1352,93 @@ const Dashboard = () => {
         : new Date(completionDate).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 
     return (
-      <div className={`${styles.chartContainer} ${styles.goalCard}`}>
-        <div className={styles.goalCardHeader}>
-          <div className={styles.goalCardTitle}>
+      <div>
+        <div>
+          <div>
             <h3>Objetivo: {goal.name}</h3>
-            <div className={styles.targetDate}>
+            <div>
               <span>Meta para:</span> {new Date(goal.end_date).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
             </div>
           </div>
-          <div className={styles.goalTargetAmount}>
-            <div className={styles.targetAmountLabel}>Meta Total</div>
-            <div className={styles.targetAmountValue}>{formatCurrency(goal.amount)}</div>
+          <div>
+            <div>Meta Total</div>
+            <div>{formatCurrency(goal.amount)}</div>
           </div>
         </div>
         
-        <div className={styles.goalProgressSection}>
-          <div className={styles.progressCircleContainer}>
-            <div 
-              className={styles.progressCircle}
-              style={{
-                background: `conic-gradient(
-                  ${savingsPace.color} ${percentageSaved * 3.6}deg, 
-                  var(--background-color) ${percentageSaved * 3.6}deg
-                )`
-              }}
-            >
-              <div className={styles.progressInner}>
-                <div className={styles.progressPercentage}>{percentageSaved}%</div>
-                <div className={styles.progressLabel}>concluído</div>
+        <div>
+          <div>
+            <div>
+              <div>
+                <div>{percentageSaved}%</div>
+                <div>concluído</div>
               </div>
             </div>
-            <div className={styles.timeRemainingBadge}>
-              <div className={styles.timeIcon}>⏱️</div>
-              <div className={styles.timeText}>{timeRemaining}</div>
+            <div>
+              <div>⏱️</div>
+              <div>{timeRemaining}</div>
             </div>
           </div>
           
-          <div className={styles.goalStatsContainer}>
-            <div className={styles.statCard}>
-              <div className={styles.statLabel}>
-                <span className={styles.statIcon}>💰</span> Economizado
+          <div>
+            <div>
+              <div>
+                <span>💰</span> Economizado
               </div>
-              <div className={`${styles.statValue} ${styles.savedValue}`}>{formatCurrency(goal.total_saved)}</div>
+              <div>{formatCurrency(goal.total_saved)}</div>
             </div>
-            <div className={styles.statCard}>
-              <div className={styles.statLabel}>
-                <span className={styles.statIcon}>📊</span> Faltando
+            <div>
+              <div>
+                <span>📊</span> Faltando
               </div>
-              <div className={styles.statValue}>{formatCurrency(goal.amount - goal.total_saved)}</div>
+              <div>{formatCurrency(goal.amount - goal.total_saved)}</div>
             </div>
-            <div className={styles.statCard}>
-              <div className={styles.statLabel}>
-                <span className={styles.statIcon}>💸</span> Economia Mensal
+            <div>
+              <div>
+                <span>💸</span> Economia Mensal
               </div>
-              <div className={`${styles.statValue} ${goal.monthly_balance >= goal.monthly_needed ? styles.positiveValue : styles.negativeValue}`}>
+              <div>
                 {formatCurrency(goal.monthly_balance)}
               </div>
-              <div className={styles.statSource}>
+              <div>
                 {Math.abs(goal.current_month_balance) > 0 ? "mês atual" : "média histórica"}
               </div>
             </div>
-            <div className={styles.statCard}>
-              <div className={styles.statLabel}>
-                <span className={styles.statIcon}>🎯</span> Necessário/Mês
+            <div>
+              <div>
+                <span>🎯</span> Necessário/Mês
               </div>
-              <div className={styles.statValue}>{formatCurrency(goal.monthly_needed)}</div>
+              <div>{formatCurrency(goal.monthly_needed)}</div>
             </div>
           </div>
         </div>
         
-        <div className={`${styles.savingsPaceIndicator} ${styles[`pace-${savingsPace.status}`]}`}>
-          <div className={styles.paceIcon}>{savingsPace.icon}</div>
-          <div className={styles.paceMessage}>{savingsPace.message}</div>
+        <div>
+          <div>{savingsPace.icon}</div>
+          <div>{savingsPace.message}</div>
         </div>
         
-        <div className={styles.projectionSection}>
-          <div className={styles.projectionHeader}>
+        <div>
+          <div>
             <h4>Projeção de Conclusão</h4>
-            <div className={styles.projectionTimeline}>
-              <div className={styles.timelineStart}>
-                <div className={styles.timelinePoint}></div>
-                <div className={styles.timelineDate}>Hoje</div>
+            <div>
+              <div>
+                <div></div>
+                <div>Hoje</div>
               </div>
-              <div className={styles.timelineBar}>
-                <div 
-                  className={`${styles.timelineProgress} ${!goal.is_achievable ? styles.timelineWarning : ''}`}
-                  style={{ '--progress-width': `${Math.min((goal.months_remaining / goal.months_needed_with_current_savings) * 100, 100)}%` }}
-                ></div>
+              <div>
+                <div></div>
               </div>
-              <div className={styles.timelineEnd}>
-                <div className={styles.timelinePoint}></div>
-                <div className={styles.timelineDate}>
+              <div>
+                <div></div>
+                <div>
                   {formattedCompletionDate}
                 </div>
               </div>
             </div>
           </div>
           
-          <div className={styles.projectionData}>
+          <div>
             <BarChart
               width={400}
               height={100}
@@ -1510,7 +1484,7 @@ const Dashboard = () => {
                     default:
                       color = 'var(--text-color)';
                   }
-                  return <span style={{ color }}>{value}</span>;
+                  return <span>{value}</span>;
                 }}
               />
               <Bar dataKey="economia" stackId="a" fill="var(--success-color)" name="Economizado" />
@@ -1518,37 +1492,37 @@ const Dashboard = () => {
               <Bar dataKey="faltante" stackId="a" fill="var(--error-color)" name="Faltante" />
             </BarChart>
             
-            <div className={styles.projectionLegend}>
-              <div className={styles.legendItem}>
-                <div className={`${styles.legendColor} ${styles.legendColorSuccess}`}></div>
-                <div className={styles.legendLabel}>Economizado</div>
+            <div>
+              <div>
+                <div></div>
+                <div>Economizado</div>
               </div>
-              <div className={styles.legendItem}>
-                <div className={`${styles.legendColor} ${styles.legendColorProjecao}`}></div>
-                <div className={styles.legendLabel}>Projeção Futura</div>
+              <div>
+                <div></div>
+                <div>Projeção Futura</div>
               </div>
-              <div className={styles.legendItem}>
-                <div className={`${styles.legendColor} ${styles.legendColorError}`}></div>
-                <div className={styles.legendLabel}>Faltante</div>
+              <div>
+                <div></div>
+                <div>Faltante</div>
               </div>
             </div>
           </div>
         </div>
         
         {!goal.is_achievable && (
-          <div className={styles.alertMessage}>
-            <div className={styles.alertTitle}>
+          <div>
+            <div>
               <span>⚠️</span> Objetivo em risco
             </div>
-            <div className={styles.alertContent}>
+            <div>
               Com seu ritmo atual de economia, esta meta não será atingida no prazo estabelecido. 
               Considere aumentar o valor mensal economizado ou ajustar a data de conclusão da meta.
             </div>
-            <div className={styles.alertActions}>
-              <button className={styles.actionButton} onClick={() => navigate('/expenses')}>
+            <div>
+              <button onClick={() => navigate('/expenses')}>
                 <span>📊</span> Revisar Despesas
               </button>
-              <button className={styles.actionButton} onClick={() => navigate('/profile')}>
+              <button onClick={() => navigate('/profile')}>
                 <span>⚙️</span> Ajustar Meta
               </button>
             </div>
@@ -1562,11 +1536,10 @@ const Dashboard = () => {
     // Verificar se existem dados de orçamento
     if (!data?.budget_info) {
       return (
-        <div className={styles.emptyState}>
-          <div className={styles.emptyIcon}>💰</div>
+        <div>
+          <div>💰</div>
           <p>Você ainda não tem um orçamento definido para este período.</p>
           <button 
-            className={styles.createGoalButton}
             onClick={() => navigate('/settings')}
           >
             Definir Orçamento
@@ -1626,70 +1599,62 @@ const Dashboard = () => {
     const formattedDate = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
     
     return (
-      <div className={styles.budgetInfoContainer}>
-        <div className={styles.budgetHeader}>
+      <div>
+        <div>
           <h3>Resumo do Orçamento</h3>
-          <div className={styles.budgetDate}>
+          <div>
             {formatCurrentDateFilter()}
           </div>
         </div>
         
-        <div className={styles.budgetStatsContainer}>
-          <div className={styles.budgetStats}>
-            <div className={styles.budgetStat}>
+        <div>
+          <div>
+            <div>
               <span>Orçamento Total</span>
               <strong>{formatCurrency(total_budget)}</strong>
             </div>
-            <div className={styles.budgetStat}>
+            <div>
               <span>Despesa até agora</span>
-              <strong className={isOverBudget ? styles.overBudget : ''}>{formatCurrency(total_spent)}</strong>
+              <strong>{formatCurrency(total_spent)}</strong>
             </div>
-            <div className={styles.budgetStat}>
+            <div>
               <span>Disponível</span>
               <strong>{formatCurrency(remainingBudget)}</strong>
             </div>
           </div>
           
-          <div className={styles.budgetProgressContainer}>
-            <div className={styles.budgetProgressLabel}>
+          <div>
+            <div>
               <span>Progresso do orçamento</span>
               <span>{spentPercentage.toFixed(1)}%</span>
             </div>
-            <div className={styles.budgetProgressBar}>
-              <div 
-                className={`${styles.budgetProgress} ${styles[statusColor]} ${styles.budgetProgressStyle} ${styles.widthProgress}`} 
-                style={{ '--progress-width': `${Math.min(spentPercentage, 100)}%` }}
-              />
-              <div 
-                className={`${styles.idealMarker} ${styles.idealMarkerStyle} ${styles.progressLeft}`}
-                style={{ '--progress-left': `${idealSpentPercentage}%` }}
-                title={`Ideal: ${idealSpentPercentage.toFixed(1)}%`}
-              />
+            <div>
+              <div></div>
+              <div></div>
             </div>
           </div>
           
-          <div className={styles.dailySpendingInfo}>
-            <div className={styles.daysInfo}>
+          <div>
+            <div>
               <span>Dias restantes</span>
               <strong>{daysRemaining}</strong>
             </div>
-            <div className={styles.dailyLimitInfo}>
+            <div>
               <span>Despesa diário ideal</span>
               <strong>{formatCurrency(remainingBudget / (daysRemaining || 1))}</strong>
             </div>
           </div>
         </div>
         
-        <div className={`${styles.budgetAdvice} ${styles[statusColor]}`}>
-          <div className={styles.adviceContent}>
-            <span className={styles.adviceIcon}>{statusIcon}</span>
+        <div>
+          <div>
+            <span>{statusIcon}</span>
             <p>{advice}</p>
           </div>
         </div>
         
-        <div className={styles.budgetActions}>
-          <button 
-            className={styles.budgetActionButton}
+        <div>
+          <button
             onClick={() => navigate('/expenses')}
           >
             Ver Despesas
@@ -1710,16 +1675,16 @@ const Dashboard = () => {
     const chartData = [
                         {
                           name: 'Disponível',
-        value: available,
-        percent: available / total,
-        color: 'var(--primary-color)'
+                          value: available,
+                          percent: available / total,
+                          color: 'var(--primary-color)'
                         },
                         {
                           name: 'Total Despesa',
-        value: totalSpent,
-        percent: totalSpent / total,
-        color: 'var(--error-color)'
-      }
+                          value: totalSpent,
+                          percent: totalSpent / total,
+                          color: 'var(--error-color)'
+                        }
     ];
 
     // Função personalizada para rótulos do gráfico Receitas vs Despesas
@@ -1748,11 +1713,11 @@ const Dashboard = () => {
     };
 
     return (
-      <div className={styles.chartContainer}>
-        <div className={styles.chartHeader}>
+      <div>
+        <div>
           <h3>Receitas vs Despesas</h3>
-          <div className={styles.chartSubtitle}>
-            <span className={styles.dateFilterBadge}>
+          <div>
+            <span>
               <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
             </span>
           </div>
@@ -1796,14 +1761,6 @@ const Dashboard = () => {
           </Pie>
           <Tooltip
             formatter={(value) => formatCurrency(value)}
-            contentStyle={{
-              backgroundColor: 'var(--card-background)',
-              border: '1px solid var(--border-color)',
-              color: 'var(--text-color)',
-              padding: '10px',
-              borderRadius: '8px',
-              boxShadow: '0 4px 8px rgba(0,0,0,0.15)'
-            }}
           />
           <Legend
             layout={isMobile ? "horizontal" : "vertical"}
@@ -1812,33 +1769,25 @@ const Dashboard = () => {
             iconType="circle"
             iconSize={isMobile ? 8 : 10}
             formatter={(value, entry) => (
-              <span style={{ 
-                color: 'var(--text-color)', 
-                fontSize: isMobile ? '10px' : '12px', 
-                fontWeight: 'bold'
-              }}>
+              <span>
                 {value}{isMobile ? '' : `: ${formatCurrency(entry.payload.value)}`} ({(entry.payload.percent * 100).toFixed(0)}%)
               </span>
             )}
-            wrapperStyle={{
-              paddingTop: isMobile ? '8px' : '10px',
-              fontSize: isMobile ? '10px' : '12px'
-            }}
           />
         </PieChart>
         
-        <div className={styles.incomeVsExpensesSummary}>
-          <div className={styles.infoItem}>
+        <div>
+          <div>
             <span>Receitas totais:</span>
-            <strong className={styles.positive}>{formatCurrency(total)}</strong>
+            <strong>{formatCurrency(total)}</strong>
           </div>
-          <div className={styles.infoItem}>
+          <div>
             <span>Despesas totais:</span>
-            <strong className={styles.negative}>{formatCurrency(totalSpent)}</strong>
+            <strong>{formatCurrency(totalSpent)}</strong>
           </div>
-          <div className={styles.infoItem}>
+          <div>
             <span>Saldo disponível:</span>
-            <strong className={styles.positive}>{formatCurrency(available)}</strong>
+            <strong>{formatCurrency(available)}</strong>
           </div>
         </div>
       </div>
@@ -1849,17 +1798,17 @@ const Dashboard = () => {
   const renderExpensesByCategoryChart = () => {
     if (!data || !data.expenses_by_category || data.expenses_by_category.length === 0) {
       return (
-        <div className={styles.chartContainer}>
-          <div className={styles.chartHeader}>
+        <div>
+          <div>
             <h3>Despesas por Categoria</h3>
-            <div className={styles.chartSubtitle}>
-              <span className={styles.dateFilterBadge}>
+            <div>
+              <span>
                 <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
               </span>
             </div>
           </div>
-          <div className={styles.emptyChartContent}>
-            <span className={styles.emptyChartIcon}>📊</span>
+          <div>
+            <span>📊</span>
             <p>Não há despesas no período selecionado.</p>
           </div>
         </div>
@@ -1908,11 +1857,11 @@ const Dashboard = () => {
     });
 
     return (
-      <div className={styles.chartContainer}>
-        <div className={styles.chartHeader}>
+      <div>
+        <div>
           <h3>Despesas por Categoria</h3>
-          <div className={styles.chartSubtitle}>
-            <span className={styles.dateFilterBadge}>
+          <div>
+            <span>
               <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
             </span>
           </div>
@@ -1965,40 +1914,20 @@ const Dashboard = () => {
             iconType="circle"
             iconSize={isMobile ? 8 : 10}
             formatter={(value, entry) => (
-              <span style={{ 
-                color: 'var(--text-color)', 
-                fontSize: isMobile ? '10px' : '12px', 
-                fontWeight: entry.payload.name === categoriesData[0]?.name ? 'bold' : 'normal',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                maxWidth: isMobile ? '60px' : '110px',
-                display: 'inline-block'
-              }}>
+              <span>
                 {isMobile ? value.substring(0, 10) + (value.length > 10 ? '...' : '') : value} 
                 {!isMobile && ` (${(entry.payload.percent * 100).toFixed(1)}%)`}
               </span>
             )}
-            wrapperStyle={{
-              paddingLeft: isMobile ? '0px' : '10px', 
-              fontSize: isMobile ? '10px' : '12px',
-              overflowY: 'auto', 
-              maxHeight: isMobile ? '60px' : '140px',
-              width: '100%',
-              marginTop: isMobile ? '5px' : '0',
-              justifyContent: isMobile ? 'center' : 'flex-start',
-              flexWrap: isMobile ? 'wrap' : 'nowrap',
-              gap: isMobile ? '5px' : '0'
-            }}
           />
         </PieChart>
         
-        <div className={styles.categoriesInsights}>
+        <div>
           <h4>Categoria principal: {categoriesData[0]?.name || 'Nenhuma'}</h4>
           <p>
             Representa {categoriesData[0]?.percent ? (categoriesData[0].percent * 100).toFixed(1) : 0}% dos seus despesas.
           </p>
-          <div className={styles.infoItem}>
+          <div>
             <span>Total de Despesas:</span>
             <strong>{formatCurrency(totalExpenses)}</strong>
           </div>
@@ -2015,16 +1944,15 @@ const Dashboard = () => {
     // Verificar se temos transações
     if (!allExpenses.length && !allIncomes.length) {
       return (
-        <div className={styles.timelineContainer}>
-          <div className={styles.timelineHeader}>
+        <div>
+          <div>
             <h3>Linha do Tempo de Transações</h3>
           </div>
-          <div className={styles.emptyTimeline}>
-            <div className={styles.emptyIcon}>💰</div>
+          <div>
+            <div>💰</div>
             <p>Ainda não existem transações registradas.</p>
-            <div className={styles.emptyStateButtons}>
+            <div>
               <button 
-                className={styles.addExpenseButton}
                 onClick={() => navigate('/expenses/add')}
               >
                 Adicionar Despesa
@@ -2249,22 +2177,20 @@ const Dashboard = () => {
     };
 
     return (
-      <div className={styles.timelineContainer}>
-        <div className={styles.timelineHeader}>
+      <div>
+        <div>
           <h3>Linha do Tempo de Transações</h3>
           
-          <div className={styles.timelineControls}>
-            <div className={styles.searchBox}>
+          <div>
+            <div>
               <input
                 type="text"
                 placeholder="Buscar transações..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className={styles.searchInput}
               />
               {searchTerm && (
                 <button
-                  className={styles.clearSearch}
                   onClick={() => setSearchTerm('')}
                 >
                   ×
@@ -2272,33 +2198,29 @@ const Dashboard = () => {
               )}
             </div>
             
-            <div className={styles.filterButtons}>
+            <div>
               <button
-                className={`${styles.filterButton} ${timelineFilter === 'all' ? styles.activeFilter : ''}`}
                 onClick={() => setTimelineFilter('all')}
               >
                 Todos
               </button>
               <button
-                className={`${styles.filterButton} ${timelineFilter === 'income' ? styles.activeFilter : ''}`}
                 onClick={() => setTimelineFilter('income')}
               >
                 Receitas
               </button>
               <button
-                className={`${styles.filterButton} ${timelineFilter === 'expense' ? styles.activeFilter : ''}`}
                 onClick={() => setTimelineFilter('expense')}
               >
                 Despesas
               </button>
             </div>
-            
           </div>
         </div>
         
         {filteredData.length === 0 ? (
-          <div className={styles.emptyTimeline}>
-            <div className={styles.emptyIcon}>💸</div>
+          <div>
+            <div>💸</div>
             <p>Nenhuma transação encontrada{
               timelineFilter !== 'all' 
                 ? ` para o tipo "${timelineFilter === 'income' ? 'receita' : 'despesa'}"` 
@@ -2310,7 +2232,6 @@ const Dashboard = () => {
             }.</p>
             {(timelineFilter !== 'all' || searchTerm) && (
               <button
-                className={styles.clearFilterButton}
                 onClick={() => {
                   console.log('Limpando todos os filtros da timeline');
                   setTimelineFilter('all');
@@ -2322,36 +2243,32 @@ const Dashboard = () => {
             )}
           </div>
         ) : groupByDate ? (
-          <div className={styles.timeline}>
+          <div>
             {groupedArray.map(group => (
-              <div key={group.date.toISOString()} className={styles.timelineGroup}>
-                <div className={styles.timelineGroupHeader}>
-                  <div className={styles.timelineDate}>
-                    <span className={styles.relativeDate}>{getRelativeDate(group.date)}</span>
-                    <span className={styles.actualDate}>{formatDate(group.date)}</span>
+              <div key={group.date.toISOString()}>
+                <div>
+                  <div>
+                    <span>{getRelativeDate(group.date)}</span>
+                    <span>{formatDate(group.date)}</span>
                   </div>
                   
                   {hasDailyTotal(group.items) && (
-                    <div className={styles.dailyTotal}>
-                      <div className={styles.dailyTotalItem}>
-                        <span className={styles.dailyTotalLabel}>Receitas:</span>
-                        <span className={styles.dailyTotalValue}>
+                    <div>
+                      <div>
+                        <span>Receitas:</span>
+                        <span>
                           {formatCurrency(calculateDailyTotal(group.items).income)}
-                          </span>
+                        </span>
                       </div>
-                      <div className={styles.dailyTotalItem}>
-                        <span className={styles.dailyTotalLabel}>Despesas:</span>
-                        <span className={styles.dailyTotalValue}>
+                      <div>
+                        <span>Despesas:</span>
+                        <span>
                           {formatCurrency(calculateDailyTotal(group.items).expense)}
                         </span>
                       </div>
-                      <div className={styles.dailyTotalItem}>
-                        <span className={styles.dailyTotalLabel}>Saldo:</span>
-                        <span className={`${styles.dailyTotalValue} ${
-                          calculateDailyTotal(group.items).balance >= 0 
-                            ? styles.positiveBalance 
-                            : styles.negativeBalance
-                        }`}>
+                      <div>
+                        <span>Saldo:</span>
+                        <span>
                           {formatCurrency(calculateDailyTotal(group.items).balance)}
                         </span>
                       </div>
@@ -2359,146 +2276,138 @@ const Dashboard = () => {
                   )}
                 </div>
                 
-                <div className={styles.timelineItems}>
+                <div>
                   {group.items.map(item => (
                     <div 
-                      key={item.id} 
-                      className={`${styles.timelineItem} ${
-                        item.type === 'income' ? styles.incomeItem : styles.expenseItem
-                      }`}
+                      key={item.id}
                       onClick={() => toggleExpand(item.id)}
                     >
-                      <div className={styles.timelineItemHeader}>
-                        <div className={styles.timelineItemIcon}>
+                      <div>
+                        <div>
                           {item.type === 'income' ? '💰' : '💸'}
                         </div>
-                        <div className={styles.timelineItemInfo}>
-                          <div className={styles.timelineItemDescription}>
+                        <div>
+                          <div>
                             {item.description}
                             {item.is_recurring && (
-                              <span className={styles.recurringTag}>Recorrente</span>
+                              <span>Recorrente</span>
                             )}
                           </div>
-                          <div className={styles.timelineItemMeta}>
-                            <span className={styles.timelineItemCategory}>{item.category}</span>
+                          <div>
+                            <span>{item.category}</span>
                             {item.bank !== 'Sem banco' && (
                               <>
-                                <span className={styles.metaSeparator}>•</span>
-                                <span className={styles.timelineItemBank}>{item.bank}</span>
+                                <span>•</span>
+                                <span>{item.bank}</span>
                               </>
                             )}
                           </div>
                         </div>
-                        <div className={styles.timelineItemAmount}>
-                          <span className={`${item.type === 'income' ? styles.incomeAmount : styles.expenseAmount}`}>
+                        <div>
+                          <span>
                             {item.type === 'income' ? '+' : '-'} {formatCurrency(item.amount)}
                           </span>
                         </div>
-                        <div className={styles.expandIcon}>
+                        <div>
                           {expandedItems.includes(item.id) ? '▼' : '▶'}
                         </div>
                       </div>
                       
                       {expandedItems.includes(item.id) && (
-                        <div className={styles.timelineItemDetails}>
-                          <div className={styles.detailsGrid}>
-                            <div className={styles.detailItem}>
-                              <span className={styles.detailLabel}>Tipo:</span>
-                              <span className={styles.detailValue}>
+                        <div>
+                          <div>
+                            <div>
+                              <span>Tipo:</span>
+                              <span>
                                 {item.type === 'income' ? 'Receita' : 'Despesa'}
                               </span>
                             </div>
-                            <div className={styles.detailItem}>
-                              <span className={styles.detailLabel}>Data:</span>
-                              <span className={styles.detailValue}>{formatDate(item.date)}</span>
+                            <div>
+                              <span>Data:</span>
+                              <span>{formatDate(item.date)}</span>
                             </div>
-                            <div className={styles.detailItem}>
-                              <span className={styles.detailLabel}>Categoria:</span>
-                              <span className={styles.detailValue}>{item.category}</span>
+                            <div>
+                              <span>Categoria:</span>
+                              <span>{item.category}</span>
                             </div>
-                            <div className={styles.detailItem}>
-                              <span className={styles.detailLabel}>Banco:</span>
-                              <span className={styles.detailValue}>{item.bank}</span>
+                            <div>
+                              <span>Banco:</span>
+                              <span>{item.bank}</span>
                             </div>
-                            <div className={styles.detailItem}>
-                              <span className={styles.detailLabel}>Recorrente:</span>
-                              <span className={styles.detailValue}>{item.is_recurring ? 'Sim' : 'Não'}</span>
+                            <div>
+                              <span>Recorrente:</span>
+                              <span>{item.is_recurring ? 'Sim' : 'Não'}</span>
                             </div>
                           </div>
                           
-                          <div className={styles.detailActions}>
+                          <div>
                             <button 
-                              className={styles.detailActionButton}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 navigate(`/${item.type === 'income' ? 'incomes' : 'expenses'}/edit/${item.id}`);
                               }}
                             >
-                              <BsPencil size={16} style={{marginRight: '6px'}} /> Editar
+                              <BsPencil size={16} /> Editar
                             </button>
                             <button 
-                              className={styles.detailActionButton}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 // Implementar visualização de detalhes
                               }}
                             >
-                              <BsEye size={16} style={{marginRight: '6px'}} /> Ver detalhes
+                              <BsEye size={16} /> Ver detalhes
                             </button>
                           </div>
                         </div>
                       )}
                     </div>
                   ))}
-                      </div>
-                    </div>
-                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
-          <div className={styles.timeline}>
+          <div>
             {filteredData.map(item => (
               <div 
-                key={item.id} 
-                className={`${styles.timelineItem} ${
-                  item.type === 'income' ? styles.incomeItem : styles.expenseItem
-                }`}
+                key={item.id}
                 onClick={() => toggleExpand(item.id)}
               >
-                {/* Conteúdo do item não agrupado similar ao conteúdo agrupado */}
-                <div className={styles.timelineItemHeader}>
-                  <div className={styles.timelineItemDateNonGrouped}>
-                    <span className={styles.relativeDate}>{getRelativeDate(item.date)}</span>
-                    <span className={styles.actualDate}>{formatDate(item.date)}</span>
+                <div>
+                  <div>
+                    <span>{getRelativeDate(item.date)}</span>
+                    <span>{formatDate(item.date)}</span>
                   </div>
-                  <div className={styles.timelineItemIcon}>
+                  <div>
                     {item.type === 'income' ? '💰' : '💸'}
                   </div>
-                  <div className={styles.timelineItemInfo}>
-                    <div className={styles.timelineItemDescription}>
+                  <div>
+                    <div>
                       {item.description}
                       {item.is_recurring && (
-                        <span className={styles.recurringTag}>Recorrente</span>
+                        <span>Recorrente</span>
                       )}
                     </div>
-                    <div className={styles.timelineItemMeta}>
-                      <span className={styles.timelineItemCategory}>{item.category}</span>
+                    <div>
+                      <span>{item.category}</span>
                       {item.bank !== 'Sem banco' && (
                         <>
-                          <span className={styles.metaSeparator}>•</span>
-                          <span className={styles.timelineItemBank}>{item.bank}</span>
+                          <span>•</span>
+                          <span>{item.bank}</span>
                         </>
                       )}
                     </div>
                   </div>
-                  <div className={styles.timelineItemAmount}>
-                    <span className={`${item.type === 'income' ? styles.incomeAmount : styles.expenseAmount}`}>
+                  <div>
+                    <span>
                       {item.type === 'income' ? '+' : '-'} {formatCurrency(item.amount)}
                     </span>
                   </div>
-                  <div className={styles.expandIcon}>
+                  <div>
                     {expandedItems.includes(item.id) ? '▼' : '▶'}
                   </div>
                 </div>
+                
                 
                 {expandedItems.includes(item.id) && (
                   <div className={styles.timelineItemDetails}>
@@ -3606,197 +3515,182 @@ const Dashboard = () => {
   };
 
   return (
-    <div className={styles.dashboardContainer}>
-      {getGreeting(auth.user?.name)}
-      <div className={styles.dashboardHeader}>
-        <div className={styles.navigationTabs}>
-          <button
-            className={`${styles.navTab} ${activeSection === 'overview' ? styles.activeTab : ''}`}
-            onClick={() => setActiveSection('overview')}
-          >
-            <span className={styles.tabIcon}>📊</span>
-            Visão Geral
-          </button>
-        </div>
-      </div>
-
-      {/* Filtros */}
-      <div className={styles.filterRow}>
-        <div className={styles.filtersContainer}>
-          <div className={styles.filterSelector}>
-            <div className={styles.filterLabel}>Período</div>
-            <div 
-              className={`${styles.filterDisplay} ${showPeriodOptions ? styles.active : ''}`}
+    <div>
+      {getGreeting(auth.user ? auth.user.name : 'Usuário')}
+      
+      <div>
+        <div>
+          <h3>Filtros e Período</h3>
+          
+          <div>
+            <button
               onClick={() => setShowPeriodOptions(!showPeriodOptions)}
             >
-              {selectedPeriod === 'custom' && customDateRange
-                ? `${formatDateStringWithTimezone(customDateRange.start)} - ${formatDateStringWithTimezone(customDateRange.end)}`
-                : getActiveFilterLabel()
-              }
-              <FaChevronDown className={`${styles.arrowIcon} ${showPeriodOptions ? styles.rotated : ''}`} />
-            </div>
+              {formatCurrentDateFilter()}
+            </button>
+            
             {showPeriodOptions && (
-              <div className={styles.filterOptions}>
-                <div 
-                  className={styles.filterOption}
-                  onClick={() => handlePeriodChange('current')}
-                >
-                  Mês Atual
-                </div>
-                <div 
-                  className={styles.filterOption}
-                  onClick={() => handlePeriodChange('last')}
-                >
-                  Mês Anterior
-                </div>
-                <div 
-                  className={styles.filterOption}
-                  onClick={() => handlePeriodChange('next')}
-                >
-                  Mês que vem
-                </div>
-                <div 
-                  className={styles.filterOption}
-                  onClick={() => handlePeriodChange('custom')}
-                >
-                  Personalizado
+              <div>
+                <div>
+                  <button
+                    onClick={() => handlePeriodChange('current')}
+                  >
+                    Mês Atual
+                  </button>
+                  <button
+                    onClick={() => handlePeriodChange('last')}
+                  >
+                    Mês Anterior
+                  </button>
+                  <button
+                    onClick={() => handlePeriodChange('year')}
+                  >
+                    Ano Atual
+                  </button>
+                  <button
+                    onClick={() => handlePeriodChange('custom')}
+                  >
+                    Personalizado
+                  </button>
                 </div>
               </div>
             )}
+            
+            {showDateRangePicker && (
+              <DateRangePicker
+                onSelect={handleDateRangeSelect}
+                onCancel={handleDateRangeCancel}
+              />
+            )}
           </div>
-          {showDateRangePicker && (
-            <div className={styles.dateRangePickerContainer}>
-              <DateRangePicker onDateRangeSelect={handleDateRangeSelect} onCancel={handleDateRangeCancel} />
-            </div>
-          )}
-          <FilterSelector
-            label="Categoria"
-            options={categories}
-            selected={selectedCategories}
-            onSelect={handleCategoryChange}
-            multiple
-          />
-          <FilterSelector
-            label="Banco"
-            options={banks}
-            selected={selectedBanks}
-            onSelect={handleBankChange}
-            multiple
-          />
+          
+          <div>
+            <FilterSelector 
+              label="Categorias"
+              options={categories}
+              selected={selectedCategories}
+              onSelect={handleCategoryChange}
+              multiple={true}
+            />
+            
+            <FilterSelector 
+              label="Contas"
+              options={banks}
+              selected={selectedBanks}
+              onSelect={handleBankChange}
+              multiple={true}
+            />
+          </div>
         </div>
-        {!hasExpenses && !hasIncome && (
-          <div className={styles.emptyStateContainer}>
-            <FaChartLine className={styles.emptyStateIcon} />
-            <div className={styles.emptyStateContent}>
-              <div className={styles.emptyStateMessage}>
-                Você ainda não tem despesas ou receitas cadastradas para este período.
-              </div>
-              <div className={styles.emptyStateSuggestion}>
-                Que tal começar adicionando sua primeira transação?
-              </div>
-              <div className={styles.emptyStateButtons}>
-                <button 
-                  className={styles.addExpenseButton}
-                  onClick={() => navigate('/add-expense')}
-                >
-                  <BsPlusLg /> Adicionar Despesa
-                </button>
-                <button 
-                  className={styles.addIncomeButton}
-                  onClick={() => navigate('/add-income')}
-                >
-                  <BsCash /> Adicionar Receita
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
         
-        {hasExpenses === false && hasIncome === true && (
-          <div className={styles.emptyStateContainer}>
-            <FaChartLine className={styles.emptyStateIcon} />
-            <div className={styles.emptyStateContent}>
-              <div className={styles.emptyStateMessage}>
-                Você tem receitas cadastradas, mas ainda não tem despesas para este período.
-              </div>
-              <div className={styles.emptyStateSuggestion}>
-                Que tal adicionar sua primeira despesa?
-              </div>
-              <div className={styles.emptyStateButtons}>
-                <button 
-                  className={styles.addExpenseButton}
-                  onClick={() => navigate('/add-expense')}
-                >
-                  <BsPlusLg /> Adicionar Despesa
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {hasExpenses === true && hasIncome === false && (
-          <div className={styles.emptyStateContainer}>
-            <FaChartLine className={styles.emptyStateIcon} />
-            <div className={styles.emptyStateContent}>
-              <div className={styles.emptyStateMessage}>
-                Você tem despesas cadastradas, mas ainda não tem receitas para este período.
-              </div>
-              <div className={styles.emptyStateSuggestion}>
-                Que tal adicionar sua primeira receita?
-              </div>
-              <div className={styles.emptyStateButtons}>
-                <button 
-                  className={styles.addIncomeButton}
-                  onClick={() => navigate('/add-income')}
-                >
-                  <BsCash /> Adicionar Receita
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <div>
+          {renderOverviewCharts()}
+        </div>
       </div>
-
-      {/* Conteúdo baseado na seção selecionada - só mostra se tiver despesas E receitas */}
-      {(hasExpenses && hasIncome) && (
-        <div className={styles.dashboardContent}>
+      
+      {/* Dashboard tabs */}
+      <div>
+        <div>
+          <button
+            onClick={() => setActiveSection('overview')}
+          >
+            Visão Geral
+          </button>
+          <button
+            onClick={() => setActiveSection('analytics')}
+          >
+            Análises
+          </button>
+          <button
+            onClick={() => setActiveSection('timeline')}
+          >
+            Linha do Tempo
+          </button>
+        </div>
+        
+        <div>
           {activeSection === 'overview' && (
-            <div className={styles.overviewSection}>
-              {/* Conteúdo original do dashboard */}
-              {renderOverviewCharts()}
+            <div>
+              <div>
+                {loading ? (
+                  <div>
+                    <div></div>
+                    <p>Carregando dados do dashboard...</p>
+                  </div>
+                ) : error ? (
+                  <div>
+                    <h3>Erro ao carregar dados</h3>
+                    <p>{error}</p>
+                    <button onClick={() => window.location.reload()}>
+                      Tentar novamente
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <div>
+                        <BankBalanceTrend />
+                      </div>
+                      <div>
+                        {renderBudgetChart()}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <div>
+                        {renderExpensesByCategoryChart()}
+                      </div>
+                      <div>
+                        {renderIncomeVsExpensesChart()}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <div>
+                        {renderFinancialGoalChart()}
+                      </div>
+                      <div>
+                        {data?.financial_health && (
+                          <FinancialHealthScore data={data.financial_health} />
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           )}
           
-          {activeSection === 'transactions' && (
-            <div className={styles.transactionsSection}>
+          {activeSection === 'analytics' && (
+            <div>
+              <div>
+                <h3>Análise de Despesas e Receitas</h3>
+                
+                <div>
+                  <div>
+                    {renderExpensesTrend()}
+                  </div>
+                  <div>
+                    {renderIncomeTrend()}
+                  </div>
+                </div>
+                
+                <div>
+                  <div>
+                    {renderMonthlyComparisonChart()}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {activeSection === 'timeline' && (
+            <div>
               {renderTimelineChart()}
             </div>
           )}
         </div>
-      )}      
-      
-      {/* Mensagem quando há apenas um tipo de transação mas não ambos */}
-      {((hasExpenses && !hasIncome) || (!hasExpenses && hasIncome)) && (
-        <div className={styles.emptyStateContainer}>
-          <FaChartLine className={styles.emptyStateIcon} />
-          <div className={styles.emptyStateContent}>
-            <div className={styles.emptyStateMessage}>
-              Para visualizar os relatórios completos, você precisa ter tanto despesas quanto receitas cadastradas.
-            </div>
-            <div className={styles.emptyStateSuggestion}>
-              {hasExpenses && !hasIncome ? 'Adicione receitas para ver os relatórios completos.' : 'Adicione despesas para ver os relatórios completos.'}
-            </div>
-            <div className={styles.emptyStateButtons}>
-              <button 
-                className={hasExpenses ? styles.addIncomeButton : styles.addExpenseButton}
-                onClick={() => navigate(hasExpenses ? '/add-income' : '/add-expense')}
-              >
-                <BsPlusLg /> {hasExpenses ? 'Adicionar Receita' : 'Adicionar Despesa'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 };
