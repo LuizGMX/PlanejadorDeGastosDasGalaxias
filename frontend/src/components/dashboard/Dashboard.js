@@ -1480,8 +1480,9 @@ const Dashboard = () => {
                   hide={true}
                 />
                 <Tooltip 
-                  formatter={(value) => [formatCurrency(value), '']}
-                  contentStyle={styles.tooltipStyle}
+                  formatter={value => formatCurrency(value)} 
+                  labelFormatter={(label) => formatDateLabel(label, chartData)}
+                  contentStyle={{ background: '#fff', border: '1px solid #ddd', borderRadius: '8px' }}
                 />
                 <Bar dataKey="economia" stackId="a" fill="var(--success-color)" name="Economizado" />
                 <Bar dataKey="projecao" stackId="a" fill="#2196F3" name="Projeção Futura" />
@@ -2662,7 +2663,7 @@ const Dashboard = () => {
 
   const renderExpensesTrend = () => {
     // Usando todos os dados de despesas, independente dos filtros
-    if (!expenseData?.length) {
+    if (!allExpenses?.length) {
       return (
         <div className={styles.emptyChart}>
           <p>Não há dados de despesas para exibir</p>
@@ -2678,7 +2679,7 @@ const Dashboard = () => {
     const futureDate = new Date();
     futureDate.setFullYear(currentDate.getFullYear() + 5);
     
-    expenseData.forEach(expense => {
+    allExpenses.forEach(expense => {
       const date = new Date(expense.date);
       
       // Ignorar datas que estão além dos próximos 5 anos
@@ -2789,35 +2790,8 @@ const Dashboard = () => {
               />
               <Tooltip 
                 formatter={value => formatCurrency(value)} 
-                labelFormatter={(label) => {
-                  if (typeof label !== 'string') {
-                    if (label instanceof Date) {
-                      const month = label.getMonth() + 1;
-                      const year = label.getFullYear();
-                      const dataPoint = chartData.find(d => {
-                        if (d.date instanceof Date) {
-                          return d.date.getMonth() === label.getMonth() && 
-                                 d.date.getFullYear() === label.getFullYear();
-                        }
-                        return false;
-                      });
-                      const monthName = months.find(m => m.value === month)?.label || month;
-                      return `${monthName}/${year}${dataPoint?.isProjection ? ' (Projeção)' : ''}`;
-                    }
-                    return String(label);
-                  }
-                  
-                  const parts = label.split('-');
-                  if (parts.length >= 2) {
-                    const year = parts[0];
-                    const month = parseInt(parts[1], 10);
-                    const dataPoint = chartData.find(d => d.date === label);
-                    const monthName = months.find(m => m.value === month)?.label || month;
-                    return `${monthName}/${year}${dataPoint?.isProjection ? ' (Projeção)' : ''}`;
-                  }
-                  
-                  return label;
-                }}
+                labelFormatter={(label) => formatDateLabel(label, chartData)}
+                contentStyle={{ background: '#fff', border: '1px solid #ddd', borderRadius: '8px' }}
               />
               <Area 
                 type="monotone" 
@@ -2842,35 +2816,74 @@ const Dashboard = () => {
   };
 
   const renderIncomeTrend = () => {
-    const chartData = filterData(incomeData).map(item => {
-      // Garantir que a data esteja no formato correto
-      let formattedDate;
-      if (item.date instanceof Date) {
-        // Se já for um objeto Date, formatar como YYYY-MM
-        const year = item.date.getFullYear();
-        const month = String(item.date.getMonth() + 1).padStart(2, '0');
-        formattedDate = `${year}-${month}`;
-      } else if (typeof item.date === 'string') {
-        // Se for string, verificar o formato
-        if (item.date.includes('T')) {
-          // Se for ISO string (com timestamp), extrair apenas a data
-          formattedDate = item.date.split('T')[0].substring(0, 7); // YYYY-MM
-        } else if (item.date.includes('-')) {
-          // Se já for no formato YYYY-MM-DD, extrair apenas ano e mês
-          formattedDate = item.date.substring(0, 7); // YYYY-MM
-        } else {
-          formattedDate = item.date;
-        }
-      } else {
-        formattedDate = String(item.date);
+    // Verificar se existem receitas para mostrar
+    if (!allIncomes?.length) {
+      return (
+        <div className={styles.emptyChart}>
+          <p>Não há dados de receitas para exibir</p>
+        </div>
+      );
+    }
+
+    // Agrupando receitas por mês
+    const groupedData = {};
+    
+    // Obtendo a data atual e a data limite de 5 anos no futuro
+    const currentDate = new Date();
+    const futureDate = new Date();
+    futureDate.setFullYear(currentDate.getFullYear() + 5);
+    
+    allIncomes.forEach(income => {
+      const date = new Date(income.date);
+      
+      // Ignorar datas que estão além dos próximos 5 anos
+      if (date > futureDate) return;
+      
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      
+      if (!groupedData[monthKey]) {
+        groupedData[monthKey] = {
+          date: monthKey,
+          value: 0
+        };
       }
       
-      return {
-        date: formattedDate,
-        value: item.amount
-      };
+      groupedData[monthKey].value += parseFloat(income.amount || 0);
     });
     
+    // Convertendo para array e ordenando por data
+    const chartData = Object.values(groupedData).sort((a, b) => 
+      new Date(a.date) - new Date(b.date)
+    );
+    
+    // Gerando meses futuros (projeção) até completar 5 anos a partir de hoje
+    const lastDataPoint = chartData.length > 0 ? new Date(chartData[chartData.length - 1].date) : new Date();
+    let projectionDate = new Date(lastDataPoint);
+    
+    // Calcular média dos últimos 6 meses ou o que estiver disponível
+    const recentMonths = chartData.slice(-6);
+    const avgIncome = recentMonths.length > 0 
+      ? recentMonths.reduce((sum, item) => sum + item.value, 0) / recentMonths.length 
+      : 0;
+    
+    // Adicionar projeção para completar 5 anos a partir de hoje
+    while (projectionDate < futureDate) {
+      projectionDate.setMonth(projectionDate.getMonth() + 1);
+      
+      // Pular se já existe um dado para este mês (evitar duplicações)
+      const projMonthKey = `${projectionDate.getFullYear()}-${String(projectionDate.getMonth() + 1).padStart(2, '0')}`;
+      if (groupedData[projMonthKey]) continue;
+      
+      chartData.push({
+        date: projMonthKey,
+        value: avgIncome,
+        isProjection: true
+      });
+    }
+
+    // Ordenando novamente após adicionar projeções
+    chartData.sort((a, b) => new Date(a.date) - new Date(b.date));
+
     return (
       <div className={styles.chartContainer}>
         <div className={styles.chartHeader}>
@@ -2927,7 +2940,7 @@ const Dashboard = () => {
               />
               <Tooltip 
                 formatter={(value) => [formatCurrency(value), 'Receita']} 
-                labelFormatter={(label) => formatDateLabel(label)}
+                labelFormatter={(label) => formatDateLabel(label, chartData)}
                 contentStyle={{ background: '#fff', border: '1px solid #ddd', borderRadius: '8px' }}
               />
               <Area 
@@ -2936,6 +2949,14 @@ const Dashboard = () => {
                 stroke="#2196F3" 
                 fillOpacity={1} 
                 fill="url(#colorIncome)" 
+                name="Receitas"
+                strokeDasharray={(d) => d.isProjection ? "5 5" : "0"}
+              />
+              <ReferenceLine 
+                x={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`}
+                stroke="#666" 
+                strokeDasharray="3 3" 
+                label={{ value: 'Hoje', position: 'insideTopRight', fill: '#666' }} 
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -3445,6 +3466,55 @@ const Dashboard = () => {
         </div>
       </div>
     );
+  };
+
+  // Função para formatar labels de datas nos gráficos
+  const formatDateLabel = (label, chartDataArray = []) => {
+    if (typeof label !== 'string') {
+      if (label instanceof Date) {
+        const month = label.getMonth() + 1;
+        const year = label.getFullYear();
+        // Procurar um ponto de dados com esta data se ele existir
+        let dataPoint = null;
+        if (chartDataArray && chartDataArray.length > 0) {
+          dataPoint = chartDataArray.find(d => {
+            if (d.date instanceof Date) {
+              return d.date.getMonth() === label.getMonth() && 
+                     d.date.getFullYear() === label.getFullYear();
+            } else if (typeof d.date === 'string') {
+              const parts = d.date.split('-');
+              if (parts.length >= 2) {
+                return parseInt(parts[0]) === year && parseInt(parts[1]) === month;
+              }
+            }
+            return false;
+          });
+        }
+        const monthName = months.find(m => m.value === month)?.label || month;
+        return `${monthName}/${year}${dataPoint?.isProjection ? ' (Projeção)' : ''}`;
+      }
+      return String(label);
+    }
+    
+    const parts = label.split('-');
+    if (parts.length >= 2) {
+      const year = parts[0];
+      const month = parseInt(parts[1], 10);
+      // Procurar um ponto de dados com esta data se ele existir
+      let dataPoint = null;
+      if (chartDataArray && chartDataArray.length > 0) {
+        dataPoint = chartDataArray.find(d => {
+          if (typeof d.date === 'string') {
+            return d.date === label;
+          }
+          return false;
+        });
+      }
+      const monthName = months.find(m => m.value === month)?.label || month;
+      return `${monthName}/${year}${dataPoint?.isProjection ? ' (Projeção)' : ''}`;
+    }
+    
+    return label;
   };
 
   return (
