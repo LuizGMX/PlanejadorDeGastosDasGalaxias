@@ -17,7 +17,7 @@
 }
 
 .payment-card h1 {
-  color: #333;
+  color: var(--text-color);
   margin-bottom: 20px;
   font-size: 24px;
   text-align: center;
@@ -30,48 +30,49 @@
 .subscription-status {
   font-size: 18px;
   margin-bottom: 15px;
+  color: var(--text-color);
 }
 
 .subscription-status .active {
-  color: #28a745;
+  color: var(--success-color);
   font-weight: bold;
 }
 
 .subscription-status .inactive {
-  color: #dc3545;
+  color: var(--error-color);
   font-weight: bold;
 }
 
 .subscription-status .pending {
-  color: #ffc107;
+  color: var(--warning-color);
   font-weight: bold;
 }
 
 .subscription-expired {
-  background-color: #f8f9fa;
+  background-color: var(--input-background);
   border-radius: 8px;
   padding: 20px;
   margin-top: 20px;
 }
 
 .subscription-pending {
-  background-color: #fff8e1;
-  border-left: 4px solid #ffc107;
+  background-color: var(--input-background);
+  border-left: 4px solid var(--warning-color);
   border-radius: 8px;
   padding: 20px;
   margin-top: 20px;
 }
 
 .renewal-warning {
-  background-color: #fff3cd;
-  border-left: 4px solid #ffc107;
+  background-color: var(--input-background);
+  border-left: 4px solid var(--warning-color);
   padding: 15px;
   margin-top: 20px;
   border-radius: 4px;
 }
 
 .payment-button {
-  background-color: #4CAF50;
+  background-color: var(--primary-color);
   color: var(--secondary-color);
   border: none;
   border-radius: 5px;
@@ -85,18 +86,18 @@
 }
 
 .payment-button:hover {
-  background-color: #388e3c;
+  background-color: var(--hover-color);
 }
 
 .payment-button:disabled {
-  background-color: #cccccc;
+  background-color: var(--input-background);
   cursor: not-allowed;
 }
 
 .payment-secondary-button {
-  background-color: #f5f5f5;
-  color: #333;
-  border: 1px solid #ddd;
+  background-color: var(--input-background);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
   border-radius: 5px;
   padding: 12px 20px;
   font-size: 16px;
@@ -108,11 +109,11 @@
 }
 
 .payment-secondary-button:hover {
-  background-color: #e0e0e0;
+  background-color: var(--border-color);
 }
 
 .payment-check-button {
-  background-color: #ff9800;
+  background-color: var(--warning-color);
   color: var(--secondary-color);
   border: none;
   border-radius: 5px;
@@ -125,17 +126,18 @@
 }
 
 .payment-check-button:hover {
-  background-color: #f57c00;
+  background-color: var(--warning-color);
+  opacity: 0.9;
 }
 
 .payment-check-button:disabled {
-  background-color: #cccccc;
+  background-color: var(--input-background);
   cursor: not-allowed;
 }
 
 .payment-url-button {
   display: inline-block;
-  background-color: #2196F3;
+  background-color: var(--chart-color-3);
   color: var(--secondary-color);
   border: none;
   border-radius: 5px;
@@ -149,7 +151,8 @@
 }
 
 .payment-url-button:hover {
-  background-color: #1976D2;
+  background-color: var(--chart-color-3);
+  opacity: 0.9;
   text-decoration: none;
   color: var(--secondary-color);
 }
@@ -159,7 +162,7 @@
 }
 
 .subscription-benefits h3 {
-  color: #333;
+  color: var(--text-color);
   margin-bottom: 10px;
   font-size: 18px;
 }
@@ -173,42 +176,43 @@
   margin-bottom: 8px;
   padding-left: 20px;
   position: relative;
+  color: var(--text-color);
 }
 
 .subscription-benefits li:before {
   content: "✓";
-  color: #4CAF50;
+  color: var(--success-color);
   position: absolute;
   left: 0;
 }
 
 .payment-info {
-  background-color: #f8f9fa;
+  background-color: var(--input-background);
   border-radius: 8px;
   padding: 15px;
   margin-top: 30px;
 }
 
 .payment-info h3 {
-  color: #333;
+  color: var(--text-color);
   margin-bottom: 10px;
   font-size: 18px;
 }
 
 .payment-info p {
   margin-bottom: 5px;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .payment-methods {
   margin-top: 20px;
   padding: 15px;
-  background-color: #f8f9fa;
+  background-color: var(--input-background);
   border-radius: 8px;
 }
 
 .payment-methods h3 {
-  color: #333;
+  color: var(--text-color);
   margin-bottom: 15px;
   font-size: 18px;
 }
@@ -231,13 +235,13 @@
   margin-top: 20px;
   text-align: center;
   padding: 15px;
-  background-color: #ffffff;
+  background-color: var(--card-background);
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .payment-qrcode h4 {
-  color: #333;
+  color: var(--text-color);
   margin-bottom: 10px;
   font-size: 16px;
 }
@@ -249,7 +253,7 @@
 }
 
 .payment-qrcode p {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
@@ -267,31 +271,32 @@
 .payment-result h1 {
   margin-bottom: 20px;
   font-size: 24px;
+  color: var(--text-color);
 }
 
 .payment-result.success {
-  background-color: #e8f5e9;
-  border-left: 4px solid #4CAF50;
+  background-color: var(--input-background);
+  border-left: 4px solid var(--success-color);
 }
 
 .payment-result.failure {
-  background-color: #ffebee;
-  border-left: 4px solid #f44336;
+  background-color: var(--input-background);
+  border-left: 4px solid var(--error-color);
 }
 
 .payment-result.pending {
-  background-color: #fff8e1;
-  border-left: 4px solid #ffc107;
+  background-color: var(--input-background);
+  border-left: 4px solid var(--warning-color);
 }
 
 .payment-result.unknown {
-  background-color: #f5f5f5;
-  border-left: 4px solid #9e9e9e;
+  background-color: var(--input-background);
+  border-left: 4px solid var(--text-secondary);
 }
 
 .payment-details {
   margin-bottom: 20px;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .payment-actions {
