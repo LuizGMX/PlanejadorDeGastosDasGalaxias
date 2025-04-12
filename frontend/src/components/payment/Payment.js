@@ -361,6 +361,7 @@ const Payment = () => {
                       </div>
                     )}
                     
+                    
                     {paymentData && paymentData.qrCode && (
                       <div className="payment-qrcode">
                         <h4>Pague com PIX</h4>
