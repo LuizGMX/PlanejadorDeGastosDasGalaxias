@@ -19,6 +19,7 @@ import spreadsheetRoutes from './routes/spreadsheetRoutes.js';
 import userRoutes from './routes/users.js';
 import recurrencesRouter from './routes/recurrences.js';
 import telegramRoutes from './routes/telegramRoutes.js';
+import paymentRoutes from './routes/payment.js';
 import { sequelize } from './models/index.js';
 import seedDatabase from './database/seeds/index.js';
 import { telegramService } from './services/telegramService.js';
@@ -84,6 +85,7 @@ app.use(`${API_PREFIX}/spreadsheet`, spreadsheetRoutes);
 app.use(`${API_PREFIX}/users`, userRoutes);
 app.use(`${API_PREFIX}/recurrences`, recurrencesRouter);
 app.use(`${API_PREFIX}/telegram`, telegramRoutes);
+app.use(`${API_PREFIX}/payment`, paymentRoutes);
 app.use(`${API_PREFIX}/health`, healthRoutes);
 
 let server;
