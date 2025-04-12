@@ -21,6 +21,7 @@ const PaymentResult = () => {
       navigate('/login');
       return;
     }
+    
 
     // Obter status do pagamento da URL
     const queryParams = new URLSearchParams(location.search);
