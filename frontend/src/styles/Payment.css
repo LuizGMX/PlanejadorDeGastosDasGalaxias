@@ -322,4 +322,40 @@
     font-size: 14px;
     padding: 10px 15px;
   }
+}
+
+/* Estilos para o container do botão do MercadoPago */
+.mp-checkout-container {
+  width: 100%;
+  min-height: 48px;
+  margin: 20px auto;
+  display: flex;
+  justify-content: center;
+}
+
+/* Estilo para o botão direto de pagamento */
+.direct-payment-button {
+  margin: 15px 0;
+  text-align: center;
+}
+
+/* Estilo para o container de PIX */
+.payment-qrcode {
+  margin: 25px 0;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+.pix-code-container {
+  margin: 15px 0;
+}
+
+/* Ajustes para mobile */
+@media (max-width: 768px) {
+  .mp-checkout-container, 
+  .payment-url-button {
+    width: 100%;
+  }
 } 
