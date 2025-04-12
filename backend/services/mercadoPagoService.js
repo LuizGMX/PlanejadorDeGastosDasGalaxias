@@ -1,4 +1,4 @@
-import { MercadoPagoConfig, Payment as MPPayment, Preference } from 'mercadopago';
+import mercadopago from 'mercadopago';
 import dotenv from 'dotenv';
 import QRCode from 'qrcode';
 import { Payment, User } from '../models/index.js';
@@ -11,7 +11,6 @@ dotenv.config();
 const accessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN;
 if (!accessToken) {
   console.error('ERRO: MERCADO_PAGO_ACCESS_TOKEN não está definido no arquivo .env!');
-  // Não lançar erro para permitir que o servidor inicie
 } else {
   console.log('MERCADO_PAGO_ACCESS_TOKEN encontrado:', accessToken.substring(0, 10) + '...');
   
@@ -31,12 +30,12 @@ console.log('Variáveis de ambiente para integração MP:', {
   MERCADO_PAGO_ACCESS_TOKEN_PRIMEIROS_CHARS: accessToken ? accessToken.substring(0, 10) + '...' : 'Não definido'
 });
 
-// Configuração do Mercado Pago
-const client = new MercadoPagoConfig({ 
-  accessToken: accessToken 
+// Configuração do Mercado Pago (versão 1.x)
+mercadopago.configure({
+  access_token: accessToken
 });
 
-// Preço da assinatura anual (R$59,90)
+// Preço da assinatura anual
 const SUBSCRIPTION_PRICE = parseFloat(process.env.SUBSCRIPTION_PRICE) || 99.90;
 
 /**
@@ -60,24 +59,23 @@ export const createPayment = async (userData) => {
     if (pendingPayment && pendingPayment.payment_id) {
       try {
         // Verifica se o pagamento ainda existe no Mercado Pago
-        const payment = new MPPayment(client);
-        const mpPayment = await payment.get({ id: pendingPayment.payment_id });
+        const mpPayment = await mercadopago.payment.get(pendingPayment.payment_id);
         
         // Se o pagamento existe e ainda está pendente, retorna os dados
-        if (mpPayment.status === 'pending') {
+        if (mpPayment.body.status === 'pending') {
           // Tenta gerar o QR code novamente, se disponível
           let qrCode = null;
-          if (mpPayment.point_of_interaction && mpPayment.point_of_interaction.transaction_data && mpPayment.point_of_interaction.transaction_data.qr_code) {
-            qrCode = await QRCode.toDataURL(mpPayment.point_of_interaction.transaction_data.qr_code);
+          if (mpPayment.body.point_of_interaction && mpPayment.body.point_of_interaction.transaction_data && mpPayment.body.point_of_interaction.transaction_data.qr_code) {
+            qrCode = await QRCode.toDataURL(mpPayment.body.point_of_interaction.transaction_data.qr_code);
           }
           
           return {
             paymentId: pendingPayment.payment_id,
-            status: mpPayment.status,
+            status: mpPayment.body.status,
             qrCode,
-            qrCodeBase64: mpPayment.point_of_interaction?.transaction_data?.qr_code_base64 || null,
-            qrCodeText: mpPayment.point_of_interaction?.transaction_data?.qr_code || null,
-            paymentUrl: mpPayment.point_of_interaction?.transaction_data?.ticket_url || null,
+            qrCodeBase64: mpPayment.body.point_of_interaction?.transaction_data?.qr_code_base64 || null,
+            qrCodeText: mpPayment.body.point_of_interaction?.transaction_data?.qr_code || null,
+            paymentUrl: mpPayment.body.point_of_interaction?.transaction_data?.ticket_url || null,
             message: 'Pagamento pendente encontrado'
           };
         }
@@ -89,7 +87,9 @@ export const createPayment = async (userData) => {
     }
     
     // Criação de um novo pagamento
-    const preferenceData = {
+    console.log('Iniciando criação da preferência para o usuário:', userId);
+    
+    const preference = {
       items: [
         {
           title: 'Assinatura Anual - Planejador de Gastos das Galáxias',
@@ -123,18 +123,16 @@ export const createPayment = async (userData) => {
       }
     };
     
-    const preference = new Preference(client);
-    
     try {
-      console.log('Iniciando criação da preferência com os dados:', JSON.stringify(preferenceData, null, 2));
-      const response = await preference.create({ body: preferenceData });
-      console.log('Preferência criada com sucesso:', response.id);
+      console.log('Enviando request para Mercado Pago...');
+      const response = await mercadopago.preferences.create(preference);
+      console.log('Preferência criada com sucesso, ID:', response.body.id);
       
       // Cria um registro de pagamento no banco de dados
       const payment = await Payment.create({
         user_id: userId,
         payment_status: 'pending',
-        payment_id: response.id, // ID da preferência de pagamento
+        payment_id: response.body.id, // ID da preferência de pagamento
         payment_amount: SUBSCRIPTION_PRICE,
         payment_method: 'mercado_pago',
         subscription_expiration: new Date() // Será atualizado quando o pagamento for aprovado
@@ -142,18 +140,18 @@ export const createPayment = async (userData) => {
       
       // Tenta gerar QR code, se disponível
       let qrCode = null;
-      if (response.point_of_interaction && response.point_of_interaction.transaction_data && response.point_of_interaction.transaction_data.qr_code) {
-        qrCode = await QRCode.toDataURL(response.point_of_interaction.transaction_data.qr_code);
+      if (response.body.point_of_interaction && response.body.point_of_interaction.transaction_data && response.body.point_of_interaction.transaction_data.qr_code) {
+        qrCode = await QRCode.toDataURL(response.body.point_of_interaction.transaction_data.qr_code);
       }
       
       return {
         paymentId: payment.payment_id,
-        preferenceId: response.id,
-        initPoint: response.init_point,
+        preferenceId: response.body.id,
+        initPoint: response.body.init_point,
         qrCode,
-        qrCodeBase64: response.point_of_interaction?.transaction_data?.qr_code_base64 || null,
-        qrCodeText: response.point_of_interaction?.transaction_data?.qr_code || null,
-        paymentUrl: response.point_of_interaction?.transaction_data?.ticket_url || null,
+        qrCodeBase64: response.body.point_of_interaction?.transaction_data?.qr_code_base64 || null,
+        qrCodeText: response.body.point_of_interaction?.transaction_data?.qr_code || null,
+        paymentUrl: response.body.point_of_interaction?.transaction_data?.ticket_url || null,
         message: 'Pagamento criado com sucesso'
       };
     } catch (mpError) {
@@ -178,16 +176,15 @@ export const createPayment = async (userData) => {
  */
 export const checkPaymentStatus = async (paymentId) => {
   try {
-    const payment = new MPPayment(client);
-    const response = await payment.get({ id: paymentId });
+    const response = await mercadopago.payment.get(paymentId);
     
     return {
-      status: response.status,
-      statusDetail: response.status_detail,
-      paymentMethod: response.payment_method_id,
-      paymentAmount: response.transaction_amount,
-      dateCreated: response.date_created,
-      dateLastUpdated: response.date_last_updated
+      status: response.body.status,
+      statusDetail: response.body.status_detail,
+      paymentMethod: response.body.payment_method_id,
+      paymentAmount: response.body.transaction_amount,
+      dateCreated: response.body.date_created,
+      dateLastUpdated: response.body.date_last_updated
     };
   } catch (error) {
     console.error('Erro ao verificar status do pagamento:', error);
@@ -210,9 +207,8 @@ export const processPaymentWebhook = async (data) => {
     }
     
     // Busca os detalhes do pagamento no Mercado Pago
-    const payment = new MPPayment(client);
-    const mpPayment = await payment.get({ id: data.data.id });
-    const paymentInfo = mpPayment;
+    const mpPayment = await mercadopago.payment.get(data.data.id);
+    const paymentInfo = mpPayment.body;
     
     // Verifica se o pagamento está relacionado a uma preferência existente
     let dbPayment = await Payment.findOne({

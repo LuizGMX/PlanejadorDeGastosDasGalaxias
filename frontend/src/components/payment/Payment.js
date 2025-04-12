@@ -3,24 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import AuthContext from '../../contexts/AuthContext';
 import '../../styles/Payment.css';
-import { initMercadoPago, Wallet } from '@mercadopago/sdk-react';
 
 const Payment = () => {
   const { auth, apiInterceptor } = useContext(AuthContext);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState(null);
-  const [processingPayment, setProcessingPayment] = useState(false);  
+  const [processingPayment, setProcessingPayment] = useState(false);
+  const [preferenceId, setPreferenceId] = useState(null);
   const [paymentData, setPaymentData] = useState(null);
   const [checkingStatus, setCheckingStatus] = useState(false);
   const statusInterval = useRef(null);
-  const [preferenceId, setPreferenceId] = useState(null);
-
-  useEffect(() => {
-    initMercadoPago(process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY, {
-      locale: 'pt-BR'
-    });
-  }, []);
 
   useEffect(() => {
     if (!auth.token) {
@@ -318,15 +311,28 @@ const Payment = () => {
                     }}>
                       <h4 style={{marginBottom: "15px"}}>Cartão de Crédito, Débito ou Saldo Mercado Pago</h4>
                       <div className="mp-checkout-container">
-                        <Wallet 
-                          initialization={{ preferenceId: preferenceId }}
-                          customization={{
-                            texts: {
-                              action: 'pay',
-                              valueProp: 'security_safety'
-                            }
+                        <a 
+                          href={`https://www.mercadopago.com.br/checkout/v1/redirect?preference-id=${preferenceId}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="payment-url-button"
+                          style={{
+                            display: "block",
+                            textAlign: "center",
+                            padding: "12px 20px",
+                            margin: "15px auto",
+                            backgroundColor: "#009ee3",
+                            color: "white",
+                            textDecoration: "none",
+                            borderRadius: "4px",
+                            fontWeight: "bold",
+                            width: "100%",
+                            maxWidth: "300px",
+                            boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
                           }}
-                        />
+                        >
+                          Pagar com Mercado Pago
+                        </a>
                       </div>
                     </div>
                     
