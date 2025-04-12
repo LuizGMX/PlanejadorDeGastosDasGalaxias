@@ -10,7 +10,7 @@ function Payment() {
   const createPreference = async () => {
     try {
       const response = await axios.post(
-        `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/create_preference`,
+        `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/payment/create_preference`,
         {
           title: "Produto Exemplo",
           quantity: 1,
