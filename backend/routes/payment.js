@@ -1,5 +1,6 @@
 import express from 'express';
 import { MercadoPagoConfig, Preference } from "mercadopago";
+import dotenv from 'dotenv';
 const router = express.Router();
 dotenv.config();
 
