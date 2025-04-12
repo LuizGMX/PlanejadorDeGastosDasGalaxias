@@ -137,7 +137,7 @@
 
 .payment-url-button {
   display: inline-block;
-  background-color: var(--chart-color-3);
+  background-color: var(--primary-color);
   color: var(--secondary-color);
   border: none;
   border-radius: 5px;
@@ -146,13 +146,11 @@
   font-weight: bold;
   text-decoration: none;
   cursor: pointer;
-  margin-top: 10px;
   transition: background-color 0.3s;
 }
 
 .payment-url-button:hover {
-  background-color: var(--chart-color-3);
-  opacity: 0.9;
+  background-color: var(--hover-color);
   text-decoration: none;
   color: var(--secondary-color);
 }
@@ -358,4 +356,53 @@
   .payment-url-button {
     width: 100%;
   }
+}
+
+.mp-wallet-container {
+  width: 100%;
+  margin: 20px 0;
+  padding: 10px;
+  background-color: var(--card-background);
+  border-radius: 8px;
+  min-height: 150px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Para garantir que o iframe do MercadoPago seja exibido corretamente */
+.mp-wallet-container iframe {
+  width: 100% !important;
+  min-height: 250px !important;
+}
+
+/* Aguardando carregamento do componente */
+.mp-wallet-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 150px;
+  background-color: var(--input-background);
+  border-radius: 8px;
+  margin: 15px 0;
+}
+
+.mp-wallet-loading::after {
+  content: "Carregando opções de pagamento...";
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.payment-alternative {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: var(--input-background);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.payment-alternative p {
+  margin-bottom: 10px;
+  color: var(--text-secondary);
+  font-size: 14px;
 } 

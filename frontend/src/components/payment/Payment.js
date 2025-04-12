@@ -3,7 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import AuthContext from '../../contexts/AuthContext';
 import '../../styles/Payment.css';
-import { Wallet } from '@mercadopago/sdk-react';
+import { Wallet, initMercadoPago } from '@mercadopago/sdk-react';
+
+// Inicializar MercadoPago com a chave pública
+initMercadoPago("TEST-6843259428100870-092419-deed0d1c053a9c2d56093554d6a039c2-115322747");
 
 const Payment = () => {
   const { auth, apiInterceptor } = useContext(AuthContext);
@@ -12,6 +15,8 @@ const Payment = () => {
   const [subscription, setSubscription] = useState(null);
   const [processingPayment, setProcessingPayment] = useState(false);
   const [preferenceId, setPreferenceId] = useState(null);
+  const [paymentUrl, setPaymentUrl] = useState(null);
+  const [walletLoaded, setWalletLoaded] = useState(false);
 
   useEffect(() => {
     if (!auth.token) {
@@ -81,10 +86,19 @@ const Payment = () => {
       }
 
       const data = await response.json();
+      console.log('Resposta do servidor:', data); // Debug da resposta
       toast.success('Pagamento criado com sucesso. Escolha uma forma de pagamento para continuar.');
       
       setPreferenceId(data.preferenceId);
+      setPaymentUrl(data.paymentUrl || data.initPoint);
       setProcessingPayment(false);
+      
+      // Iniciar contador para verificar se o componente Wallet carregou
+      setTimeout(() => {
+        if (!walletLoaded) {
+          console.log('Wallet não carregou em tempo hábil, mostrando botão alternativo');
+        }
+      }, 5000);
     } catch (error) {
       console.error('Erro ao processar pagamento:', error);
       toast.error('Não foi possível processar o pagamento');
@@ -133,6 +147,62 @@ const Payment = () => {
     }
   }, []);
 
+  // Função para reiniciar o processo de pagamento
+  const restartPaymentProcess = () => {
+    setPreferenceId(null);
+    setPaymentUrl(null);
+    setWalletLoaded(false);
+    setProcessingPayment(false);
+    toast.info('Processo de pagamento reiniciado.');
+  };
+
+  // Renderização condicional do componente de carteira do MercadoPago
+  const renderMercadoPagoWallet = () => {
+    if (!preferenceId) return null;
+    
+    console.log('Renderizando Wallet com preferenceId:', preferenceId);
+    
+    return (
+      <div className="payment-methods">
+        <h3>Selecione o método de pagamento:</h3>
+        <div className="mp-wallet-container">
+          <Wallet 
+            initialization={{ preferenceId: preferenceId }}
+            customization={{ texts: { valueProp: 'smart_option' } }}
+            onReady={() => setWalletLoaded(true)}
+            onError={(error) => {
+              console.error('Erro ao carregar Wallet:', error);
+              setWalletLoaded(false);
+              toast.error('Não foi possível carregar as opções de pagamento.');
+            }}
+          />
+        </div>
+        
+        {paymentUrl && (
+          <div className="payment-alternative">
+            <p>Se o formulário de pagamento não carregar corretamente, você pode usar o link abaixo:</p>
+            <a 
+              href={paymentUrl} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="payment-url-button"
+            >
+              Abrir Página de Pagamento
+            </a>
+            
+            <button 
+              className="payment-secondary-button"
+              onClick={restartPaymentProcess}
+              style={{ marginTop: '15px' }}
+            >
+              Reiniciar Processo de Pagamento
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="payment-container">
@@ -171,6 +241,7 @@ const Payment = () => {
                     >
                       {processingPayment ? 'Processando...' : 'Renovar Assinatura'}
                     </button>
+                    {preferenceId && renderMercadoPagoWallet()}
                   </div>
                 )}
               </>
@@ -192,14 +263,7 @@ const Payment = () => {
                     {processingPayment ? 'Processando...' : 'Assinar Agora - R$ 99,90/ano'}
                   </button>
                 ) : (
-                  <div className="payment-methods">
-                    <h3>Selecione o método de pagamento:</h3>
-                    <div className="mp-wallet-container">
-                      <Wallet 
-                        initialization={{ preferenceId: preferenceId }} 
-                      />
-                    </div>
-                  </div>
+                  renderMercadoPagoWallet()
                 )}
                 
                 <div className="subscription-benefits">

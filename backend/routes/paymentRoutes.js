@@ -248,6 +248,25 @@ router.post('/create-payment', authenticate, async (req, res) => {
       }
     });
     
+    console.log('Preferência criada no MercadoPago:', preferenceData);
+    
+    // Registrar pagamento no banco de dados
+    try {
+      await Payment.create({
+        user_id: userId,
+        payment_status: 'pending',
+        payment_id: null, // Será atualizado quando o pagamento for processado
+        payment_amount: SUBSCRIPTION_PRICE,
+        payment_date: null,
+        subscription_expiration: new Date(), // Será atualizado quando o pagamento for aprovado
+        created_at: new Date(),
+        updated_at: new Date()
+      });
+    } catch (dbError) {
+      console.error('Erro ao registrar pagamento no banco de dados:', dbError);
+      // Continua mesmo com erro no DB para não impedir o pagamento
+    }
+    
     // Retornar dados do pagamento para o frontend
     return res.json({
       preferenceId: preferenceData.id,
