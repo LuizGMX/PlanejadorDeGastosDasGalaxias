@@ -52,44 +52,47 @@ const express = require('express');
 const YOUR_DOMAIN = 'https://planejadordasgalaxias.com.br';
 
 router.post('/create-checkout-session', async (req, res) => {
-  const prices = await stripe.prices.list({
-    lookup_keys: [req.body.lookup_key],
-    expand: ['data.product'],
-  });
-  const session = await stripe.checkout.sessions.create({
-    billing_address_collection: 'auto',
-    line_items: [
-      {
-        price: prices.data[0].id,
-        // For metered billing, do not pass quantity
-        quantity: 1,
+  try {
+    const prices = await stripe.prices.list({
+      lookup_keys: [req.body.lookup_key],
+      expand: ['data.product'],
+    });
+    const session = await stripe.checkout.sessions.create({
+      billing_address_collection: 'auto',
+      line_items: [
+        {
+          price: prices.data[0].id,
+          quantity: 1,
+        },
+      ],
+      mode: 'subscription',
+      success_url: `${YOUR_DOMAIN}/?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${YOUR_DOMAIN}?canceled=true`,
+    });
 
-      },
-    ],
-    mode: 'subscription',
-    success_url: `${YOUR_DOMAIN}/?success=true&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${YOUR_DOMAIN}?canceled=true`,
-  });
-
-  res.redirect(303, session.url);
+    res.redirect(303, session.url);
+  } catch (error) {
+    console.error("Error creating checkout session:", error);
+    res.status(500).send('Internal Server Error');
+  }
 });
 
 router.post('/create-portal-session', async (req, res) => {
-  // For demonstration purposes, we're using the Checkout session to retrieve the customer ID.
-  // Typically this is stored alongside the authenticated user in your database.
-  const { session_id } = req.body;
-  const checkoutSession = await stripe.checkout.sessions.retrieve(session_id);
+  try {
+    const { session_id } = req.body;
+    const checkoutSession = await stripe.checkout.sessions.retrieve(session_id);
 
-  // This is the url to which the customer will be redirected when they're done
-  // managing their billing with the portal.
-  const returnUrl = YOUR_DOMAIN;
+    const returnUrl = YOUR_DOMAIN;
+    const portalSession = await stripe.billingPortal.sessions.create({
+      customer: checkoutSession.customer,
+      return_url: returnUrl,
+    });
 
-  const portalSession = await stripe.billingPortal.sessions.create({
-    customer: checkoutSession.customer,
-    return_url: returnUrl,
-  });
-
-  res.redirect(303, portalSession.url);
+    res.redirect(303, portalSession.url);
+  } catch (error) {
+    console.error("Error creating portal session:", error);
+    res.status(500).send('Internal Server Error');
+  }
 });
 
 router.post(
