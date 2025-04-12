@@ -66,6 +66,19 @@
   background-color: #ffebee;
 }
 
+.pending {
+  border-left: 4px solid #ffc107;
+  background-color: #fff8e1;
+}
+
+.pending .actionButton {
+  background-color: #ff9800;
+}
+
+.pending .actionButton:hover {
+  background-color: #f57c00;
+}
+
 .skeletonContainer {
   height: 80px;
   width: 100%;

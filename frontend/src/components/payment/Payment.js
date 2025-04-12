@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import AuthContext from '../../contexts/AuthContext';
@@ -10,6 +10,11 @@ const Payment = () => {
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState(null);
   const [processingPayment, setProcessingPayment] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('credit_card');
+  const [paymentData, setPaymentData] = useState(null);
+  const [checkingStatus, setCheckingStatus] = useState(false);
+  const mpCheckoutRef = useRef(null);
+  const statusInterval = useRef(null);
 
   useEffect(() => {
     if (!auth.token) {
@@ -18,7 +23,87 @@ const Payment = () => {
     }
 
     fetchSubscriptionStatus();
+
+    // Adicionar o script do Mercado Pago
+    const script = document.createElement('script');
+    script.src = 'https://sdk.mercadopago.com/js/v2';
+    script.async = true;
+    document.body.appendChild(script);
+
+    return () => {
+      // Limpar script e intervalo ao desmontar
+      document.body.removeChild(script);
+      if (statusInterval.current) {
+        clearInterval(statusInterval.current);
+      }
+    };
   }, [auth.token, navigate]);
+
+  useEffect(() => {
+    // Se temos um pagamento pendente, verificar o status periodicamente
+    if (subscription && subscription.isPending && subscription.paymentId) {
+      // Limpar intervalo existente se houver
+      if (statusInterval.current) {
+        clearInterval(statusInterval.current);
+      }
+      
+      // Verificar a cada 10 segundos
+      statusInterval.current = setInterval(() => {
+        checkPaymentStatus(subscription.paymentId);
+      }, 10000);
+      
+      // Verificar imediatamente
+      checkPaymentStatus(subscription.paymentId);
+    }
+    
+    return () => {
+      // Limpar intervalo ao desmontar ou mudar o estado
+      if (statusInterval.current) {
+        clearInterval(statusInterval.current);
+      }
+    };
+  }, [subscription]);
+
+  // Inicializa o Mercado Pago se temos dados de pagamento
+  useEffect(() => {
+    if (paymentData && paymentData.initPoint) {
+      // Verificar se o objeto window.MercadoPago está disponível
+      if (window.MercadoPago) {
+        renderCheckoutButton();
+      } else {
+        // Se o SDK ainda não foi carregado, tentar novamente após 1 segundo
+        const timer = setTimeout(() => {
+          if (window.MercadoPago) {
+            renderCheckoutButton();
+          }
+        }, 1000);
+        
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [paymentData]);
+
+  const renderCheckoutButton = () => {
+    // Limpar qualquer botão anterior
+    if (mpCheckoutRef.current) {
+      mpCheckoutRef.current.innerHTML = '';
+    }
+    
+    const mp = new window.MercadoPago(process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY, {
+      locale: 'pt-BR'
+    });
+    
+    // Renderizar botão de pagamento
+    mp.checkout({
+      preference: {
+        id: paymentData.preferenceId
+      },
+      render: {
+        container: '.mp-checkout-container',
+        label: 'Pagar Agora',
+      }
+    });
+  };
 
   const fetchSubscriptionStatus = async () => {
     try {
@@ -50,11 +135,55 @@ const Payment = () => {
 
       const data = await response.json();
       setSubscription(data);
+      
+      // Se temos um pagamento pendente, configura para verificar o status
+      if (data.isPending && data.paymentId) {
+        checkPaymentStatus(data.paymentId);
+      }
     } catch (error) {
       console.error('Erro ao verificar assinatura:', error);
       toast.error('Não foi possível verificar o status da sua assinatura');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const checkPaymentStatus = async (paymentId) => {
+    if (checkingStatus) return;
+    
+    try {
+      setCheckingStatus(true);
+      const response = await apiInterceptor(
+        `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/payments/check-payment/${paymentId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${auth.token}`
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Falha ao verificar status do pagamento');
+      }
+
+      const data = await response.json();
+      
+      // Se o pagamento foi aprovado, atualizar a interface
+      if (data.status === 'approved') {
+        // Limpar o intervalo de verificação
+        if (statusInterval.current) {
+          clearInterval(statusInterval.current);
+        }
+        
+        toast.success('Pagamento aprovado! Sua assinatura foi ativada.');
+        
+        // Atualizar o status da assinatura
+        fetchSubscriptionStatus();
+      }
+    } catch (error) {
+      console.error('Erro ao verificar status do pagamento:', error);
+    } finally {
+      setCheckingStatus(false);
     }
   };
 
@@ -83,15 +212,13 @@ const Payment = () => {
       }
 
       const data = await response.json();
-      toast.success('Pagamento criado com sucesso');
+      toast.success('Pagamento criado com sucesso. Escolha uma forma de pagamento para continuar.');
       
-      // Aqui seria implementada a integração com o Mercado Pago
-      // Por enquanto, apenas atualizamos o status
-      setTimeout(() => {
-        fetchSubscriptionStatus();
-        setProcessingPayment(false);
-      }, 1500);
+      // Salvar os dados de pagamento
+      setPaymentData(data);
       
+      // Resetar o estado de processamento
+      setProcessingPayment(false);
     } catch (error) {
       console.error('Erro ao processar pagamento:', error);
       toast.error('Não foi possível processar o pagamento');
@@ -108,6 +235,37 @@ const Payment = () => {
       year: 'numeric'
     });
   };
+
+  // Verifica se veio da URL de retorno do Mercado Pago
+  useEffect(() => {
+    const queryParams = new URLSearchParams(window.location.search);
+    const status = queryParams.get('status');
+    
+    if (status) {
+      switch (status) {
+        case 'success':
+          toast.success('Pagamento concluído com sucesso!');
+          break;
+        case 'failure':
+          toast.error('Falha no pagamento. Por favor, tente novamente.');
+          break;
+        case 'pending':
+          toast.info('Seu pagamento está pendente de aprovação.');
+          break;
+        case 'error':
+          toast.error('Ocorreu um erro ao processar seu pagamento.');
+          break;
+        default:
+          break;
+      }
+      
+      // Limpa os parâmetros da URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+      
+      // Atualiza o status da assinatura
+      fetchSubscriptionStatus();
+    }
+  }, []);
 
   if (loading) {
     return (
@@ -127,8 +285,8 @@ const Payment = () => {
         {subscription && (
           <div className="subscription-info">
             <p className="subscription-status">
-              Status: <span className={subscription.hasSubscription ? 'active' : 'inactive'}>
-                {subscription.hasSubscription ? 'Ativa' : 'Inativa'}
+              Status: <span className={subscription.hasSubscription ? 'active' : subscription.isPending ? 'pending' : 'inactive'}>
+                {subscription.hasSubscription ? 'Ativa' : subscription.isPending ? 'Pendente' : 'Inativa'}
               </span>
             </p>
             
@@ -143,25 +301,80 @@ const Payment = () => {
                     <button 
                       className="payment-button"
                       onClick={handlePayment}
-                      disabled={processingPayment}
+                      disabled={processingPayment || paymentData}
                     >
                       {processingPayment ? 'Processando...' : 'Renovar Assinatura'}
                     </button>
                   </div>
                 )}
               </>
+            ) : subscription.isPending ? (
+              <div className="subscription-pending">
+                <p>Seu pagamento está sendo processado. Você receberá uma confirmação assim que for aprovado.</p>
+                <p>Se preferir, você pode verificar o status do seu pagamento: </p>
+                <button 
+                  className="payment-check-button"
+                  onClick={() => checkPaymentStatus(subscription.paymentId)}
+                  disabled={checkingStatus}
+                >
+                  {checkingStatus ? 'Verificando...' : 'Verificar Status'}
+                </button>
+                
+                {paymentData && paymentData.paymentUrl && (
+                  <div className="payment-link">
+                    <p>Ou acesse diretamente o link de pagamento:</p>
+                    <a 
+                      href={paymentData.paymentUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="payment-url-button"
+                    >
+                      Abrir Link de Pagamento
+                    </a>
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="subscription-expired">
                 <p>Sua assinatura expirou ou você ainda está no período de teste.</p>
                 <p>Para continuar utilizando o sistema, é necessário adquirir uma assinatura.</p>
                 
-                <button 
-                  className="payment-button"
-                  onClick={handlePayment}
-                  disabled={processingPayment}
-                >
-                  {processingPayment ? 'Processando...' : 'Assinar Agora - R$ 99,90/ano'}
-                </button>
+                {!paymentData ? (
+                  <button 
+                    className="payment-button"
+                    onClick={handlePayment}
+                    disabled={processingPayment}
+                  >
+                    {processingPayment ? 'Processando...' : 'Assinar Agora - R$ 99,90/ano'}
+                  </button>
+                ) : (
+                  <div className="payment-methods">
+                    <h3>Selecione o método de pagamento:</h3>
+                    
+                    <div className="mp-checkout-container" ref={mpCheckoutRef}></div>
+                    
+                    {paymentData.qrCode && (
+                      <div className="payment-qrcode">
+                        <h4>Pague com PIX</h4>
+                        <img src={paymentData.qrCode} alt="QR Code para pagamento PIX" />
+                        <p>Escaneie o QR Code acima com o app do seu banco</p>
+                      </div>
+                    )}
+                    
+                    {paymentData.paymentUrl && (
+                      <div className="payment-link">
+                        <a 
+                          href={paymentData.paymentUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="payment-url-button"
+                        >
+                          Abrir Checkout do Mercado Pago
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                )}
                 
                 <div className="subscription-benefits">
                   <h3>Benefícios da assinatura:</h3>
@@ -180,7 +393,10 @@ const Payment = () => {
         <div className="payment-info">
           <h3>Informações de Pagamento</h3>
           <p>Aceitamos pagamentos seguros através do Mercado Pago</p>
-          <p>A assinatura é renovada anualmente por R$ 99,90</p>
+          <p>A assinatura custa apenas R$ 4,99 por mês, para que você possa controlar totalmente sua vida financeira</p>
+          <div className="payment-methods-icons">
+            <img src="/images/payment-methods.png" alt="Métodos de pagamento" />
+          </div>
         </div>
       </div>
     </div>

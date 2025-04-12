@@ -15,7 +15,7 @@ Sistema de gerenciamento financeiro pessoal que permite aos usuários controlar 
 O sistema de assinatura foi implementado com as seguintes características:
 
 - Período de teste gratuito de 7 dias para novos usuários
-- Assinatura anual de R$ 99,90
+- Assinatura anual de R$ 59,90
 - Integração com Mercado Pago
 - Notificação de expiração da assinatura
 - Bloqueio de acesso após expiração

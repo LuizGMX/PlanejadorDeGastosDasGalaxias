@@ -81,6 +81,26 @@ const SubscriptionStatus = () => {
     return null;
   }
 
+  // Se tem pagamento pendente, mostra notificação
+  if (subscription.isPending) {
+    return (
+      <div 
+        className={`${styles.subscriptionStatus} ${styles.pending}`}
+        onClick={handleClick}
+      >
+        <div className={styles.statusInfo}>
+          <span className={styles.statusTitle}>⏱️ Pagamento em processamento</span>
+          <span className={styles.statusDetails}>
+            Clique para verificar o status do seu pagamento
+          </span>
+        </div>
+        <div className={styles.actionButton}>
+          Verificar
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div 
       className={`${styles.subscriptionStatus} ${
