@@ -1,7 +1,7 @@
-import express from 'express';
+import { Router } from 'express';
 import { MercadoPagoConfig, Preference } from "mercadopago";
 import dotenv from 'dotenv';
-const router = express.Router();
+const router = Router();
 dotenv.config();
 
 const client = new MercadoPagoConfig({
