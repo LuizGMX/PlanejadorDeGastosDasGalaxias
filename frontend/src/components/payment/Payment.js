@@ -89,20 +89,71 @@ const Payment = () => {
       mpCheckoutRef.current.innerHTML = '';
     }
     
-    const mp = new window.MercadoPago(process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY, {
-      locale: 'pt-BR'
-    });
-    
-    // Renderizar botão de pagamento
-    mp.checkout({
-      preference: {
-        id: paymentData.preferenceId
-      },
-      render: {
-        container: '.mp-checkout-container',
-        label: 'Pagar Agora',
+    try {
+      // Criar instância do Mercado Pago com a chave pública
+      const mp = new window.MercadoPago(process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY, {
+        locale: 'pt-BR'
+      });
+      
+      // Criar botão de checkout para redirecionar para a página de pagamento
+      const checkout = mp.checkout({
+        preference: {
+          id: paymentData.preferenceId
+        },
+        render: {
+          container: '.mp-checkout-container',
+          label: 'Pagar com Mercado Pago',
+          type: 'redirect'
+        }
+      });
+      
+      // Garantir que o botão está visível
+      const container = document.querySelector('.mp-checkout-container');
+      if (container) {
+        container.style.display = 'block';
+        container.style.margin = '20px auto';
       }
-    });
+      
+      // Se tiver a URL de inicialização direta, adicionar botão alternativo
+      if (paymentData.initPoint) {
+        const directLinkContainer = document.createElement('div');
+        directLinkContainer.className = 'payment-link';
+        directLinkContainer.innerHTML = `
+          <p>Se o botão acima não funcionar, use este link:</p>
+          <a 
+            href="${paymentData.initPoint}" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            class="payment-url-button"
+          >
+            Ir para Página de Pagamento
+          </a>
+        `;
+        
+        if (container && container.parentNode) {
+          container.parentNode.insertBefore(directLinkContainer, container.nextSibling);
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao renderizar botão do Mercado Pago:', error);
+      
+      // Fallback se o SDK falhar
+      if (paymentData.initPoint) {
+        mpCheckoutRef.current.innerHTML = `
+          <div class="payment-link">
+            <p>Ocorreu um erro ao carregar o botão de pagamento. Use este link:</p>
+            <a 
+              href="${paymentData.initPoint}" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              class="payment-url-button"
+            >
+              Ir para Página de Pagamento
+            </a>
+          </div>
+        `;
+      }
+    }
   };
 
   const fetchSubscriptionStatus = async () => {
@@ -351,13 +402,75 @@ const Payment = () => {
                   <div className="payment-methods">
                     <h3>Selecione o método de pagamento:</h3>
                     
-                    <div className="mp-checkout-container" ref={mpCheckoutRef}></div>
+                    <div style={{
+                      margin: "20px 0",
+                      padding: "15px",
+                      border: "1px solid var(--primary-color)",
+                      borderRadius: "8px",
+                      backgroundColor: "#f9f9f9"
+                    }}>
+                      <h4 style={{marginBottom: "15px"}}>Cartão de Crédito, Débito ou Saldo Mercado Pago</h4>
+                      <div className="mp-checkout-container" ref={mpCheckoutRef}></div>
+                    </div>
                     
                     {paymentData.qrCode && (
                       <div className="payment-qrcode">
                         <h4>Pague com PIX</h4>
-                        <img src={paymentData.qrCode} alt="QR Code para pagamento PIX" />
-                        <p>Escaneie o QR Code acima com o app do seu banco</p>
+                        <p>Escaneie o QR Code abaixo com o aplicativo do seu banco</p>
+                        <img 
+                          src={paymentData.qrCode} 
+                          alt="QR Code para pagamento PIX" 
+                          style={{
+                            maxWidth: "250px",
+                            margin: "15px auto",
+                            display: "block",
+                            border: "1px solid #ddd",
+                            padding: "10px",
+                            borderRadius: "8px"
+                          }}
+                        />
+                        {paymentData.qrCodeText && (
+                          <div className="pix-copy">
+                            <p>Ou copie o código PIX abaixo:</p>
+                            <div className="pix-code-container">
+                              <textarea 
+                                readOnly 
+                                value={paymentData.qrCodeText}
+                                onClick={(e) => {
+                                  e.target.select();
+                                  navigator.clipboard.writeText(paymentData.qrCodeText);
+                                  toast.success('Código PIX copiado!');
+                                }}
+                                style={{
+                                  width: "100%",
+                                  padding: "8px",
+                                  height: "80px",
+                                  margin: "10px 0",
+                                  cursor: "pointer",
+                                  fontSize: "12px"
+                                }}
+                              />
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(paymentData.qrCodeText);
+                                  toast.success('Código PIX copiado!');
+                                }}
+                                style={{
+                                  padding: "8px 16px",
+                                  background: "var(--primary-color)",
+                                  color: "var(--secondary-color)",
+                                  border: "none",
+                                  borderRadius: "4px",
+                                  cursor: "pointer",
+                                  marginTop: "5px"
+                                }}
+                              >
+                                Copiar código PIX
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                        <p style={{marginTop: "15px", fontStyle: "italic"}}>Após o pagamento, pode levar alguns minutos para confirmarmos seu pagamento.</p>
                       </div>
                     )}
                     
@@ -368,9 +481,24 @@ const Payment = () => {
                           target="_blank" 
                           rel="noopener noreferrer"
                           className="payment-url-button"
+                          style={{
+                            display: "block",
+                            textAlign: "center",
+                            padding: "12px 20px",
+                            margin: "20px auto",
+                            backgroundColor: "var(--primary-color)",
+                            color: "var(--secondary-color)",
+                            textDecoration: "none",
+                            borderRadius: "4px",
+                            fontWeight: "bold",
+                            maxWidth: "300px"
+                          }}
                         >
                           Abrir Checkout do Mercado Pago
                         </a>
+                        <p style={{textAlign: "center", marginTop: "10px"}}>
+                          Se os botões acima não funcionarem, use este link para acessar a página de pagamento.
+                        </p>
                       </div>
                     )}
                   </div>

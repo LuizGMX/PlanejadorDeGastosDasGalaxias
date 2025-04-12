@@ -12,6 +12,13 @@ const client = new MercadoPagoConfig({
   accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN 
 });
 
+// Log das variáveis de ambiente importantes
+console.log('Variáveis de ambiente para integração MP:', {
+  BACKEND_URL: process.env.BACKEND_URL || 'Não definido',
+  FRONTEND_URL: process.env.FRONTEND_URL || 'Não definido',
+  MERCADO_PAGO_PUBLIC_KEY: process.env.MERCADO_PAGO_PUBLIC_KEY ? 'Definido' : 'Não definido'
+});
+
 // Preço da assinatura anual (R$59,90)
 const SUBSCRIPTION_PRICE = parseFloat(process.env.SUBSCRIPTION_PRICE) || 99.90;
 
@@ -93,7 +100,7 @@ export const createPayment = async (userData) => {
       },
       auto_return: 'approved',
       statement_descriptor: 'PLANEJADORGALAXIAS',
-      notification_url: `${process.env.BACKEND_URL || 'https://seu-backend.com'}/payments/webhook`,
+      notification_url: `${process.env.BACKEND_URL || process.env.FRONTEND_URL?.replace('3000', '5000') || 'https://planejadordasgalaxias.com.br'}/payments/webhook`,
       metadata: {
         user_id: userId
       }
