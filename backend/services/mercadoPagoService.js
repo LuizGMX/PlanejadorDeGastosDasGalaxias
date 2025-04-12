@@ -22,19 +22,6 @@ if (!accessToken) {
   }
 }
 
-// Log das variáveis de ambiente importantes
-console.log('Variáveis de ambiente para integração MP:', {
-  BACKEND_URL: process.env.BACKEND_URL || 'Não definido',
-  FRONTEND_URL: process.env.FRONTEND_URL || 'Não definido',
-  MERCADO_PAGO_PUBLIC_KEY: process.env.MERCADO_PAGO_PUBLIC_KEY ? 'Definido' : 'Não definido',
-  MERCADO_PAGO_ACCESS_TOKEN_PRIMEIROS_CHARS: accessToken ? accessToken.substring(0, 10) + '...' : 'Não definido'
-});
-
-// Configuração do Mercado Pago (versão 1.x)
-mercadopago.configure({
-  access_token: accessToken
-});
-
 // Preço da assinatura anual
 const SUBSCRIPTION_PRICE = parseFloat(process.env.SUBSCRIPTION_PRICE) || 99.90;
 
@@ -59,23 +46,25 @@ export const createPayment = async (userData) => {
     if (pendingPayment && pendingPayment.payment_id) {
       try {
         // Verifica se o pagamento ainda existe no Mercado Pago
-        const mpPayment = await mercadopago.payment.get(pendingPayment.payment_id);
+        const mpPayment = new mercadopago.Payment();
+        mpPayment.setAccessToken(accessToken);
+        const response = await mpPayment.get(pendingPayment.payment_id);
         
         // Se o pagamento existe e ainda está pendente, retorna os dados
-        if (mpPayment.body.status === 'pending') {
+        if (response.body.status === 'pending') {
           // Tenta gerar o QR code novamente, se disponível
           let qrCode = null;
-          if (mpPayment.body.point_of_interaction && mpPayment.body.point_of_interaction.transaction_data && mpPayment.body.point_of_interaction.transaction_data.qr_code) {
-            qrCode = await QRCode.toDataURL(mpPayment.body.point_of_interaction.transaction_data.qr_code);
+          if (response.body.point_of_interaction && response.body.point_of_interaction.transaction_data && response.body.point_of_interaction.transaction_data.qr_code) {
+            qrCode = await QRCode.toDataURL(response.body.point_of_interaction.transaction_data.qr_code);
           }
           
           return {
             paymentId: pendingPayment.payment_id,
-            status: mpPayment.body.status,
+            status: response.body.status,
             qrCode,
-            qrCodeBase64: mpPayment.body.point_of_interaction?.transaction_data?.qr_code_base64 || null,
-            qrCodeText: mpPayment.body.point_of_interaction?.transaction_data?.qr_code || null,
-            paymentUrl: mpPayment.body.point_of_interaction?.transaction_data?.ticket_url || null,
+            qrCodeBase64: response.body.point_of_interaction?.transaction_data?.qr_code_base64 || null,
+            qrCodeText: response.body.point_of_interaction?.transaction_data?.qr_code || null,
+            paymentUrl: response.body.point_of_interaction?.transaction_data?.ticket_url || null,
             message: 'Pagamento pendente encontrado'
           };
         }
@@ -125,7 +114,10 @@ export const createPayment = async (userData) => {
     
     try {
       console.log('Enviando request para Mercado Pago...');
-      const response = await mercadopago.preferences.create(preference);
+      const mpPreference = new mercadopago.Preference();
+      mpPreference.setAccessToken(accessToken);
+      
+      const response = await mpPreference.create(preference);
       console.log('Preferência criada com sucesso, ID:', response.body.id);
       
       // Cria um registro de pagamento no banco de dados
@@ -176,7 +168,10 @@ export const createPayment = async (userData) => {
  */
 export const checkPaymentStatus = async (paymentId) => {
   try {
-    const response = await mercadopago.payment.get(paymentId);
+    const mpPayment = new mercadopago.Payment();
+    mpPayment.setAccessToken(accessToken);
+    
+    const response = await mpPayment.get(paymentId);
     
     return {
       status: response.body.status,
@@ -207,8 +202,11 @@ export const processPaymentWebhook = async (data) => {
     }
     
     // Busca os detalhes do pagamento no Mercado Pago
-    const mpPayment = await mercadopago.payment.get(data.data.id);
-    const paymentInfo = mpPayment.body;
+    const mpPayment = new mercadopago.Payment();
+    mpPayment.setAccessToken(accessToken);
+    
+    const response = await mpPayment.get(data.data.id);
+    const paymentInfo = response.body;
     
     // Verifica se o pagamento está relacionado a uma preferência existente
     let dbPayment = await Payment.findOne({
