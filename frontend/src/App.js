@@ -4,7 +4,6 @@ import { Toaster } from 'react-hot-toast';
 import Login from './components/auth/Login';
 
 import Dashboard from './components/dashboard/Dashboard';
-import SubscriptionStatus from './components/payment/SubscriptionStatus';
 import ExpensesWrapper from './components/expenses/ExpensesWrapper';
 import AddExpenseWrapper from './components/expenses/AddExpenseWrapper';
 import EditExpense from './components/expenses/EditExpense';
@@ -15,9 +14,6 @@ import EditIncome from './components/incomes/EditIncome';
 import SpreadsheetUpload from './components/spreadsheet/SpreadsheetUpload';
 import Layout from './components/layout/Layout';
 import EditRecurringIncomes from './components/incomes/EditRecurringIncomes';
-import Payment from './components/payment/Payment';
-import PaymentResult from './components/payment/PaymentResult';
-import ProtectedRoute from './components/ProtectedRoute';
 import { checkApiHealth, diagnoseProblem } from './utils/apiHealth';
 import { AuthProvider } from './contexts/AuthContext';
 import { initIOSSupport, isIOS } from './utils/iosSupport';
@@ -118,108 +114,51 @@ function App() {
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/" element={<Navigate to="/dashboard" />} />
-              
-              {/* Rotas protegidas que exigem assinatura ativa */}
-              <Route path="/dashboard" element={
-                <ProtectedRoute>
-                  <Layout>
-                    <SubscriptionStatus />
-                    <Dashboard />
-                  </Layout>
-                </ProtectedRoute>
-              } />
+              <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/expenses" element={
-                <ProtectedRoute>
-                  <Layout>
-                    <ExpensesWrapper />
-                  </Layout>
-                </ProtectedRoute>
+                <Layout>
+                  <ExpensesWrapper />
+                </Layout>
               } />
               <Route path="/expenses/edit/:id" element={
-                <ProtectedRoute>
-                  <Layout>
-                    <EditExpense />
-                  </Layout>
-                </ProtectedRoute>
+                <Layout>
+                  <EditExpense />
+                </Layout>
               } />
               <Route path="/add-expense" element={
-                <ProtectedRoute>
-                  <Layout>
-                    <AddExpenseWrapper />
-                  </Layout>
-                </ProtectedRoute>
+                <Layout>
+                  <AddExpenseWrapper />
+                </Layout>
               } />
               <Route path="/profile" element={
-                <ProtectedRoute allowWithoutSubscription={true}>
-                  <Layout>
-                    <Profile />
-                  </Layout>
-                </ProtectedRoute>
+                <Layout>
+                  <Profile />
+                </Layout>
               } />
               <Route path="/income" element={
-                <ProtectedRoute>
-                  <Layout>
-                    <IncomesWrapper />
-                  </Layout>
-                </ProtectedRoute>
+                <Layout>
+                  <IncomesWrapper />
+                </Layout>
               } />
               <Route path="/add-income" element={
-                <ProtectedRoute>
-                  <Layout>
-                    <AddIncomeWrapper />
-                  </Layout>
-                </ProtectedRoute>
+                <Layout>
+                  <AddIncomeWrapper />
+                </Layout>
               } />
               <Route path="/incomes/edit/:id" element={
-                <ProtectedRoute>
-                  <Layout>
-                    <EditIncome />
-                  </Layout>
-                </ProtectedRoute>
+                <Layout>
+                  <EditIncome />
+                </Layout>
               } />
               <Route path="/edit-recurring-incomes" element={
-                <ProtectedRoute>
-                  <Layout>
-                    <EditRecurringIncomes />
-                  </Layout>
-                </ProtectedRoute>
+                <Layout>
+                  <EditRecurringIncomes />
+                </Layout>
               } />
               <Route path="/upload-spreadsheet" element={
-                <ProtectedRoute>
-                  <Layout>
-                    <SpreadsheetUpload />
-                  </Layout>
-                </ProtectedRoute>
-              } />
-              
-              {/* Rotas relacionadas a pagamento são acessíveis mesmo sem assinatura ativa */}
-              <Route path="/payment" element={
-                <ProtectedRoute allowWithoutSubscription={true}>
-                  <Layout>
-                    <Payment />
-                  </Layout>
-                </ProtectedRoute>
-              } />
-              <Route path="/payment/success" element={
-                <ProtectedRoute allowWithoutSubscription={true}>
-                  <Layout>
-                    <PaymentResult />
-                  </Layout>
-                </ProtectedRoute>
-              } />
-              <Route path="/payment/failure" element={
-                <ProtectedRoute allowWithoutSubscription={true}>
-                  <Layout>
-                    <PaymentResult />
-                  </Layout>
-                </ProtectedRoute>
-              } />
-              <Route path="/payment/pending" element={
-                <ProtectedRoute allowWithoutSubscription={true}>
-                  <Layout>
-                    <PaymentResult />
-                  </Layout>
-                </ProtectedRoute>
+                <Layout>
+                  <SpreadsheetUpload />
+                </Layout>
               } />
               <Route path="*" element={<Navigate to="/dashboard" />} />
             </Routes>

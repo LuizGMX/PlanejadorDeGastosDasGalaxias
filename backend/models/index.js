@@ -11,7 +11,6 @@ import defineVerificationCodeModel from './verificationCode.js';
 import defineUserBankModel from './userBank.js';
 import defineRecurrenceRuleModel from './recurrenceRule.js';
 import defineRecurrenceExceptionModel from './recurrenceException.js';
-import definePaymentModel from './payment.js';
 
 // Configurações do banco de dados
 dotenv.config();
@@ -42,7 +41,6 @@ const VerificationCode = defineVerificationCodeModel(sequelize);
 const UserBank = defineUserBankModel(sequelize);
 const RecurrenceRule = defineRecurrenceRuleModel(sequelize);
 const RecurrenceException = defineRecurrenceExceptionModel(sequelize);
-const Payment = definePaymentModel(sequelize);
 
 // Associações entre modelos
 // User-Expense
@@ -191,15 +189,6 @@ RecurrenceRule.belongsTo(Bank, {
   as: 'bank'
 });
 
-// User-Payment
-User.hasMany(Payment, {
-  foreignKey: 'user_id',
-  as: 'payments'
-});
-Payment.belongsTo(User, {
-  foreignKey: 'user_id'
-});
-
 // Exports
 export {
   sequelize,
@@ -212,6 +201,5 @@ export {
   VerificationCode,
   UserBank,
   RecurrenceRule,
-  RecurrenceException,
-  Payment
+  RecurrenceException
 };

@@ -1,53 +1,16 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 import styles from '../../styles/sidebar.module.css';
-import { BsGraphUp, BsListUl, BsPlusCircle, BsDoorOpen, BsCashCoin, BsChevronDown, BsPerson, BsPencil, BsCreditCard, BsExclamationCircle } from 'react-icons/bs';
+import { BsGraphUp, BsListUl, BsPlusCircle, BsDoorOpen, BsCashCoin, BsChevronDown, BsPerson, BsPencil } from 'react-icons/bs';
 import logo from '../../assets/logo.svg';
 import { GiPayMoney, GiReceiveMoney, } from "react-icons/gi";
 
 const Sidebar = ({ className }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { auth, apiInterceptor, setAuth } = useContext(AuthContext);
+  const { auth, setAuth } = useContext(AuthContext);
   const [openMenu, setOpenMenu] = useState(null);
-  const [subscriptionStatus, setSubscriptionStatus] = useState(null);
-
-  useEffect(() => {
-    // Verificar status da assinatura para destacar o menu quando necessário
-    const checkSubscriptionStatus = async () => {
-      if (!auth.token) return;
-      
-      try {
-        const response = await apiInterceptor(
-          `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/payments/status`,
-          {
-            headers: {
-              'Authorization': `Bearer ${auth.token}`
-            }
-          }
-        );
-        
-        if (response.subscriptionExpired) {
-          setSubscriptionStatus({ hasWarning: true });
-          return;
-        }
-        
-        if (response.ok) {
-          const data = await response.json();
-          // Mostrar aviso se faltar menos de 30 dias para expirar
-          setSubscriptionStatus({ 
-            hasWarning: data.hasSubscription && data.daysLeft <= 30,
-            daysLeft: data.daysLeft 
-          });
-        }
-      } catch (error) {
-        console.error('Erro ao verificar status da assinatura:', error);
-      }
-    };
-    
-    checkSubscriptionStatus();
-  }, [auth.token, apiInterceptor]);
 
   const handleLogout = () => {
     setAuth({ token: null, user: null });
@@ -107,12 +70,6 @@ const Sidebar = ({ className }) => {
       label: 'Perfil',
       path: '/profile',
       icon: <BsPerson size={20} />
-    },
-    {
-      label: 'Assinatura',
-      path: '/payment',
-      icon: subscriptionStatus?.hasWarning ? <BsExclamationCircle size={20} className={styles.warningIcon} /> : <BsCreditCard size={20} />,
-      warning: subscriptionStatus?.hasWarning
     }
   ];
 

@@ -1,5 +1,4 @@
 import React, { createContext, useState, useEffect } from 'react';
-import { toast } from 'react-hot-toast';
 
 // Criar o contexto de autenticação
 export const AuthContext = createContext();
@@ -9,75 +8,8 @@ export const AuthProvider = ({ children }) => {
   const [auth, setAuth] = useState(() => {
     // Verificar se há um token armazenado no localStorage
     const token = localStorage.getItem('token');
-    return { 
-      token, 
-      user: null, 
-      loading: !!token, 
-      subscriptionExpired: false,
-      hasActiveSubscription: false
-    };
+    return { token, user: null, loading: !!token };
   });
-
-  // Interceptor para tratar erros de API, especialmente para assinatura expirada
-  const apiInterceptor = async (url, options = {}) => {
-    try {
-      const response = await fetch(url, options);
-      
-      // Verificar se a resposta é um erro de assinatura expirada
-      if (response.status === 403) {
-        const data = await response.json();
-        
-        if (data.subscriptionExpired) {
-          // Definir status de assinatura expirada sem remover o token
-          setAuth(prev => ({ 
-            ...prev, 
-            subscriptionExpired: true,
-            hasActiveSubscription: false
-          }));
-          
-          // Exibir notificação
-          toast.error('Sua assinatura expirou. Por favor, renove para continuar usando o sistema.');
-          
-          // Retornamos a resposta com um atributo para indicar a expiração
-          return { 
-            ...response, 
-            subscriptionExpired: true 
-          };
-        }
-      }
-      
-      return response;
-    } catch (error) {
-      // Repassar o erro para ser tratado pelo chamador
-      throw error;
-    }
-  };
-
-  // Função para verificar o status da assinatura
-  const checkSubscriptionStatus = async (token) => {
-    if (!token) return false;
-    
-    try {
-      const response = await fetch(
-        `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/payments/status`, 
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
-      
-      if (!response.ok) {
-        throw new Error('Falha ao verificar status da assinatura');
-      }
-      
-      const data = await response.json();
-      return data.hasSubscription === true;
-    } catch (error) {
-      console.error('Erro ao verificar status da assinatura:', error);
-      return false;
-    }
-  };
 
   // Função para buscar os dados do usuário quando houver um token
   useEffect(() => {
@@ -113,15 +45,10 @@ export const AuthProvider = ({ children }) => {
               const userData = JSON.parse(responseText);
               console.log('Dados do usuário recuperados com sucesso');
               
-              // Verificar status da assinatura
-              const hasActiveSubscription = await checkSubscriptionStatus(token);
-              
               setAuth({ 
                 token: token, 
                 user: userData, 
-                loading: false,
-                subscriptionExpired: !hasActiveSubscription,
-                hasActiveSubscription: hasActiveSubscription
+                loading: false 
               });
             } catch (jsonError) {
               console.error('Erro ao parsear JSON da resposta:', jsonError);
@@ -135,13 +62,7 @@ export const AuthProvider = ({ children }) => {
             if (response.status === 401) {
               console.log('Token inválido ou expirado, removendo do localStorage');
               localStorage.removeItem('token');
-              setAuth({ 
-                token: null, 
-                user: null, 
-                loading: false, 
-                subscriptionExpired: false,
-                hasActiveSubscription: false
-              });
+              setAuth({ token: null, user: null, loading: false });
             } else {
               // Para outros erros, mantemos o token para permitir novas tentativas
               setAuth(prev => ({ ...prev, loading: false }));
@@ -156,13 +77,7 @@ export const AuthProvider = ({ children }) => {
           setAuth(prev => ({ ...prev, loading: false }));
         }
       } else {
-        setAuth({ 
-          token: null, 
-          user: null, 
-          loading: false, 
-          subscriptionExpired: false,
-          hasActiveSubscription: false
-        });
+        setAuth({ token: null, user: null, loading: false });
       }
     };
 
@@ -174,13 +89,7 @@ export const AuthProvider = ({ children }) => {
         if (e.newValue) {
           fetchUser();
         } else {
-          setAuth({ 
-            token: null, 
-            user: null, 
-            loading: false, 
-            subscriptionExpired: false,
-            hasActiveSubscription: false
-          });
+          setAuth({ token: null, user: null, loading: false });
         }
       }
     };
@@ -207,22 +116,8 @@ export const AuthProvider = ({ children }) => {
 
       if (response.ok) {
         localStorage.setItem('token', data.token);
-        
-        // Verificar status da assinatura
-        const hasActiveSubscription = await checkSubscriptionStatus(data.token);
-        
-        setAuth({ 
-          token: data.token, 
-          user: data.user, 
-          loading: false,
-          subscriptionExpired: !hasActiveSubscription,
-          hasActiveSubscription: hasActiveSubscription
-        });
-        
-        return { 
-          success: true, 
-          hasActiveSubscription: hasActiveSubscription 
-        };
+        setAuth({ token: data.token, user: data.user, loading: false });
+        return { success: true };
       } else {
         return { success: false, message: data.message || 'Erro ao fazer login' };
       }
@@ -235,13 +130,7 @@ export const AuthProvider = ({ children }) => {
   // Função para fazer logout
   const logout = () => {
     localStorage.removeItem('token');
-    setAuth({ 
-      token: null, 
-      user: null, 
-      loading: false, 
-      subscriptionExpired: false,
-      hasActiveSubscription: false
-    });
+    setAuth({ token: null, user: null, loading: false });
   };
 
   // Função para registrar um novo usuário
@@ -275,8 +164,6 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     register,
-    apiInterceptor,
-    checkSubscriptionStatus
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

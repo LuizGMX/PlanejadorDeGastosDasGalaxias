@@ -8,8 +8,7 @@ import {
   BsChevronUp,
   BsListUl,
   BsPlusCircle,
-  BsCashCoin,
-  BsCreditCard
+  BsCashCoin
 } from 'react-icons/bs';
 import { GiPayMoney, GiReceiveMoney } from "react-icons/gi";
 import { isIOS } from '../../utils/iosSupport';
@@ -109,11 +108,6 @@ const MobileNavbar = () => {
       label: 'Perfil',
       path: '/profile',
       icon: <BsPerson className="mobileNavIcon" />
-    },
-    {
-      label: 'Assinatura',
-      path: '/payment',
-      icon: <BsCreditCard className="mobileNavIcon" />
     }
   ];
 

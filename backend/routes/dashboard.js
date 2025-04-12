@@ -13,13 +13,8 @@ import {
 import { Op } from 'sequelize';
 import { authenticate } from '../middleware/auth.js';
 import { calculateOccurrences } from '../utils/recurrenceCalculator.js';
-import checkSubscription from '../middleware/subscriptionCheck.js';
 
 const router = express.Router();
-
-// Todas as rotas usam o middleware de autenticação seguido do middleware de verificação de assinatura
-router.use(authenticate);
-router.use(checkSubscription);
 
 // Função auxiliar para construir condições de data
 const buildDateConditions = (months, years, dateField = 'expense_date') => {
@@ -160,7 +155,7 @@ function monthsBetweenDates(startDate, endDate) {
          (endDate.getMonth() - startDate.getMonth());
 }
 
-router.get('/', async (req, res) => {
+router.get('/', authenticate, async (req, res) => {
   try {
     console.log('\n=== INÍCIO DA REQUISIÇÃO DO DASHBOARD ===');
     console.log('Query params:', req.query);
@@ -662,7 +657,7 @@ router.get('/period-summary', async (req, res) => {
   }
 });
 
-router.get('/bank-balance-trend', async (req, res) => {
+router.get('/bank-balance-trend', authenticate, async (req, res) => {
   try {
     const { months = 3 } = req.query;
     const projectionMonths = parseInt(months);
@@ -770,7 +765,7 @@ router.get('/bank-balance-trend', async (req, res) => {
   }
 });
 
-router.get('/summary', async (req, res) => {
+router.get('/summary', authenticate, async (req, res) => {
   try {
     const user = req.user;
     const today = new Date();
@@ -832,7 +827,7 @@ router.get('/summary', async (req, res) => {
   }
 });
 
-router.get('/trend', async (req, res) => {
+router.get('/trend', authenticate, async (req, res) => {
   try {
     const user = req.user;
     const today = new Date();
@@ -909,7 +904,7 @@ router.get('/trend', async (req, res) => {
   }
 });
 
-router.get('/projection', async (req, res) => {
+router.get('/projection', authenticate, async (req, res) => {
   try {
     const user = req.user;
     const today = new Date();
@@ -954,7 +949,7 @@ router.get('/projection', async (req, res) => {
 });
 
 // Rota para buscar todas as transações do usuário (sem filtros de data)
-router.get('/all-transactions', async (req, res) => {
+router.get('/all-transactions', authenticate, async (req, res) => {
   try {
     console.log('\n=== BUSCA DE TODAS AS TRANSAÇÕES DO USUÁRIO ===');
     console.log('Usuário ID:', req.user.id);
