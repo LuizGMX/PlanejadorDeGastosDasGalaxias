@@ -4,7 +4,8 @@ import { User, Payment } from '../models/index.js';
 import { authenticate } from './auth.js';
 import { Op } from 'sequelize';
 import sequelize from '../config/db.js';
-import { MercadoPagoConfig, Preference } from 'mercadopago';
+import pkg from 'mercadopago';
+const { MercadoPagoConfig, Preference } = pkg;
 
 dotenv.config();
 const router = Router();
