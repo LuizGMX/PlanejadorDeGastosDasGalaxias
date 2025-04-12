@@ -22,6 +22,79 @@ if (!accessToken) {
   }
 }
 
+// Verificar se estamos com o SDK importado corretamente
+if (!mercadopago) {
+  throw new Error('SDK do Mercado Pago não foi importado corretamente');
+}
+
+console.log('SDK do Mercado Pago importado. Propriedades disponíveis:', Object.keys(mercadopago));
+
+// Configurar o SDK de acordo com o que está disponível
+let sdkConfigured = false;
+
+// Opção 1: Método configure (formato antigo)
+if (typeof mercadopago.configure === 'function') {
+  try {
+    mercadopago.configure({
+      access_token: accessToken
+    });
+    console.log('SDK do Mercado Pago configurado com mercadopago.configure()');
+    sdkConfigured = true;
+  } catch (error) {
+    console.error('Erro ao usar mercadopago.configure():', error);
+  }
+}
+
+// Opção 2: configurations.setAccessToken (alguns ambientes)
+if (!sdkConfigured && mercadopago.configurations && typeof mercadopago.configurations.setAccessToken === 'function') {
+  try {
+    mercadopago.configurations.setAccessToken(accessToken);
+    console.log('SDK do Mercado Pago configurado com mercadopago.configurations.setAccessToken()');
+    sdkConfigured = true;
+  } catch (error) {
+    console.error('Erro ao usar mercadopago.configurations.setAccessToken():', error);
+  }
+}
+
+// Opção 3: MercadoPagoConfig (novo SDK)
+if (!sdkConfigured && mercadopago.MercadoPagoConfig) {
+  try {
+    // Configuração para o novo SDK
+    const mpClient = new mercadopago.MercadoPagoConfig({ accessToken });
+    console.log('SDK do Mercado Pago configurado com MercadoPagoConfig');
+    
+    // Substituir o mercadopago padrão com a versão configurada
+    mercadopago = { 
+      payment: new mercadopago.Payment(mpClient),
+      preference: new mercadopago.Preference(mpClient),
+      // Outras APIs que você precisar
+    };
+    sdkConfigured = true;
+  } catch (error) {
+    console.error('Erro ao usar MercadoPagoConfig:', error);
+  }
+}
+
+if (!sdkConfigured) {
+  console.error('AVISO CRÍTICO: Nenhum método de configuração do SDK do Mercado Pago funcionou!');
+  console.error('A integração com o Mercado Pago pode falhar.');
+}
+
+// Função utilitária para executar operações no SDK, tentando diferentes abordagens
+async function sdkOperation(resourceType, operation, ...args) {
+  // Tenta obter o recurso no formato antigo (v1.x)
+  if (mercadopago[resourceType] && typeof mercadopago[resourceType][operation] === 'function') {
+    return mercadopago[resourceType][operation](...args);
+  }
+  
+  // Tenta obter o recurso no formato novo
+  if (mercadopago[resourceType] && typeof mercadopago[resourceType][operation] === 'function') {
+    return mercadopago[resourceType][operation](...args);
+  }
+  
+  throw new Error(`Método não encontrado: ${resourceType}.${operation}`);
+}
+
 // Preço da assinatura anual
 const SUBSCRIPTION_PRICE = parseFloat(process.env.SUBSCRIPTION_PRICE) || 99.90;
 
@@ -46,9 +119,7 @@ export const createPayment = async (userData) => {
     if (pendingPayment && pendingPayment.payment_id) {
       try {
         // Verifica se o pagamento ainda existe no Mercado Pago
-        const mpPayment = new mercadopago.Payment();
-        mpPayment.setAccessToken(accessToken);
-        const response = await mpPayment.get(pendingPayment.payment_id);
+        const response = await sdkOperation('payment', 'get', pendingPayment.payment_id);
         
         // Se o pagamento existe e ainda está pendente, retorna os dados
         if (response.body.status === 'pending') {
@@ -113,11 +184,26 @@ export const createPayment = async (userData) => {
     };
     
     try {
-      console.log('Enviando request para Mercado Pago...');
-      const mpPreference = new mercadopago.Preference();
-      mpPreference.setAccessToken(accessToken);
+      console.log('Enviando request para Mercado Pago com preferência:', JSON.stringify(preference, null, 2));
       
-      const response = await mpPreference.create(preference);
+      // Criar preferência
+      let response;
+      try {
+        // Primeiro tenta usando a API preferences
+        response = await sdkOperation('preferences', 'create', preference);
+        console.log('Preferência criada via mercadopago.preferences.create()');
+      } catch (err) {
+        console.error('Erro ao usar preferences.create(), tentando alternativa...', err);
+        
+        // Tenta com a API preference (singular)
+        response = await sdkOperation('preference', 'create', preference);
+        console.log('Preferência criada via mercadopago.preference.create()');
+      }
+      
+      if (!response || !response.body || !response.body.id) {
+        throw new Error('Resposta inválida do Mercado Pago: ' + JSON.stringify(response));
+      }
+      
       console.log('Preferência criada com sucesso, ID:', response.body.id);
       
       // Cria um registro de pagamento no banco de dados
@@ -168,10 +254,7 @@ export const createPayment = async (userData) => {
  */
 export const checkPaymentStatus = async (paymentId) => {
   try {
-    const mpPayment = new mercadopago.Payment();
-    mpPayment.setAccessToken(accessToken);
-    
-    const response = await mpPayment.get(paymentId);
+    const response = await sdkOperation('payment', 'get', paymentId);
     
     return {
       status: response.body.status,
@@ -202,10 +285,7 @@ export const processPaymentWebhook = async (data) => {
     }
     
     // Busca os detalhes do pagamento no Mercado Pago
-    const mpPayment = new mercadopago.Payment();
-    mpPayment.setAccessToken(accessToken);
-    
-    const response = await mpPayment.get(data.data.id);
+    const response = await sdkOperation('payment', 'get', data.data.id);
     const paymentInfo = response.body;
     
     // Verifica se o pagamento está relacionado a uma preferência existente
