@@ -27,6 +27,9 @@ import { telegramService } from './services/telegramService.js';
 import healthRoutes from './routes/healthRoutes.js';
 import { configureRateLimit, authLimiter } from './middleware/rateLimit.js';
 
+// Importar middleware de verificação de assinatura
+import { checkSubscription } from './routes/paymentRoutes.js';
+
 dotenv.config();
 
 const app = express();
@@ -76,14 +79,15 @@ console.log("API_PREFIX " + API_PREFIX);
 // Rotas da API
 app.use(`${API_PREFIX}/auth`, authLimiter, authRoutes);
 app.use(`${API_PREFIX}/categories`, categoryRoutes);
-app.use(`${API_PREFIX}/expenses`, expenseRoutes);
-app.use(`${API_PREFIX}/incomes`, incomeRoutes);
-app.use(`${API_PREFIX}/dashboard`, dashboardRoutes);
-app.use(`${API_PREFIX}/banks`, bankRoutes);
-app.use(`${API_PREFIX}/budgets`, budgetRoutes);
-app.use(`${API_PREFIX}/spreadsheet`, spreadsheetRoutes);
+// Rotas protegidas que exigem assinatura ativa
+app.use(`${API_PREFIX}/expenses`, checkSubscription, expenseRoutes);
+app.use(`${API_PREFIX}/incomes`, checkSubscription, incomeRoutes);
+app.use(`${API_PREFIX}/dashboard`, checkSubscription, dashboardRoutes);
+app.use(`${API_PREFIX}/banks`, checkSubscription, bankRoutes);
+app.use(`${API_PREFIX}/budgets`, checkSubscription, budgetRoutes);
+app.use(`${API_PREFIX}/spreadsheet`, checkSubscription, spreadsheetRoutes);
 app.use(`${API_PREFIX}/users`, userRoutes);
-app.use(`${API_PREFIX}/recurrences`, recurrencesRouter);
+app.use(`${API_PREFIX}/recurrences`, checkSubscription, recurrencesRouter);
 app.use(`${API_PREFIX}/telegram`, telegramRoutes);
 app.use(`${API_PREFIX}/health`, healthRoutes);
 app.use(`${API_PREFIX}/payments`, paymentRoutes);
