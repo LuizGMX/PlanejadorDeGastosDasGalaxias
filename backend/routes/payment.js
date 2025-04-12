@@ -118,6 +118,7 @@ router.post(
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
     let event = request.body;
     
+    
     // Usar o webhook secret do arquivo .env
     const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
     
