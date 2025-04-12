@@ -393,9 +393,13 @@ const Payment = () => {
         <div className="payment-info">
           <h3>Informações de Pagamento</h3>
           <p>Aceitamos pagamentos seguros através do Mercado Pago</p>
-          <p>A assinatura custa apenas R$ 4,99 por mês, para que você possa controlar totalmente sua vida financeira</p>
+          <p>A assinatura é renovada anualmente por R$ 99,90</p>
           <div className="payment-methods-icons">
-            <img src="/images/payment-methods.png" alt="Métodos de pagamento" />
+            <img 
+              src="https://logosmarcas.net/wp-content/uploads/2021/03/Mercado-Pago-Logo.png" 
+              alt="Métodos de pagamento aceitos pelo Mercado Pago" 
+              style={{maxWidth: "250px"}}
+            />
           </div>
         </div>
       </div>

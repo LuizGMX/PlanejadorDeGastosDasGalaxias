@@ -1,0 +1,10 @@
+Este é um arquivo de placeholder para a imagem payment-methods.png.
+
+Na implementação real, este arquivo deveria ser substituído por um arquivo PNG real
+com os logos dos métodos de pagamento suportados:
+- Cartão de Crédito (Visa, Mastercard, etc.)
+- PIX
+- Boleto
+- PayPal
+
+Deve ter aproximadamente 300x60 pixels para funcionar bem com o layout atual. 

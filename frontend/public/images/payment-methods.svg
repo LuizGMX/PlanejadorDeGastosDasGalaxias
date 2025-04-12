@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300" height="60" viewBox="0 0 300 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="300" height="60" fill="white"/>
+  
+  <!-- Visa -->
+  <rect x="10" y="10" width="50" height="40" rx="4" fill="#1A1F71"/>
+  <path d="M25 30L28 23H31L28 30H25Z" fill="white"/>
+  <path d="M32 23H35L37 30H34L33.5 28H31.5L32 26H33L32.5 25L32 23Z" fill="white"/>
+  <path d="M38 23H41L40 30H37L38 23Z" fill="white"/>
+  <path d="M42 23H45L44 30H41L42 23Z" fill="white"/>
+  
+  <!-- Mastercard -->
+  <circle cx="85" cy="30" r="20" fill="#EB001B"/>
+  <circle cx="105" cy="30" r="20" fill="#F79E1B"/>
+  <path d="M95 20C91.4 20 88.2 21.6 86 24.1C83.8 26.6 82.5 30 82.5 33.6C82.5 37.2 83.8 40.6 86 43.1C88.2 45.6 91.4 47.2 95 47.2C98.6 47.2 101.8 45.6 104 43.1C106.2 40.6 107.5 37.2 107.5 33.6C107.5 30 106.2 26.6 104 24.1C101.8 21.6 98.6 20 95 20Z" fill="#FF5F00"/>
+  
+  <!-- PIX -->
+  <rect x="140" y="10" width="50" height="40" rx="4" fill="#32BCAD"/>
+  <text x="165" y="35" text-anchor="middle" font-family="Arial" font-size="16" font-weight="bold" fill="white">PIX</text>
+  
+  <!-- Paypal -->
+  <rect x="210" y="10" width="50" height="40" rx="4" fill="#003087"/>
+  <text x="235" y="35" text-anchor="middle" font-family="Arial" font-size="14" font-weight="bold" fill="white">PayPal</text>
+</svg> 

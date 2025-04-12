@@ -16,6 +16,7 @@ import SpreadsheetUpload from './components/spreadsheet/SpreadsheetUpload';
 import Layout from './components/layout/Layout';
 import EditRecurringIncomes from './components/incomes/EditRecurringIncomes';
 import Payment from './components/payment/Payment';
+import PaymentResult from './components/payment/PaymentResult';
 import { checkApiHealth, diagnoseProblem } from './utils/apiHealth';
 import { AuthProvider } from './contexts/AuthContext';
 import { initIOSSupport, isIOS } from './utils/iosSupport';
@@ -170,6 +171,21 @@ function App() {
               <Route path="/payment" element={
                 <Layout>
                   <Payment />
+                </Layout>
+              } />
+              <Route path="/payment/success" element={
+                <Layout>
+                  <PaymentResult />
+                </Layout>
+              } />
+              <Route path="/payment/failure" element={
+                <Layout>
+                  <PaymentResult />
+                </Layout>
+              } />
+              <Route path="/payment/pending" element={
+                <Layout>
+                  <PaymentResult />
                 </Layout>
               } />
               <Route path="*" element={<Navigate to="/dashboard" />} />
