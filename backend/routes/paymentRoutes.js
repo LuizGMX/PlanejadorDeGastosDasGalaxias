@@ -205,7 +205,7 @@ router.post('/create-payment', authenticate, async (req, res) => {
     
     // Configurar cliente do Mercado Pago
     // const client = new MercadoPagoConfig({ accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN });
-    const client = new MercadoPagoConfig({ accessToken: "APP_USR-7643300749129129-041213-1e62a88ea3b65589d7084d3dc5a4bb10-115322747" });
+    const client = new MercadoPagoConfig({ accessToken: "APP_USR-7643300749129129-041216-edebbefa0fa7752260fa4ed721f8489b-115322747" });
     const preference = new Preference(client);
     
     // Criar preferência de pagamento
