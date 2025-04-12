@@ -449,6 +449,46 @@ router.post('/verify-code', async (req, res) => {
         await t.rollback();
         return res.status(404).json({ message: 'Usuário não encontrado' });
       }
+      
+      // Verifica se a assinatura está válida para usuário existente
+      const payment = await Payment.findOne({
+        where: { 
+          user_id: user.id,
+          subscription_expiration: {
+            [Op.gt]: new Date() // Busca apenas assinaturas não expiradas
+          }
+        },
+        order: [['subscription_expiration', 'DESC']], // Busca a assinatura mais recente
+        transaction: t
+      });
+      
+      // Se não existe uma assinatura válida, informa ao frontend que deve redirecionar para pagamento
+      if (!payment) {
+        // Remove o código de verificação
+        await verificationCode.destroy({ transaction: t });
+        
+        // Commit da transação
+        await t.commit();
+        
+        // Gera um token temporário apenas para a página de pagamento
+        const tempToken = jwt.sign(
+          { userId: user.id, email: user.email, temporary: true },
+          process.env.JWT_SECRET,
+          { expiresIn: '1h' }
+        );
+        
+        return res.json({
+          token: tempToken,
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email
+          },
+          subscriptionExpired: true,
+          redirectTo: '/payment',
+          message: 'Sua assinatura expirou. Por favor, renove para continuar utilizando o sistema.'
+        });
+      }
     }
 
     // Associar bancos ao usuário, se houver

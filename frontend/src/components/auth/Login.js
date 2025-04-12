@@ -349,6 +349,25 @@ const Login = () => {
           const data = await response.json();
           console.log('Resposta do verify-code (sucesso):', data);
           
+          // Verifica se precisa redirecionar para pagamento (assinatura inválida)
+          if (data.redirectToPayment) {
+            console.log('Assinatura inválida. Redirecionando para pagamento.');
+            // Salva o token temporário e atualiza o estado de autenticação
+            localStorage.setItem('token', data.token);
+            setAuth({
+              token: data.token,
+              user: data.user,
+              subscriptionExpired: true
+            });
+            
+            // Redireciona para a página de pagamento
+            setTimeout(() => {
+              navigate('/payment');
+            }, 1500);
+            
+            return;
+          }
+          
           // Salva o token no localStorage e atualiza o estado de autenticação
           localStorage.setItem('token', data.token);
           setAuth({
