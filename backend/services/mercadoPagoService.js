@@ -7,11 +7,33 @@ import sequelize from '../config/db.js';
 
 dotenv.config();
 
-console.log("process.env.MERCADO_PAGO_ACCESS_TOKEN " + process.env.MERCADO_PAGO_ACCESS_TOKEN);
+// Verificar se o token está definido
+const accessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN;
+if (!accessToken) {
+  console.error('ERRO: MERCADO_PAGO_ACCESS_TOKEN não está definido no arquivo .env!');
+  // Não lançar erro para permitir que o servidor inicie
+} else {
+  console.log('MERCADO_PAGO_ACCESS_TOKEN encontrado:', accessToken.substring(0, 10) + '...');
+  
+  // Verificar o formato do token
+  if (!accessToken.startsWith('APP_USR-') && !accessToken.startsWith('TEST-')) {
+    console.warn('AVISO: O formato do token do Mercado Pago parece incorreto. Deveria começar com APP_USR- (produção) ou TEST- (teste)');
+  } else {
+    console.log('Formato do token parece correto:', accessToken.startsWith('APP_USR-') ? 'Produção' : 'Teste');
+  }
+}
+
+// Log das variáveis de ambiente importantes
+console.log('Variáveis de ambiente para integração MP:', {
+  BACKEND_URL: process.env.BACKEND_URL || 'Não definido',
+  FRONTEND_URL: process.env.FRONTEND_URL || 'Não definido',
+  MERCADO_PAGO_PUBLIC_KEY: process.env.MERCADO_PAGO_PUBLIC_KEY ? 'Definido' : 'Não definido',
+  MERCADO_PAGO_ACCESS_TOKEN_PRIMEIROS_CHARS: accessToken ? accessToken.substring(0, 10) + '...' : 'Não definido'
+});
 
 // Configuração do Mercado Pago
 const client = new MercadoPagoConfig({ 
-  accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN 
+  accessToken: accessToken 
 });
 
 // Preço da assinatura anual (R$59,90)
@@ -102,34 +124,47 @@ export const createPayment = async (userData) => {
     };
     
     const preference = new Preference(client);
-    const response = await preference.create({ body: preferenceData });
     
-    // Cria um registro de pagamento no banco de dados
-    const payment = await Payment.create({
-      user_id: userId,
-      payment_status: 'pending',
-      payment_id: response.id, // ID da preferência de pagamento
-      payment_amount: SUBSCRIPTION_PRICE,
-      payment_method: 'mercado_pago',
-      subscription_expiration: new Date() // Será atualizado quando o pagamento for aprovado
-    });
-    
-    // Tenta gerar QR code, se disponível
-    let qrCode = null;
-    if (response.point_of_interaction && response.point_of_interaction.transaction_data && response.point_of_interaction.transaction_data.qr_code) {
-      qrCode = await QRCode.toDataURL(response.point_of_interaction.transaction_data.qr_code);
+    try {
+      console.log('Iniciando criação da preferência com os dados:', JSON.stringify(preferenceData, null, 2));
+      const response = await preference.create({ body: preferenceData });
+      console.log('Preferência criada com sucesso:', response.id);
+      
+      // Cria um registro de pagamento no banco de dados
+      const payment = await Payment.create({
+        user_id: userId,
+        payment_status: 'pending',
+        payment_id: response.id, // ID da preferência de pagamento
+        payment_amount: SUBSCRIPTION_PRICE,
+        payment_method: 'mercado_pago',
+        subscription_expiration: new Date() // Será atualizado quando o pagamento for aprovado
+      });
+      
+      // Tenta gerar QR code, se disponível
+      let qrCode = null;
+      if (response.point_of_interaction && response.point_of_interaction.transaction_data && response.point_of_interaction.transaction_data.qr_code) {
+        qrCode = await QRCode.toDataURL(response.point_of_interaction.transaction_data.qr_code);
+      }
+      
+      return {
+        paymentId: payment.payment_id,
+        preferenceId: response.id,
+        initPoint: response.init_point,
+        qrCode,
+        qrCodeBase64: response.point_of_interaction?.transaction_data?.qr_code_base64 || null,
+        qrCodeText: response.point_of_interaction?.transaction_data?.qr_code || null,
+        paymentUrl: response.point_of_interaction?.transaction_data?.ticket_url || null,
+        message: 'Pagamento criado com sucesso'
+      };
+    } catch (mpError) {
+      console.error('Erro ao criar preferência no Mercado Pago:', {
+        mensagem: mpError.message,
+        causa: mpError.cause || 'Sem causa especificada',
+        statusCode: mpError.status || 'Sem status',
+        detalhe: mpError.error || 'Sem detalhes adicionais'
+      });
+      throw mpError;
     }
-    
-    return {
-      paymentId: payment.payment_id,
-      preferenceId: response.id,
-      initPoint: response.init_point,
-      qrCode,
-      qrCodeBase64: response.point_of_interaction?.transaction_data?.qr_code_base64 || null,
-      qrCodeText: response.point_of_interaction?.transaction_data?.qr_code || null,
-      paymentUrl: response.point_of_interaction?.transaction_data?.ticket_url || null,
-      message: 'Pagamento criado com sucesso'
-    };
   } catch (error) {
     console.error('Erro ao criar pagamento:', error);
     throw new Error(`Falha ao criar pagamento: ${error.message}`);
