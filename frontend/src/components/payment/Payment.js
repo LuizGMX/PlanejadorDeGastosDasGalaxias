@@ -23,9 +23,20 @@ const Payment = () => {
 
     fetchSubscriptionStatus();
 
+    // Adicionar o script do Mercado Pago
+    const script = document.createElement('script');
+    script.src = 'https://sdk.mercadopago.com/js/v2';
+    script.async = true;
+    document.body.appendChild(script);
+
     return () => {
       if (statusInterval.current) {
         clearInterval(statusInterval.current);
+      }
+      // Remover script ao desmontar
+      const mpScript = document.querySelector('script[src="https://sdk.mercadopago.com/js/v2"]');
+      if (mpScript && document.body.contains(mpScript)) {
+        document.body.removeChild(mpScript);
       }
     };
   }, [auth.token, navigate]);
@@ -104,8 +115,9 @@ const Payment = () => {
     try {
       setCheckingStatus(true);
       const response = await apiInterceptor(
-        `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/payments/check-payment/${paymentId}`,
+        `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/payments/check-status?payment_id=${paymentId}`,
         {
+          method: 'GET',
           headers: {
             'Authorization': `Bearer ${auth.token}`
           }
@@ -141,7 +153,7 @@ const Payment = () => {
     try {
       setProcessingPayment(true);
       const response = await apiInterceptor(
-        `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/payments/create-payment`,
+        `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/payments/create`,
         {
           method: 'POST',
           headers: {
@@ -217,6 +229,31 @@ const Payment = () => {
       fetchSubscriptionStatus();
     }
   }, []);
+
+  // Renderizar o botão do checkout quando receber o preferenceId
+  useEffect(() => {
+    if (preferenceId && window.MercadoPago) {
+      // Inicializar o Mercado Pago
+      const mp = new window.MercadoPago(process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY, {
+        locale: 'pt-BR'
+      });
+
+      // Renderizar botão de checkout
+      mp.checkout({
+        preference: {
+          id: preferenceId
+        },
+        render: {
+          container: '.mp-checkout-container',
+          label: 'Pagar com Mercado Pago'
+        },
+        theme: {
+          elementsColor: 'var(--primary-color)',
+          headerColor: 'var(--secondary-color)'
+        }
+      });
+    }
+  }, [preferenceId]);
 
   if (loading) {
     return (
