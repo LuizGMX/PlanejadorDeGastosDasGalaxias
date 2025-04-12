@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast';
 import AuthContext from '../../contexts/AuthContext';
 import '../../styles/Payment.css';
 
+
 const PaymentResult = () => {
   const { auth, apiInterceptor } = useContext(AuthContext);
   const navigate = useNavigate();
