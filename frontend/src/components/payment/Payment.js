@@ -10,8 +10,7 @@ const Payment = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState(null);
-  const [processingPayment, setProcessingPayment] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState('credit_card');
+  const [processingPayment, setProcessingPayment] = useState(false);  
   const [paymentData, setPaymentData] = useState(null);
   const [checkingStatus, setCheckingStatus] = useState(false);
   const statusInterval = useRef(null);
@@ -360,7 +359,7 @@ const Payment = () => {
                         </a>
                       </div>
                     )}
-                    
+
                     
                     {paymentData && paymentData.qrCode && (
                       <div className="payment-qrcode">

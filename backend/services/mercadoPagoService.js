@@ -7,16 +7,11 @@ import sequelize from '../config/db.js';
 
 dotenv.config();
 
+console.log("process.env.MERCADO_PAGO_ACCESS_TOKEN " + process.env.MERCADO_PAGO_ACCESS_TOKEN);
+
 // Configuração do Mercado Pago
 const client = new MercadoPagoConfig({ 
   accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN 
-});
-
-// Log das variáveis de ambiente importantes
-console.log('Variáveis de ambiente para integração MP:', {
-  BACKEND_URL: process.env.BACKEND_URL || 'Não definido',
-  FRONTEND_URL: process.env.FRONTEND_URL || 'Não definido',
-  MERCADO_PAGO_PUBLIC_KEY: process.env.MERCADO_PAGO_PUBLIC_KEY ? 'Definido' : 'Não definido'
 });
 
 // Preço da assinatura anual (R$59,90)
