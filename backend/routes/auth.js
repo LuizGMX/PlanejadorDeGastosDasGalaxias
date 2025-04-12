@@ -2,7 +2,7 @@ import { Router } from 'express';
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
 import sgMail from '@sendgrid/mail';
-import { User, VerificationCode, UserBank, Bank } from '../models/index.js';
+import { User, VerificationCode, UserBank, Bank, Payment } from '../models/index.js';
 import { Op } from 'sequelize';
 import sequelize from '../config/db.js';
 
@@ -429,11 +429,65 @@ router.post('/verify-code', async (req, res) => {
         financial_goal_start_date: startDate,
         financial_goal_end_date: endDate
       }, { transaction: t });
+      
+      // Criar registro de pagamento inicial com 7 dias gratuitos
+      const trialExpirationDate = new Date();
+      trialExpirationDate.setDate(trialExpirationDate.getDate() + 7); // 7 dias de teste
+      
+      await Payment.create({
+        user_id: user.id,
+        subscription_expiration: trialExpirationDate,
+        payment_status: 'approved',
+        payment_method: 'trial',
+        payment_amount: 0,
+        payment_date: new Date()
+      }, { transaction: t });
+      
     } else {
       // Se for um usuário existente, apenas verifica se existe
       if (!user) {
         await t.rollback();
         return res.status(404).json({ message: 'Usuário não encontrado' });
+      }
+      
+      // Verifica se a assinatura está válida para usuário existente
+      const payment = await Payment.findOne({
+        where: { 
+          user_id: user.id,
+          subscription_expiration: {
+            [Op.gt]: new Date() // Busca apenas assinaturas não expiradas
+          }
+        },
+        order: [['subscription_expiration', 'DESC']], // Busca a assinatura mais recente
+        transaction: t
+      });
+      
+      // Se não existe uma assinatura válida, informa ao frontend que deve redirecionar para pagamento
+      if (!payment) {
+        // Remove o código de verificação
+        await verificationCode.destroy({ transaction: t });
+        
+        // Commit da transação
+        await t.commit();
+        
+        // Gera um token temporário apenas para a página de pagamento
+        const tempToken = jwt.sign(
+          { userId: user.id, email: user.email, temporary: true },
+          process.env.JWT_SECRET,
+          { expiresIn: '1h' }
+        );
+        
+        return res.json({
+          token: tempToken,
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email
+          },
+          subscriptionExpired: true,
+          redirectTo: '/payment',
+          message: 'Sua assinatura expirou. Por favor, renove para continuar utilizando o sistema.'
+        });
       }
     }
 
@@ -869,6 +923,96 @@ router.post('/change-email/verify', authenticate, async (req, res) => {
     console.error('Stack:', error.stack);
     console.error('=================================');
     res.status(500).json({ message: 'Erro ao processar solicitação' });
+  }
+});
+
+// Rota de login
+router.post('/login', async (req, res) => {
+  console.log('===========================================');
+  console.log('INICIANDO /${process.env.API_PREFIX}/auth/login');
+  console.log('Timestamp:', new Date().toISOString());
+  console.log('Body parcial:', JSON.stringify({ ...req.body, email: req.body.email ? `${req.body.email.slice(0, 3)}...` : undefined }));
+  
+  const t = await sequelize.transaction();
+  
+  try {
+    const { email, code } = req.body;
+    
+    if (!email || !code) {
+      await t.rollback();
+      return res.status(400).json({ message: 'Email e código são obrigatórios' });
+    }
+    
+    // Buscar código válido mais recente
+    const verificationCode = await VerificationCode.findOne({
+      where: {
+        email: email.toLowerCase(),
+        code: code,
+        expires_at: { [Op.gt]: new Date() }, // ainda não expirou
+        used: false
+      },
+      order: [['created_at', 'DESC']],
+      transaction: t
+    });
+    
+    if (!verificationCode) {
+      await t.rollback();
+      return res.status(401).json({ message: 'Código inválido ou expirado' });
+    }
+    
+    // Marcar código como usado
+    verificationCode.used = true;
+    await verificationCode.save({ transaction: t });
+    
+    // Buscar ou criar usuário
+    let user = await User.findOne({ 
+      where: { email: email.toLowerCase() },
+      transaction: t
+    });
+    
+    if (!user) {
+      console.log(`User ${email} não encontrado. Isso não deveria acontecer neste ponto.`);
+      await t.rollback();
+      return res.status(404).json({ message: 'Usuário não encontrado' });
+    }
+
+    // Verificar se o usuário tem uma assinatura ativa
+    const activeSubscription = await Payment.findOne({
+      where: {
+        user_id: user.id,
+        payment_status: 'approved',
+        subscription_expiration: {
+          [Op.gt]: new Date() // Assinatura ainda não expirou
+        }
+      },
+      transaction: t
+    });
+
+    const hasActiveSubscription = !!activeSubscription;
+    
+    // Gerar token JWT
+    const token = generateJWT(user.id, user.email);
+    
+    await t.commit();
+    
+    // Enviar resposta com token
+    res.json({ 
+      message: 'Login realizado com sucesso',
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email
+      },
+      hasActiveSubscription
+    });
+    
+  } catch (error) {
+    await t.rollback();
+    console.error('Erro detalhado no login:', error);
+    res.status(500).json({ message: 'Erro ao realizar login' });
+  } finally {
+    console.log('FINALIZANDO /${process.env.API_PREFIX}/auth/login');
   }
 });
 

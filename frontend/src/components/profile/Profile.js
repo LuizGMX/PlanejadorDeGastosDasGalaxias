@@ -9,7 +9,6 @@ import PersonalInfoAndEmail from './PersonalInfoAndEmail';
 import FinancialGoal from './FinancialGoal';
 import BanksList from './BanksList';
 import TelegramVerification from './TelegramVerification';
-import Payment from '../Payment';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -690,7 +689,6 @@ const Profile = () => {
               refreshUserData={refreshUserData}
             />
           </div>
-          <Payment />
         </div>
         
         {/* Botão de Logout Mobile */}

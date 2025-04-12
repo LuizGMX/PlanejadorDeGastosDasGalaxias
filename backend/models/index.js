@@ -191,7 +191,7 @@ RecurrenceRule.belongsTo(Bank, {
   as: 'bank'
 });
 
-// Payment-User
+// User-Payment
 User.hasMany(Payment, {
   foreignKey: 'user_id',
   as: 'payments'

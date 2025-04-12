@@ -349,6 +349,25 @@ const Login = () => {
           const data = await response.json();
           console.log('Resposta do verify-code (sucesso):', data);
           
+          // Verifica se precisa redirecionar para pagamento (assinatura inválida)
+          if (data.redirectToPayment) {
+            console.log('Assinatura inválida. Redirecionando para pagamento.');
+            // Salva o token temporário e atualiza o estado de autenticação
+            localStorage.setItem('token', data.token);
+            setAuth({
+              token: data.token,
+              user: data.user,
+              subscriptionExpired: true
+            });
+            
+            // Redireciona para a página de pagamento
+            setTimeout(() => {
+              navigate('/payment');
+            }, 1500);
+            
+            return;
+          }
+          
           // Salva o token no localStorage e atualiza o estado de autenticação
           localStorage.setItem('token', data.token);
           setAuth({
@@ -1619,6 +1638,54 @@ const Login = () => {
       if (timer) clearInterval(timer);
     };
   }, [verificationCode, remainingTime]);
+
+  const handleCodeSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    if (!code) {
+      setError('Por favor, insira o código de verificação');
+      return;
+    }
+
+    // Evitar chamadas repetidas (throttling)
+    const now = Date.now();
+    if (now - lastSubmitTime < SUBMIT_DELAY) {
+      setError('Por favor, aguarde alguns segundos antes de tentar novamente.');
+      return;
+    }
+    setLastSubmitTime(now);
+    setLoading(true);
+
+    try {
+      const { login } = useContext(AuthContext);
+      const result = await login(formData.email, code);
+
+      if (result.success) {
+        setSuccess('Login bem-sucedido!');
+        
+        // Verificar se tem assinatura ativa
+        if (!result.hasActiveSubscription) {
+          toast.error('É necessário ter uma assinatura ativa para acessar o sistema.');
+          setTimeout(() => {
+            navigate('/payment');
+          }, 1000);
+          return;
+        }
+        
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 500);
+      } else {
+        setError(result.message || 'Código inválido. Por favor, tente novamente.');
+      }
+    } catch (error) {
+      console.error('Erro ao verificar código:', error);
+      setError('Erro ao verificar código. Por favor, tente novamente.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className={styles.loginContainer}>
