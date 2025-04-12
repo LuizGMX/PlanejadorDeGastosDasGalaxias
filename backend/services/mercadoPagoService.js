@@ -1,4 +1,4 @@
-import mercadopago from 'mercadopago';
+import { MercadoPagoConfig, Payment as MPPayment, Preference } from 'mercadopago';
 import dotenv from 'dotenv';
 import QRCode from 'qrcode';
 import { Payment, User } from '../models/index.js';
@@ -8,8 +8,8 @@ import sequelize from '../config/db.js';
 dotenv.config();
 
 // Configuração do Mercado Pago
-mercadopago.configure({
-  access_token: process.env.MERCADO_PAGO_ACCESS_TOKEN
+const client = new MercadoPagoConfig({ 
+  accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN 
 });
 
 // Preço da assinatura anual (R$59,90)
@@ -36,23 +36,24 @@ export const createPayment = async (userData) => {
     if (pendingPayment && pendingPayment.payment_id) {
       try {
         // Verifica se o pagamento ainda existe no Mercado Pago
-        const mpPayment = await mercadopago.payment.get(pendingPayment.payment_id);
+        const payment = new MPPayment(client);
+        const mpPayment = await payment.get({ id: pendingPayment.payment_id });
         
         // Se o pagamento existe e ainda está pendente, retorna os dados
-        if (mpPayment.body.status === 'pending') {
+        if (mpPayment.status === 'pending') {
           // Tenta gerar o QR code novamente, se disponível
           let qrCode = null;
-          if (mpPayment.body.point_of_interaction && mpPayment.body.point_of_interaction.transaction_data && mpPayment.body.point_of_interaction.transaction_data.qr_code) {
-            qrCode = await QRCode.toDataURL(mpPayment.body.point_of_interaction.transaction_data.qr_code);
+          if (mpPayment.point_of_interaction && mpPayment.point_of_interaction.transaction_data && mpPayment.point_of_interaction.transaction_data.qr_code) {
+            qrCode = await QRCode.toDataURL(mpPayment.point_of_interaction.transaction_data.qr_code);
           }
           
           return {
             paymentId: pendingPayment.payment_id,
-            status: mpPayment.body.status,
+            status: mpPayment.status,
             qrCode,
-            qrCodeBase64: mpPayment.body.point_of_interaction?.transaction_data?.qr_code_base64 || null,
-            qrCodeText: mpPayment.body.point_of_interaction?.transaction_data?.qr_code || null,
-            paymentUrl: mpPayment.body.point_of_interaction?.transaction_data?.ticket_url || null,
+            qrCodeBase64: mpPayment.point_of_interaction?.transaction_data?.qr_code_base64 || null,
+            qrCodeText: mpPayment.point_of_interaction?.transaction_data?.qr_code || null,
+            paymentUrl: mpPayment.point_of_interaction?.transaction_data?.ticket_url || null,
             message: 'Pagamento pendente encontrado'
           };
         }
@@ -64,7 +65,7 @@ export const createPayment = async (userData) => {
     }
     
     // Criação de um novo pagamento
-    const preference = {
+    const preferenceData = {
       items: [
         {
           title: 'Assinatura Anual - Planejador de Gastos das Galáxias',
@@ -98,13 +99,14 @@ export const createPayment = async (userData) => {
       }
     };
     
-    const response = await mercadopago.preferences.create(preference);
+    const preference = new Preference(client);
+    const response = await preference.create({ body: preferenceData });
     
     // Cria um registro de pagamento no banco de dados
     const payment = await Payment.create({
       user_id: userId,
       payment_status: 'pending',
-      payment_id: response.body.id, // ID da preferência de pagamento
+      payment_id: response.id, // ID da preferência de pagamento
       payment_amount: SUBSCRIPTION_PRICE,
       payment_method: 'mercado_pago',
       subscription_expiration: new Date() // Será atualizado quando o pagamento for aprovado
@@ -112,18 +114,18 @@ export const createPayment = async (userData) => {
     
     // Tenta gerar QR code, se disponível
     let qrCode = null;
-    if (response.body.point_of_interaction && response.body.point_of_interaction.transaction_data && response.body.point_of_interaction.transaction_data.qr_code) {
-      qrCode = await QRCode.toDataURL(response.body.point_of_interaction.transaction_data.qr_code);
+    if (response.point_of_interaction && response.point_of_interaction.transaction_data && response.point_of_interaction.transaction_data.qr_code) {
+      qrCode = await QRCode.toDataURL(response.point_of_interaction.transaction_data.qr_code);
     }
     
     return {
       paymentId: payment.payment_id,
-      preferenceId: response.body.id,
-      initPoint: response.body.init_point,
+      preferenceId: response.id,
+      initPoint: response.init_point,
       qrCode,
-      qrCodeBase64: response.body.point_of_interaction?.transaction_data?.qr_code_base64 || null,
-      qrCodeText: response.body.point_of_interaction?.transaction_data?.qr_code || null,
-      paymentUrl: response.body.point_of_interaction?.transaction_data?.ticket_url || null,
+      qrCodeBase64: response.point_of_interaction?.transaction_data?.qr_code_base64 || null,
+      qrCodeText: response.point_of_interaction?.transaction_data?.qr_code || null,
+      paymentUrl: response.point_of_interaction?.transaction_data?.ticket_url || null,
       message: 'Pagamento criado com sucesso'
     };
   } catch (error) {
@@ -139,14 +141,16 @@ export const createPayment = async (userData) => {
  */
 export const checkPaymentStatus = async (paymentId) => {
   try {
-    const response = await mercadopago.payment.get(paymentId);
+    const payment = new MPPayment(client);
+    const response = await payment.get({ id: paymentId });
+    
     return {
-      status: response.body.status,
-      statusDetail: response.body.status_detail,
-      paymentMethod: response.body.payment_method_id,
-      paymentAmount: response.body.transaction_amount,
-      dateCreated: response.body.date_created,
-      dateLastUpdated: response.body.date_last_updated
+      status: response.status,
+      statusDetail: response.status_detail,
+      paymentMethod: response.payment_method_id,
+      paymentAmount: response.transaction_amount,
+      dateCreated: response.date_created,
+      dateLastUpdated: response.date_last_updated
     };
   } catch (error) {
     console.error('Erro ao verificar status do pagamento:', error);
@@ -169,16 +173,17 @@ export const processPaymentWebhook = async (data) => {
     }
     
     // Busca os detalhes do pagamento no Mercado Pago
-    const mpPayment = await mercadopago.payment.get(data.data.id);
-    const paymentInfo = mpPayment.body;
+    const payment = new MPPayment(client);
+    const mpPayment = await payment.get({ id: data.data.id });
+    const paymentInfo = mpPayment;
     
     // Verifica se o pagamento está relacionado a uma preferência existente
-    const payment = await Payment.findOne({
+    let dbPayment = await Payment.findOne({
       where: { payment_id: paymentInfo.external_reference || paymentInfo.preference_id },
       transaction: t
     });
     
-    if (!payment) {
+    if (!dbPayment) {
       // Se não encontrar pelo external_reference, busca pelo metadata
       const userId = paymentInfo.metadata?.user_id;
       if (userId) {
@@ -198,12 +203,12 @@ export const processPaymentWebhook = async (data) => {
           await pendingPayment.save({ transaction: t });
           
           // Atualiza a referência para processamento
-          payment = pendingPayment;
+          dbPayment = pendingPayment;
         }
       }
       
       // Se mesmo assim não encontrar, cria um log e retorna
-      if (!payment) {
+      if (!dbPayment) {
         console.warn('Pagamento não encontrado no sistema:', data.data.id);
         await t.commit();
         return { message: 'Pagamento não encontrado no sistema' };
@@ -211,13 +216,13 @@ export const processPaymentWebhook = async (data) => {
     }
     
     // Atualiza o status do pagamento com base na resposta do Mercado Pago
-    payment.payment_status = paymentInfo.status;
-    payment.payment_method = paymentInfo.payment_method_id;
-    payment.payment_date = new Date(paymentInfo.date_approved || paymentInfo.date_created);
+    dbPayment.payment_status = paymentInfo.status;
+    dbPayment.payment_method = paymentInfo.payment_method_id;
+    dbPayment.payment_date = new Date(paymentInfo.date_approved || paymentInfo.date_created);
     
     // Se o pagamento foi aprovado, atualiza a data de expiração da assinatura
     if (paymentInfo.status === 'approved') {
-      const user = await User.findByPk(payment.user_id, { transaction: t });
+      const user = await User.findByPk(dbPayment.user_id, { transaction: t });
       
       // Busca a assinatura ativa mais recente (se existir)
       const latestPayment = await Payment.findOne({
@@ -244,16 +249,16 @@ export const processPaymentWebhook = async (data) => {
         newExpirationDate.setMonth(newExpirationDate.getMonth() + 12);
       }
       
-      payment.subscription_expiration = newExpirationDate;
+      dbPayment.subscription_expiration = newExpirationDate;
     }
     
-    await payment.save({ transaction: t });
+    await dbPayment.save({ transaction: t });
     await t.commit();
     
     return { 
       message: 'Pagamento processado com sucesso',
       status: paymentInfo.status,
-      subscription_expiration: payment.subscription_expiration
+      subscription_expiration: dbPayment.subscription_expiration
     };
   } catch (error) {
     await t.rollback();
