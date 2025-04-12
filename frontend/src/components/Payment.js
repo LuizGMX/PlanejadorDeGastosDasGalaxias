@@ -52,9 +52,9 @@ const ProductDisplay = () => (
         <h5>$20.00 / month</h5>
       </div>
     </div>
-    <form action="/create-checkout-session" method="POST">
+    <form action={`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/payment/create-checkout-session`} method="POST">
       {/* Add a hidden field with the lookup_key of your Price */}
-      <input type="hidden" name="lookup_key" value="{{PRICE_LOOKUP_KEY}}" />
+      <input type="hidden" name="lookup_key" value="starter_monthly" />
       <button id="checkout-and-portal-button" type="submit">
         Checkout
       </button>
@@ -71,7 +71,7 @@ const SuccessDisplay = ({ sessionId }) => {
           <h3>Subscription to starter plan successful!</h3>
         </div>
       </div>
-      <form action="/create-portal-session" method="POST">
+      <form action={`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/payment/create-portal-session`} method="POST">
         <input
           type="hidden"
           id="session-id"

@@ -39,24 +39,35 @@
 // export default router; 
 
 import { Router } from 'express';
+import express from 'express';
 import dotenv from 'dotenv';
+import Stripe from 'stripe';
+
 const router = Router();
 dotenv.config();
 
-// This is your test secret API key.
-import Stripe from 'stripe';
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+// Verificar se a chave do Stripe está definida
+if (!process.env.STRIPE_SECRET_KEY) {
+  console.error("STRIPE_SECRET_KEY não está definida no arquivo .env!");
+}
 
-const express = require('express');
+// Inicializar Stripe com a chave secreta
 
-const YOUR_DOMAIN = 'https://planejadordasgalaxias.com.br';
+
+const YOUR_DOMAIN = process.env.FRONTEND_URL || 'https://planejadordasgalaxias.com.br';
 
 router.post('/create-checkout-session', async (req, res) => {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
   try {
     const prices = await stripe.prices.list({
       lookup_keys: [req.body.lookup_key],
       expand: ['data.product'],
     });
+    
+    if (!prices.data || prices.data.length === 0) {
+      return res.status(400).json({ error: "Produto não encontrado" });
+    }
+    
     const session = await stripe.checkout.sessions.create({
       billing_address_collection: 'auto',
       line_items: [
@@ -72,14 +83,19 @@ router.post('/create-checkout-session', async (req, res) => {
 
     res.redirect(303, session.url);
   } catch (error) {
-    console.error("Error creating checkout session:", error);
-    res.status(500).send('Internal Server Error');
+    console.error("Erro ao criar sessão de checkout:", error);
+    res.status(500).json({ error: "Erro interno ao processar pagamento" });
   }
 });
 
 router.post('/create-portal-session', async (req, res) => {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
   try {
     const { session_id } = req.body;
+    if (!session_id) {
+      return res.status(400).json({ error: "ID da sessão não fornecido" });
+    }
+    
     const checkoutSession = await stripe.checkout.sessions.retrieve(session_id);
 
     const returnUrl = YOUR_DOMAIN;
@@ -90,25 +106,24 @@ router.post('/create-portal-session', async (req, res) => {
 
     res.redirect(303, portalSession.url);
   } catch (error) {
-    console.error("Error creating portal session:", error);
-    res.status(500).send('Internal Server Error');
+    console.error("Erro ao criar sessão do portal:", error);
+    res.status(500).json({ error: "Erro interno ao acessar informações de faturamento" });
   }
 });
 
-router.post(
+router.post(  
   '/webhook',
   express.raw({ type: 'application/json' }),
   (request, response) => {
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
     let event = request.body;
-    // Replace this endpoint secret with your endpoint's unique secret
-    // If you are testing with the CLI, find the secret by running 'stripe listen'
-    // If you are using an endpoint defined with the API or dashboard, look in your webhook settings
-    // at https://dashboard.stripe.com/webhooks
-    const endpointSecret = 'whsec_12345';
-    // Only verify the event if you have an endpoint secret defined.
-    // Otherwise use the basic event deserialized with JSON.parse
+    
+    // Usar o webhook secret do arquivo .env
+    const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    
+    // Apenas verificar o evento se tiver um endpoint secret definido
     if (endpointSecret) {
-      // Get the signature sent by Stripe
+      // Obter a assinatura enviada pelo Stripe
       const signature = request.headers['stripe-signature'];
       try {
         event = stripe.webhooks.constructEvent(
@@ -117,53 +132,45 @@ router.post(
           endpointSecret
         );
       } catch (err) {
-        console.log(`⚠️  Webhook signature verification failed.`, err.message);
+        console.log(`⚠️  Falha na verificação de assinatura do webhook.`, err.message);
         return response.sendStatus(400);
       }
     }
+    
     let subscription;
     let status;
-    // Handle the event
+    
+    // Processar o evento
     switch (event.type) {
       case 'customer.subscription.trial_will_end':
         subscription = event.data.object;
         status = subscription.status;
-        console.log(`Subscription status is ${status}.`);
-        // Then define and call a method to handle the subscription trial ending.
-        // handleSubscriptionTrialEnding(subscription);
+        console.log(`Status da assinatura: ${status}.`);
+        // Implementar método para lidar com o fim do período de teste
         break;
       case 'customer.subscription.deleted':
         subscription = event.data.object;
         status = subscription.status;
-        console.log(`Subscription status is ${status}.`);
-        // Then define and call a method to handle the subscription deleted.
-        // handleSubscriptionDeleted(subscriptionDeleted);
+        console.log(`Status da assinatura: ${status}.`);
+        // Implementar método para lidar com assinatura excluída
         break;
       case 'customer.subscription.created':
         subscription = event.data.object;
         status = subscription.status;
-        console.log(`Subscription status is ${status}.`);
-        // Then define and call a method to handle the subscription created.
-        // handleSubscriptionCreated(subscription);
+        console.log(`Status da assinatura: ${status}.`);
+        // Implementar método para lidar com assinatura criada
         break;
       case 'customer.subscription.updated':
         subscription = event.data.object;
         status = subscription.status;
-        console.log(`Subscription status is ${status}.`);
-        // Then define and call a method to handle the subscription update.
-        // handleSubscriptionUpdated(subscription);
-        break;
-      case 'entitlements.active_entitlement_summary.updated':
-        subscription = event.data.object;
-        console.log(`Active entitlement summary updated for ${subscription}.`);
-        // Then define and call a method to handle active entitlement summary updated
-        // handleEntitlementUpdated(subscription);
+        console.log(`Status da assinatura: ${status}.`);
+        // Implementar método para lidar com atualização de assinatura
         break;
       default:
-        // Unexpected event type
-        console.log(`Unhandled event type ${event.type}.`);
+        console.log(`Tipo de evento não tratado: ${event.type}.`);
     }
-    // Return a 200 response to acknowledge receipt of the event
+    
+    // Retornar resposta 200 para confirmar recebimento do evento
     response.send();
   }
 );

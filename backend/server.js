@@ -63,6 +63,9 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Middleware especial para webhook do Stripe (deve vir antes do middleware JSON global)
+app.use(`${API_PREFIX}/payment/webhook`, express.raw({ type: 'application/json' }));
+
 // Aplicar rate limiting global
 app.use(configureRateLimit());
 
