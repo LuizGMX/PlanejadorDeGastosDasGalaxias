@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import AuthContext from '../../contexts/AuthContext';
 import '../../styles/Payment.css';
+import { initMercadoPago, Wallet } from '@mercadopago/sdk-react';
 
 const Payment = () => {
   const { auth, apiInterceptor } = useContext(AuthContext);
@@ -13,8 +14,14 @@ const Payment = () => {
   const [paymentMethod, setPaymentMethod] = useState('credit_card');
   const [paymentData, setPaymentData] = useState(null);
   const [checkingStatus, setCheckingStatus] = useState(false);
-  const mpCheckoutRef = useRef(null);
   const statusInterval = useRef(null);
+  const [preferenceId, setPreferenceId] = useState(null);
+
+  useEffect(() => {
+    initMercadoPago(process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY, {
+      locale: 'pt-BR'
+    });
+  }, []);
 
   useEffect(() => {
     if (!auth.token) {
@@ -24,22 +31,7 @@ const Payment = () => {
 
     fetchSubscriptionStatus();
 
-    // Adicionar o script do Mercado Pago
-    const script = document.createElement('script');
-    script.src = 'https://sdk.mercadopago.com/js/v2';
-    script.async = true;
-    document.body.appendChild(script);
-    
-    // Adicionar o CSS do Mercado Pago Bricks
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'https://sdk.mercadopago.com/js/v2/mercadopago.css';
-    document.head.appendChild(link);
-
     return () => {
-      // Limpar script e intervalo ao desmontar
-      document.body.removeChild(script);
-      document.head.removeChild(link);
       if (statusInterval.current) {
         clearInterval(statusInterval.current);
       }
@@ -70,137 +62,6 @@ const Payment = () => {
       }
     };
   }, [subscription]);
-
-  // Inicializa o Mercado Pago se temos dados de pagamento
-  useEffect(() => {
-    if (paymentData && paymentData.initPoint) {
-      // Verificar se o objeto window.MercadoPago está disponível
-      if (window.MercadoPago) {
-        renderCheckoutButton();
-      } else {
-        // Se o SDK ainda não foi carregado, tentar novamente após 1 segundo
-        const timer = setTimeout(() => {
-          if (window.MercadoPago) {
-            renderCheckoutButton();
-          }
-        }, 1000);
-        
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [paymentData]);
-
-  const renderCheckoutButton = () => {
-    // Limpar qualquer botão anterior
-    if (mpCheckoutRef.current) {
-      mpCheckoutRef.current.innerHTML = '';
-    }
-    
-    try {
-      // Verificar se a div existe
-      const container = document.querySelector('.mp-checkout-container');
-      if (!container) {
-        console.error('Container para botão do Mercado Pago não encontrado');
-        return;
-      }
-      
-      // Criar instância do Mercado Pago com a chave pública
-      const mp = new window.MercadoPago(process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY, {
-        locale: 'pt-BR'
-      });
-      
-      // Renderizar botão de checkout (usando o Brick de Payment)
-      const bricksBuilder = mp.bricks();
-      
-      // Renderizar botão de redirecionamento
-      bricksBuilder.create('wallet', 'mp-checkout-container', {
-        initialization: {
-          preferenceId: paymentData.preferenceId,
-        },
-        customization: {
-          texts: {
-            action: 'pay',
-            valueProp: 'security_safety',
-          },
-        },
-      });
-      
-      // Ajustar estilo do container para garantir que ele está visível
-      container.style.display = 'block';
-      container.style.margin = '20px auto';
-      container.style.minHeight = '48px';
-
-      // Adicionar botão de redirecionamento direto como fallback
-      if (paymentData.initPoint) {
-        const directButton = document.createElement('div');
-        directButton.className = 'direct-payment-button';
-        directButton.innerHTML = `
-          <a 
-            href="${paymentData.initPoint}" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            class="payment-url-button"
-            style="
-              display: block;
-              text-align: center;
-              padding: 12px 20px;
-              margin: 15px auto;
-              background-color: #009ee3;
-              color: white;
-              text-decoration: none;
-              border-radius: 4px;
-              font-weight: bold;
-              width: 100%;
-              max-width: 300px;
-              box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            "
-          >
-            Pagar com Mercado Pago
-          </a>
-          <p style="text-align: center; font-size: 12px; color: #666;">
-            Se o botão acima não funcionar, clique neste
-          </p>
-        `;
-        
-        // Inserir após o container do MP
-        if (container.parentNode) {
-          container.parentNode.insertBefore(directButton, container.nextSibling);
-        }
-      }
-    } catch (error) {
-      console.error('Erro ao renderizar botão do Mercado Pago:', error);
-      
-      // Fallback se o SDK falhar
-      if (paymentData.initPoint && mpCheckoutRef.current) {
-        mpCheckoutRef.current.innerHTML = `
-          <div class="payment-link" style="margin: 20px 0;">
-            <p style="margin-bottom: 10px;">Clique no botão abaixo para ir para a página de pagamento:</p>
-            <a 
-              href="${paymentData.initPoint}" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              class="payment-url-button"
-              style="
-                display: block;
-                text-align: center;
-                padding: 12px 20px;
-                margin: 15px auto;
-                background-color: var(--primary-color);
-                color: var(--secondary-color);
-                text-decoration: none;
-                border-radius: 4px;
-                font-weight: bold;
-                width: 100%;
-                max-width: 300px;
-              "
-            >
-              Pagar com Mercado Pago
-            </a>
-          </div>
-        `;
-      }
-    }
-  };
 
   const fetchSubscriptionStatus = async () => {
     try {
@@ -311,8 +172,9 @@ const Payment = () => {
       const data = await response.json();
       toast.success('Pagamento criado com sucesso. Escolha uma forma de pagamento para continuar.');
       
-      // Salvar os dados de pagamento
+      // Salvar os dados de pagamento e o preferenceId
       setPaymentData(data);
+      setPreferenceId(data.preferenceId);
       
       // Resetar o estado de processamento
       setProcessingPayment(false);
@@ -436,7 +298,7 @@ const Payment = () => {
                 <p>Sua assinatura expirou ou você ainda está no período de teste.</p>
                 <p>Para continuar utilizando o sistema, é necessário adquirir uma assinatura.</p>
                 
-                {!paymentData ? (
+                {!preferenceId ? (
                   <button 
                     className="payment-button"
                     onClick={handlePayment}
@@ -456,10 +318,50 @@ const Payment = () => {
                       backgroundColor: "#f9f9f9"
                     }}>
                       <h4 style={{marginBottom: "15px"}}>Cartão de Crédito, Débito ou Saldo Mercado Pago</h4>
-                      <div className="mp-checkout-container" ref={mpCheckoutRef}></div>
+                      <div className="mp-checkout-container">
+                        <Wallet 
+                          initialization={{ preferenceId: preferenceId }}
+                          customization={{
+                            texts: {
+                              action: 'pay',
+                              valueProp: 'security_safety'
+                            }
+                          }}
+                        />
+                      </div>
                     </div>
                     
-                    {paymentData.qrCode && (
+                    {paymentData && paymentData.initPoint && (
+                      <div className="direct-payment-button">
+                        <p style={{marginBottom: "10px", fontSize: "14px", color: "#666"}}>
+                          Se o botão acima não funcionar, utilize o link abaixo:
+                        </p>
+                        <a 
+                          href={paymentData.initPoint} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="payment-url-button"
+                          style={{
+                            display: "block",
+                            textAlign: "center",
+                            padding: "12px 20px",
+                            margin: "15px auto",
+                            backgroundColor: "#009ee3",
+                            color: "white",
+                            textDecoration: "none",
+                            borderRadius: "4px",
+                            fontWeight: "bold",
+                            width: "100%",
+                            maxWidth: "300px",
+                            boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
+                          }}
+                        >
+                          Pagar com Mercado Pago
+                        </a>
+                      </div>
+                    )}
+                    
+                    {paymentData && paymentData.qrCode && (
                       <div className="payment-qrcode">
                         <h4>Pague com PIX</h4>
                         <p>Escaneie o QR Code abaixo com o aplicativo do seu banco</p>
@@ -520,7 +422,7 @@ const Payment = () => {
                       </div>
                     )}
                     
-                    {paymentData.paymentUrl && !paymentData.qrCode && (
+                    {paymentData && paymentData.paymentUrl && !paymentData.qrCode && (
                       <div className="payment-link">
                         <p style={{textAlign: "center", marginBottom: "15px"}}>
                           Se os botões acima não funcionarem, você também pode acessar:
