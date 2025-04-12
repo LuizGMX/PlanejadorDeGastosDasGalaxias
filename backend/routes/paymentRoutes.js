@@ -13,6 +13,7 @@ const router = Router();
 // Constante com o preço da assinatura
 const SUBSCRIPTION_PRICE = 99.90;
 
+
 // Verificação de acesso do usuário
 export const checkSubscription = async (req, res, next) => {
   const t = await sequelize.transaction();
