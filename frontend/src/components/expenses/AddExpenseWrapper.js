@@ -1,30 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useMediaQuery } from 'react-responsive';
 import MobileAddExpense from './MobileAddExpense';
 import AddExpense from './AddExpense';
+import { useLocation } from 'react-router-dom';
 
 const AddExpenseWrapper = () => {
-  // Função para verificar se a tela é mobile
-  const isMobileView = () => {
-    return window.innerWidth <= 768;
-  };
-
-  // Estado para controlar se é mobile
-  const [isMobile, setIsMobile] = useState(isMobileView());
+  const isMobile = useMediaQuery({ maxWidth: 767 });
+  const location = useLocation();
   
-  // Efeito para monitorar mudanças no tamanho da tela
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(isMobileView());
-    };
-    
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []);
-
-  // Renderização condicional baseada no dispositivo
-  return isMobile ? <MobileAddExpense /> : <AddExpense />;
+  // Verifica se está na rota de despesa parcelada
+  const isInstallmentExpense = location.pathname === '/add-installment';
+  
+  return (
+    <>
+      {isMobile ? (
+        <MobileAddExpense installment={isInstallmentExpense} />
+      ) : (
+        <AddExpense installment={isInstallmentExpense} />
+      )}
+    </>
+  );
 };
 
 export default AddExpenseWrapper; 

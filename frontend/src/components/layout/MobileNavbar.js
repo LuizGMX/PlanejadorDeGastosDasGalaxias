@@ -110,6 +110,11 @@ const MobileNavbar = () => {
           label: 'Adicionar Despesa',
           path: '/add-expense',
           icon: <BsPlusCircle size={18} />
+        },
+        {
+          label: 'Despesa Parcelada',
+          path: '/add-installment',
+          icon: <BsCreditCard size={18} />
         }
       ]
     },

@@ -19,7 +19,7 @@ export const configureRateLimit = (options = {}) => {
   // Configuração padrão para produção
   const defaultOptions = {
     windowMs: 15 * 60 * 1000, // 15 minutos
-    max: 100, // limite de 100 requisições por IP
+    max: 1000, // limite de 100 requisições por IP
     standardHeaders: true, // Retorna os headers padrão de rate limit
     legacyHeaders: false, // Desabilita os headers antigos
     message: 'Muitas requisições, por favor tente novamente mais tarde.',

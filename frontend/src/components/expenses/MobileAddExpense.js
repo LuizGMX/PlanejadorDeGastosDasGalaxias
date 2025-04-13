@@ -16,28 +16,34 @@ import {
   BsWallet2,
   BsListCheck
 } from 'react-icons/bs';
+import { format } from 'date-fns';
 
 
-const MobileAddExpense = () => {
+const MobileAddExpense = ({ installment = false }) => {
   const navigate = useNavigate();
   const { auth } = useContext(AuthContext);
-  const [formData, setFormData] = useState({
+  const initialFormData = {
     description: '',
     amount: '',
-    expense_date: new Date().toISOString().split('T')[0],
-    category_id: '',
-    bank_id: '',
+    date: format(new Date(), 'yyyy-MM-dd'),
+    categoryId: '',
     is_recurring: false,
-    start_date: null,
-    recurrence_type: 'monthly',
+    frequency: 'monthly',
+    recurrence_end_date: '',
+    has_installments: installment,
+    total_installments: installment ? 2 : 1,
+    current_installment: installment ? 1 : 1,
     payment_method: 'credit_card',
-    is_in_cash: false
-  });
+    bankId: '',
+  };
+  const [formData, setFormData] = useState(initialFormData);
   const [categories, setCategories] = useState([]);
   const [banks, setBanks] = useState([]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [activeStep, setActiveStep] = useState(1);
+  const [activeExpenseType, setActiveExpenseType] = useState('regular');
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -167,6 +173,17 @@ const MobileAddExpense = () => {
     fetchBanks();
   }, [auth.token, navigate]);
 
+  useEffect(() => {
+    if (installment) {
+      setFormData(prev => ({
+        ...prev,
+        has_installments: true,
+        is_recurring: false
+      }));
+      setActiveExpenseType('installments');
+    }
+  }, [installment]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -258,7 +275,7 @@ const MobileAddExpense = () => {
 
     try {
       // Verificar se os campos obrigatórios estão preenchidos
-      if (!formData.description || !formData.amount || !formData.category_id || !formData.bank_id) {
+      if (!formData.description || !formData.amount || !formData.categoryId || !formData.bankId) {
         throw new Error('Preencha todos os campos obrigatórios: descrição, valor, categoria e banco');
       }
 
@@ -343,8 +360,8 @@ const MobileAddExpense = () => {
       const dataToSend = {
         description: formData.description,
         amount: amount,
-        category_id: parseInt(formData.category_id),
-        bank_id: parseInt(formData.bank_id),
+        category_id: parseInt(formData.categoryId),
+        bank_id: parseInt(formData.bankId),
         expense_date: formData.expense_date,
         payment_method: formData.payment_method,
         has_installments: Boolean(formData.has_installments),
@@ -352,7 +369,7 @@ const MobileAddExpense = () => {
         is_in_cash: !formData.is_recurring && !formData.has_installments,
         current_installment: formData.has_installments ? parseInt(formData.current_installment) : null,
         total_installments: formData.has_installments ? parseInt(formData.total_installments) : null,
-        recurrence_type: formData.is_recurring ? formData.recurrence_type : null,
+        recurrence_type: formData.is_recurring ? formData.frequency : null,
         user_id: auth.user?.id // Garante que o ID do usuário está incluído
       };
 
@@ -572,8 +589,8 @@ const MobileAddExpense = () => {
                   <div className={addExpenseStyles.formGroup}>
                     <label className={addExpenseStyles.formLabel}>Tipo de Recorrência</label>
                     <select
-                      name="recurrence_type"
-                      value={formData.recurrence_type || 'monthly'}
+                      name="frequency"
+                      value={formData.frequency || 'monthly'}
                       onChange={handleChange}
                       className={addExpenseStyles.formInput}
                       required
@@ -597,8 +614,8 @@ const MobileAddExpense = () => {
                   <BsFolderSymlink size={16} /> Categoria
                 </label>
                 <select
-                  name="category_id"
-                  value={formData.category_id}
+                  name="categoryId"
+                  value={formData.categoryId}
                   onChange={handleChange}
                   className={addExpenseStyles.formInput}
                   required
@@ -618,8 +635,8 @@ const MobileAddExpense = () => {
                 </label>
                 {banks.length > 0 ? (
                   <select
-                    name="bank_id"
-                    value={formData.bank_id}
+                    name="bankId"
+                    value={formData.bankId}
                     onChange={handleChange}
                     className={addExpenseStyles.formInput}
                     required
