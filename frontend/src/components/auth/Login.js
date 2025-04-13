@@ -1158,20 +1158,40 @@ const Login = () => {
                     name="acceptedTerms"
                     checked={formData.acceptedTerms}
                     onChange={(e) => {
-                      setFormData(prev => ({ 
-                        ...prev, 
-                        acceptedTerms: e.target.checked 
-                      }));
+                      console.log("Checkbox clicado: ", e.target.checked);
+                      setFormData({
+                        ...formData,
+                        acceptedTerms: e.target.checked
+                      });
                       if (e.target.checked) {
                         setError('');
                       }
                     }}
+                    style={{ cursor: 'pointer', width: '24px', height: '24px' }}
                   />
-                  <label htmlFor="acceptedTerms">
+                  <label 
+                    htmlFor="acceptedTerms" 
+                    style={{cursor: 'pointer'}}
+                    onClick={() => {
+                      // Alternar o estado do checkbox quando clicar no label também
+                      const newValue = !formData.acceptedTerms;
+                      console.log("Label clicado, alterando para: ", newValue);
+                      setFormData({
+                        ...formData,
+                        acceptedTerms: newValue
+                      });
+                      if (newValue) {
+                        setError('');
+                      }
+                    }}
+                  >
                     Eu li e aceito os <button 
                       type="button" 
                       className={styles.termsLink}
-                      onClick={() => setShowTermsModal(true)}
+                      onClick={(e) => {
+                        e.stopPropagation(); // Evita que o clique no botão dispare o evento do label
+                        setShowTermsModal(true);
+                      }}
                     >
                       Termos de Uso
                     </button>
@@ -1632,6 +1652,12 @@ const Login = () => {
       return;
     }
 
+    // Validação específica para etapa 'goal' - verificar se aceitou os termos
+    if (step === 'goal' && !formData.acceptedTerms) {
+      setError('Você precisa aceitar os termos de uso para continuar');
+      return;
+    }
+
     // Previne submissão se já estiver carregando
     if (loading) {
       console.log('Já está carregando, ignorando chamada');
@@ -1870,8 +1896,10 @@ const Login = () => {
             <button 
               className={styles.acceptButton}
               onClick={() => {
+                console.log("Aceitar termos clicado");
                 setFormData(prev => ({ ...prev, acceptedTerms: true }));
                 setShowTermsModal(false);
+                setError('');
               }}
             >
               Aceitar os Termos
@@ -2003,7 +2031,7 @@ const Login = () => {
                     }
                   }}
                   className={`${styles.loginButton} ${step === 'name' ? styles.nameStepButton : ''}`}
-                  disabled={loading}
+                  disabled={loading || (step === 'goal' && !formData.acceptedTerms)}
                   data-step={step}
                   id="continueButton"
                   style={step === 'name' ? {background: '#00d084', fontWeight: 'bold'} : {}}
