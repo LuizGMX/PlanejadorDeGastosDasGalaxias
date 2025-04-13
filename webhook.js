@@ -1,20 +1,27 @@
-const { exec } = require("child_process");
+const https = require("https");
+const fs = require("fs");
 const express = require("express");
 const bodyParser = require("body-parser");
 
 const app = express();
-const PORT = 9000; // Alterando para a porta 9000
+const PORT = 9000;
+const domain = "https://planejador.galaxias.com.br";
+
+// Caminhos para os certificados SSL gerados pelo Certbot
+const options = {
+  key: fs.readFileSync(`/etc/letsencrypt/live/${domain}/privkey.pem`),
+  cert: fs.readFileSync(`/etc/letsencrypt/live/${domain}/cert.pem`),
+  ca: fs.readFileSync(`/etc/letsencrypt/live/${domain}/fullchain.pem`), // Cadeia de certificação
+};
 
 // Middleware para processar o corpo do JSON
 app.use(bodyParser.json());
 
 // Rota do webhook
 app.post("/github-webhook", (req, res) => {
-  // Verifique se o evento é um push
   if (req.headers['x-github-event'] === 'push') {
     console.log("Evento push recebido!");
 
-    // Frontend build
     exec(
       `cd /var/www/PlanejadorDeGastosDasGalaxias/frontend && pnpm i && export $(grep -v '^#' .env | xargs) && pnpm build`,
       (err, stdout, stderr) => {
@@ -24,7 +31,6 @@ app.post("/github-webhook", (req, res) => {
         }
         console.log(`Frontend: ${stdout}`);
 
-        // Backend restart
         exec(
           `cd /var/www/PlanejadorDeGastosDasGalaxias/backend && pnpm i && pm2 restart backend-planejador`,
           (err, stdout, stderr) => {
@@ -43,6 +49,7 @@ app.post("/github-webhook", (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Webhook escutando na porta ${PORT}`);
+// Iniciar servidor HTTPS
+https.createServer(options, app).listen(PORT, () => {
+  console.log(`Webhook escutando em https://localhost:${PORT}`);
 });
