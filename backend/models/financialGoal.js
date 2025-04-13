@@ -9,7 +9,7 @@ const defineFinancialGoalModel = (sequelize) => {
       type: sequelize.Sequelize.INTEGER,
       allowNull: false,
       references: {
-        model: 'Users',
+        model: 'users',
         key: 'id'
       }
     },
