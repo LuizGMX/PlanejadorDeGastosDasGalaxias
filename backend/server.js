@@ -83,7 +83,7 @@ app.use(`${API_PREFIX}/categories`, categoryRoutes);
 app.use(`${API_PREFIX}/expenses`, checkSubscription, expenseRoutes);
 app.use(`${API_PREFIX}/incomes`, checkSubscription, incomeRoutes);
 app.use(`${API_PREFIX}/dashboard`, checkSubscription, dashboardRoutes);
-app.use(`${API_PREFIX}/banks`, checkSubscription, bankRoutes);
+app.use(`${API_PREFIX}/banks`, bankRoutes);
 app.use(`${API_PREFIX}/budgets`, checkSubscription, budgetRoutes);
 app.use(`${API_PREFIX}/spreadsheet`, checkSubscription, spreadsheetRoutes);
 app.use(`${API_PREFIX}/users`, userRoutes);

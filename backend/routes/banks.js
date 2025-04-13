@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { Bank, UserBank } from '../models/index.js';
 import { authenticate } from '../middleware/auth.js';
+import { checkSubscription } from '../middleware/subscriptionCheck.js';
 
 const router = Router();
 
@@ -20,7 +21,7 @@ router.get('/', async (req, res) => {
 });
 
 // Rota protegida - Requer autenticação - Bancos favoritos do usuário
-router.get('/favorites', authenticate, async (req, res) => {
+router.get('/favorites', authenticate, checkSubscription, async (req, res) => {
   try {
     console.log(`Buscando bancos favoritos para o usuário ${req.user.id}`);
     
@@ -71,7 +72,7 @@ router.get('/favorites', authenticate, async (req, res) => {
 });
 
 // Rota protegida - Requer autenticação - Bancos ativos do usuário
-router.get('/users', authenticate, async (req, res) => {
+router.get('/users', authenticate, checkSubscription, async (req, res) => {
   try {
     // Buscar as relações de UserBank para o usuário atual onde is_active é true
     const userBanks = await UserBank.findAll({
@@ -172,7 +173,7 @@ router.get('/users', authenticate, async (req, res) => {
 // });
 
 // Rota protegida - Requer autenticação - Gerenciar bancos favoritos (POST)
-router.post('/favorites', authenticate, async (req, res) => {
+router.post('/favorites', authenticate, checkSubscription, async (req, res) => {
   const { bank_id, is_active } = req.body;
   const user_id = req.user.id;
 
@@ -228,7 +229,7 @@ router.post('/favorites', authenticate, async (req, res) => {
 });
 
 // Rota protegida - Requer autenticação - Atualizar bancos favoritos (PUT)
-router.put('/favorites', authenticate, async (req, res) => {
+router.put('/favorites', authenticate, checkSubscription, async (req, res) => {
   const { bank_id, is_active } = req.body;
   const user_id = req.user.id;
 
