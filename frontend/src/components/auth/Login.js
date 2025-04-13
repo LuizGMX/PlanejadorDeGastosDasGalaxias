@@ -1297,7 +1297,7 @@ const Login = () => {
                 </p>
               </motion.div>
               
-              <motion.div 
+              {/* <motion.div 
                 className={styles.verifyButtonContainer}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -1311,7 +1311,7 @@ const Login = () => {
                 >
                 
                 </button>
-              </motion.div>
+              </motion.div> */}
             </motion.div>
           </motion.div>
         );

@@ -405,12 +405,39 @@ router.post('/verify-code', async (req, res) => {
 
       // Se houver meta financeira, cria
       if (financialGoalName && financialGoalAmount) {
+        // Calcular a data de término baseada no período
+        const startDate = new Date();
+        let endDate = new Date(startDate);
+        
+        if (financialGoalPeriodType && financialGoalPeriodValue) {
+          const periodValue = parseInt(financialGoalPeriodValue);
+          
+          switch (financialGoalPeriodType) {
+            case 'days':
+              endDate.setDate(startDate.getDate() + periodValue);
+              break;
+            case 'months':
+              endDate.setMonth(startDate.getMonth() + periodValue);
+              break;
+            case 'years':
+              endDate.setFullYear(startDate.getFullYear() + periodValue);
+              break;
+            default:
+              endDate.setFullYear(startDate.getFullYear() + 1); // Padrão: 1 ano
+          }
+        } else {
+          // Se não tiver período definido, define 1 ano como padrão
+          endDate.setFullYear(startDate.getFullYear() + 1);
+        }
+        
         await FinancialGoal.create({
           user_id: user.id,
           name: financialGoalName,
           amount: financialGoalAmount,
-          period_type: financialGoalPeriodType,
-          period_value: financialGoalPeriodValue
+          period_type: financialGoalPeriodType || 'years',
+          period_value: financialGoalPeriodValue || 1,
+          start_date: startDate,
+          end_date: endDate
         }, { transaction: t });
       }
 
