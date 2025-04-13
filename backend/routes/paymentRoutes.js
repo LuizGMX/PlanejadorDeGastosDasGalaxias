@@ -708,4 +708,136 @@ router.get('/check-subscription/:userId', async (req, res) => {
   }
 });
 
+// Verificar status de um pagamento específico por ID
+router.get('/check/:id', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    
+    // Verificar se o ID existe
+    if (!id) {
+      return res.status(400).json({ 
+        status: 'error',
+        message: 'ID do pagamento não fornecido'
+      });
+    }
+    
+    // Buscar o pagamento no banco de dados
+    const payment = await Payment.findOne({
+      where: {
+        payment_id: id,
+        user_id: userId
+      }
+    });
+    
+    // Se não encontrar pelo payment_id, tenta buscar pelo ID da preferência
+    let paymentData = payment;
+    if (!paymentData) {
+      paymentData = await Payment.findOne({
+        where: {
+          user_id: userId
+        },
+        order: [['created_at', 'DESC']]
+      });
+      
+      if (!paymentData) {
+        return res.status(404).json({ 
+          status: 'error',
+          message: 'Pagamento não encontrado' 
+        });
+      }
+    }
+    
+    // Verificar o status no Mercado Pago se tiver payment_id
+    let paymentStatus = {
+      status: paymentData.payment_status,
+      statusDetail: 'Status local',
+      paymentMethod: 'unknown'
+    };
+    
+    if (id) {
+      try {
+        const mpStatus = await checkPaymentStatus(id);
+        paymentStatus = {
+          ...mpStatus,
+          localStatus: paymentData.payment_status
+        };
+        
+        // Atualizar o status no banco se for diferente
+        if (mpStatus.status !== paymentData.payment_status) {
+          await Payment.update({
+            payment_status: mpStatus.status,
+            payment_id: id,
+            payment_date: mpStatus.status === 'approved' ? new Date() : paymentData.payment_date,
+            updated_at: new Date()
+          }, {
+            where: { id: paymentData.id }
+          });
+          
+          // Se foi aprovado, atualiza a validade da assinatura
+          if (mpStatus.status === 'approved' && paymentData.payment_status !== 'approved') {
+            const now = new Date();
+            const expirationDate = new Date(now.setMonth(now.getMonth() + 12));
+            
+            await Payment.update({
+              subscription_expiration: expirationDate
+            }, {
+              where: { id: paymentData.id }
+            });
+            
+            paymentStatus.subscriptionExpiration = expirationDate;
+          }
+        }
+      } catch (mpError) {
+        console.error('Erro ao verificar status no Mercado Pago:', mpError);
+        // Continua usando o status local em caso de erro
+      }
+    }
+    
+    // Mapear o status para valores mais amigáveis para o frontend
+    let status = 'unknown';
+    if (paymentStatus.status === 'approved') {
+      status = 'success';
+    } else if (paymentStatus.status === 'pending' || paymentStatus.status === 'in_process') {
+      status = 'pending';
+    } else if (paymentStatus.status === 'rejected' || paymentStatus.status === 'cancelled') {
+      status = 'failure';
+    }
+    
+    return res.json({
+      status,
+      originalStatus: paymentStatus.status,
+      message: getMessageForStatus(status),
+      paymentMethod: paymentStatus.paymentMethod,
+      paymentDate: paymentData.payment_date,
+      paymentId: id,
+      details: paymentStatus
+    });
+    
+  } catch (error) {
+    console.error('Erro ao verificar pagamento:', error);
+    res.status(500).json({ 
+      status: 'error',
+      message: 'Erro ao verificar o pagamento',
+      error: error.message
+    });
+  }
+});
+
+// Função para obter mensagem amigável baseada no status
+const getMessageForStatus = (status) => {
+  switch (status) {
+    case 'success':
+      return 'Pagamento concluído com sucesso!';
+    case 'pending':
+      return 'Seu pagamento está em processamento';
+    case 'failure':
+      return 'Houve um problema com seu pagamento';
+    case 'error':
+      return 'Erro no processamento do pagamento';
+    default:
+      return 'Status do pagamento desconhecido';
+  }
+};
+
 export default router; 

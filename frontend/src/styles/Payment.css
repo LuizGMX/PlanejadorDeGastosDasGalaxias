@@ -405,4 +405,53 @@
   margin-bottom: 10px;
   color: var(--text-secondary);
   font-size: 14px;
+}
+
+.loading-spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top: 4px solid var(--primary-color);
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 20px auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.payment-message {
+  margin: 20px 0;
+  padding: 15px;
+  border-radius: 8px;
+  background-color: var(--input-background);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-color);
+}
+
+.payment-result.success .payment-message {
+  border-left: 4px solid var(--success-color);
+}
+
+.payment-result.pending .payment-message {
+  border-left: 4px solid var(--warning-color);
+}
+
+.payment-result.failure .payment-message, 
+.payment-result.error .payment-message {
+  border-left: 4px solid var(--error-color);
+}
+
+.payment-details {
+  white-space: pre-line;
+  margin-bottom: 20px;
+  font-family: monospace;
+  font-size: 14px;
+  padding: 10px;
+  background-color: var(--input-background);
+  border-radius: 4px;
+  color: var(--text-secondary);
 } 

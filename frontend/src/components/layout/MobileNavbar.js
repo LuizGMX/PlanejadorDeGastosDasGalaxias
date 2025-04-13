@@ -9,7 +9,8 @@ import {
   BsListUl,
   BsPlusCircle,
   BsCashCoin,
-  BsCreditCard
+  BsCreditCard,
+  BsDoorOpen
 } from 'react-icons/bs';
 import { GiPayMoney, GiReceiveMoney } from "react-icons/gi";
 import { isIOS } from '../../utils/iosSupport';
@@ -17,7 +18,7 @@ import { isIOS } from '../../utils/iosSupport';
 const MobileNavbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { auth } = useContext(AuthContext);
+  const { auth, logout } = useContext(AuthContext);
   const [openSubmenu, setOpenSubmenu] = useState(null);
   const [isIOSDevice, setIsIOSDevice] = useState(false);
   
@@ -67,7 +68,14 @@ const MobileNavbar = () => {
   
   const isActive = (path) => location.pathname === path;
   
-  const menuItems = [
+  // Função para lidar com logout
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+  
+  // Itens de menu para usuários com assinatura válida
+  const fullMenuItems = [
     {
       label: 'Início',
       path: '/dashboard',
@@ -116,9 +124,28 @@ const MobileNavbar = () => {
       icon: <BsCreditCard className="mobileNavIcon" />
     }
   ];
+  
+  // Itens de menu para usuários sem assinatura válida
+  const restrictedMenuItems = [
+    {
+      label: 'Assinatura',
+      path: '/payment',
+      icon: <BsCreditCard className="mobileNavIcon" />
+    },
+    {
+      label: 'Sair',
+      icon: <BsDoorOpen className="mobileNavIcon" />,
+      onClick: handleLogout
+    }
+  ];
+  
+  // Seleciona quais itens de menu mostrar com base no status da assinatura
+  const menuItems = auth.subscriptionExpired ? restrictedMenuItems : fullMenuItems;
 
   const handleMenuClick = (item, index) => {
-    if (item.submenu) {
+    if (item.onClick) {
+      item.onClick();
+    } else if (item.submenu) {
       setOpenSubmenu(openSubmenu === index ? null : index);
     } else if (item.path) {
       navigate(item.path);

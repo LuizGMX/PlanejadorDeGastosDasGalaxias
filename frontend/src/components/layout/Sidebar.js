@@ -9,7 +9,7 @@ import { GiPayMoney, GiReceiveMoney, } from "react-icons/gi";
 const Sidebar = ({ className }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { auth, apiInterceptor, setAuth } = useContext(AuthContext);
+  const { auth, apiInterceptor, logout } = useContext(AuthContext);
   const [openMenu, setOpenMenu] = useState(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
 
@@ -50,12 +50,12 @@ const Sidebar = ({ className }) => {
   }, [auth.token, apiInterceptor]);
 
   const handleLogout = () => {
-    setAuth({ token: null, user: null });
-    localStorage.removeItem('token');
+    logout();
     navigate('/login');
   };
 
-  const menuItems = [
+  // Menu completo para usuários com assinatura válida
+  const fullMenuItems = [
     {
       label: 'Dashboard',
       path: '/dashboard',
@@ -115,6 +115,19 @@ const Sidebar = ({ className }) => {
       warning: subscriptionStatus?.hasWarning
     }
   ];
+  
+  // Menu restrito para usuários sem assinatura válida
+  const restrictedMenuItems = [
+    {
+      label: 'Assinatura',
+      path: '/payment',
+      icon: <BsExclamationCircle size={20} className={styles.warningIcon} />,
+      warning: true
+    }
+  ];
+  
+  // Seleciona quais itens mostrar com base no status da assinatura
+  const menuItems = auth.subscriptionExpired ? restrictedMenuItems : fullMenuItems;
 
   const handleMenuClick = (item) => {
     if (item.submenu) {
@@ -171,7 +184,7 @@ const Sidebar = ({ className }) => {
         ))}
       </nav>
 
-      {/* Botão de logout para desktop */}
+      {/* Botão de logout sempre visível */}
       <button 
         onClick={handleLogout} 
         className={`${styles.logoutButton} desktopLogoutButton`}

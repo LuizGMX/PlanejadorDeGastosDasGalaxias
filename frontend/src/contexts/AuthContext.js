@@ -268,6 +268,26 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Função para atualizar o status da assinatura
+  const refreshSubscriptionStatus = async () => {
+    if (!auth.token) return false;
+    
+    try {
+      const hasActiveSubscription = await checkSubscriptionStatus(auth.token);
+      
+      setAuth(prevAuth => ({
+        ...prevAuth,
+        subscriptionExpired: !hasActiveSubscription,
+        hasActiveSubscription: hasActiveSubscription
+      }));
+      
+      return hasActiveSubscription;
+    } catch (error) {
+      console.error('Erro ao atualizar status da assinatura:', error);
+      return false;
+    }
+  };
+
   // Valor do contexto
   const value = {
     auth,
@@ -276,7 +296,8 @@ export const AuthProvider = ({ children }) => {
     logout,
     register,
     apiInterceptor,
-    checkSubscriptionStatus
+    checkSubscriptionStatus,
+    refreshSubscriptionStatus
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
