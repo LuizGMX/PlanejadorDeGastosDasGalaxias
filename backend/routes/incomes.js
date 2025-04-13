@@ -769,7 +769,7 @@ router.get('/:id', async (req, res) => {
         },
         { 
           model: Bank,
-          as: 'Bank'
+          as: 'bank'
         }
       ]
     });
