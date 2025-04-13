@@ -2,6 +2,37 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 @import '../variables.css';
 
+/* Estilos para o contêiner principal em dispositivos móveis */
+.container {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  position: relative;
+  left: 0 !important;
+  right: 0 !important;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background-color: var(--background-color, #f5f5f5);
+}
+
+.dataContainer {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 !important;
+  padding: 12px !important;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  position: relative;
+  left: 0 !important;
+  right: 0 !important;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
 
 .successMessage {
   color: var(--success-color);

@@ -28,10 +28,18 @@
 @media (max-width: 768px) {
   .layout {
     flex-direction: column;
+    width: 100%;
+    margin: 0;
+    padding: 0;
   }
 
   .mainContent {
     padding: 1rem;
+    margin-left: 0 !important; /* Remover qualquer margem à esquerda em dispositivos móveis */
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden; /* Prevenir rolagem horizontal */
   }
   
   /* Garantindo que a sidebar não seja visível no mobile */

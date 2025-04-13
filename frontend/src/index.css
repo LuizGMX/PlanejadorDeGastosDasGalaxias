@@ -238,6 +238,39 @@ input[type="datetime-local"] {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Quando tem sidebar, ajusta o layout */
+.app.with-sidebar {
+  display: flex;
+  flex-direction: row;
+}
+
+/* Ajustes para dispositivos móveis */
+@media (max-width: 768px) {
+  .app {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow-x: hidden !important;
+  }
+  
+  .app.with-sidebar {
+    flex-direction: column !important;
+  }
+  
+  .app .mainContent {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 1rem !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
 }
 
 /* Ajustes para o conteúdo principal */
