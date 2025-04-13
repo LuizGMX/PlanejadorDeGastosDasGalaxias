@@ -1,96 +1,67 @@
 import jwt from 'jsonwebtoken';
 import { User } from '../models/index.js';
+import sequelize from '../config/db.js';
 
 export const authenticate = async (req, res, next) => {
-  console.log('Iniciando autenticação para:', req.originalUrl);
-  console.log('Método:', req.method);
+  const t = await sequelize.transaction();
   
   try {
+    // Se for uma rota pública, permite o acesso
+    if (isPublicRoute(req.originalUrl)) {
+      console.log('Permitindo acesso a rota pública sem autenticação');
+      await t.commit();
+      return next();
+    }
+
     const authHeader = req.headers.authorization;
-    console.log('Header de autorização:', authHeader ? 'Presente' : 'Ausente');
-    
     if (!authHeader) {
-      console.log('Token não fornecido para rota:', req.originalUrl);
-      return res.status(401).json({ 
-        message: 'Token não fornecido',
-        path: req.originalUrl, 
-        details: 'Autenticação necessária para acessar este recurso'
-      });
+      await t.rollback();
+      return res.status(401).json({ message: 'Token não fornecido' });
     }
 
     const token = authHeader.split(' ')[1];
-    console.log('Token extraído, verificando...');
-    
+    if (!token) {
+      await t.rollback();
+      return res.status(401).json({ message: 'Token mal formatado' });
+    }
+
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      console.log('Token decodificado para usuário ID:', decoded.userId);
+      const user = await User.findByPk(decoded.userId, { transaction: t });
       
-      const user = await User.findByPk(decoded.userId, {
-        attributes: [
-          'id', 
-          'name', 
-          'email', 
-          'created_at', 
-          'updated_at', 
-          'financial_goal_name',
-          'financial_goal_amount',
-          'financial_goal_start_date',
-          'financial_goal_end_date',
-          'telegram_verified'
-        ]
-      });
-  
-      console.log('Usuário encontrado:', user ? 'Sim' : 'Não');
-  
       if (!user) {
-        console.log('Usuário não encontrado no banco de dados para ID:', decoded.userId);
-        return res.status(401).json({ 
-          message: 'Usuário não encontrado',
-          details: 'O token fornecido corresponde a um usuário que não existe mais'
-        });
+        await t.rollback();
+        return res.status(401).json({ message: 'Usuário não encontrado' });
       }
-  
-      req.user = {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        telegram_verified: user.telegram_verified,
-        financial_goal_name: user.financial_goal_name,
-        financial_goal_amount: user.financial_goal_amount,
-        financial_goal_start_date: user.financial_goal_start_date,
-        financial_goal_end_date: user.financial_goal_end_date
-      };
-      
-      console.log('Autenticação concluída com sucesso para usuário:', user.name);
+
+      req.user = user;
+      await t.commit();
       next();
     } catch (jwtError) {
-      console.error('Erro na verificação do JWT:', {
-        error: jwtError.message,
-        name: jwtError.name,
-        stack: jwtError.stack
-      });
-  
-      if (jwtError.name === 'JsonWebTokenError') {
-        return res.status(401).json({ 
-          message: 'Token inválido',
-          details: 'O token de autenticação fornecido não é válido ou está malformado'
-        });
-      }
-      if (jwtError.name === 'TokenExpiredError') {
-        return res.status(401).json({ 
-          message: 'Token expirado',
-          details: 'O token de autenticação expirou. Faça login novamente para obter um novo token'
-        });
-      }
-      
-      throw jwtError;
+      await t.rollback();
+      console.error('Erro na verificação do JWT:', jwtError);
+      return res.status(401).json({ message: 'Token inválido' });
     }
   } catch (error) {
-    console.error('Erro não tratado na autenticação:', error);
-    
-    res.status(500).json({ 
-      message: 'Erro ao autenticar usuário',
-      details: process.env.NODE_ENV === 'development' ? error.message : 'Erro interno no servidor'
-    });
+    await t.rollback();
+    console.error('Erro na autenticação:', error);
+    res.status(500).json({ message: 'Erro ao autenticar usuário' });
   }
-}; 
+};
+
+// Função auxiliar para verificar se a rota é pública
+function isPublicRoute(url) {
+  const publicRoutes = [
+    '/banks',
+    '/auth/verify-code',
+    '/auth/send-code',
+    '/auth/check-email'
+  ];
+  
+  // Verifica se a URL contém /banks e não contém /favorites ou /users
+  if (url.includes('/banks') && !url.includes('/banks/favorites') && !url.includes('/banks/users')) {
+    return true;
+  }
+  
+  return publicRoutes.some(route => url.endsWith(route));
+} 

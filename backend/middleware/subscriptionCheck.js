@@ -4,9 +4,9 @@ import sequelize from '../config/db.js';
 
 // Middleware para verificar se o usuário tem uma assinatura ativa
 export const checkSubscription = async (req, res, next) => {
-  // Se a rota é para bancos (listagem geral), permita sem autenticação
-  if (req.originalUrl.includes('/banks') && !req.originalUrl.includes('/banks/favorites') && !req.originalUrl.includes('/banks/users')) {
-    console.log('Permitindo acesso sem autenticação para listagem de bancos');
+  // Se for uma rota pública, permite o acesso
+  if (isPublicRoute(req.originalUrl)) {
+    console.log('Permitindo acesso a rota pública sem verificação de assinatura');
     return next();
   }
 
@@ -21,13 +21,6 @@ export const checkSubscription = async (req, res, next) => {
       await t.commit();
       console.log('Usuário não autenticado no middleware checkSubscription');
       console.log('URL da requisição:', req.originalUrl);
-      
-      // Se for uma rota pública, permite o acesso
-      if (isPublicRoute(req.originalUrl)) {
-        console.log('Permitindo acesso a rota pública sem autenticação');
-        return next();
-      }
-      
       return res.status(401).json({ 
         message: 'Usuário não autenticado', 
         subscriptionExpired: true 
@@ -70,8 +63,15 @@ export const checkSubscription = async (req, res, next) => {
 function isPublicRoute(url) {
   const publicRoutes = [
     '/banks',
-    '/auth/verify-code'
+    '/auth/verify-code',
+    '/auth/send-code',
+    '/auth/check-email'
   ];
+  
+  // Verifica se a URL contém /banks e não contém /favorites ou /users
+  if (url.includes('/banks') && !url.includes('/banks/favorites') && !url.includes('/banks/users')) {
+    return true;
+  }
   
   return publicRoutes.some(route => url.endsWith(route));
 }

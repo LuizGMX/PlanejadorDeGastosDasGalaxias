@@ -413,6 +413,19 @@ router.post('/verify-code', async (req, res) => {
           period_value: financialGoalPeriodValue
         }, { transaction: t });
       }
+
+      // Criar registro de pagamento inicial com 7 dias gratuitos
+      const trialExpirationDate = new Date();
+      trialExpirationDate.setDate(trialExpirationDate.getDate() + 7); // 7 dias de teste
+      
+      await Payment.create({
+        user_id: user.id,
+        subscription_expiration: trialExpirationDate,
+        payment_status: 'approved',
+        payment_method: 'trial',
+        payment_amount: 0,
+        payment_date: new Date()
+      }, { transaction: t });
     }
 
     // Associar bancos ao usuário, se houver
@@ -472,7 +485,15 @@ router.post('/verify-code', async (req, res) => {
     // Commit da transação
     await t.commit();
 
-    res.json({ token });
+    res.json({ 
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        telegram_verified: user.telegram_verified
+      }
+    });
   } catch (error) {
     await t.rollback();
     console.error('Erro ao verificar código:', error);
