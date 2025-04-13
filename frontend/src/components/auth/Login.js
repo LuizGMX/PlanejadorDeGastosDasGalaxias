@@ -226,11 +226,6 @@ const Login = () => {
       return;
     }
     
-    if (step === 'email' && !formData.acceptedTerms) {
-      setError('Você precisa aceitar os termos de uso para continuar');
-      return;
-    }
-    
     setLoading(true);
     console.log('Loading definido como true');
 
@@ -239,8 +234,6 @@ const Login = () => {
         console.log('Enviando email para verificação:', formData.email);
         console.log('REACT_APP_API_PREFIX:' + process.env.REACT_APP_API_PREFIX + ' REACT_APP_API_URL:' + process.env.REACT_APP_API_URL);
         
-
-
         const prefix = process.env.REACT_APP_API_PREFIX?.trim();
         const url = `${process.env.REACT_APP_API_URL}${prefix ? `/${prefix}` : ''}/auth/check-email`;
         console.log('URL:' + url);
@@ -322,7 +315,7 @@ const Login = () => {
         }
         setStep('goal');
       } else if (step === 'goal') {
-        // Verificar se os termos foram aceitos
+        // Verificar se os termos foram aceitos - Esta é a etapa final antes de criar a conta
         if (!formData.acceptedTerms) {
           setError('Você precisa aceitar os termos de uso para continuar');
           setLoading(false);
@@ -692,26 +685,6 @@ const Login = () => {
                 autoFocus
               />
               <BsEnvelope className={styles.inputIcon} />
-            </motion.div>
-            
-            <motion.div 
-              className={styles.termsContainer}
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.4 }}
-            >
-              <div className={styles.termsCheckbox}>
-                <input
-                  type="checkbox"
-                  id="acceptTerms"
-                  checked={formData.acceptedTerms}
-                  onChange={() => setFormData(prev => ({ ...prev, acceptedTerms: !prev.acceptedTerms }))}
-                />
-                <label htmlFor="acceptTerms">
-                  Eu li e aceito os <button type="button" className={styles.termsLink} onClick={() => setShowTermsModal(true)}>Termos de Uso</button>
-                </label>
-              </div>
-              {error && error.includes("termos") && <p className={styles.termsError}>{error}</p>}
             </motion.div>
           </motion.div>
         );
@@ -1178,15 +1151,21 @@ const Login = () => {
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.7 }}
               >
-                <div className={styles.termsCheckbox}>
+                <div className={`${styles.termsCheckbox} ${error && error.includes('termos') ? styles.termsCheckboxError : ''}`}>
                   <input
                     type="checkbox"
                     id="acceptedTerms"
                     name="acceptedTerms"
                     checked={formData.acceptedTerms}
-                    onChange={handleChange}
-                    required
-                    disabled={loading}
+                    onChange={(e) => {
+                      setFormData(prev => ({ 
+                        ...prev, 
+                        acceptedTerms: e.target.checked 
+                      }));
+                      if (e.target.checked) {
+                        setError('');
+                      }
+                    }}
                   />
                   <label htmlFor="acceptedTerms">
                     Eu li e aceito os <button 
@@ -1198,13 +1177,13 @@ const Login = () => {
                     </button>
                   </label>
                 </div>
-                {!formData.acceptedTerms && error && error.includes('aceitar os termos') && (
-                  <p className={styles.termsError}>{error}</p>
+                {error && error.includes('termos') && (
+                  <p className={styles.termsError}>
+                    <span className="material-icons">error</span> {error}
+                  </p>
                 )}
               </motion.div>
             </motion.div>
-            
-            {renderTermsModal()}
           </motion.div>
         );
 
@@ -2043,6 +2022,11 @@ const Login = () => {
                     <>
                       <span className="material-icons">arrow_forward</span>
                       Continuar para Seleção de Bancos
+                    </>
+                  ) : step === 'goal' ? (
+                    <>
+                      <span className="material-icons">check_circle</span>
+                      Criar Minha Conta
                     </>
                   ) : (
                     <>
