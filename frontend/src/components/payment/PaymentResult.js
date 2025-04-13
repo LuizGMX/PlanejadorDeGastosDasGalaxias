@@ -154,8 +154,12 @@ const PaymentResult = () => {
   // Função para verificar o status do pagamento
   const checkPaymentStatus = async (paymentId) => {
     try {
-      const response = await apiInterceptor(`/payments/check/${paymentId}`, {
-        method: 'GET'
+      const apiUrl = `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}`;
+      const response = await fetch(`${apiUrl}/payments/check/${paymentId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
 
       if (!response.ok) {

@@ -718,38 +718,38 @@ router.get('/check-subscription/:userId', async (req, res) => {
 });
 
 // Verificar status de um pagamento específico por ID
-router.get('/check/:id', authenticate, async (req, res) => {
+router.get('/check/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user.id;
+    
+    console.log(`[DEBUG] Verificando pagamento ID: ${id}`);
     
     // Verificar se o ID existe
     if (!id) {
+      console.log('[DEBUG] ID de pagamento não fornecido');
       return res.status(400).json({ 
         status: 'error',
         message: 'ID do pagamento não fornecido'
       });
     }
     
-    // Buscar o pagamento no banco de dados
-    const payment = await Payment.findOne({
+    // Buscar o pagamento no banco de dados pelo payment_id
+    console.log(`[DEBUG] Buscando pagamento pelo payment_id: ${id}`);
+    let payment = await Payment.findOne({
       where: {
-        payment_id: id,
-        user_id: userId
+        payment_id: id
       }
     });
     
     // Se não encontrar pelo payment_id, tenta buscar pelo ID da preferência
-    let paymentData = payment;
-    if (!paymentData) {
-      paymentData = await Payment.findOne({
-        where: {
-          user_id: userId
-        },
+    if (!payment) {
+      console.log('[DEBUG] Pagamento não encontrado pelo payment_id, buscando pelo mais recente');
+      payment = await Payment.findOne({
         order: [['created_at', 'DESC']]
       });
       
-      if (!paymentData) {
+      if (!payment) {
+        console.log('[DEBUG] Nenhum pagamento encontrado no banco de dados');
         return res.status(404).json({ 
           status: 'error',
           message: 'Pagamento não encontrado' 
@@ -757,50 +757,55 @@ router.get('/check/:id', authenticate, async (req, res) => {
       }
     }
     
-    // Verificar o status no Mercado Pago se tiver payment_id
+    console.log(`[DEBUG] Pagamento encontrado: ID=${payment.id}, Status=${payment.payment_status}, User=${payment.user_id}`);
+    
+    // Verificar o status no Mercado Pago
     let paymentStatus = {
-      status: paymentData.payment_status,
+      status: payment.payment_status,
       statusDetail: 'Status local',
       paymentMethod: 'unknown'
     };
     
-    if (id) {
-      try {
-        const mpStatus = await checkPaymentStatus(id);
-        paymentStatus = {
-          ...mpStatus,
-          localStatus: paymentData.payment_status
-        };
+    try {
+      console.log(`[DEBUG] Verificando status no MercadoPago para ID: ${id}`);
+      const mpStatus = await checkPaymentStatus(id);
+      console.log(`[DEBUG] Resposta do MercadoPago: ${JSON.stringify(mpStatus)}`);
+      
+      paymentStatus = {
+        ...mpStatus,
+        localStatus: payment.payment_status
+      };
+      
+      // Atualizar o status no banco se for diferente
+      if (mpStatus.status !== payment.payment_status) {
+        console.log(`[DEBUG] Atualizando status do pagamento: ${payment.payment_status} -> ${mpStatus.status}`);
+        await Payment.update({
+          payment_status: mpStatus.status,
+          payment_id: id,
+          payment_date: mpStatus.status === 'approved' ? new Date() : payment.payment_date,
+          updated_at: new Date()
+        }, {
+          where: { id: payment.id }
+        });
         
-        // Atualizar o status no banco se for diferente
-        if (mpStatus.status !== paymentData.payment_status) {
+        // Se foi aprovado, atualiza a validade da assinatura
+        if (mpStatus.status === 'approved' && payment.payment_status !== 'approved') {
+          console.log('[DEBUG] Pagamento aprovado. Atualizando data de expiração da assinatura');
+          const now = new Date();
+          const expirationDate = new Date(now.setMonth(now.getMonth() + 12));
+          
           await Payment.update({
-            payment_status: mpStatus.status,
-            payment_id: id,
-            payment_date: mpStatus.status === 'approved' ? new Date() : paymentData.payment_date,
-            updated_at: new Date()
+            subscription_expiration: expirationDate
           }, {
-            where: { id: paymentData.id }
+            where: { id: payment.id }
           });
           
-          // Se foi aprovado, atualiza a validade da assinatura
-          if (mpStatus.status === 'approved' && paymentData.payment_status !== 'approved') {
-            const now = new Date();
-            const expirationDate = new Date(now.setMonth(now.getMonth() + 12));
-            
-            await Payment.update({
-              subscription_expiration: expirationDate
-            }, {
-              where: { id: paymentData.id }
-            });
-            
-            paymentStatus.subscriptionExpiration = expirationDate;
-          }
+          paymentStatus.subscriptionExpiration = expirationDate;
         }
-      } catch (mpError) {
-        console.error('Erro ao verificar status no Mercado Pago:', mpError);
-        // Continua usando o status local em caso de erro
       }
+    } catch (mpError) {
+      console.error('[DEBUG] Erro ao verificar status no Mercado Pago:', mpError);
+      // Continua usando o status local em caso de erro
     }
     
     // Mapear o status para valores mais amigáveis para o frontend
@@ -813,18 +818,20 @@ router.get('/check/:id', authenticate, async (req, res) => {
       status = 'failure';
     }
     
+    console.log(`[DEBUG] Retornando resposta final. Status: ${status}`);
+    
     return res.json({
       status,
       originalStatus: paymentStatus.status,
       message: getMessageForStatus(status),
       paymentMethod: paymentStatus.paymentMethod,
-      paymentDate: paymentData.payment_date,
+      paymentDate: payment.payment_date,
       paymentId: id,
       details: paymentStatus
     });
     
   } catch (error) {
-    console.error('Erro ao verificar pagamento:', error);
+    console.error('[DEBUG] Erro ao verificar pagamento:', error);
     res.status(500).json({ 
       status: 'error',
       message: 'Erro ao verificar o pagamento',
