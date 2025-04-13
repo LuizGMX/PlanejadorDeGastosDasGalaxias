@@ -18,7 +18,7 @@ import userRoutes from './routes/users.js';
 import recurrencesRouter from './routes/recurrences.js';
 import telegramRoutes from './routes/telegramRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
-import { sequelize } from './models/index.js';
+import { sequelize, User, Category, Bank, Expense, Income, Budget, VerificationCode, UserBank, RecurrenceRule, RecurrenceException, Payment, FinancialGoal } from './models/index.js';
 import seedDatabase from './database/seeds/index.js';
 import { telegramService } from './services/telegramService.js';
 
