@@ -195,7 +195,7 @@ const MobileEditExpense = ({ expense, onSave, onCancel }) => {
                 disabled={true}
                 title="O tipo de despesa não pode ser alterado"
               >
-                <BsCurrencyDollar /> Único
+                <BsCurrencyDollar style={{color: !formData.is_recurring && !formData.has_installments ? 'var(--secondary-color)' : 'white'}} /> Único
               </button>
               <button
                 type="button"
@@ -203,7 +203,7 @@ const MobileEditExpense = ({ expense, onSave, onCancel }) => {
                 disabled={true}
                 title="O tipo de despesa não pode ser alterado"
               >
-                <BsListCheck /> Parcelado
+                <BsListCheck style={{color: formData.has_installments ? 'var(--secondary-color)' : 'white'}} /> Parcelado
               </button>
               <button
                 type="button"
@@ -211,7 +211,7 @@ const MobileEditExpense = ({ expense, onSave, onCancel }) => {
                 disabled={true}
                 title="O tipo de despesa não pode ser alterado"
               >
-                <BsRepeat /> Fixo
+                <BsRepeat style={{color: formData.is_recurring ? 'var(--secondary-color)' : 'white'}} /> Fixo
               </button>
             </div>
             <p style={{fontSize: '12px', color: 'var(--warning-color)', marginTop: '4px'}}>
@@ -378,28 +378,32 @@ const MobileEditExpense = ({ expense, onSave, onCancel }) => {
                 className={`${addExpenseStyles.toggleButton} ${formData.payment_method === 'credit_card' ? addExpenseStyles.active : ''}`}
                 onClick={() => handlePaymentMethodChange('credit_card')}
               >
-                <BsCreditCard2Front /> Crédito
+                <BsCreditCard2Front style={{color: formData.payment_method === 'credit_card' ? 'var(--secondary-color)' : 'white'}} /> 
+                <span style={{color: formData.payment_method === 'credit_card' ? 'var(--secondary-color)' : 'white'}}>Crédito</span>
               </button>
               <button
                 type="button"
                 className={`${addExpenseStyles.toggleButton} ${formData.payment_method === 'debit_card' ? addExpenseStyles.active : ''}`}
                 onClick={() => handlePaymentMethodChange('debit_card')}
               >
-                <BsCreditCard2Front /> Débito
+                <BsCreditCard2Front style={{color: formData.payment_method === 'debit_card' ? 'var(--secondary-color)' : 'white'}} /> 
+                <span style={{color: formData.payment_method === 'debit_card' ? 'var(--secondary-color)' : 'white'}}>Débito</span>
               </button>
               <button
                 type="button"
                 className={`${addExpenseStyles.toggleButton} ${formData.payment_method === 'cash' ? addExpenseStyles.active : ''}`}
                 onClick={() => handlePaymentMethodChange('cash')}
               >
-                <BsCashCoin /> Dinheiro
+                <BsCashCoin style={{color: formData.payment_method === 'cash' ? 'var(--secondary-color)' : 'white'}} /> 
+                <span style={{color: formData.payment_method === 'cash' ? 'var(--secondary-color)' : 'white'}}>Dinheiro</span>
               </button>
               <button
                 type="button"
                 className={`${addExpenseStyles.toggleButton} ${formData.payment_method === 'pix' ? addExpenseStyles.active : ''}`}
                 onClick={() => handlePaymentMethodChange('pix')}
               >
-                <BsWallet2 /> Pix
+                <BsWallet2 style={{color: formData.payment_method === 'pix' ? 'var(--secondary-color)' : 'white'}} /> 
+                <span style={{color: formData.payment_method === 'pix' ? 'var(--secondary-color)' : 'white'}}>Pix</span>
               </button>
             </div>
           </div>

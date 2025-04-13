@@ -217,7 +217,8 @@ const MobileEditIncome = ({ income, onSave, onCancel }) => {
                 disabled={true}
                 title="O tipo de receita não pode ser alterado"
               >
-                <BsCurrencyDollar /> Único
+                <BsCurrencyDollar style={{color: !formData.is_recurring ? 'var(--secondary-color)' : 'white'}} /> 
+                <span style={{color: !formData.is_recurring ? 'var(--secondary-color)' : 'white'}}>Único</span>
               </button>
               <button
                 type="button"
@@ -225,7 +226,8 @@ const MobileEditIncome = ({ income, onSave, onCancel }) => {
                 disabled={true}
                 title="O tipo de receita não pode ser alterado"
               >
-                <BsRepeat /> Fixo
+                <BsRepeat style={{color: formData.is_recurring ? 'var(--secondary-color)' : 'white'}} /> 
+                <span style={{color: formData.is_recurring ? 'var(--secondary-color)' : 'white'}}>Fixo</span>
               </button>
             </div>
             <p style={{fontSize: '12px', color: 'var(--warning-color)', marginTop: '4px'}}>
