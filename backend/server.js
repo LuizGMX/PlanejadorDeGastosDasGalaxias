@@ -28,6 +28,8 @@ import { configureRateLimit, authLimiter } from './middleware/rateLimit.js';
 // Importar middleware de verificação de assinatura
 import { checkSubscription } from './middleware/subscriptionCheck.js';
 
+import net from 'net';
+
 dotenv.config();
 
 const app = express();
@@ -177,9 +179,38 @@ const startServer = async () => {
     await Payment.sync({ force: false });
     await FinancialGoal.sync({ force: false });
 
-    app.listen(5000, () => {
-      console.log(`Servidor rodando na porta 5000`);
-    });
+    // Verificar se a porta está em uso
+    const checkPort = () => {
+      return new Promise((resolve, reject) => {
+        const tester = net.createServer()
+          .once('error', (err) => {
+            if (err.code === 'EADDRINUSE') {
+              console.error('⚠️ A porta 5000 já está em uso. Por favor, verifique se há outro processo rodando.');
+              process.exit(1);
+            }
+            reject(err);
+          })
+          .once('listening', () => {
+            tester.once('close', () => resolve())
+              .close();
+          })
+          .listen(5000);
+      });
+    };
+
+    await checkPort();
+
+    if (process.env.NODE_ENV === 'production') {
+      server = https.createServer(credentials, app);
+      server.listen(5000, '0.0.0.0', () => {
+        console.log('🚀 Servidor HTTPS rodando na porta 5000 em modo produção');
+      });
+    } else {
+      server = http.createServer(app);
+      server.listen(5000, () => {
+        console.log('🚀 Servidor HTTP rodando na porta 5000 em modo desenvolvimento');
+      });
+    }
   } catch (error) {
     console.error('Erro ao iniciar o servidor:', error);
     process.exit(1);
