@@ -1499,12 +1499,12 @@ const Login = () => {
     if (!showTermsModal) return null;
     
     return (
-      <div className={styles.modalOverlay}>
+      <div className={styles.termsModalOverlay}>
         <div className={styles.termsModal}>
           <div className={styles.termsModalHeader}>
             <h2>Termo de Uso - Planejador de Gastos das Galáxias</h2>
             <button 
-              className={styles.closeButton}
+              className={styles.termsModalCloseButton}
               onClick={() => setShowTermsModal(false)}
             >
               <BsXCircle size={24} />
@@ -1549,19 +1549,19 @@ const Login = () => {
           </div>
           <div className={styles.termsModalFooter}>
             <button 
-              className={styles.acceptButton}
+              className={styles.termsModalCancelButton}
+              onClick={() => setShowTermsModal(false)}
+            >
+              Fechar
+            </button>
+            <button 
+              className={styles.termsModalAcceptButton}
               onClick={() => {
                 setFormData(prev => ({ ...prev, acceptedTerms: true }));
                 setShowTermsModal(false);
               }}
             >
               Aceitar os Termos
-            </button>
-            <button 
-              className={styles.cancelButton}
-              onClick={() => setShowTermsModal(false)}
-            >
-              Fechar
             </button>
           </div>
         </div>

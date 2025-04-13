@@ -61,7 +61,7 @@
   color: var(--text-color);
 }
 
-.closeButton {
+.termsModalCloseButton {
   background: none;
   border: none;
   color: var(--text-color);
@@ -72,7 +72,7 @@
   justify-content: center;
 }
 
-.closeButton:hover {
+.termsModalCloseButton:hover {
   color: var(--primary-color);
 }
 
@@ -99,7 +99,7 @@
   border-top: 1px solid var(--border-color);
 }
 
-.acceptButton {
+.termsModalAcceptButton {
   background: var(--primary-color);
   color: var(--secondary-color);
   border: none;
@@ -109,11 +109,11 @@
   font-weight: bold;
 }
 
-.acceptButton:hover {
+.termsModalAcceptButton:hover {
   background: var(--primary-color-dark);
 }
 
-.cancelButton {
+.termsModalCancelButton {
   background: none;
   border: 1px solid var(--border-color);
   padding: 0.75rem 1.5rem;
@@ -122,11 +122,11 @@
   color: var(--text-color);
 }
 
-.cancelButton:hover {
+.termsModalCancelButton:hover {
   background: var(--border-color);
 }
 
-.modalOverlay {
+.termsModalOverlay {
   position: fixed;
   top: 0;
   left: 0;
