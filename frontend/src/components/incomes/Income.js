@@ -39,13 +39,6 @@ function Income({
   const [deleteSuccess, setDeleteSuccess] = useState(null);
   const [showInstallmentMessage, setShowInstallmentMessage] = useState(false);
   const [messagePosition, setMessagePosition] = useState({ x: 0, y: 0 });
-  const [filters, setFilters] = useState({
-    months: [new Date().getMonth() + 1],
-    years: [new Date().getFullYear()],
-    description: '',
-    category_id: '',
-    is_recurring: ''
-  });
   const [openFilter, setOpenFilter] = useState(null);
   const [metadata, setMetadata] = useState({
     filters: {
@@ -156,41 +149,15 @@ function Income({
 
   const handleFilterChange = (type, value) => {
     if (type === 'description') {
-      setFilters(prev => ({ ...prev, description: value }));
+      onSearch(value);
       return;
     }
-    if (type === 'months' || type === 'years') {
-      setFilters(prev => {
-        const currentValues = prev[type];
-        let newValues;
-
-        if (value === 'all') {
-          newValues = currentValues.length === (type === 'months' ? months.length : years.length)
-            ? []
-            : (type === 'months' ? months.map(m => m.value) : years.map(y => y.value));
-        } else {
-          newValues = currentValues.includes(value)
-            ? currentValues.filter(v => v !== value)
-            : [...currentValues, value];
-        }
-
-        return { ...prev, [type]: newValues };
-      });
-    } else {
-      setFilters(prev => ({ ...prev, [type]: value }));
-    }
+    
+    onFilter(type, value);
   };
 
   const formatSelectedPeriod = (type) => {
-    const selected = filters[type];
-    const options = type === 'months' ? months : years;
-    
-    if (selected.length === 0) return 'Nenhum selecionado';
-    if (selected.length === options.length) return 'Todos';
-    
-    return selected
-      .map(value => options.find(option => option.value === value)?.label)
-      .join(', ');
+    return "Filtro aplicado";
   };
 
   const formatCurrency = (value) => {

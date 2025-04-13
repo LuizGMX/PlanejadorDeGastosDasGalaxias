@@ -22,42 +22,6 @@ const MobileIncomes = ({
   const [searchTerm, setSearchTerm] = useState('');
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
-  const initialFilterApplied = useRef(false);
-
-  // Inicializa os filtros com o mês atual se ainda não estiver definido
-  useEffect(() => {
-    console.log('MobileIncomes - Verificando inicialização de filtros', {
-      initialFilterApplied: initialFilterApplied.current,
-      filters
-    });
-    
-    if (initialFilterApplied.current) {
-      console.log('Filtros já inicializados, pulando');
-      return;
-    }
-    
-    console.log('Inicializando filtros no mobile para receitas');
-    
-    // Forçar a aplicação do filtro com valores iniciais
-    const today = new Date();
-    const thisMonth = today.getMonth() + 1;
-    const thisYear = today.getFullYear();
-    
-    console.log(`Aplicando filtro inicial no mobile para receitas: mês=${thisMonth}, ano=${thisYear}`);
-    
-    // Primeiro definimos a flag como true para evitar chamadas repetidas
-    initialFilterApplied.current = true;
-    
-    // Aplicar o filtro inicial para carregar dados do backend com o mês e ano atual
-    console.log('Chamando onFilter para months:', [thisMonth]);
-    onFilter('months', [thisMonth]);
-    
-    // Importante: o timeout é necessário para garantir que a segunda chamada aconteça após a primeira ser processada
-    setTimeout(() => {
-      console.log('Chamando onFilter para years:', [thisYear]);
-      onFilter('years', [thisYear]);
-    }, 300);
-  }, []);
 
   const handleSearch = (e) => {
     const value = e.target.value;
