@@ -27,6 +27,7 @@ export const checkSubscription = async (req, res, next) => {
       });
     }
     
+    
     // Buscar a assinatura do usuário
     const payment = await Payment.findOne({
       where: { 
