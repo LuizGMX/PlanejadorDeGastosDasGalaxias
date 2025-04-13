@@ -130,6 +130,7 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
+
 if (process.env.SENDGRID_API_KEY) {
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 }
