@@ -187,6 +187,9 @@ const Login = () => {
     bank.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Determinar se devemos mostrar a lista de bancos
+  const shouldShowBankList = searchTerm.length > 0;
+
   // Banks that are popular based on usage count
   const popularBanks = banks
     .filter(bank => bank.usage_count > 0 && !formData.selectedBanks.includes(bank.id))
@@ -862,18 +865,21 @@ const Login = () => {
               >
                 <div className={styles.banksList}>
                   <h3>Bancos Disponíveis</h3>
-                  {searchTerm === '' && popularBanks.length > 0 && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                      <h4 className={styles.popularBanksTitle}>Mais populares</h4>
-                      <div className={styles.popularBanksGrid}>
-                        {popularBanks.map((bank, index) => (
+                  
+                  <p className={styles.banksDescription}>
+                    {searchTerm ? 'Resultados da busca:' : 'Digite para buscar bancos'}
+                  </p>
+                  <div className={styles.banksGrid}>
+                    {shouldShowBankList ? (
+                      filteredBanks.length > 0 ? (
+                        filteredBanks.map((bank, index) => (
                           <motion.div
                             key={bank.id}
                             className={styles.bankCard}
                             onClick={() => handleBankSelection(bank.id)}
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: index * 0.05 }}
+                            transition={{ delay: index * 0.03 }}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                           >
@@ -882,40 +888,15 @@ const Login = () => {
                             </div>
                             <span className="material-icons">add_circle_outline</span>
                           </motion.div>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                  
-                  <p className={styles.banksDescription}>
-                    {searchTerm ? 'Resultados da busca:' : 'Todos os bancos:'}
-                  </p>
-                  <div className={styles.banksGrid}>
-                    {filteredBanks.map((bank, index) => (
-                      <motion.div
-                        key={bank.id}
-                        className={styles.bankCard}
-                        onClick={() => handleBankSelection(bank.id)}
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: index * 0.03 }}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        <div className={styles.bankInfo}>
-                          <span className={styles.bankName}>{bank.name}</span>
-                        </div>
-                        <span className="material-icons">add_circle_outline</span>
-                      </motion.div>
-                    ))}
-                    {banks.filter(bank => !formData.selectedBanks.includes(bank.id)).length === 0 && (
+                        ))
+                      ) : (
+                        <p className={styles.emptyMessage}>
+                          Nenhum banco encontrado com este nome
+                        </p>
+                      )
+                    ) : (
                       <p className={styles.emptyMessage}>
-                        Nenhum banco disponível
-                      </p>
-                    )}
-                    {filteredBanks.length === 0 && searchTerm !== '' && (
-                      <p className={styles.emptyMessage}>
-                        Nenhum banco encontrado com este nome
+                        Comece a digitar para pesquisar bancos
                       </p>
                     )}
                   </div>
