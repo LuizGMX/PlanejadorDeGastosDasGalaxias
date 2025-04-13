@@ -3,13 +3,13 @@ const express = require("express");
 const bodyParser = require("body-parser");
 
 const app = express();
-const PORT = 9000;
+const PORT = 9000; // Alterando para a porta 9000
 
 // Middleware para processar o corpo do JSON
 app.use(bodyParser.json());
 
 // Rota do webhook
-app.post("/webhook", (req, res) => {
+app.post("/github-webhook", (req, res) => {
   // Verifique se o evento é um push
   if (req.headers['x-github-event'] === 'push') {
     console.log("Evento push recebido!");
