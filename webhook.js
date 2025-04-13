@@ -5,7 +5,7 @@ const bodyParser = require("body-parser");
 const { exec } = require("child_process");
 const app = express();
 const PORT = 9000;
-const domain = "https://planejador.galaxias.com.br";
+const domain = "planejadordasgalaxias.com.br";
 
 // Caminhos para os certificados SSL gerados pelo Certbot
 const options = {
