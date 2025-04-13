@@ -77,21 +77,49 @@ const Login = () => {
       console.log('URL da API:', apiUrl);
       
       // Não incluímos o token na solicitação para a rota pública
-      const response = await fetch(apiUrl);
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
       console.log('Status da resposta:', response.status);
       
       if (!response.ok) {
+        // Tratar códigos de erro específicos
         if (response.status === 401) {
           console.error('Erro 401: Não autorizado ao tentar buscar bancos durante o cadastro');
+          
+          // Retry com backoff exponencial para códigos de erro 401, 500, 502, 503, 504
+          if (retryCount < 5) {
+            const nextDelay = delay * 1.5; // Backoff exponencial
+            console.log(`Tentando novamente em ${nextDelay/1000} segundos... (Tentativa ${retryCount + 1} de 5)`);
+            setError(`Problema ao conectar com o servidor. Tentando novamente em ${Math.round(nextDelay/1000)} segundos...`);
+            
+            await new Promise(resolve => setTimeout(resolve, nextDelay));
+            return fetchBanks(retryCount + 1, nextDelay);
+          }
+          
           throw new Error('Erro de autorização ao buscar bancos. Por favor, contate o suporte.');
         }
         
-        if (response.status === 429 && retryCount < 3) {
+        if (response.status === 429 && retryCount < 5) {
           console.log(`Recebido erro 429, aguardando ${delay}ms antes de tentar novamente...`);
           setError(`Muitas requisições. Tentando novamente em ${delay/1000} segundos...`);
           
           await new Promise(resolve => setTimeout(resolve, delay));
           return fetchBanks(retryCount + 1, delay * 2);
+        }
+        
+        // Retry para erros de servidor
+        if ([500, 502, 503, 504].includes(response.status) && retryCount < 5) {
+          const nextDelay = delay * 1.5;
+          console.log(`Erro do servidor ${response.status}, tentando novamente em ${nextDelay/1000} segundos...`);
+          setError(`Problema no servidor. Tentando novamente em ${Math.round(nextDelay/1000)} segundos...`);
+          
+          await new Promise(resolve => setTimeout(resolve, nextDelay));
+          return fetchBanks(retryCount + 1, nextDelay);
         }
         
         try {
@@ -107,8 +135,24 @@ const Login = () => {
       const data = await response.json();
       console.log('Dados recebidos:', data);
       
+      // Verificar se os dados são válidos
       if (!Array.isArray(data)) {
-        throw new Error('Resposta inválida: dados não são um array');
+        console.error('Resposta inválida: dados não são um array:', data);
+        
+        // Se, após todas as tentativas, o erro persistir, use dados de fallback
+        if (retryCount >= 5) {
+          console.log('Número máximo de tentativas alcançado, usando dados de fallback');
+          setBanks([]);
+          return true;
+        }
+        
+        // Tenta mais uma vez após um atraso
+        const nextDelay = delay * 1.5;
+        console.log(`Tentando novamente em ${nextDelay/1000} segundos...`);
+        setError(`Formato de dados inválido. Tentando novamente...`);
+        
+        await new Promise(resolve => setTimeout(resolve, nextDelay));
+        return fetchBanks(retryCount + 1, nextDelay);
       }
       
       const sortedBanks = data.sort((a, b) => (b.usage_count || 0) - (a.usage_count || 0));
@@ -118,9 +162,20 @@ const Login = () => {
       return true;
     } catch (error) {
       console.error('Erro ao carregar bancos:', error);
-      setError(error.message || 'Erro ao carregar bancos. Por favor, tente novamente.');
+      
+      // Verificar se devemos tentar novamente
+      if (retryCount < 5) {
+        const nextDelay = delay * 1.5;
+        console.log(`Erro ao buscar bancos, tentando novamente em ${nextDelay/1000} segundos...`);
+        setError(`Erro ao carregar bancos. Tentando novamente...`);
+        
+        await new Promise(resolve => setTimeout(resolve, nextDelay));
+        return fetchBanks(retryCount + 1, nextDelay);
+      }
+      
+      setError('Erro ao carregar bancos. Você pode continuar o cadastro mesmo assim.');
       setBanks([]);
-      throw error; // Re-throw para que o chamador possa tratar o erro
+      return false; // Retornamos false para indicar falha, mas permitimos continuar
     } finally {
       setLoading(false);
     }

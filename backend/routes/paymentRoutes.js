@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import dotenv from 'dotenv';
 import { User, Payment } from '../models/index.js';
-import { authenticate } from './auth.js';
+import { authenticate } from '../middleware/auth.js';
 import { Op } from 'sequelize';
 import sequelize from '../config/db.js';
 
@@ -85,6 +85,15 @@ const SUBSCRIPTION_PRICE = 59.90;
 export const checkSubscription = async (req, res, next) => {
   // Verifica se o usuário existe na requisição
   if (!req.user) {
+    console.log('Usuário não autenticado no middleware checkSubscription');
+    console.log('URL da requisição:', req.originalUrl);
+    
+    // Se a rota é para bancos (listagem geral), permita sem autenticação
+    if (req.originalUrl.includes('/banks') && !req.originalUrl.includes('/banks/favorites') && !req.originalUrl.includes('/banks/users')) {
+      console.log('Permitindo acesso sem autenticação para listagem de bancos');
+      return next();
+    }
+    
     return res.status(401).json({ 
       message: 'Usuário não autenticado', 
       subscriptionExpired: true 
