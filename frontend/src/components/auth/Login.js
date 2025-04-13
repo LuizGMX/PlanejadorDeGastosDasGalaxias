@@ -317,6 +317,7 @@ const Login = () => {
       } else if (step === 'goal') {
         // Verificar se os termos foram aceitos - Esta é a etapa final antes de criar a conta
         if (!formData.acceptedTerms) {
+          console.log('Termos não aceitos, impedindo o avanço');
           setError('Você precisa aceitar os termos de uso para continuar');
           setLoading(false);
           return;
@@ -328,6 +329,8 @@ const Login = () => {
           setLoading(false);
           return;
         }
+        
+        console.log('Todos os campos preenchidos e termos aceitos, prosseguindo...');
         
         try {
           const parsedFinancialGoalAmount = formData.financialGoalAmount ? Number(formData.financialGoalAmount.replace(/\./g, '').replace(',', '.')) : 0;
@@ -1151,56 +1154,60 @@ const Login = () => {
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.7 }}
               >
-                <div className={`${styles.termsCheckbox} ${error && error.includes('termos') ? styles.termsCheckboxError : ''}`}>
+                <div className={`${styles.termsCheckbox} ${error && error.includes('termos') ? styles.termsCheckboxError : ''}`}
+                  onClick={(e) => {
+                    // Evita que o evento propague para outros elementos
+                    e.stopPropagation();
+                    // Alterna o valor do checkbox ao clicar em qualquer lugar da div
+                    toggleTermsAcceptance(!formData.acceptedTerms);
+                  }}
+                >
                   <input
                     type="checkbox"
                     id="acceptedTerms"
                     name="acceptedTerms"
                     checked={formData.acceptedTerms}
                     onChange={(e) => {
-                      console.log("Checkbox clicado: ", e.target.checked);
-                      setFormData({
-                        ...formData,
-                        acceptedTerms: e.target.checked
-                      });
-                      if (e.target.checked) {
-                        setError('');
-                      }
+                      // Previne o comportamento padrão
+                      e.stopPropagation();
+                      toggleTermsAcceptance(e.target.checked);
                     }}
-                    style={{ cursor: 'pointer', width: '24px', height: '24px' }}
+                    style={{ cursor: 'pointer', width: '24px', height: '24px', zIndex: 10 }}
                   />
                   <label 
                     htmlFor="acceptedTerms" 
                     style={{cursor: 'pointer'}}
-                    onClick={() => {
-                      // Alternar o estado do checkbox quando clicar no label também
-                      const newValue = !formData.acceptedTerms;
-                      console.log("Label clicado, alterando para: ", newValue);
-                      setFormData({
-                        ...formData,
-                        acceptedTerms: newValue
-                      });
-                      if (newValue) {
-                        setError('');
-                      }
+                    onClick={(e) => {
+                      // Previne o comportamento padrão e propagação
+                      e.preventDefault();
+                      e.stopPropagation();
+                      // Alterna o valor do checkbox
+                      toggleTermsAcceptance(!formData.acceptedTerms);
                     }}
                   >
-                    Eu li e aceito os <button 
+                    <span style={{color: 'white', fontWeight: 'bold'}}>Eu li e aceito os</span> <button 
                       type="button" 
                       className={styles.termsLink}
                       onClick={(e) => {
+                        e.preventDefault();
                         e.stopPropagation(); // Evita que o clique no botão dispare o evento do label
                         setShowTermsModal(true);
                       }}
                     >
                       Termos de Uso
-                    </button>
+                    </button> <span style={{color: '#ff454a', fontWeight: 'bold'}}>*</span>
                   </label>
                 </div>
                 {error && error.includes('termos') && (
-                  <p className={styles.termsError}>
-                    <span className="material-icons">error</span> {error}
-                  </p>
+                  <motion.p 
+                    className={styles.termsError}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <span className="material-icons" style={{color: '#ff454a', verticalAlign: 'middle', marginRight: '5px'}}>error</span> 
+                    <span style={{color: '#ff454a', fontWeight: 'bold'}}>{error}</span>
+                  </motion.p>
                 )}
               </motion.div>
             </motion.div>
@@ -1840,6 +1847,18 @@ const Login = () => {
     }
   };
 
+  const toggleTermsAcceptance = (newValue) => {
+    console.log(`Alternando aceitação dos termos para: ${newValue}`);
+    setFormData(prevData => ({
+      ...prevData,
+      acceptedTerms: newValue
+    }));
+    
+    if (newValue) {
+      setError('');
+    }
+  };
+
   const renderTermsModal = () => {
     if (!showTermsModal) return null;
     
@@ -1896,10 +1915,9 @@ const Login = () => {
             <button 
               className={styles.acceptButton}
               onClick={() => {
-                console.log("Aceitar termos clicado");
-                setFormData(prev => ({ ...prev, acceptedTerms: true }));
+                console.log("Aceitar termos clicado no modal");
+                toggleTermsAcceptance(true);
                 setShowTermsModal(false);
-                setError('');
               }}
             >
               Aceitar os Termos
