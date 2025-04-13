@@ -156,6 +156,9 @@ router.post('/', async (req, res) => {
       amount: rawAmount,
       date,
       is_recurring,
+      has_installments,
+      total_installments,
+      current_installment,
       category_id,
       bank_id,
       start_date,
@@ -248,6 +251,40 @@ router.post('/', async (req, res) => {
         currentDate = nextDate;
         count++;
       }
+    } else if (has_installments) {
+      // Validações específicas para receitas parceladas
+      if (!total_installments || total_installments < 2) {
+        await t.rollback();
+        return res.status(400).json({ message: 'Para receitas parceladas, o número total de parcelas deve ser maior que 1' });
+      }
+
+      const installmentGroupId = uuidv4();
+      // Usar o valor da parcela informado pelo usuário diretamente
+      // current_installment começa a partir da parcela atual e vai até o total
+      const current = current_installment || 1;
+      
+      // Criar apenas as parcelas restantes
+      for (let i = current - 1; i < total_installments; i++) {
+        const installmentDate = adjustDate(date);
+        // Ajustar data apenas para parcelas futuras em relação à atual
+        if (i > current - 1) {
+          installmentDate.setMonth(installmentDate.getMonth() + (i - (current - 1)));
+        }
+
+        incomes.push({
+          user_id: req.user.id,
+          description: `${description} (${i + 1}/${total_installments})`,
+          amount: parsedAmount, // Usa o valor da parcela diretamente, sem calcular
+          category_id,
+          bank_id,
+          date: installmentDate,
+          has_installments: true,
+          current_installment: i + 1,
+          total_installments,
+          installment_group_id: installmentGroupId,
+          is_recurring: false
+        });
+      }
     } else {
       incomes.push({
         user_id: req.user.id,
@@ -255,6 +292,7 @@ router.post('/', async (req, res) => {
         amount: parsedAmount,
         date: adjustDate(date),
         is_recurring: false,
+        has_installments: false,
         category_id,
         bank_id
       });
@@ -262,11 +300,22 @@ router.post('/', async (req, res) => {
 
     const createdIncomes = await Income.bulkCreate(incomes, { transaction: t });
     await t.commit();
-    res.status(201).json(createdIncomes);
+
+    return res.status(201).json({
+      message: 'Ganho registrado com sucesso',
+      incomes: createdIncomes
+    });
   } catch (error) {
+    // Log do erro para diagnóstico
+    console.error(`Erro ao criar ganho: ${error.message}`, error);
+    
+    // Rollback da transação em caso de erro
     await t.rollback();
-    console.error('Erro ao criar ganho:', error);
-    res.status(500).json({ message: 'Erro ao criar ganho' });
+    
+    return res.status(500).json({
+      message: 'Erro ao registrar ganho',
+      error: error.message
+    });
   }
 });
 
