@@ -21,6 +21,7 @@
   min-height: 100vh;
   background-color: var(--background-color);
   padding: 2rem;
+  margin-left: 280px;
 }
 
 .content {

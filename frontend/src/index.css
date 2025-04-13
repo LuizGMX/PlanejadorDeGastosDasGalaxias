@@ -244,10 +244,6 @@ input[type="datetime-local"] {
 }
 
 /* Quando tem sidebar, ajusta o layout */
-.app.with-sidebar {
-  display: flex;
-  flex-direction: row;
-}
 
 /* Ajustes para dispositivos móveis */
 @media (max-width: 768px) {
