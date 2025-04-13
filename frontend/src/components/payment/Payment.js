@@ -260,7 +260,7 @@ const Payment = () => {
                     onClick={handlePayment}
                     disabled={processingPayment}
                   >
-                    {processingPayment ? 'Processando...' : 'Assinar Agora - R$ 99,90/ano'}
+                    {processingPayment ? 'Processando...' : 'Assinar Agora - R$ 4,99/mês (Pagamento único de R$ 59,90 por ano, ou divida em 12x de R$ 4,99)'}
                   </button>
                 ) : (
                   renderMercadoPagoWallet()
@@ -283,7 +283,7 @@ const Payment = () => {
         <div className="payment-info">
           <h3>Informações de Pagamento</h3>
           <p>Aceitamos pagamentos seguros através do Mercado Pago</p>
-          <p>A assinatura é renovada anualmente por R$ 99,90</p>
+          <p>A assinatura é renovada anualmente por R$ 59,90</p>
         </div>
       </div>
     </div>

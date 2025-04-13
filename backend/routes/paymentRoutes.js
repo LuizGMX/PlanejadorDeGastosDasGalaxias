@@ -78,7 +78,7 @@ dotenv.config();
 const router = Router();
 
 // Constante com o preço da assinatura
-const SUBSCRIPTION_PRICE = 99.90;
+const SUBSCRIPTION_PRICE = 59.90;
 
 
 // Verificação de acesso do usuário
@@ -370,7 +370,7 @@ router.post('/create-payment', authenticate, async (req, res) => {
           excluded_payment_types: [
             { id: 'ticket' } // Excluir pagamento por boleto
           ],
-          installments: 1, // Parcelas
+          installments: 12, // Parcelas
           default_installments: 1
         },
         // URLs de retorno

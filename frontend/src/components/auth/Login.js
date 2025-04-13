@@ -4,7 +4,7 @@ import { AuthContext } from '../../contexts/AuthContext';
 import CurrencyInput from 'react-currency-input-field';
 import styles from '../../styles/login.module.css';
 import logo from '../../assets/logo.svg';
-import { BsEnvelope, BsPerson, BsShieldLock, BsBank2, BsGraphUp, BsTelegram } from 'react-icons/bs';
+import { BsEnvelope, BsPerson, BsShieldLock, BsBank2, BsGraphUp, BsTelegram, BsXCircle, BsCheckCircle } from 'react-icons/bs';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 
@@ -20,7 +20,8 @@ const Login = () => {
     financialGoalPeriodType: 'years',
     financialGoalPeriodValue: '',
     selectedBanks: [],
-    desired_budget: ''
+    desired_budget: '',
+    acceptedTerms: false
   });
   const [banks, setBanks] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -38,6 +39,7 @@ const Login = () => {
   const [verificationCode, setVerificationCode] = useState('');
   const [remainingTime, setRemainingTime] = useState(300);
   const [telegramError, setTelegramError] = useState('');
+  const [showTermsModal, setShowTermsModal] = useState(false);
   const SUBMIT_DELAY = 3000; // 3 segundos entre submissões
   
   // Steps configuration for better progress tracking and visualization
@@ -138,10 +140,10 @@ const Login = () => {
   };
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
     }));
   };
 
@@ -243,9 +245,20 @@ const Login = () => {
         }
         setStep('goal');
       } else if (step === 'goal') {
-        if (!formData.financialGoalName || !formData.financialGoalAmount || !formData.financialGoalPeriodType || !formData.financialGoalPeriodValue) {
-          throw new Error('Por favor, preencha todos os campos do objetivo financeiro');
+        // Verificar se os termos foram aceitos
+        if (!formData.acceptedTerms) {
+          setError('Você precisa aceitar os termos de uso para continuar');
+          setLoading(false);
+          return;
         }
+        
+        // Verifica se todos os campos obrigatórios foram preenchidos
+        if (!formData.financialGoalName || !formData.financialGoalAmount || !formData.financialGoalPeriodValue) {
+          setError('Por favor, preencha todas as informações sobre seu objetivo financeiro');
+          setLoading(false);
+          return;
+        }
+        
         try {
           const parsedFinancialGoalAmount = formData.financialGoalAmount ? Number(formData.financialGoalAmount.replace(/\./g, '').replace(',', '.')) : 0;
           
@@ -895,7 +908,7 @@ const Login = () => {
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.1 }}
               >
-                Defina seu objetivo financeiro
+                Objetivo Financeiro
               </motion.h1>
               <motion.p 
                 className={styles.loginSubtitle}
@@ -1060,7 +1073,41 @@ const Login = () => {
                   </div>
                 </motion.div>
               )}
+
+              {/* Termo de uso */}
+              <motion.div 
+                className={styles.termsContainer}
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.7 }}
+              >
+                <div className={styles.termsCheckbox}>
+                  <input
+                    type="checkbox"
+                    id="acceptedTerms"
+                    name="acceptedTerms"
+                    checked={formData.acceptedTerms}
+                    onChange={handleChange}
+                    required
+                    disabled={loading}
+                  />
+                  <label htmlFor="acceptedTerms">
+                    Eu li e aceito os <button 
+                      type="button" 
+                      className={styles.termsLink}
+                      onClick={() => setShowTermsModal(true)}
+                    >
+                      Termos de Uso
+                    </button>
+                  </label>
+                </div>
+                {!formData.acceptedTerms && error && error.includes('aceitar os termos') && (
+                  <p className={styles.termsError}>{error}</p>
+                )}
+              </motion.div>
             </motion.div>
+            
+            {renderTermsModal()}
           </motion.div>
         );
 
@@ -1687,6 +1734,80 @@ const Login = () => {
     }
   };
 
+  const renderTermsModal = () => {
+    if (!showTermsModal) return null;
+    
+    return (
+      <div className={styles.modalOverlay}>
+        <div className={styles.termsModal}>
+          <div className={styles.termsModalHeader}>
+            <h2>Termo de Uso - Planejador de Gastos das Galáxias</h2>
+            <button 
+              className={styles.closeButton}
+              onClick={() => setShowTermsModal(false)}
+            >
+              <BsXCircle size={24} />
+            </button>
+          </div>
+          <div className={styles.termsModalContent}>
+            <h3>1. Aceitação dos Termos</h3>
+            <p>Ao acessar e utilizar os serviços do "Planejador de Gastos das Galáxias", você concorda em cumprir e se sujeitar aos termos e condições aqui descritos, bem como às políticas de privacidade e outros regulamentos aplicáveis. Se não concordar com qualquer parte desses termos, você não deverá usar os serviços oferecidos.</p>
+            
+            <h3>2. Descrição do Serviço</h3>
+            <p>O "Planejador de Gastos das Galáxias" oferece ferramentas para planejamento e controle de gastos, com foco em gerenciamento financeiro pessoal e de pequenas empresas, visando proporcionar uma visão estratégica das finanças.</p>
+            
+            <h3>3. Uso Permitido</h3>
+            <p>O uso dos serviços é restrito a fins pessoais ou comerciais legítimos. Você concorda em não utilizar os serviços para fins ilegais, fraudulentos ou que violem os direitos de terceiros.</p>
+            
+            <h3>4. Conta de Usuário</h3>
+            <p>Para utilizar os serviços, pode ser necessário criar uma conta, fornecendo informações precisas e atualizadas. Você é responsável pela segurança e confidencialidade de sua conta e senha. Qualquer atividade realizada por meio de sua conta será de sua total responsabilidade.</p>
+            
+            <h3>5. Propriedade Intelectual</h3>
+            <p>Todos os direitos de propriedade intelectual relacionados ao "Planejador de Gastos das Galáxias", incluindo, mas não se limitando a, software, design, conteúdo e funcionalidades, são de propriedade exclusiva da empresa responsável pelo serviço. O uso dos serviços não transfere nenhum direito de propriedade sobre o conteúdo ou software.</p>
+            
+            <h3>6. Termos de Pagamento</h3>
+            <p>Caso o serviço ofereça planos pagos, os termos e condições de pagamento, incluindo preços, cobranças e políticas de cancelamento, serão detalhados no momento da assinatura. O usuário concorda em pagar todas as taxas aplicáveis ao seu plano escolhido.</p>
+            
+            <h3>7. Privacidade e Proteção de Dados</h3>
+            <p>As informações fornecidas pelos usuários serão tratadas conforme nossa Política de Privacidade. O serviço compromete-se a proteger os dados pessoais dos usuários de acordo com as leis e regulamentos de proteção de dados aplicáveis.</p>
+            
+            <h3>8. Limitação de Responsabilidade</h3>
+            <p>O "Planejador de Gastos das Galáxias" não se responsabiliza por perdas financeiras, danos diretos ou indiretos resultantes do uso dos serviços, incluindo, mas não se limitando a, erros nos dados inseridos, interrupções no serviço ou falhas técnicas.</p>
+            
+            <h3>9. Alterações nos Termos</h3>
+            <p>A empresa responsável pelo "Planejador de Gastos das Galáxias" se reserva o direito de alterar estes termos de uso a qualquer momento, com ou sem aviso prévio. As mudanças entram em vigor assim que publicadas no site ou plataforma.</p>
+            
+            <h3>10. Cancelamento e Término</h3>
+            <p>O usuário pode cancelar sua conta a qualquer momento. A empresa também pode suspender ou encerrar o acesso aos serviços por violação destes termos ou por motivos técnicos, conforme necessário.</p>
+            
+            <h3>11. Legislação Aplicável</h3>
+            <p>Estes termos serão regidos pelas leis do país em que a empresa responsável está registrada. Qualquer disputa será resolvida no foro competente.</p>
+            
+            <h3>12. Contato</h3>
+            <p>Se você tiver dúvidas ou precisar de mais informações, entre em contato com nosso suporte através dos canais disponíveis na plataforma.</p>
+          </div>
+          <div className={styles.termsModalFooter}>
+            <button 
+              className={styles.acceptButton}
+              onClick={() => {
+                setFormData(prev => ({ ...prev, acceptedTerms: true }));
+                setShowTermsModal(false);
+              }}
+            >
+              Aceitar os Termos
+            </button>
+            <button 
+              className={styles.cancelButton}
+              onClick={() => setShowTermsModal(false)}
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className={styles.loginContainer}>
       <div className={styles.loginIllustration}>
@@ -1845,6 +1966,7 @@ const Login = () => {
           </form>
         </div>
       </div>
+      {renderTermsModal()}
     </div>
   );
 };

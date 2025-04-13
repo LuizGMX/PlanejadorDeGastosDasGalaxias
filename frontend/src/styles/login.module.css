@@ -1129,4 +1129,225 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Estilos para o container de termos */
+.termsContainer {
+  margin-top: 20px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 20px;
+}
+
+.termsCheckbox {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.termsCheckbox input[type="checkbox"] {
+  margin-right: 10px;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary-color);
+}
+
+.termsCheckbox label {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.termsLink {
+  background: none;
+  border: none;
+  color: var(--primary-color);
+  font-size: 14px;
+  padding: 0;
+  margin: 0;
+  text-decoration: underline;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.termsLink:hover {
+  color: var(--primary-color-light);
+}
+
+.termsError {
+  color: var(--error-color);
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+/* Estilos para o modal de termos */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(3px);
+  animation: fadeIn 0.3s ease-out;
+}
+
+.termsModal {
+  background-color: var(--card-background);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  animation: scaleIn 0.3s ease-out;
+}
+
+.termsModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.termsModalHeader h2 {
+  margin: 0;
+  font-size: 20px;
+  color: var(--text-color);
+  background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.closeButton:hover {
+  color: var(--text-color);
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.termsModalContent {
+  padding: 20px 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.termsModalContent h3 {
+  font-size: 18px;
+  margin-top: 20px;
+  margin-bottom: 10px;
+  color: var(--primary-color);
+}
+
+.termsModalContent p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin-bottom: 15px;
+}
+
+.termsModalFooter {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.acceptButton {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--primary-color);
+  color: var(--secondary-color);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.acceptButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 255, 133, 0.2);
+}
+
+.cancelButton {
+  padding: 10px 20px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: transparent;
+  color: var(--text-color);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancelButton:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Responsividade para o modal de termos */
+@media (max-width: 768px) {
+  .termsModalContent {
+    padding: 16px;
+  }
+  
+  .termsModalHeader {
+    padding: 16px;
+  }
+  
+  .termsModalFooter {
+    padding: 12px 16px;
+  }
+  
+  .termsModalHeader h2 {
+    font-size: 18px;
+  }
+  
+  .termsModalContent h3 {
+    font-size: 16px;
+  }
+  
+  .termsModalContent p {
+    font-size: 13px;
+  }
+  
+  .acceptButton, .cancelButton {
+    padding: 8px 16px;
+    font-size: 14px;
+  }
 } 
