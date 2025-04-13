@@ -12,6 +12,7 @@ import defineUserBankModel from './userBank.js';
 import defineRecurrenceRuleModel from './recurrenceRule.js';
 import defineRecurrenceExceptionModel from './recurrenceException.js';
 import definePaymentModel from './payment.js';
+import defineFinancialGoalModel from './financialGoal.js';
 
 // Configurações do banco de dados
 dotenv.config();
@@ -43,6 +44,7 @@ const UserBank = defineUserBankModel(sequelize);
 const RecurrenceRule = defineRecurrenceRuleModel(sequelize);
 const RecurrenceException = defineRecurrenceExceptionModel(sequelize);
 const Payment = definePaymentModel(sequelize);
+const FinancialGoal = defineFinancialGoalModel(sequelize);
 
 // Associações entre modelos
 // User-Expense
@@ -69,6 +71,15 @@ User.hasMany(Category, {
   as: 'categories'
 });
 Category.belongsTo(User, {
+  foreignKey: 'user_id'
+});
+
+// User-FinancialGoal
+User.hasMany(FinancialGoal, {
+  foreignKey: 'user_id',
+  as: 'financial_goals'
+});
+FinancialGoal.belongsTo(User, {
   foreignKey: 'user_id'
 });
 
@@ -213,5 +224,6 @@ export {
   UserBank,
   RecurrenceRule,
   RecurrenceException,
-  Payment
+  Payment,
+  FinancialGoal
 };
