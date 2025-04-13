@@ -1,6 +1,18 @@
 import { Sequelize } from 'sequelize';
 import dotenv from 'dotenv';
 import path from 'path';
+import User from '../models/user.js';
+import Category from '../models/category.js';
+import Bank from '../models/bank.js';
+import Expense from '../models/expense.js';
+import Income from '../models/income.js';
+import Budget from '../models/budget.js';
+import VerificationCode from '../models/verificationCode.js';
+import UserBank from '../models/userBank.js';
+import RecurrenceRule from '../models/recurrenceRule.js';
+import RecurrenceException from '../models/recurrenceException.js';
+import Payment from '../models/payment.js';
+import FinancialGoal from '../models/financialGoal.js';
 
 dotenv.config();
 
@@ -24,7 +36,23 @@ const sequelize = new Sequelize(
 // Função para sincronizar o banco de dados
 export const syncDatabase = async () => {
   try {
-    await sequelize.sync({ alter: true });
+    // Sincronizar banco de dados na ordem correta
+    await sequelize.sync({ force: false });
+    
+    // Criar tabelas na ordem correta
+    await User.sync({ force: false });
+    await Category.sync({ force: false });
+    await Bank.sync({ force: false });
+    await Expense.sync({ force: false });
+    await Income.sync({ force: false });
+    await Budget.sync({ force: false });
+    await VerificationCode.sync({ force: false });
+    await UserBank.sync({ force: false });
+    await RecurrenceRule.sync({ force: false });
+    await RecurrenceException.sync({ force: false });
+    await Payment.sync({ force: false });
+    await FinancialGoal.sync({ force: false });
+
     console.log('✅ Banco de dados sincronizado com sucesso!');
   } catch (error) {
     console.error('❌ Erro ao sincronizar o banco de dados:', error);

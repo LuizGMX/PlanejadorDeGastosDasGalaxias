@@ -211,9 +211,8 @@ Payment.belongsTo(User, {
   foreignKey: 'user_id'
 });
 
-// Exports
+// Exportar modelos
 export {
-  sequelize,
   User,
   Category,
   Expense,
@@ -225,5 +224,6 @@ export {
   RecurrenceRule,
   RecurrenceException,
   Payment,
-  FinancialGoal
+  FinancialGoal,
+  sequelize
 };

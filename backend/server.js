@@ -159,41 +159,28 @@ const gracefulShutdown = (server) => {
 
 const startServer = async () => {
   try {
-    await sequelize.authenticate();
-    console.log('Conexão com banco estabelecida com sucesso.');
-
-    // Verificar variável de ambiente para decidir se deve alterar o banco de dados
-    const shouldAlterDatabase = process.env.ALTER_DATABASE === 'true';
+    // Sincronizar banco de dados na ordem correta
+    await sequelize.sync({ force: false });
     
-    // Sincronizar modelos com o banco de dados, sem alter por padrão
-    await sequelize.sync({ 
-      force: false, 
-      alter: shouldAlterDatabase, 
-      hooks: true
+    // Criar tabelas na ordem correta
+    await User.sync({ force: false });
+    await Category.sync({ force: false });
+    await Bank.sync({ force: false });
+    await Expense.sync({ force: false });
+    await Income.sync({ force: false });
+    await Budget.sync({ force: false });
+    await VerificationCode.sync({ force: false });
+    await UserBank.sync({ force: false });
+    await RecurrenceRule.sync({ force: false });
+    await RecurrenceException.sync({ force: false });
+    await Payment.sync({ force: false });
+    await FinancialGoal.sync({ force: false });
+
+    app.listen(5000, () => {
+      console.log(`Servidor rodando na porta 5000`);
     });
-    
-    console.log(`Modelos sincronizados com banco de dados. Modo alter: ${shouldAlterDatabase ? 'ativado' : 'desativado'}`);
-
-    if (process.env.RUN_SEEDERS === 'true') {
-      await seedDatabase();
-      console.log('Dados iniciais carregados com sucesso.');
-    } else {
-      console.log('Seeders ignorados. Configure RUN_SEEDERS=true para executá-los.');
-    }
-
-    if (process.env.TELEGRAM_BOT_TOKEN) {
-      try {
-        await telegramService.init();
-        console.log('Bot do Telegram inicializado com sucesso');
-      } catch (error) {
-        console.error('Erro ao inicializar bot do Telegram:', error);
-      }
-    }
-
-    process.on('SIGTERM', () => gracefulShutdown(server));
-    process.on('SIGINT', () => gracefulShutdown(server));
   } catch (error) {
-    console.error('Erro ao iniciar servidor:', error);
+    console.error('Erro ao iniciar o servidor:', error);
     process.exit(1);
   }
 };

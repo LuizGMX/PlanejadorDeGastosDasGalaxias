@@ -25,7 +25,7 @@ app.post("/github-webhook", (req, res) => {
         console.log(`executando comando: cd /var/www/PlanejadorDeGastosDasGalaxias/frontend && pnpm i && export $(grep -v '^#' .env | xargs) && pnpm build`)
 
         exec(
-            `cd /var/www/PlanejadorDeGastosDasGalaxias/frontend && pnpm i && export $(grep -v '^#' .env | xargs) && pnpm build`,
+            `git pull && cd /var/www/PlanejadorDeGastosDasGalaxias/frontend && pnpm i && export $(grep -v '^#' .env | xargs) && pnpm build`,
             (err, stdout, stderr) => {
                 if (err) {
                     console.error(`Erro no frontend: ${stderr}`);
@@ -43,12 +43,13 @@ app.post("/github-webhook", (req, res) => {
                             return;
                         }
                         console.log(`Backend: ${stdout}`);
+                        console.log("WEBHOOK FINALIZADO COM SUCESSO!!!!!");
                     }
                 );
             }
         );
 
-        console.log("WEBHOOK FINALIZADO COM SUCESSO!!!!!");
+        
         res.status(200).send("Webhook de push recebido e processamento iniciado.");
     } else {
         res.status(200).send("Evento não é um push. Ignorando.");
