@@ -7,11 +7,11 @@ import Dashboard from './components/dashboard/Dashboard';
 import SubscriptionStatus from './components/payment/SubscriptionStatus';
 import ExpensesWrapper from './components/expenses/ExpensesWrapper';
 import AddExpenseWrapper from './components/expenses/AddExpenseWrapper';
-import EditExpense from './components/expenses/EditExpense';
+import EditExpenseWrapper from './components/expenses/EditExpenseWrapper';
 import Profile from './components/profile/Profile';
 import IncomesWrapper from './components/incomes/IncomesWrapper';
 import AddIncomeWrapper from './components/incomes/AddIncomeWrapper';
-import EditIncome from './components/incomes/EditIncome';
+import EditIncomeWrapper from './components/incomes/EditIncomeWrapper';
 import SpreadsheetUpload from './components/spreadsheet/SpreadsheetUpload';
 import Layout from './components/layout/Layout';
 import EditRecurringIncomes from './components/incomes/EditRecurringIncomes';
@@ -165,7 +165,7 @@ function App() {
               <Route path="/expenses/edit/:id" element={
                 <ProtectedRoute>
                   <Layout>
-                    <EditExpense />
+                    <EditExpenseWrapper />
                   </Layout>
                 </ProtectedRoute>
               } />
@@ -207,7 +207,7 @@ function App() {
               <Route path="/incomes/edit/:id" element={
                 <ProtectedRoute>
                   <Layout>
-                    <EditIncome />
+                    <EditIncomeWrapper />
                   </Layout>
                 </ProtectedRoute>
               } />
