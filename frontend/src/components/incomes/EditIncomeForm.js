@@ -11,7 +11,8 @@ import {
   BsRepeat, 
   BsCalendar3, 
   BsXLg,
-  BsListCheck
+  BsListCheck,
+  BsExclamationTriangle
 } from 'react-icons/bs';
 
 const EditIncomeForm = ({ income, onSave, onCancel }) => {
@@ -167,13 +168,6 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
     handleSubmit({ preventDefault: () => {} });
   };
 
-  const handleToggleChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
   return (
     <div className={dataTableStyles.modalOverlay}>
       <div className={`${dataTableStyles.modalContent} ${dataTableStyles.formModal}`}>
@@ -193,19 +187,24 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
             <div className={dataTableStyles.toggleGroup}>
               <button
                 type="button"
-                className={`${dataTableStyles.toggleButton} ${!formData.is_recurring ? dataTableStyles.active : ''}`}
-                onClick={() => handleToggleChange('is_recurring', false)}
+                className={`${dataTableStyles.toggleButton} ${!formData.is_recurring ? dataTableStyles.active : ''} ${dataTableStyles.disabled}`}
+                disabled={true}
+                title="O tipo de receita não pode ser alterado"
               >
                 <BsCurrencyDollar /> Único
               </button>
               <button
                 type="button"
-                className={`${dataTableStyles.toggleButton} ${formData.is_recurring ? dataTableStyles.active : ''}`}
-                onClick={() => handleToggleChange('is_recurring', true)}
+                className={`${dataTableStyles.toggleButton} ${formData.is_recurring ? dataTableStyles.active : ''} ${dataTableStyles.disabled}`}
+                disabled={true}
+                title="O tipo de receita não pode ser alterado"
               >
                 <BsRepeat /> Fixo
               </button>
             </div>
+            <p className={dataTableStyles.helperText} style={{fontSize: '12px', color: 'var(--warning-color)', marginTop: '4px'}}>
+              <BsExclamationTriangle style={{marginRight: '5px'}} /> O tipo de receita não pode ser alterado após a criação.
+            </p>
           </div>
 
           <div className={dataTableStyles.formGroup}>

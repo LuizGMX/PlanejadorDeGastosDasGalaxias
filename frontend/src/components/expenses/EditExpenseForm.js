@@ -139,17 +139,6 @@ const EditExpenseForm = ({ expense, onSave, onCancel }) => {
     }));
   };
 
-  const handleToggleChange = (type) => {
-    setFormData(prev => ({
-      ...prev,
-      is_recurring: type === 'recurring',
-      has_installments: type === 'installments',
-      start_date: null,
-      end_date: null,
-      total_installments: null
-    }));
-  };
-
   return (
     <div className={dataTableStyles.modalOverlay}>
       <div className={`${dataTableStyles.modalContent} ${dataTableStyles.formModal}`}>
@@ -169,26 +158,32 @@ const EditExpenseForm = ({ expense, onSave, onCancel }) => {
             <div className={dataTableStyles.toggleGroup}>
               <button
                 type="button"
-                className={`${dataTableStyles.toggleButton} ${!formData.is_recurring && !formData.has_installments ? dataTableStyles.active : ''}`}
-                onClick={() => handleToggleChange('normal')}
+                className={`${dataTableStyles.toggleButton} ${!formData.is_recurring && !formData.has_installments ? dataTableStyles.active : ''} ${dataTableStyles.disabled}`}
+                disabled={true}
+                title="O tipo de despesa não pode ser alterado"
               >
                 <BsCurrencyDollar /> Único
               </button>
               <button
                 type="button"
-                className={`${dataTableStyles.toggleButton} ${formData.has_installments ? dataTableStyles.active : ''}`}
-                onClick={() => handleToggleChange('installments')}
+                className={`${dataTableStyles.toggleButton} ${formData.has_installments ? dataTableStyles.active : ''} ${dataTableStyles.disabled}`}
+                disabled={true}
+                title="O tipo de despesa não pode ser alterado"
               >
                 <BsListCheck /> Parcelado
               </button>
               <button
                 type="button"
-                className={`${dataTableStyles.toggleButton} ${formData.is_recurring ? dataTableStyles.active : ''}`}
-                onClick={() => handleToggleChange('recurring')}
+                className={`${dataTableStyles.toggleButton} ${formData.is_recurring ? dataTableStyles.active : ''} ${dataTableStyles.disabled}`}
+                disabled={true}
+                title="O tipo de despesa não pode ser alterado"
               >
                 <BsRepeat /> Fixo
               </button>
             </div>
+            <p className={dataTableStyles.helperText} style={{fontSize: '12px', color: 'var(--warning-color)', marginTop: '4px'}}>
+              <BsExclamationTriangle style={{marginRight: '5px'}} /> O tipo de despesa não pode ser alterado após a criação.
+            </p>
           </div>
 
           <div className={dataTableStyles.formGroup}>
