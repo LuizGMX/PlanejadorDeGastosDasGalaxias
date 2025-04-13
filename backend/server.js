@@ -200,17 +200,31 @@ const startServer = async () => {
 
     await checkPort();
 
+    // Inicializar o servidor apenas uma vez
     if (process.env.NODE_ENV === 'production') {
+      const privateKey = readFileSync(
+        '/etc/letsencrypt/live/planejadordasgalaxias.com.br/privkey.pem',
+        'utf8'
+      );
+      const certificate = readFileSync(
+        '/etc/letsencrypt/live/planejadordasgalaxias.com.br/cert.pem',
+        'utf8'
+      );
+      const ca = readFileSync(
+        '/etc/letsencrypt/live/planejadordasgalaxias.com.br/chain.pem',
+        'utf8'
+      );
+
+      const credentials = { key: privateKey, cert: certificate, ca: ca };
       server = https.createServer(credentials, app);
-      server.listen(5000, '0.0.0.0', () => {
-        console.log('🚀 Servidor HTTPS rodando na porta 5000 em modo produção');
-      });
     } else {
       server = http.createServer(app);
-      server.listen(5000, () => {
-        console.log('🚀 Servidor HTTP rodando na porta 5000 em modo desenvolvimento');
-      });
     }
+
+    server.listen(5000, process.env.NODE_ENV === 'production' ? '0.0.0.0' : undefined, () => {
+      console.log(`🚀 Servidor ${process.env.NODE_ENV === 'production' ? 'HTTPS' : 'HTTP'} rodando na porta 5000 em modo ${process.env.NODE_ENV || 'desenvolvimento'}`);
+    });
+
   } catch (error) {
     console.error('Erro ao iniciar o servidor:', error);
     process.exit(1);
@@ -230,5 +244,3 @@ process.on('unhandledRejection', (reason, promise) => {
 app.get('/', (req, res) => {
   res.send('Backend está funcionando');
 });
-
-startServer();
