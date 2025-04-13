@@ -154,22 +154,16 @@ const PaymentResult = () => {
   // Função para verificar o status do pagamento
   const checkPaymentStatus = async (paymentId) => {
     try {
-      const apiUrl = `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}`;
-      const response = await fetch(`${apiUrl}/payments/check/${paymentId}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${auth.token}`,
-          'Content-Type': 'application/json',
-        },
+      const response = await apiInterceptor(`/payments/check/${paymentId}`, {
+        method: 'GET'
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.message || 'Erro ao verificar o status do pagamento');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao verificar o status do pagamento');
       }
       
-      return data;
+      return await response.json();
     } catch (error) {
       console.error('Erro ao verificar status do pagamento:', error);
       throw error;
