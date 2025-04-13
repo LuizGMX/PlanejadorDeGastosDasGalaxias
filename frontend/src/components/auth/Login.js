@@ -216,75 +216,283 @@ const Login = () => {
   };
 
   const handleSubmit = async (e) => {
+    console.log('handleSubmit chamado para etapa:', step, 'evento:', e);
     e.preventDefault();
     setError('');
+    setSuccess('');
+
+    if (loading) {
+      console.log('handleSubmit ignorado porque loading=true');
+      return;
+    }
     setLoading(true);
+    console.log('Loading definido como true');
 
     try {
-      switch (step) {
-        case 'email':
-          // Verifica se o email é válido
-          if (!formData.email || !formData.email.includes('@')) {
-            setError('Por favor, insira um email válido');
-            return;
+      if (step === 'email') {
+        console.log('Enviando email para verificação:', formData.email);
+        console.log('REACT_APP_API_PREFIX:' + process.env.REACT_APP_API_PREFIX + ' REACT_APP_API_URL:' + process.env.REACT_APP_API_URL);
+        
+
+
+        const prefix = process.env.REACT_APP_API_PREFIX?.trim();
+        const url = `${process.env.REACT_APP_API_URL}${prefix ? `/${prefix}` : ''}/auth/check-email`;
+        console.log('URL:' + url);
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: formData.email })
+        });
+
+        if (response.status === 429) {
+          throw new Error('Muitas tentativas. Por favor, aguarde alguns segundos antes de tentar novamente.');
+        }
+
+        const responseText = await response.text();
+        console.log('Resposta bruta do check-email:', responseText);
+        
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (jsonError) {
+          console.error('Erro ao parsear JSON:', jsonError);
+          if (!response.ok) {
+            throw new Error('Erro ao verificar email. Por favor, tente novamente.');
           }
-          // Avança para a próxima etapa
+          throw jsonError;
+        }
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Erro ao verificar email');
+        }
+
+        console.log('Resposta do check-email (parseada):', data);
+        
+        // Atualiza o estado com base na resposta
+        const userIsNew = Boolean(data.isNewUser);
+        console.log('É um novo usuário?', userIsNew);
+        
+        setIsNewUser(userIsNew);
+        setFormData(prev => ({ 
+          ...prev, 
+          name: data.name || '',
+          email: data.email || formData.email
+        }));
+        
+        if (userIsNew) {
+          console.log('Redirecionando para etapa de nome (novo usuário)');
           setStep('name');
-          break;
-
-        case 'name':
-          // Verifica se o nome foi preenchido
-          if (!formData.name) {
-            setError('Por favor, insira seu nome');
-            return;
-          }
-          // Avança para a próxima etapa
-          setStep('banks');
-          break;
-
-        case 'banks':
-          // Verifica se pelo menos um banco foi selecionado
-          if (formData.selectedBanks.length === 0) {
-            setError('Por favor, selecione pelo menos um banco');
-            return;
-          }
-          // Avança para a próxima etapa
-          setStep('goal');
-          break;
-
-        case 'goal':
-          // Verifica se os campos do objetivo foram preenchidos
-          if (!formData.financialGoalName || !formData.financialGoalAmount || !formData.financialGoalPeriodValue) {
-            setError('Por favor, preencha todos os campos do objetivo');
-            return;
-          }
-          // Verifica se os termos foram aceitos
-          if (!formData.acceptedTerms) {
-            setError('É necessário aceitar os termos de uso para continuar');
-            return;
-          }
-          // Avança para a próxima etapa
+        } else {
+          console.log('Redirecionando para etapa de código (usuário existente)');
           setStep('code');
-          break;
+          setSuccess('Código enviado com sucesso! Verifique seu email.');
+        }
+      } else if (step === 'name') {
+        console.log('Processando etapa "name" no handleSubmit...');
+        
+        if (!formData.name || !formData.desired_budget) {
+          throw new Error('Por favor, preencha todos os campos');
+        }
+        
+        console.log('Campos validados, avançando para "banks"...');
+        
+        // Primeiro carregamos os bancos e depois mudamos o step
+        try {
+          console.log('Carregando bancos antes de avançar...');
+          await fetchBanks();
+          console.log('Bancos carregados com sucesso, avançando para etapa banks');
+        } catch (error) {
+          console.error('Erro ao carregar bancos:', error);
+          // Mostra o erro, mas permite continuar
+          setError('Não foi possível carregar a lista de bancos, mas você pode continuar o cadastro.');
+          // Define um array vazio para banks
+          setBanks([]);
+        }
+        // Avança independentemente de ter conseguido carregar os bancos
+        setStep('banks');
+      } else if (step === 'banks') {
+        if (formData.selectedBanks.length === 0) {
+          throw new Error('Por favor, selecione pelo menos um banco');
+        }
+        setStep('goal');
+      } else if (step === 'goal') {
+        // Verificar se os termos foram aceitos
+        if (!formData.acceptedTerms) {
+          setError('Você precisa aceitar os termos de uso para continuar');
+          setLoading(false);
+          return;
+        }
+        
+        // Verifica se todos os campos obrigatórios foram preenchidos
+        if (!formData.financialGoalName || !formData.financialGoalAmount || !formData.financialGoalPeriodValue) {
+          setError('Por favor, preencha todas as informações sobre seu objetivo financeiro');
+          setLoading(false);
+          return;
+        }
+        
+        try {
+          const parsedFinancialGoalAmount = formData.financialGoalAmount ? Number(formData.financialGoalAmount.replace(/\./g, '').replace(',', '.')) : 0;
+          
+          const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/auth/send-code`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: formData.email,
+              name: formData.name,
+              financialGoalName: formData.financialGoalName,
+              financialGoalAmount: parsedFinancialGoalAmount,
+              financialGoalPeriodType: formData.financialGoalPeriodType,
+              financialGoalPeriodValue: formData.financialGoalPeriodValue
+            })
+          });
 
-        case 'code':
-          // Verifica se o código foi preenchido
-          if (!code || code.length !== 6) {
-            setError('Por favor, insira o código de 6 dígitos');
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Falha ao enviar código');
+          }
+
+          const data = await response.json();
+          setSuccess('Código enviado com sucesso! Verifique seu email.');
+          setStep('code');
+        } catch (error) {
+          setError(error.message);
+          throw error;
+        }
+      } else if (step === 'code') {
+        if (!code) {
+          setError('Por favor, digite o código de verificação');
+          return;
+        }
+
+        try {
+          setLoading(true);
+          console.log('Verificando código para usuário:', {
+            email: formData.email,
+            code: code,
+            isNewUser: isNewUser
+          });
+          
+          // Para depuração: simplificar a chamada e os dados enviados
+          const verifyData = {
+            email: formData.email,
+            code: code,
+            isNewUser: isNewUser
+          };
+          
+          // Se for um novo usuário, adicionar os dados necessários
+          if (isNewUser) {
+            console.log('Dados do novo usuário:', {
+              name: formData.name,
+              desired_budget: formData.desired_budget,
+              financialGoal: formData.financialGoalName,
+              selectedBanks: formData.selectedBanks
+            });
+            
+            const parsedDesiredBudget = formData.desired_budget ? 
+              Number(formData.desired_budget.replace(/\./g, '').replace(',', '.')) : 0;
+            const parsedFinancialGoalAmount = formData.financialGoalAmount ? 
+              Number(formData.financialGoalAmount.replace(/\./g, '').replace(',', '.')) : 0;
+            
+            // Adiciona os dados ao objeto de verificação
+            verifyData.name = formData.name;
+            verifyData.desired_budget = parsedDesiredBudget;
+            verifyData.financialGoalName = formData.financialGoalName;
+            verifyData.financialGoalAmount = parsedFinancialGoalAmount;
+            verifyData.financialGoalPeriodType = formData.financialGoalPeriodType;
+            verifyData.financialGoalPeriodValue = formData.financialGoalPeriodValue;
+            verifyData.selectedBanks = formData.selectedBanks;
+          }
+          
+          console.log('Enviando dados para verificação:', verifyData);
+          
+          const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/auth/verify-code`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(verifyData)
+          });
+
+          console.log('Resposta do verify-code (status):', response.status);
+          
+          // Se a resposta não for bem-sucedida, capturamos o texto da resposta para análise
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Erro na resposta de verificação:', errorText);
+            
+            // Tenta interpretar a resposta como JSON
+            let errorMessage = 'Código inválido';
+            try {
+              const errorData = JSON.parse(errorText);
+              errorMessage = errorData.message || errorMessage;
+            } catch (e) {
+              console.error('Erro ao parsear resposta de erro:', e);
+            }
+            
+            throw new Error(errorMessage);
+          }
+
+          const data = await response.json();
+          console.log('Resposta do verify-code (sucesso):', data);
+          
+          // Verifica se precisa redirecionar para pagamento (assinatura inválida)
+          if (data.redirectToPayment) {
+            console.log('Assinatura inválida. Redirecionando para pagamento.');
+            // Salva o token temporário e atualiza o estado de autenticação
+            localStorage.setItem('token', data.token);
+            setAuth({
+              token: data.token,
+              user: data.user,
+              subscriptionExpired: true
+            });
+            
+            // Redireciona para a página de pagamento
+            setTimeout(() => {
+              navigate('/payment');
+            }, 1500);
+            
             return;
           }
-          // Faz a verificação do código
-          await handleCodeSubmit(e);
-          break;
-
-        default:
-          break;
+          
+          // Salva o token no localStorage e atualiza o estado de autenticação
+          localStorage.setItem('token', data.token);
+          setAuth({
+            token: data.token,
+            user: data.user
+          });
+          
+          // Mostra mensagem de sucesso
+          setSuccess(isNewUser ? 'Conta criada com sucesso!' : 'Login realizado com sucesso!');
+          
+          // Se for novo usuário, oferece opção de conectar ao Telegram
+          if (isNewUser) {
+            setTimeout(() => {
+              setStep('telegram');
+            }, 1000);
+            return;
+          }
+          
+          // Redireciona após 1.5 segundos para usuários existentes
+          setTimeout(() => {
+            if (data.redirectTo) {
+              navigate(data.redirectTo);
+            } else {
+              navigate('/dashboard');
+            }
+          }, 1500);
+        } catch (error) {
+          console.error('Erro ao verificar código:', error);
+          setError(error.message);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setSuccess('Telegram connection logic not implemented yet');
       }
-    } catch (error) {
-      console.error('Erro em handleSubmit:', error);
-      setError('Ocorreu um erro. Por favor, tente novamente.');
+    } catch (err) {
+      console.error('Erro no handleSubmit:', err);
+      setError(err.message || 'Ocorreu um erro. Por favor, tente novamente.');
     } finally {
       setLoading(false);
+      setLastSubmitTime(Date.now());
     }
   };
 
@@ -436,65 +644,125 @@ const Login = () => {
       case 'email':
         return (
           <motion.div
-            key="email"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
+            key="email-step"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
           >
-            <h2>Bem-vindo ao Planejador de Gastos das Galáxias</h2>
-            <p>Digite seu e-mail para começar</p>
-            <div className={styles.inputGroup}>
+            <div className={styles.loginHeader}>
+              <motion.h1 
+                className={styles.loginTitle}
+                initial={{ y: -20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.1 }}
+              >
+                Bem-vindo ao Planejador
+              </motion.h1>
+              <motion.p 
+                className={styles.loginSubtitle}
+                initial={{ y: -20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                Entre com seu e-mail para começar a planejar seus despesas de forma intergaláctica
+              </motion.p>
+            </div>
+            <motion.div 
+              className={styles.inputWrapper}
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
               <input
                 type="email"
-                placeholder="Seu e-mail"
+                name="email"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={handleChange}
+                className={styles.loginInput}
+                placeholder="Digite seu e-mail"
                 required
+                disabled={loading}
+                autoFocus
               />
-            </div>
+              <BsEnvelope className={styles.inputIcon} />
+            </motion.div>
           </motion.div>
         );
 
       case 'name':
         return (
           <motion.div
-            key="name"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
+            key="name-step"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
           >
-            <h2>Olá! Vamos nos conhecer melhor</h2>
-            <p>Como podemos te chamar?</p>
-            <div className={styles.inputGroup}>
+            <div className={styles.loginHeader}>
+              <motion.h1 
+                className={styles.loginTitle}
+                initial={{ y: -20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.1 }}
+              >
+                Como podemos te chamar?
+              </motion.h1>
+              <motion.p 
+                className={styles.loginSubtitle}
+                initial={{ y: -20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                Nos diga seu nome e quanto deseja gastar por mês
+              </motion.p>
+            </div>
+            <motion.div 
+              className={styles.inputWrapper}
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
               <input
                 type="text"
-                placeholder="Seu nome"
+                name="name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={handleChange}
+                className={styles.loginInput}
+                placeholder="Digite seu nome"
                 required
+                disabled={loading}
+                autoFocus
               />
-            </div>
-            <div className={styles.inputGroup}>
-              <input
-                type="number"
-                placeholder="Orçamento desejado"
+              <BsPerson className={styles.inputIcon} />
+            </motion.div>
+            <motion.div 
+              className={styles.inputWrapper}
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.4 }}
+            >
+              <CurrencyInput
+                name="desired_budget"
                 value={formData.desired_budget}
-                onChange={(e) => setFormData({ ...formData, desired_budget: e.target.value })}
+                onValueChange={(value) => {
+                  console.log('Valor do orçamento:', value);
+                  setFormData(prev => ({
+                    ...prev,
+                    desired_budget: value || ''
+                  }));
+                }}
+                prefix="R$ "
+                decimalSeparator=","
+                groupSeparator="."
+                decimalsLimit={2}
+                className={styles.loginInput}
+                placeholder="Quanto deseja gastar por mês?"
                 required
+                disabled={loading}
               />
-            </div>
-            <div className={styles.termsGroup}>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={formData.acceptedTerms}
-                  onChange={(e) => setFormData({ ...formData, acceptedTerms: e.target.checked })}
-                />
-                <span>Li e aceito os <button type="button" onClick={() => setShowTermsModal(true)} className={styles.termsLink}>termos de uso</button></span>
-              </label>
-            </div>
+              <span className={`${styles.inputIcon} material-icons`}>savings</span>
+            </motion.div>
           </motion.div>
         );
 
@@ -1545,12 +1813,12 @@ const Login = () => {
     if (!showTermsModal) return null;
     
     return (
-      <div className={styles.termsModalOverlay}>
+      <div className={styles.modalOverlay}>
         <div className={styles.termsModal}>
           <div className={styles.termsModalHeader}>
             <h2>Termo de Uso - Planejador de Gastos das Galáxias</h2>
             <button 
-              className={styles.termsModalCloseButton}
+              className={styles.closeButton}
               onClick={() => setShowTermsModal(false)}
             >
               <BsXCircle size={24} />
@@ -1595,19 +1863,19 @@ const Login = () => {
           </div>
           <div className={styles.termsModalFooter}>
             <button 
-              className={styles.termsModalCancelButton}
-              onClick={() => setShowTermsModal(false)}
-            >
-              Fechar
-            </button>
-            <button 
-              className={styles.termsModalAcceptButton}
+              className={styles.acceptButton}
               onClick={() => {
                 setFormData(prev => ({ ...prev, acceptedTerms: true }));
                 setShowTermsModal(false);
               }}
             >
               Aceitar os Termos
+            </button>
+            <button 
+              className={styles.cancelButton}
+              onClick={() => setShowTermsModal(false)}
+            >
+              Fechar
             </button>
           </div>
         </div>
@@ -1699,12 +1967,6 @@ const Login = () => {
             if (step === 'name') {
               console.log('Chamando handleNameStepSubmit via formulário');
               handleNameStepSubmit();
-              return;
-            }
-            
-            // Se estiver na etapa de código e for novo usuário, verifica se aceitou os termos
-            if (step === 'code' && isNewUser && !formData.acceptedTerms) {
-              setError('É necessário aceitar os termos de uso para continuar');
               return;
             }
             

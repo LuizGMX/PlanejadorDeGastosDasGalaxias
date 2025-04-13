@@ -41,7 +41,7 @@ export const syncDatabase = async () => {
     await sequelize.sync({ force: false });
     
     // Criar tabelas na ordem correta
-    await User.sync({ force: false, alter: true });
+    await User.sync({ force: false });
     await Category.sync({ force: false });
     await Bank.sync({ force: false });
     await Expense.sync({ force: false });

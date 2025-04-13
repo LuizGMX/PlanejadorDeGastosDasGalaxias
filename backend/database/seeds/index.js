@@ -226,12 +226,6 @@ const seedPayments = async (forceUpdate = false) => {
       return true;
     }
     
-    // Atualizar todos os usuários para aceitar os termos
-    await Promise.all(users.map(user => 
-      user.update({ accepted_terms: true })
-    ));
-    console.log(`Termos de uso atualizados para ${users.length} usuários!`);
-    
     const paymentPromises = users.map(user => {
       // Criar um pagamento para cada usuário
       const trialExpirationDate = new Date();
