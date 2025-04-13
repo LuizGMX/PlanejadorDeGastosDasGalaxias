@@ -217,29 +217,75 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Previne submissão se já estiver carregando
-    if (loading) {
-      console.log('Formulário ignorado - já está carregando');
-      return;
-    }
-    
-    // Se estiver na etapa de nome, usa handleNameStepSubmit
-    if (step === 'name') {
-      console.log('Chamando handleNameStepSubmit via formulário');
-      handleNameStepSubmit();
-      return;
-    }
+    setError('');
+    setLoading(true);
 
-    // Se estiver na etapa de código e for novo usuário, verifica se aceitou os termos
-    if (step === 'code' && isNewUser && !formData.acceptedTerms) {
-      setError('É necessário aceitar os termos de uso para continuar');
-      return;
+    try {
+      switch (step) {
+        case 'email':
+          // Verifica se o email é válido
+          if (!formData.email || !formData.email.includes('@')) {
+            setError('Por favor, insira um email válido');
+            return;
+          }
+          // Avança para a próxima etapa
+          setStep('name');
+          break;
+
+        case 'name':
+          // Verifica se o nome foi preenchido
+          if (!formData.name) {
+            setError('Por favor, insira seu nome');
+            return;
+          }
+          // Avança para a próxima etapa
+          setStep('banks');
+          break;
+
+        case 'banks':
+          // Verifica se pelo menos um banco foi selecionado
+          if (formData.selectedBanks.length === 0) {
+            setError('Por favor, selecione pelo menos um banco');
+            return;
+          }
+          // Avança para a próxima etapa
+          setStep('goal');
+          break;
+
+        case 'goal':
+          // Verifica se os campos do objetivo foram preenchidos
+          if (!formData.financialGoalName || !formData.financialGoalAmount || !formData.financialGoalPeriodValue) {
+            setError('Por favor, preencha todos os campos do objetivo');
+            return;
+          }
+          // Verifica se os termos foram aceitos
+          if (!formData.acceptedTerms) {
+            setError('É necessário aceitar os termos de uso para continuar');
+            return;
+          }
+          // Avança para a próxima etapa
+          setStep('code');
+          break;
+
+        case 'code':
+          // Verifica se o código foi preenchido
+          if (!code || code.length !== 6) {
+            setError('Por favor, insira o código de 6 dígitos');
+            return;
+          }
+          // Faz a verificação do código
+          await handleCodeSubmit(e);
+          break;
+
+        default:
+          break;
+      }
+    } catch (error) {
+      console.error('Erro em handleSubmit:', error);
+      setError('Ocorreu um erro. Por favor, tente novamente.');
+    } finally {
+      setLoading(false);
     }
-    
-    // Para outras etapas, usa handleSubmit
-    console.log('Chamando handleSubmit para outras etapas');
-    handleSubmit(e);
   };
 
   const requestAccessCode = async () => {
