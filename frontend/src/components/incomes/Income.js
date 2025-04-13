@@ -2,13 +2,9 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 import dataTableStyles from '../../styles/dataTable.module.css';
-import sharedStyles from '../../styles/shared.module.css';
-import EditIncomeForm from './EditIncomeForm';
-import { toast } from 'react-hot-toast';
 import { 
   BsPlusLg, 
   BsCash, 
-  BsCalendar3, 
   BsFilter, 
   BsSearch, 
   BsPencil, 
@@ -17,14 +13,9 @@ import {
   BsExclamationTriangle, 
   BsRepeat, 
   BsCurrencyDollar,
-  BsX,
-  BsCheckAll,
-  BsCheck2,
   BsFolderSymlink,
-  BsListCheck,
   BsChevronDown,
   BsChevronUp,
-  BsArrowClockwise
 } from 'react-icons/bs';
 
 function Income({ 

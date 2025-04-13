@@ -1,11 +1,9 @@
-import React, { useState, useEffect, useRef, useContext } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FiEdit2, FiTrash2, FiFilter, FiSearch, FiPlus } from 'react-icons/fi';
 import { BsRepeat, BsCurrencyDollar } from 'react-icons/bs';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import styles from '../../styles/mobile/dataTable.mobile.module.css';
-import dataTableStyles from '../../styles/dataTable.module.css';
-import sharedStyles from '../../styles/shared.module.css';
-import { AuthContext } from '../../contexts/AuthContext';
+
 
 const MobileIncomes = ({ 
   incomes, 
@@ -14,9 +12,6 @@ const MobileIncomes = ({
   onAdd,
   onFilter,
   onSearch,
-  selectedIncomes,
-  onSelectIncome,
-  onSelectAll,
   loading,
   error,
   categories = [],

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { AuthContext } from '../../contexts/AuthContext';
 import dataTableStyles from '../../styles/dataTable.module.css';
 import sharedStyles from '../../styles/shared.module.css';
 import CurrencyInput from 'react-currency-input-field';
@@ -19,6 +20,7 @@ import {
 } from 'react-icons/bs';
 
 const EditExpenseForm = ({ expense, onSave, onCancel }) => {
+  const { auth } = useContext(AuthContext);
   const [formData, setFormData] = useState({
     description: expense.description,
     amount: expense.amount,
