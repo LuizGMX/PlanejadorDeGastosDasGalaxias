@@ -1154,42 +1154,31 @@ const Login = () => {
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.7 }}
               >
-                <div className={`${styles.termsCheckbox} ${error && error.includes('termos') ? styles.termsCheckboxError : ''}`}
-                  onClick={(e) => {
-                    // Evita que o evento propague para outros elementos
-                    e.stopPropagation();
-                    // Alterna o valor do checkbox ao clicar em qualquer lugar da div
-                    toggleTermsAcceptance(!formData.acceptedTerms);
-                  }}
+                <div 
+                  className={`${styles.termsCheckbox} ${error && error.includes('termos') ? styles.termsCheckboxError : ''}`}
                 >
                   <input
                     type="checkbox"
                     id="acceptedTerms"
                     name="acceptedTerms"
                     checked={formData.acceptedTerms}
-                    onChange={(e) => {
-                      // Previne o comportamento padrão
-                      e.stopPropagation();
-                      toggleTermsAcceptance(e.target.checked);
+                    onChange={() => toggleTermsAcceptance(!formData.acceptedTerms)}
+                    style={{ 
+                      cursor: 'pointer', 
+                      width: '24px', 
+                      height: '24px', 
+                      opacity: '1'
                     }}
-                    style={{ cursor: 'pointer', width: '24px', height: '24px', zIndex: 10 }}
                   />
                   <label 
                     htmlFor="acceptedTerms" 
                     style={{cursor: 'pointer'}}
-                    onClick={(e) => {
-                      // Previne o comportamento padrão e propagação
-                      e.preventDefault();
-                      e.stopPropagation();
-                      // Alterna o valor do checkbox
-                      toggleTermsAcceptance(!formData.acceptedTerms);
-                    }}
                   >
-                    <span style={{color: 'white', fontWeight: 'bold'}}>Eu li e aceito os</span>
-                     <button 
+                    <span style={{color: 'white', fontWeight: 'bold'}}>Eu li e aceito os</span> <button 
                       type="button" 
                       className={styles.termsLink}
-                      onClick={() => {                     
+                      onClick={(e) => {
+                        e.stopPropagation();
                         setShowTermsModal(true);
                       }}
                     >
@@ -1915,7 +1904,12 @@ const Login = () => {
               className={styles.acceptButton}
               onClick={() => {
                 console.log("Aceitar termos clicado no modal");
-                toggleTermsAcceptance(true);
+                // Atualize diretamente o estado para evitar problemas de assincronicidade
+                setFormData({
+                  ...formData,
+                  acceptedTerms: true
+                });
+                setError('');
                 setShowTermsModal(false);
               }}
             >
@@ -2038,6 +2032,12 @@ const Login = () => {
                 <button 
                   type="button" 
                   onClick={() => {
+                    // Se estiver na etapa 'goal' e os termos não forem aceitos, exibir erro
+                    if (step === 'goal' && !formData.acceptedTerms) {
+                      setError('Você precisa aceitar os termos de uso para continuar');
+                      return;
+                    }
+                    
                     console.log('Botão Continuar clicado na etapa:', step);
                     if (step === 'name') {
                       console.log('Chamando handleNameStepSubmit diretamente');

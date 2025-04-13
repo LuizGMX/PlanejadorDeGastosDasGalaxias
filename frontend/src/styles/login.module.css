@@ -1140,14 +1140,13 @@
 
 .termsCheckbox {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 10px;
   padding: 12px;
   border-radius: 8px;
   border: 2px solid var(--primary-color);
   transition: all 0.3s ease;
   background-color: rgba(0, 255, 133, 0.05);
-  position: relative;
 }
 
 .termsCheckbox:hover {
@@ -1165,14 +1164,29 @@
   animation: pulse 1.5s infinite;
 }
 
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(255, 0, 0, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 0, 0, 0);
+  }
+}
+
 .termsCheckbox input[type="checkbox"] {
   margin-right: 12px;
   width: 24px;
   height: 24px;
   accent-color: var(--primary-color);
   cursor: pointer;
+  -webkit-appearance: checkbox !important;
+  -moz-appearance: checkbox !important;
+  appearance: checkbox !important;
+  opacity: 1 !important;
   position: relative;
-  z-index: 2;
 }
 
 .termsCheckbox label {
