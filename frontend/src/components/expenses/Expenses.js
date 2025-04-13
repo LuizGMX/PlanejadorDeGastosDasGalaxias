@@ -1034,7 +1034,7 @@ const Expenses = () => {
             
             <div className={dataTableStyles.mobileCardHeader}>
               <h3 className={dataTableStyles.mobileCardTitle}>{expense.description}</h3>
-              <span className={`${dataTableStyles.amountBadge} ${dataTableStyles.expenseAmount} ${dataTableStyles.mobileCardAmount}`}>
+              <span className={`${dataTableStyles.expenseAmountBadge} ${dataTableStyles.expenseAmount} ${dataTableStyles.mobileCardAmount}`}>
                 {formatCurrency(expense.amount)}
               </span>
             </div>
@@ -1239,7 +1239,7 @@ const Expenses = () => {
                           </td>
                           <td data-label="Descrição">{expense.description}</td>
                           <td data-label="Valor">
-                            <span className={dataTableStyles.amountBadge}>
+                            <span className={dataTableStyles.expenseAmountBadge}>
                               {formatCurrency(expense.amount)}
                             </span>
                           </td>
@@ -1319,7 +1319,7 @@ const Expenses = () => {
                         </td>
                         <td>{expense.description}</td>
                         <td>
-                          <span className={dataTableStyles.amountBadge}>
+                          <span className={dataTableStyles.expenseAmountBadge}>
                             {formatCurrency(expense.amount)}
                           </span>
                         </td>

@@ -16,6 +16,8 @@ import {
   BsFolderSymlink,
   BsChevronDown,
   BsChevronUp,
+  BsCalendar3,
+  BsArrowClockwise
 } from 'react-icons/bs';
 
 function Income({ 
@@ -62,7 +64,7 @@ function Income({
   const [touchStartX, setTouchStartX] = useState(0);
   const [touchCurrentX, setTouchCurrentX] = useState(0);
 
-  // Add useEffect for detecting mobile screen size - MOVIDO PARA O INÍCIO DO COMPONENTE
+  // Add useEffect for detecting mobile screen size
   useEffect(() => {
     const handleResize = () => {
       const mobile = window.innerWidth < 768;
@@ -81,7 +83,7 @@ function Income({
     return () => {
       window.removeEventListener('resize', handleResize);
     };
-  }, []); // Empty dependency array since we only want to set up the listener once
+  }, []);
 
   // Log do estado antes da renderização
   console.log('Income render:', { 
@@ -169,10 +171,10 @@ function Income({
 
   // Lista de anos para o filtro
   const years = Array.from(
-    { length: 20 },
+    { length: 11 },
     (_, i) => ({
-      value: new Date().getFullYear() + i,
-      label: (new Date().getFullYear() + i).toString()
+      value: 2025 + i,
+      label: (2025 + i).toString()
     })
   );
 
@@ -277,7 +279,7 @@ function Income({
               
               <div className={dataTableStyles.mobileCardHeader}>
                 <h3 className={dataTableStyles.mobileCardTitle}>{income.description}</h3>
-                <span className={`${dataTableStyles.amountBadge} ${dataTableStyles.incomeAmount} ${dataTableStyles.mobileCardAmount}`}>
+                <span className={`${dataTableStyles.incomeAmountBadge} ${dataTableStyles.incomeAmount} ${dataTableStyles.mobileCardAmount}`}>
                   {formatCurrency(income.amount)}
                 </span>
               </div>
@@ -438,6 +440,132 @@ function Income({
                 />
               </div>
             </div>
+            
+            <div className={dataTableStyles.filterGroup}>
+              <label className={dataTableStyles.filterLabel}>
+                <BsCalendar3 /> Período
+              </label>
+              <div
+                className={`${dataTableStyles.modernSelect} ${openFilter === 'months' ? dataTableStyles.active : ''}`}
+                onClick={() => handleFilterClick('months')}
+              >
+                <div className={dataTableStyles.modernSelectHeader}>
+                  <span>Selecione o mês</span>
+                  <span className={dataTableStyles.arrow}>▼</span>
+                </div>
+                {openFilter === 'months' && (
+                  <div className={dataTableStyles.modernSelectDropdown}>
+                    {months.map((month) => (
+                      <label key={month.value} className={dataTableStyles.modernCheckboxLabel}>
+                        <div className={dataTableStyles.modernCheckbox}>
+                          <input
+                            type="checkbox"
+                            className={dataTableStyles.hiddenCheckbox}
+                            checked={selectedIncomes.includes(month.value)}
+                            onChange={() => handleFilterChange('months', month.value)}
+                            onClick={handleCheckboxClick}
+                          />
+                          <div className={dataTableStyles.customCheckbox}></div>
+                        </div>
+                        {month.label}
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className={dataTableStyles.filterGroup}>
+              <label className={dataTableStyles.filterLabel}>
+                <BsCalendar3 /> Ano
+              </label>
+              <div
+                className={`${dataTableStyles.modernSelect} ${openFilter === 'years' ? dataTableStyles.active : ''}`}
+                onClick={() => handleFilterClick('years')}
+              >
+                <div className={dataTableStyles.modernSelectHeader}>
+                  <span>Selecione o ano</span>
+                  <span className={dataTableStyles.arrow}>▼</span>
+                </div>
+                {openFilter === 'years' && (
+                  <div className={dataTableStyles.modernSelectDropdown}>
+                    {years.map((year) => (
+                      <label key={year.value} className={dataTableStyles.modernCheckboxLabel}>
+                        <div className={dataTableStyles.modernCheckbox}>
+                          <input
+                            type="checkbox"
+                            className={dataTableStyles.hiddenCheckbox}
+                            checked={selectedIncomes.includes(year.value)}
+                            onChange={() => handleFilterChange('years', year.value)}
+                            onClick={handleCheckboxClick}
+                          />
+                          <div className={dataTableStyles.customCheckbox}></div>
+                        </div>
+                        {year.label}
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className={dataTableStyles.filterGroup}>
+              <label className={dataTableStyles.filterLabel}>
+                <BsFolderSymlink /> Categoria
+              </label>
+              <div
+                className={`${dataTableStyles.modernSelect} ${openFilter === 'category' ? dataTableStyles.active : ''}`}
+                onClick={() => handleFilterClick('category')}
+              >
+                <div className={dataTableStyles.modernSelectHeader}>
+                  <span>Selecione a categoria</span>
+                  <span className={dataTableStyles.arrow}>▼</span>
+                </div>
+                {openFilter === 'category' && (
+                  <div className={dataTableStyles.modernSelectDropdown}>
+                    <label className={dataTableStyles.modernCheckboxLabel}>
+                      <div className={dataTableStyles.modernCheckbox}>
+                        <input
+                          type="radio"
+                          className={dataTableStyles.hiddenCheckbox}
+                          checked={true}
+                          onChange={() => handleFilterChange('category', 'all')}
+                          onClick={handleCheckboxClick}
+                        />
+                        <div className={dataTableStyles.customCheckbox}></div>
+                      </div>
+                      Todas as categorias
+                    </label>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className={dataTableStyles.filterGroup}>
+              <label className={dataTableStyles.filterLabel}>
+                <BsRepeat /> Tipo
+              </label>
+              <div className={dataTableStyles.toggleGroup}>
+                <button
+                  className={`${dataTableStyles.recurringButton} ${selectedIncomes.includes('') ? dataTableStyles.active : ''}`}
+                  onClick={() => handleFilterChange('is_recurring', '')}
+                >
+                  <BsArrowClockwise /> Todos
+                </button>
+                <button
+                  className={`${dataTableStyles.recurringButton} ${selectedIncomes.includes(true) ? dataTableStyles.active : ''}`}
+                  onClick={() => handleFilterChange('is_recurring', true)}
+                >
+                  <BsRepeat /> Fixos
+                </button>
+                <button
+                  className={`${dataTableStyles.recurringButton} ${selectedIncomes.includes(false) ? dataTableStyles.active : ''}`}
+                  onClick={() => handleFilterChange('is_recurring', false)}
+                >
+                  <BsCurrencyDollar /> Únicos
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -482,7 +610,7 @@ function Income({
                     </td>
                     <td>{income.description}</td>
                     <td>
-                      <span className={`${dataTableStyles.amountBadge} ${dataTableStyles.incomeAmount}`}>
+                      <span className={`${dataTableStyles.incomeAmountBadge} ${dataTableStyles.incomeAmount}`}>
                         {formatCurrency(income.amount)}
                       </span>
                     </td>

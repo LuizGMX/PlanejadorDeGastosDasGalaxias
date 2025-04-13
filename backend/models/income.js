@@ -88,6 +88,24 @@ export default (sequelize) => {
       type: DataTypes.UUID,
       allowNull: true
     },
+    has_installments: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false
+    },
+    current_installment: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
+    total_installments: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
+    installment_group_id: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      description: 'ID para agrupar receitas parceladas'
+    },
     category_id: {
       type: DataTypes.INTEGER,
       allowNull: false,

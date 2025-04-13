@@ -54,6 +54,7 @@
   font-size: 28px;
   font-weight: 600;
   color: var(--primary-color);
+  margin-left: 280px;
 }
 
 .addButton {
@@ -403,15 +404,6 @@
   background-color: rgba(var(--border-color), 0.05);
 }
 
-.amountBadge {
-  display: inline-block;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-weight: 500;
-  background-color: var(--primary-color);
-  color: var(--secondary-color);
-}
-
 .actionButtons {
   display: flex;
   gap: 8px;
@@ -691,12 +683,22 @@
 }
 
 /* Adicionando estilos para badges de valor */
-.amountBadge {
+.incomeAmountBadge {
+  display: inline-block;
   padding: 4px 8px;
   border-radius: 4px;
   font-weight: 500;
-  display: inline-flex;
-  align-items: center;
+  background-color: var(--primary-color);
+  color: var(--secondary-color);
+}
+
+.expenseAmountBadge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+  background-color: var(--error-color); 
+  color: var(--secondary-color);
 }
 
 .incomeAmount {
