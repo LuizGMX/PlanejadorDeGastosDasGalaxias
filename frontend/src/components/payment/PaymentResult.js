@@ -20,8 +20,7 @@ const PaymentResult = () => {
     if (!auth.token) {
       navigate('/login');
       return;
-    }
-        
+    }        
 
     // Obter status do pagamento da URL
     const queryParams = new URLSearchParams(location.search);
