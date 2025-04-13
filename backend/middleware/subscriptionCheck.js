@@ -4,6 +4,12 @@ import sequelize from '../config/db.js';
 
 // Middleware para verificar se o usuário tem uma assinatura ativa
 export const checkSubscription = async (req, res, next) => {
+  // Se a rota é para bancos (listagem geral), permita sem autenticação
+  if (req.originalUrl.includes('/banks') && !req.originalUrl.includes('/banks/favorites') && !req.originalUrl.includes('/banks/users')) {
+    console.log('Permitindo acesso sem autenticação para listagem de bancos');
+    return next();
+  }
+
   const t = await sequelize.transaction();
   
   try {
@@ -13,7 +19,19 @@ export const checkSubscription = async (req, res, next) => {
     // que provavelmente retornará um erro de autenticação
     if (!user) {
       await t.commit();
-      return next();
+      console.log('Usuário não autenticado no middleware checkSubscription');
+      console.log('URL da requisição:', req.originalUrl);
+      
+      // Se for uma rota pública, permite o acesso
+      if (isPublicRoute(req.originalUrl)) {
+        console.log('Permitindo acesso a rota pública sem autenticação');
+        return next();
+      }
+      
+      return res.status(401).json({ 
+        message: 'Usuário não autenticado', 
+        subscriptionExpired: true 
+      });
     }
     
     // Buscar a assinatura do usuário
@@ -22,7 +40,8 @@ export const checkSubscription = async (req, res, next) => {
         user_id: user.id,
         subscription_expiration: {
           [Op.gt]: new Date() // Busca apenas assinaturas não expiradas
-        }
+        },
+        payment_status: 'approved'
       },
       order: [['subscription_expiration', 'DESC']], // Busca a assinatura mais recente
       transaction: t
@@ -46,5 +65,14 @@ export const checkSubscription = async (req, res, next) => {
     res.status(500).json({ message: 'Erro ao verificar assinatura' });
   }
 };
+
+// Função auxiliar para verificar se a rota é pública
+function isPublicRoute(url) {
+  const publicRoutes = [
+    '/banks'
+  ];
+  
+  return publicRoutes.some(route => url.endsWith(route));
+}
 
 export default checkSubscription; 

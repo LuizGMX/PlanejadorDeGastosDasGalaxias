@@ -1,7 +1,5 @@
 import express from 'express';
 import cors from 'cors';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
 import { readFileSync, writeFileSync } from 'fs';
 import http from 'http';
 import https from 'https';
@@ -28,7 +26,7 @@ import healthRoutes from './routes/healthRoutes.js';
 import { configureRateLimit, authLimiter } from './middleware/rateLimit.js';
 
 // Importar middleware de verificação de assinatura
-import { checkSubscription } from './routes/paymentRoutes.js';
+import { checkSubscription } from './middleware/subscriptionCheck.js';
 
 dotenv.config();
 
