@@ -36,7 +36,7 @@ app.post("/github-webhook", (req, res) => {
                 console.log(`executando comando: cd /var/www/PlanejadorDeGastosDasGalaxias/backend && pnpm i && pm2 restart backend-planejador`)
 
                 exec(
-                    `cd /var/www/PlanejadorDeGastosDasGalaxias/backend && pnpm i && pm2 restart backend-planejador`,
+                    `cd /var/www/PlanejadorDeGastosDasGalaxias/backend && pnpm i && export $(grep -v '^#' .env | xargs) && pm2 restart backend-planejador`,
                     (err, stdout, stderr) => {
                         if (err) {
                             console.error(`Erro no backend: ${stderr}`);
