@@ -74,12 +74,7 @@ const Sidebar = ({ className }) => {
           label: 'Adicionar Despesa',
           path: '/add-expense',
           icon: <BsPlusCircle size={18} />
-        },
-        // {
-        //   label: 'Editar Despesa Parcelas ou Recorrentes',
-        //   path: '/edit-recurring-expenses',
-        //   icon: <BsPencil size={18} />
-        // }
+        }
       ]
     },
     {
@@ -95,12 +90,7 @@ const Sidebar = ({ className }) => {
           label: 'Adicionar Receita',
           path: '/add-income',
           icon: <BsPlusCircle size={18} />
-        },
-        // {
-        //   label: 'Editar Receitas Recorrentes',
-        //   path: '/edit-recurring-incomes',
-        //   icon: <BsPencil size={18} />
-        // }
+        }
       ]
     },
     {
@@ -111,11 +101,11 @@ const Sidebar = ({ className }) => {
     {
       label: 'Assinatura',
       path: '/payment',
-      icon: subscriptionStatus?.hasWarning ? <BsExclamationCircle size={20} className={styles.warningIcon} /> : <BsCreditCard size={20} />,
-      warning: subscriptionStatus?.hasWarning
+      icon: subscriptionStatus?.hasWarning ? 
+            <BsExclamationCircle size={20} className={styles.warningIcon} /> : 
+            <BsCreditCard size={20} />
     }
   ];
-  
   
   // Menu restrito para usuários sem assinatura válida
   const restrictedMenuItems = [
@@ -188,7 +178,7 @@ const Sidebar = ({ className }) => {
       {/* Botão de logout sempre visível */}
       <button 
         onClick={handleLogout} 
-        className={`${styles.logoutButton} desktopLogoutButton`}
+        className={styles.logoutButton}
       >
         <BsDoorOpen size={20} />
         <span>Sair</span>

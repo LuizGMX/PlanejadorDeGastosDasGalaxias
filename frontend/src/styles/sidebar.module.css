@@ -92,7 +92,7 @@
   padding: 0.75rem 1rem;
   border: none;
   background: none;
-  color: var(--text-color);
+  color: var(--secondary-color);
   font-size: 1rem;
   text-align: left;
   cursor: pointer;
@@ -136,7 +136,7 @@
   padding: 0.5rem 1rem 0.5rem 2.75rem;
   border: none;
   background: none;
-  color: var(--text-color);
+  color: var(--secondary-color);
   font-size: 0.9rem;
   text-align: left;
   cursor: pointer;
@@ -330,7 +330,7 @@
 }
 
 .warningIcon {
-  color: #ff9800;
+  color: var(--warning-color);
   animation: pulse 1.5s infinite;
 }
 

@@ -905,9 +905,7 @@ const Login = () => {
                 <div className={`${styles.banksList} ${styles.selectedBanksList}`}>
                   <div className={styles.selectedBanksHeader}>
                     <h3>Meus Bancos</h3>
-                    <span className={styles.selectedCount}>
-                      {formData.selectedBanks.length} selecionado(s)
-                    </span>
+                  
                   </div>
                   <p className={styles.banksDescription}>
                     Estes bancos aparecerão ao registrar suas movimentações financeiras
