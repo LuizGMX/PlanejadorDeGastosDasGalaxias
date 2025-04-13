@@ -22,7 +22,7 @@ export const checkSubscription = async (req, res, next) => {
       console.log('Usuário não autenticado no middleware checkSubscription');
       console.log('URL da requisição:', req.originalUrl);
       return res.status(401).json({ 
-        message: 'Usuário não autenticado', 
+        message: 'Usuário não autenticado - checkSubscription do subscriptionCheck.js', 
         subscriptionExpired: true 
       });
     }

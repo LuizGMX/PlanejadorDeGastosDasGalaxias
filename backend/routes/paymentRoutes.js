@@ -95,7 +95,7 @@ export const checkSubscription = async (req, res, next) => {
     }
     
     return res.status(401).json({ 
-      message: 'Usuário não autenticado', 
+      message: 'Usuário não autenticado - checkSubscription do paymentRoutes.js', 
       subscriptionExpired: true 
     });
   }
@@ -320,7 +320,7 @@ router.post('/create-payment', authenticate, async (req, res) => {
     // Verifica se o usuário existe
     if (!req.user || !req.user.id) {
       return res.status(401).json({ 
-        message: 'Usuário não autenticado', 
+        message: 'Usuário não autenticado - create-payment do paymentRoutes.js', 
         error: 'No user found in request'
       });
     }
