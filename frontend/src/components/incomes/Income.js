@@ -62,6 +62,27 @@ function Income({
   const [touchStartX, setTouchStartX] = useState(0);
   const [touchCurrentX, setTouchCurrentX] = useState(0);
 
+  // Add useEffect for detecting mobile screen size - MOVIDO PARA O INÍCIO DO COMPONENTE
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      // Em desktop, sempre mostrar filtros. Em mobile, esconder por padrão
+      setShowFilters(!mobile);
+    };
+    
+    // Initial check
+    handleResize();
+    
+    // Add event listener
+    window.addEventListener('resize', handleResize);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []); // Empty dependency array since we only want to set up the listener once
+
   // Log do estado antes da renderização
   console.log('Income render:', { 
     incomesType: typeof incomes, 
@@ -81,38 +102,70 @@ function Income({
     data: safeIncomes
   });
 
-  if (loading) {
-    return (
-      <div className={dataTableStyles.loadingContainer}>
-        <div className={dataTableStyles.loadingText}>Carregando receitas...</div>
-      </div>
-    );
-  }
+  // Funções para manipular receitas
+  const handleAddIncome = () => {
+    onAdd();
+  };
 
-  if (error) {
-    return (
-      <div className={dataTableStyles.errorContainer}>
-        <div className={dataTableStyles.errorText}>Erro ao carregar receitas: {error}</div>
-      </div>
-    );
-  }
+  const handleEditIncome = (income) => {
+    onEdit(income);
+  };
 
-  if (safeIncomes.length === 0) {
-    return (
-      <div className={dataTableStyles.noDataContainer}>
-        <div className={dataTableStyles.noDataIcon}>💰</div>
-        <h3 className={dataTableStyles.noDataMessage}>Nenhuma receita encontrada</h3>
-        <p className={dataTableStyles.noDataSuggestion}>
-          Comece adicionando sua primeira receita clicando no botão abaixo
-        </p>
-        <div className={dataTableStyles.noDataActions}>
-          <button className={dataTableStyles.primaryButton} onClick={onAdd}>
-            <BsPlusLg /> Adicionar Receita
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const handleDeleteIncome = (income) => {
+    setIncomeToDelete(income);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (incomeToDelete) {
+      onDelete(incomeToDelete);
+      setShowDeleteModal(false);
+      setIncomeToDelete(null);
+    }
+  };
+
+  const handleSearch = (term) => {
+    onSearch(term);
+  };
+
+  const handleFilter = () => {
+    onFilter();
+  };
+
+  const handleSelectIncome = (id) => {
+    onSelectIncome(id);
+  };
+
+  const handleSelectAll = () => {
+    onSelectAll();
+  };
+
+  // Função para alternar detalhes do cartão em visualização mobile
+  const toggleCardDetails = (id) => {
+    setExpandedCardDetails(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+
+  // Funções para controlar o movimento de swipe em dispositivos móveis
+  const handleTouchStart = (id, e) => {
+    setTouchStartX(e.touches[0].clientX);
+    setTouchCurrentX(e.touches[0].clientX);
+    setActiveSwipeCard(id);
+  };
+
+  const handleTouchMove = (id, e) => {
+    if (activeSwipeCard === id) {
+      setTouchCurrentX(e.touches[0].clientX);
+    }
+  };
+
+  const handleTouchEnd = (id) => {
+    if (activeSwipeCard === id) {
+      setActiveSwipeCard(null);
+    }
+  };
 
   // Lista de anos para o filtro
   const years = Array.from(
@@ -175,92 +228,6 @@ function Income({
     } catch (error) {
       console.error('Erro ao formatar data:', error);
       return '-';
-    }
-  };
-
-  // Funções para manipular receitas
-  const handleAddIncome = () => {
-    onAdd();
-  };
-
-  const handleEditIncome = (income) => {
-    onEdit(income);
-  };
-
-  const handleDeleteIncome = (income) => {
-    setIncomeToDelete(income);
-    setShowDeleteModal(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (incomeToDelete) {
-      onDelete(incomeToDelete);
-      setShowDeleteModal(false);
-      setIncomeToDelete(null);
-    }
-  };
-
-  const handleSearch = (term) => {
-    onSearch(term);
-  };
-
-  const handleFilter = () => {
-    onFilter();
-  };
-
-  const handleSelectIncome = (id) => {
-    onSelectIncome(id);
-  };
-
-  const handleSelectAll = () => {
-    onSelectAll();
-  };
-
-  // Add useEffect for detecting mobile screen size
-  useEffect(() => {
-    const handleResize = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-      // Em desktop, sempre mostrar filtros. Em mobile, esconder por padrão
-      setShowFilters(!mobile);
-    };
-    
-    // Initial check
-    handleResize();
-    
-    // Add event listener
-    window.addEventListener('resize', handleResize);
-    
-    // Cleanup
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []); // Empty dependency array since we only want to set up the listener once
-
-  // Função para alternar detalhes do cartão em visualização mobile
-  const toggleCardDetails = (id) => {
-    setExpandedCardDetails(prev => ({
-      ...prev,
-      [id]: !prev[id]
-    }));
-  };
-
-  // Funções para controlar o movimento de swipe em dispositivos móveis
-  const handleTouchStart = (id, e) => {
-    setTouchStartX(e.touches[0].clientX);
-    setTouchCurrentX(e.touches[0].clientX);
-    setActiveSwipeCard(id);
-  };
-
-  const handleTouchMove = (id, e) => {
-    if (activeSwipeCard === id) {
-      setTouchCurrentX(e.touches[0].clientX);
-    }
-  };
-
-  const handleTouchEnd = (id) => {
-    if (activeSwipeCard === id) {
-      setActiveSwipeCard(null);
     }
   };
 
@@ -384,6 +351,39 @@ function Income({
       </div>
     );
   };
+
+  if (loading) {
+    return (
+      <div className={dataTableStyles.loadingContainer}>
+        <div className={dataTableStyles.loadingText}>Carregando receitas...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={dataTableStyles.errorContainer}>
+        <div className={dataTableStyles.errorText}>Erro ao carregar receitas: {error}</div>
+      </div>
+    );
+  }
+
+  if (safeIncomes.length === 0) {
+    return (
+      <div className={dataTableStyles.noDataContainer}>
+        <div className={dataTableStyles.noDataIcon}>💰</div>
+        <h3 className={dataTableStyles.noDataMessage}>Nenhuma receita encontrada</h3>
+        <p className={dataTableStyles.noDataSuggestion}>
+          Comece adicionando sua primeira receita clicando no botão abaixo
+        </p>
+        <div className={dataTableStyles.noDataActions}>
+          <button className={dataTableStyles.primaryButton} onClick={onAdd}>
+            <BsPlusLg /> Adicionar Receita
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={dataTableStyles.pageContainer}>
