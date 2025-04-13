@@ -2,7 +2,7 @@ import { Router } from 'express';
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
 import sgMail from '@sendgrid/mail';
-import { User, VerificationCode, UserBank, Bank, Payment } from '../models/index.js';
+import { User, VerificationCode, UserBank, Bank, Payment, FinancialGoal } from '../models/index.js';
 import { Op } from 'sequelize';
 import sequelize from '../config/db.js';
 
@@ -394,100 +394,24 @@ router.post('/verify-code', async (req, res) => {
 
     // Busca o usuário
     let user = await User.findOne({ where: { email } });
-    
-    if (isNewUser) {
-      // Se for um novo usuário, valida os dados necessários
-      if (!name || !financialGoalName || !financialGoalAmount || !financialGoalPeriodType || !financialGoalPeriodValue) {
-        await t.rollback();
-        return res.status(400).json({ message: 'Todos os dados são obrigatórios para novos usuários' });
-      }
 
-      // Calcula as datas do objetivo
-      const startDate = new Date();
-      let endDate = new Date(startDate);
-
-      if (financialGoalPeriodType && financialGoalPeriodValue) {
-        switch (financialGoalPeriodType) {
-          case 'days':
-            endDate.setDate(startDate.getDate() + parseInt(financialGoalPeriodValue));
-            break;
-          case 'months':
-            endDate.setMonth(startDate.getMonth() + parseInt(financialGoalPeriodValue));
-            break;
-          case 'years':
-            endDate.setFullYear(startDate.getFullYear() + parseInt(financialGoalPeriodValue));
-            break;
-        }
-      }
-
-      // Cria um novo usuário
+    // Se for um novo usuário, cria o usuário
+    if (isNewUser && !user) {
       user = await User.create({
         email,
-        name: name,
-        financial_goal_name: financialGoalName,
-        financial_goal_amount: financialGoalAmount ? parseFloat(financialGoalAmount.toString().replace(/\./g, '').replace(',', '.')) : null,
-        financial_goal_start_date: startDate,
-        financial_goal_end_date: endDate
+        name,
+        desired_budget: financialGoalAmount || 0
       }, { transaction: t });
-      
-      // Criar registro de pagamento inicial com 7 dias gratuitos
-      const trialExpirationDate = new Date();
-      trialExpirationDate.setDate(trialExpirationDate.getDate() + 7); // 7 dias de teste
-      
-      await Payment.create({
-        user_id: user.id,
-        subscription_expiration: trialExpirationDate,
-        payment_status: 'approved',
-        payment_method: 'trial',
-        payment_amount: 0,
-        payment_date: new Date()
-      }, { transaction: t });
-      
-    } else {
-      // Se for um usuário existente, apenas verifica se existe
-      if (!user) {
-        await t.rollback();
-        return res.status(404).json({ message: 'Usuário não encontrado' });
-      }
-      
-      // Verifica se a assinatura está válida para usuário existente
-      const payment = await Payment.findOne({
-        where: { 
+
+      // Se houver meta financeira, cria
+      if (financialGoalName && financialGoalAmount) {
+        await FinancialGoal.create({
           user_id: user.id,
-          subscription_expiration: {
-            [Op.gt]: new Date() // Busca apenas assinaturas não expiradas
-          }
-        },
-        order: [['subscription_expiration', 'DESC']], // Busca a assinatura mais recente
-        transaction: t
-      });
-      
-      // Se não existe uma assinatura válida, informa ao frontend que deve redirecionar para pagamento
-      if (!payment) {
-        // Remove o código de verificação
-        await verificationCode.destroy({ transaction: t });
-        
-        // Commit da transação
-        await t.commit();
-        
-        // Gera um token temporário apenas para a página de pagamento
-        const tempToken = jwt.sign(
-          { userId: user.id, email: user.email, temporary: true },
-          process.env.JWT_SECRET,
-          { expiresIn: '1h' }
-        );
-        
-        return res.json({
-          token: tempToken,
-          user: {
-            id: user.id,
-            name: user.name,
-            email: user.email
-          },
-          subscriptionExpired: true,
-          redirectTo: '/payment',
-          message: 'Sua assinatura expirou. Por favor, renove para continuar utilizando o sistema.'
-        });
+          name: financialGoalName,
+          amount: financialGoalAmount,
+          period_type: financialGoalPeriodType,
+          period_value: financialGoalPeriodValue
+        }, { transaction: t });
       }
     }
 
@@ -548,24 +472,11 @@ router.post('/verify-code', async (req, res) => {
     // Commit da transação
     await t.commit();
 
-    return res.json({
-      token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        financial_goal_name: user.financial_goal_name,
-        financial_goal_amount: user.financial_goal_amount,
-        financial_goal_start_date: user.financial_goal_start_date,
-        financial_goal_end_date: user.financial_goal_end_date,
-        telegram_verified: user.telegram_verified
-      },
-      redirectTo: isNewUser ? '/telegram' : '/dashboard'
-    });
+    res.json({ token });
   } catch (error) {
     await t.rollback();
     console.error('Erro ao verificar código:', error);
-    return res.status(500).json({ message: 'Erro ao verificar código' });
+    res.status(500).json({ message: 'Erro ao verificar código' });
   }
 });
 

@@ -69,7 +69,8 @@ export const checkSubscription = async (req, res, next) => {
 // Função auxiliar para verificar se a rota é pública
 function isPublicRoute(url) {
   const publicRoutes = [
-    '/banks'
+    '/banks',
+    '/auth/verify-code'
   ];
   
   return publicRoutes.some(route => url.endsWith(route));
