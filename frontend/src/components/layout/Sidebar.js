@@ -116,7 +116,6 @@ const Sidebar = ({ className }) => {
     }
   ];
   
-  
   // Menu restrito para usuários sem assinatura válida
   const restrictedMenuItems = [
     {
