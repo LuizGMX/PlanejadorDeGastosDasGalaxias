@@ -369,13 +369,15 @@ router.post('/verify-code', async (req, res) => {
       financialGoalAmount,
       financialGoalPeriodType,
       financialGoalPeriodValue,
-      selectedBanks 
+      selectedBanks,
+      acceptedTerms 
     } = req.body;
 
     console.log('Dados recebidos no verify-code:', {
       email,
       isNewUser,
-      selectedBanks: selectedBanks ? selectedBanks.length : 0
+      selectedBanks: selectedBanks ? selectedBanks.length : 0,
+      acceptedTerms
     });
 
     // Validação do código de verificação
@@ -397,10 +399,17 @@ router.post('/verify-code', async (req, res) => {
 
     // Se for um novo usuário, cria o usuário
     if (isNewUser && !user) {
+      // Verifica se os termos foram aceitos
+      if (!acceptedTerms) {
+        await t.rollback();
+        return res.status(400).json({ message: 'É necessário aceitar os termos de uso para continuar' });
+      }
+
       user = await User.create({
         email,
         name,
-        desired_budget: financialGoalAmount || 0
+        desired_budget: financialGoalAmount || 0,
+        accepted_terms: acceptedTerms
       }, { transaction: t });
 
       // Se houver meta financeira, cria

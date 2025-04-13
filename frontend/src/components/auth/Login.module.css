@@ -1,0 +1,140 @@
+.buttonGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.termsGroup {
+  margin-top: 1rem;
+  text-align: left;
+}
+
+.termsGroup label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-color);
+}
+
+.termsGroup input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+}
+
+.termsLink {
+  background: none;
+  border: none;
+  color: var(--primary-color);
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+}
+
+.termsLink:hover {
+  color: var(--primary-color-dark);
+}
+
+.termsModal {
+  background: var(--background-color);
+  border-radius: 8px;
+  padding: 2rem;
+  max-width: 800px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.termsModalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.termsModalHeader h2 {
+  margin: 0;
+  color: var(--text-color);
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  color: var(--text-color);
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.closeButton:hover {
+  color: var(--primary-color);
+}
+
+.termsModalContent {
+  color: var(--text-color);
+}
+
+.termsModalContent h3 {
+  margin: 1.5rem 0 1rem;
+  color: var(--primary-color);
+}
+
+.termsModalContent p {
+  margin: 0.5rem 0;
+  line-height: 1.6;
+}
+
+.termsModalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.acceptButton {
+  background: var(--primary-color);
+  color: var(--secondary-color);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.acceptButton:hover {
+  background: var(--primary-color-dark);
+}
+
+.cancelButton {
+  background: none;
+  border: 1px solid var(--border-color);
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-color);
+}
+
+.cancelButton:hover {
+  background: var(--border-color);
+}
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+} 
