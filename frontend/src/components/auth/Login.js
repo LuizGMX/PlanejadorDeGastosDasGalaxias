@@ -1185,12 +1185,11 @@ const Login = () => {
                       toggleTermsAcceptance(!formData.acceptedTerms);
                     }}
                   >
-                    <span style={{color: 'white', fontWeight: 'bold'}}>Eu li e aceito os</span> <button 
+                    <span style={{color: 'white', fontWeight: 'bold'}}>Eu li e aceito os</span>
+                     <button 
                       type="button" 
                       className={styles.termsLink}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation(); // Evita que o clique no botão dispare o evento do label
+                      onClick={() => {                     
                         setShowTermsModal(true);
                       }}
                     >
