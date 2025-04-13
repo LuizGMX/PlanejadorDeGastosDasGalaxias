@@ -1246,7 +1246,21 @@ const Expenses = () => {
                           <td data-label="Data">{formatDate(expense.expense_date)}</td>
                           <td data-label="Categoria">{expense.Category?.category_name}</td>
                           <td data-label="Pagamento">{expense.payment_method}</td>
-                          <td data-label="Tipo">{expense.is_recurring ? 'Fixo' : expense.has_installments ? 'Parcelado' : 'Único'}</td>
+                          <td data-label="Tipo">
+                            {expense.is_recurring ? (
+                              <span className={dataTableStyles.typeWithIcon}>
+                                <BsRepeat size={14} /> Fixo
+                              </span>
+                            ) : expense.has_installments ? (
+                              <span className={dataTableStyles.typeWithIcon}>
+                                <BsCreditCard2Front size={14} /> Parcelado
+                              </span>
+                            ) : (
+                              <span className={dataTableStyles.typeWithIcon}>
+                                <BsCurrencyDollar size={14} /> Único
+                              </span>
+                            )}
+                          </td>
                           <td data-label="Parcelas">{expense.has_installments ? `${expense.current_installment}/${expense.total_installments}` : '-'}</td>
                           <td data-label="Ações">
                             <div className={dataTableStyles.actionButtons}>
@@ -1312,7 +1326,21 @@ const Expenses = () => {
                         <td>{formatDate(expense.expense_date)}</td>
                         <td>{expense.Category?.category_name}</td>
                         <td>{expense.payment_method}</td>
-                        <td>{expense.is_recurring ? 'Fixo' : expense.has_installments ? 'Parcelado' : 'Único'}</td>
+                        <td>
+                          {expense.is_recurring ? (
+                            <span className={dataTableStyles.typeWithIcon}>
+                              <BsRepeat size={14} /> Fixo
+                            </span>
+                          ) : expense.has_installments ? (
+                            <span className={dataTableStyles.typeWithIcon}>
+                              <BsCreditCard2Front size={14} /> Parcelado
+                            </span>
+                          ) : (
+                            <span className={dataTableStyles.typeWithIcon}>
+                              <BsCurrencyDollar size={14} /> Único
+                            </span>
+                          )}
+                        </td>
                         <td>{expense.has_installments ? `${expense.current_installment}/${expense.total_installments}` : '-'}</td>
                         <td>
                           <div className={dataTableStyles.actionButtons}>

@@ -509,21 +509,21 @@ const AddExpense = ({ installment = false }) => {
                 className={`${dataTableStyles.toggleButton} ${!formData.is_recurring && !formData.has_installments ? dataTableStyles.active : ''}`}
                 onClick={() => handleToggleChange('normal')}
               >
-                <BsCurrencyDollar /> Único
+                <BsCurrencyDollar size={16} /> Único
               </button>
               <button
                 type="button"
                 className={`${dataTableStyles.toggleButton} ${formData.has_installments ? dataTableStyles.active : ''}`}
                 onClick={() => handleToggleChange('installments')}
               >
-                <BsListCheck /> Despesa parcelada
+                <BsListCheck size={16} /> Despesa parcelada
               </button>
               <button
                 type="button"
                 className={`${dataTableStyles.toggleButton} ${formData.is_recurring ? dataTableStyles.active : ''}`}
                 onClick={() => handleToggleChange('recurring')}
               >
-                <BsRepeat /> Despesa fixa
+                <BsRepeat size={16} /> Despesa fixa
               </button>
             </div>
           </div>
@@ -737,28 +737,28 @@ const AddExpense = ({ installment = false }) => {
                 className={`${dataTableStyles.toggleButton} ${formData.payment_method === 'credit_card' ? dataTableStyles.active : ''}`}
                 onClick={() => handlePaymentMethodChange('credit_card')}
               >
-                <BsCreditCard2Front /> Crédito
+                <BsCreditCard2Front size={16} /> Crédito
               </button>
               <button
                 type="button"
                 className={`${dataTableStyles.toggleButton} ${formData.payment_method === 'debit_card' ? dataTableStyles.active : ''}`}
                 onClick={() => handlePaymentMethodChange('debit_card')}
               >
-                <BsCreditCard2Front /> Débito
+                <BsCreditCard2Front size={16} /> Débito
               </button>
               <button
                 type="button"
                 className={`${dataTableStyles.toggleButton} ${formData.payment_method === 'cash' ? dataTableStyles.active : ''}`}
                 onClick={() => handlePaymentMethodChange('cash')}
               >
-                <BsCashCoin /> Dinheiro
+                <BsCashCoin size={16} /> Dinheiro
               </button>
               <button
                 type="button"
                 className={`${dataTableStyles.toggleButton} ${formData.payment_method === 'pix' ? dataTableStyles.active : ''}`}
                 onClick={() => handlePaymentMethodChange('pix')}
               >
-                <BsWallet2 /> Pix
+                <BsWallet2 size={16} /> Pix
               </button>
             </div>
           </div>
