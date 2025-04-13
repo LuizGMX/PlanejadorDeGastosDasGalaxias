@@ -294,6 +294,8 @@ const MobileAddExpense = ({ installment = false }) => {
        // Informe o usuário que o valor inserido é o valor da parcela e não o total
        let amount = formData.amount;
 
+       
+       
       // Validações específicas para pagamento parcelado
       if (formData.has_installments) {
         // Validação do número de parcelas
