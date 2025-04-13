@@ -241,6 +241,13 @@ process.on('unhandledRejection', (reason, promise) => {
   process.exit(1);
 });
 
+// Inicializar o bot do Telegram
+telegramService.init().then(() => {
+  console.log('🤖 Verificação de inicialização do bot do Telegram concluída');
+}).catch(error => {
+  console.error('❌ Erro durante a inicialização do bot do Telegram:', error);
+});
+
 app.get('/', (req, res) => {
   res.send('Backend está funcionando');
 });
