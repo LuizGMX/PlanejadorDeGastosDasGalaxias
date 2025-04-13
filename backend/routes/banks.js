@@ -4,9 +4,10 @@ import { authenticate } from '../middleware/auth.js';
 
 const router = Router();
 
-// Rota para listar todos os bancos
+// Rota para listar todos os bancos - Não exige autenticação
 router.get('/', async (req, res) => {
   try {
+    console.log('Listando todos os bancos sem autenticação (para cadastro de usuários)');
     const banks = await Bank.findAll({
       order: [['name', 'ASC']]
     });

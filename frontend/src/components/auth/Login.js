@@ -80,6 +80,11 @@ const Login = () => {
       console.log('Status da resposta:', response.status);
       
       if (!response.ok) {
+        if (response.status === 401) {
+          console.error('Erro 401: Não autorizado ao tentar buscar bancos durante o cadastro');
+          throw new Error('Erro de autorização ao buscar bancos. Por favor, contate o suporte.');
+        }
+        
         if (response.status === 429 && retryCount < 3) {
           console.log(`Recebido erro 429, aguardando ${delay}ms antes de tentar novamente...`);
           setError(`Muitas requisições. Tentando novamente em ${delay/1000} segundos...`);
@@ -88,7 +93,14 @@ const Login = () => {
           return fetchBanks(retryCount + 1, delay * 2);
         }
         
-        throw new Error(`Erro ao carregar bancos: ${response.status}`);
+        try {
+          // Tentar ler o corpo da resposta para entender melhor o erro
+          const errorData = await response.json();
+          console.error('Detalhes do erro:', errorData);
+          throw new Error(errorData.message || `Erro ao carregar bancos: ${response.status}`);
+        } catch (jsonError) {
+          throw new Error(`Erro ao carregar bancos: ${response.status}`);
+        }
       }
       
       const data = await response.json();
@@ -105,7 +117,7 @@ const Login = () => {
       return true;
     } catch (error) {
       console.error('Erro ao carregar bancos:', error);
-      setError('Erro ao carregar bancos. Por favor, tente novamente.');
+      setError(error.message || 'Erro ao carregar bancos. Por favor, tente novamente.');
       setBanks([]);
       throw error; // Re-throw para que o chamador possa tratar o erro
     } finally {
@@ -233,12 +245,15 @@ const Login = () => {
           console.log('Carregando bancos antes de avançar...');
           await fetchBanks();
           console.log('Bancos carregados com sucesso, avançando para etapa banks');
-          setStep('banks');
         } catch (error) {
           console.error('Erro ao carregar bancos:', error);
-          setError('Erro ao carregar bancos. Tente novamente em alguns instantes.');
-          throw error; // Propaga o erro para que setLoading(false) seja chamado no finally
+          // Mostra o erro, mas permite continuar
+          setError('Não foi possível carregar a lista de bancos, mas você pode continuar o cadastro.');
+          // Define um array vazio para banks
+          setBanks([]);
         }
+        // Avança independentemente de ter conseguido carregar os bancos
+        setStep('banks');
       } else if (step === 'banks') {
         if (formData.selectedBanks.length === 0) {
           throw new Error('Por favor, selecione pelo menos um banco');
@@ -1528,15 +1543,18 @@ const Login = () => {
       // Avança para a próxima etapa primeiro
       setStep('banks');
       
-      // Depois carrega os bancos
-      console.log('Carregando bancos...');
-      await fetchBanks();
+      // Tenta carregar os bancos, mas continua mesmo se falhar
+      try {
+        console.log('Carregando bancos...');
+        await fetchBanks();
+        console.log('Bancos carregados com sucesso');
+      } catch (error) {
+        console.error('Erro ao carregar bancos:', error);
+        setError('Não foi possível carregar a lista de bancos, mas você pode continuar o cadastro.');
+        // Define um array vazio para banks
+        setBanks([]);
+      }
       
-    } catch (error) {
-      console.error('Erro:', error);
-      setError('Erro ao carregar bancos. Por favor, tente novamente.');
-      // Volta para a etapa anterior em caso de erro
-      setStep('name');
     } finally {
       setLoading(false);
     }
