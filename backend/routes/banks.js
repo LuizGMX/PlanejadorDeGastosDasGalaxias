@@ -4,10 +4,11 @@ import { authenticate } from '../middleware/auth.js';
 
 const router = Router();
 
-// Rota para listar todos os bancos - Não exige autenticação
+// Rota pública - Listar todos os bancos (sem autenticação)
+// Usada durante o cadastro de novos usuários
 router.get('/', async (req, res) => {
   try {
-    console.log('Listando todos os bancos sem autenticação (para cadastro de usuários)');
+    console.log('Listando todos os bancos (rota pública)');
     const banks = await Bank.findAll({
       order: [['name', 'ASC']]
     });
@@ -18,7 +19,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Rota para listar bancos favoritos do usuário
+// Rota protegida - Requer autenticação - Bancos favoritos do usuário
 router.get('/favorites', authenticate, async (req, res) => {
   try {
     console.log(`Buscando bancos favoritos para o usuário ${req.user.id}`);
@@ -69,7 +70,7 @@ router.get('/favorites', authenticate, async (req, res) => {
   }
 });
 
-// Rota para listar bancos ativos do usuário
+// Rota protegida - Requer autenticação - Bancos ativos do usuário
 router.get('/users', authenticate, async (req, res) => {
   try {
     // Buscar as relações de UserBank para o usuário atual onde is_active é true
@@ -170,7 +171,7 @@ router.get('/users', authenticate, async (req, res) => {
 //   }
 // });
 
-// Rota para gerenciar bancos favoritos (POST)
+// Rota protegida - Requer autenticação - Gerenciar bancos favoritos (POST)
 router.post('/favorites', authenticate, async (req, res) => {
   const { bank_id, is_active } = req.body;
   const user_id = req.user.id;
@@ -226,7 +227,7 @@ router.post('/favorites', authenticate, async (req, res) => {
   }
 });
 
-// Rota para atualizar bancos favoritos (PUT)
+// Rota protegida - Requer autenticação - Atualizar bancos favoritos (PUT)
 router.put('/favorites', authenticate, async (req, res) => {
   const { bank_id, is_active } = req.body;
   const user_id = req.user.id;

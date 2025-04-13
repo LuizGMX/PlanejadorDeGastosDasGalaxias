@@ -76,6 +76,7 @@ const Login = () => {
       const apiUrl = `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/banks`;
       console.log('URL da API:', apiUrl);
       
+      // Não incluímos o token na solicitação para a rota pública
       const response = await fetch(apiUrl);
       console.log('Status da resposta:', response.status);
       
@@ -1550,6 +1551,7 @@ const Login = () => {
         console.log('Bancos carregados com sucesso');
       } catch (error) {
         console.error('Erro ao carregar bancos:', error);
+        // Mostra o erro, mas permite continuar
         setError('Não foi possível carregar a lista de bancos, mas você pode continuar o cadastro.');
         // Define um array vazio para banks
         setBanks([]);
