@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useState, useEffect, useContext } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import Login from './components/auth/Login';
 
@@ -19,7 +19,7 @@ import Payment from './components/payment/Payment';
 import PaymentResult from './components/payment/PaymentResult';
 import ProtectedRoute from './components/ProtectedRoute';
 import { checkApiHealth, diagnoseProblem } from './utils/apiHealth';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, AuthContext } from './contexts/AuthContext';
 import { initIOSSupport, isIOS } from './utils/iosSupport';
 import MobileNavbar from './components/layout/MobileNavbar';
 import Sidebar from './components/layout/Sidebar';
@@ -33,10 +33,37 @@ const routerConfig = {
   }
 };
 
+// Componente para renderizar barras de navegação com base no estado de autenticação
+const Navigation = ({ setHasSidebar }) => {
+  const { auth } = useContext(AuthContext);
+  const location = useLocation();
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Apenas renderizar os componentes de navegação se o usuário estiver logado
+  // E não estiver na página de login
+  if (!auth.token || location.pathname === '/login') {
+    setHasSidebar(false);
+    return null;
+  }
+
+  setHasSidebar(!isMobile);
+  return isMobile ? <MobileNavbar /> : <Sidebar />;
+};
+
 function App() {
   const [apiStatus, setApiStatus] = useState(null);
   const [isIOSDevice, setIsIOSDevice] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [hasSidebar, setHasSidebar] = useState(false);
 
   // Verificar a saúde da API ao iniciar o aplicativo
   useEffect(() => {
@@ -110,9 +137,9 @@ function App() {
             {apiStatus.error && ` Erro: ${apiStatus.error}`}
           </div>
         )}
-        <div className={`app ${isIOSDevice ? 'ios-device' : ''}`}>
-          {/* Renderiza Sidebar para desktop e MobileNavbar para mobile */}
-          {isMobile ? <MobileNavbar /> : <Sidebar />}
+        <div className={`app ${isIOSDevice ? 'ios-device' : ''} ${hasSidebar ? 'with-sidebar' : ''}`}>
+          {/* Renderização condicional da navegação baseada em autenticação */}
+          <Navigation setHasSidebar={setHasSidebar} />
           
           <div className={`mainContent ${isMobile ? 'mobile' : ''}`}>
             <Routes>

@@ -1,35 +1,39 @@
 .app {
   display: flex;
+  flex-direction: column;
   min-height: 100vh;
-  background-color: var(--background-color);
+  background-color: var(--bg-color);
 }
 
 .mainContent {
   flex: 1;
   padding: 20px;
-  margin-left: 250px; /* Largura da Sidebar */
-  transition: margin-left 0.3s ease;
+  transition: margin-left 0.3s;
+  position: relative;
 }
 
 .mainContent.mobile {
-  margin-left: 0;
   padding-bottom: 80px; /* Espaço para a MobileNavbar */
 }
 
+/* Quando o sidebar está visível, adicionar margem à esquerda */
+.app.with-sidebar .mainContent:not(.mobile) {
+  margin-left: 250px;
+}
+
+/* Estilos para dispositivos móveis */
 @media (max-width: 768px) {
   .mainContent {
-    margin-left: 0;
     padding: 15px;
-    padding-bottom: 80px; /* Espaço para a MobileNavbar */
+    padding-bottom: 80px; /* Espaço para a navbar móvel */
   }
 }
 
-/* Ajustes para iOS */
-.ios-device .mainContent.mobile {
-  padding-bottom: 100px; /* Mais espaço para a barra do iOS */
+/* Estilos específicos para iOS */
+.ios-device .mainContent {
+  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
 }
 
-/* Garantir que o conteúdo não fique escondido atrás da navbar em dispositivos iOS */
 .ios-device .mobileNavbar {
-  padding-bottom: env(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 } 
