@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import { FiEdit2, FiTrash2, FiFilter, FiSearch, FiPlus } from 'react-icons/fi';
+import { BsRepeat, BsCurrencyDollar } from 'react-icons/bs';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import styles from '../../styles/mobile/dataTable.mobile.module.css';
 import dataTableStyles from '../../styles/dataTable.module.css';
@@ -294,7 +295,11 @@ const MobileIncomes = ({
                 <div className={styles.cardDetail}>
                   <span className={styles.cardLabel}>Tipo</span>
                   <span className={`${styles.typeStatus} ${income.is_recurring ? styles.fixedType : styles.oneTimeType}`}>
-                    {income.is_recurring ? 'Fixa' : 'Única'}
+                    {income.is_recurring ? (
+                      <><BsRepeat size={14} /> Fixa</>
+                    ) : (
+                      <><BsCurrencyDollar size={14} /> Única</>
+                    )}
                   </span>
                 </div>
               </div>

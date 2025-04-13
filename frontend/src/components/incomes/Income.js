@@ -331,107 +331,98 @@ function Income({
     return (
       <div className={dataTableStyles.mobileCardView}>
         {console.log("Rendering mobile card view with", safeIncomes.length, "incomes")}
-        {safeIncomes.map((income) => {
-          const isSwipeActive = activeSwipeCard === income.id;
-
-          return (
+        {safeIncomes.map((income) => (
             <div 
               key={income.id} 
-              className={`${dataTableStyles.mobileCard} ${isSwipeActive ? dataTableStyles.mobileCardSwipeActive : ''}`}
-              onTouchStart={(e) => handleTouchStart(income.id, e)}
-              onTouchMove={(e) => handleTouchMove(income.id, e)}
-              onTouchEnd={() => handleTouchEnd(income.id)}
+              className={dataTableStyles.mobileCard}
             >
-              <div className={dataTableStyles.mobileCardSwipeState}>
-                {!income.is_recurring && (
-                  <div className={dataTableStyles.mobileCardSelect}>
-                    <label className={dataTableStyles.checkboxContainer}>
-                      <input
-                        type="checkbox"
-                        checked={selectedIncomes.includes(income.id)}
-                        onChange={(e) => handleSelectIncome(income.id, e)}
-                        className={dataTableStyles.checkbox}
-                      />
-                      <span className={dataTableStyles.checkmark}></span>
-                    </label>
-                  </div>
-                )}
+              {!income.is_recurring && (
+                <div className={dataTableStyles.mobileCardSelect}>
+                  <label className={dataTableStyles.checkboxContainer}>
+                    <input
+                      type="checkbox"
+                      checked={selectedIncomes.includes(income.id)}
+                      onChange={() => handleSelectIncome(income.id)}
+                      className={dataTableStyles.checkbox}
+                    />
+                    <span className={dataTableStyles.checkmark}></span>
+                  </label>
+                </div>
+              )}
+              
+              <div className={dataTableStyles.mobileCardHeader}>
+                <h3 className={dataTableStyles.mobileCardTitle}>{income.description}</h3>
+                <span className={`${dataTableStyles.amountBadge} ${dataTableStyles.incomeAmount} ${dataTableStyles.mobileCardAmount}`}>
+                  {formatCurrency(income.amount)}
+                </span>
+              </div>
+              
+              <div className={dataTableStyles.mobileCardDetails}>
+                <div className={dataTableStyles.mobileCardDetail}>
+                  <span className={dataTableStyles.mobileCardLabel}>Data</span>
+                  <span className={dataTableStyles.mobileCardValue}>{formatDate(income.date)}</span>
+                </div>
                 
-                <div className={dataTableStyles.mobileCardHeader}>
-                  <h3 className={dataTableStyles.mobileCardTitle}>{income.description}</h3>
-                  <span className={`${dataTableStyles.amountBadge} ${dataTableStyles.incomeAmount} ${dataTableStyles.mobileCardAmount}`}>
-                    {formatCurrency(income.amount)}
+                <div className={dataTableStyles.mobileCardDetail}>
+                  <span className={dataTableStyles.mobileCardLabel}>Categoria</span>
+                  <span className={dataTableStyles.mobileCardValue}>
+                    <BsFolderSymlink style={{color: 'var(--primary-color)'}} />
+                    {income.Category?.category_name || '-'}
                   </span>
                 </div>
                 
-                <div className={dataTableStyles.mobileCardDetails}>
-                  <div className={dataTableStyles.mobileCardDetail}>
-                    <span className={dataTableStyles.mobileCardLabel}>Data</span>
-                    <span className={dataTableStyles.mobileCardValue}>{formatDate(income.date)}</span>
-                  </div>
-                  
-                  <div className={dataTableStyles.mobileCardDetail}>
-                    <span className={dataTableStyles.mobileCardLabel}>Categoria</span>
-                    <span className={dataTableStyles.mobileCardValue}>
-                      <BsFolderSymlink style={{color: 'var(--primary-color)'}} />
-                      {income.Category?.category_name || '-'}
-                    </span>
-                  </div>
-                  
-                  <div className={dataTableStyles.mobileCardDetail}>
-                    <span className={dataTableStyles.mobileCardLabel}>Banco</span>
-                    <span className={dataTableStyles.mobileCardValue}>
-                      <BsBank2 style={{color: 'var(--primary-color)'}} />
-                      {income.Bank?.name || '-'}
-                    </span>
-                  </div>
-                  
-                  <div className={dataTableStyles.mobileCardDetail}>
-                    <span className={dataTableStyles.mobileCardLabel}>Tipo</span>
-                    <span className={dataTableStyles.mobileCardValue}>
-                      {income.is_recurring ? (
-                        <><BsRepeat style={{color: 'var(--primary-color)'}} /> Receita fixa</>
-                      ) : (
-                        <><BsCurrencyDollar style={{color: 'var(--text-color)'}} /> Receita única</>
-                      )}
-                    </span>
-                  </div>
+                <div className={dataTableStyles.mobileCardDetail}>
+                  <span className={dataTableStyles.mobileCardLabel}>Banco</span>
+                  <span className={dataTableStyles.mobileCardValue}>
+                    <BsBank2 style={{color: 'var(--primary-color)'}} />
+                    {income.Bank?.name || '-'}
+                  </span>
                 </div>
                 
-                <div className={dataTableStyles.mobileCardActions}>
-                  <div className={dataTableStyles.mobileCardType}>
+                <div className={dataTableStyles.mobileCardDetail}>
+                  <span className={dataTableStyles.mobileCardLabel}>Tipo</span>
+                  <span className={dataTableStyles.mobileCardValue}>
                     {income.is_recurring ? (
-                      <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
-                        <BsRepeat /> Fixo
-                      </span>
+                      <><BsRepeat style={{color: 'var(--primary-color)'}} /> Receita fixa</>
                     ) : (
-                      <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
-                        <BsCurrencyDollar /> Único
-                      </span>
+                      <><BsCurrencyDollar style={{color: 'var(--text-color)'}} /> Receita única</>
                     )}
-                  </div>
-                  
-                  <div className={dataTableStyles.mobileCardActionButtons}>
-                    <button 
-                      onClick={() => handleEditIncome(income)} 
-                      className={dataTableStyles.actionButton}
-                      title="Editar"
-                    >
-                      <BsPencil />
-                    </button>
-                    <button 
-                      onClick={() => handleDeleteIncome(income)} 
-                      className={`${dataTableStyles.actionButton} ${dataTableStyles.delete}`}
-                      title="Excluir"
-                    >
-                      <BsTrash />
-                    </button>
-                  </div>
+                  </span>
+                </div>
+              </div>
+              
+              <div className={dataTableStyles.mobileCardActions}>
+                <div className={dataTableStyles.mobileCardType}>
+                  {income.is_recurring ? (
+                    <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
+                      <BsRepeat /> Fixo
+                    </span>
+                  ) : (
+                    <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
+                      <BsCurrencyDollar /> Único
+                    </span>
+                  )}
+                </div>
+                
+                <div className={dataTableStyles.mobileCardActionButtons}>
+                  <button 
+                    onClick={() => handleEditIncome(income)} 
+                    className={dataTableStyles.actionButton}
+                    title="Editar"
+                  >
+                    <BsPencil />
+                  </button>
+                  <button 
+                    onClick={() => handleDeleteIncome(income)} 
+                    className={`${dataTableStyles.actionButton} ${dataTableStyles.delete}`}
+                    title="Excluir"
+                  >
+                    <BsTrash />
+                  </button>
                 </div>
               </div>
             </div>
-          );
-        })}
+        ))}
       </div>
     );
   };
@@ -449,7 +440,7 @@ function Income({
       <div className={dataTableStyles.pageHeader}>
         <h1 className={dataTableStyles.pageTitle}>Receitas</h1>
         <button 
-          onClick={() => navigate('/add-income')} 
+          onClick={handleAddIncome} 
           className={dataTableStyles.addButton}
         >
           <BsPlusLg size={16} /> Adicionar
@@ -460,10 +451,7 @@ function Income({
         {isMobile && (
           <button 
             className={dataTableStyles.filterToggleButton} 
-            onClick={() => {
-              console.log("Toggling filters from", showFilters, "to", !showFilters);
-              setShowFilters(!showFilters);
-            }}
+            onClick={() => setShowFilters(!showFilters)}
           >
             <BsFilter size={16} /> 
             {showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}
@@ -471,7 +459,7 @@ function Income({
           </button>
         )}
 
-        <div className={`${dataTableStyles.filtersContainer} ${isMobile && !showFilters ? dataTableStyles.filtersCollapsed : ''} ${isMobile && showFilters ? dataTableStyles.filtersExpanded : ''}`} style={isMobile ? { display: showFilters ? 'flex' : 'none', flexDirection: 'column' } : {}}>
+        <div className={`${dataTableStyles.filtersContainer} ${isMobile && !showFilters ? dataTableStyles.filtersCollapsed : ''}`}>
           {deleteSuccess && (
             <div className={dataTableStyles.successMessage}>
               {deleteSuccess.message} {deleteSuccess.count > 1 ? `(${deleteSuccess.count} itens)` : ''}
@@ -495,78 +483,115 @@ function Income({
           </div>
         </div>
 
-        <div className={dataTableStyles.tableContainer}>
-          <table className={dataTableStyles.table}>
-            <thead>
-              <tr>
-                <th>
-                  <div className={dataTableStyles.checkboxContainer}>
-                    <input
-                      type="checkbox"
-                      checked={selectedIncomes.length === safeIncomes.length}
-                      onChange={handleSelectAll}
-                    />
-                    <span className={dataTableStyles.checkmark}></span>
-                  </div>
-                </th>
-                <th>Descrição</th>
-                <th>Valor</th>
-                <th>Data</th>
-                <th>Categoria</th>
-                <th>Banco</th>
-                <th>Tipo</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {safeIncomes.map((income) => (
-                <tr key={income.id}>
-                  <td>
+        {isMobile ? (
+          renderMobileCards()
+        ) : (
+          <div className={dataTableStyles.tableContainer}>
+            <table className={dataTableStyles.table}>
+              <thead>
+                <tr>
+                  <th>
                     <div className={dataTableStyles.checkboxContainer}>
                       <input
                         type="checkbox"
-                        checked={selectedIncomes.includes(income.id)}
-                        onChange={() => handleSelectIncome(income.id)}
+                        checked={selectedIncomes.length === safeIncomes.length}
+                        onChange={handleSelectAll}
                       />
                       <span className={dataTableStyles.checkmark}></span>
                     </div>
-                  </td>
-                  <td>{income.description}</td>
-                  <td>
-                    <span className={`${dataTableStyles.amountBadge} ${dataTableStyles.incomeAmount}`}>
-                      {formatCurrency(income.amount)}
-                    </span>
-                  </td>
-                  <td>{formatDate(income.date)}</td>
-                  <td>{income.Category?.category_name || '-'}</td>
-                  <td>{income.Bank?.name || '-'}</td>
-                  <td>
-                    <span className={`${dataTableStyles.typeStatus} ${income.is_recurring ? dataTableStyles.fixedType : dataTableStyles.oneTimeType}`}>
-                      {income.is_recurring ? 'Fixa' : 'Única'}
-                    </span>
-                  </td>
-                  <td>
-                    <div className={dataTableStyles.actionButtons}>
-                      <button
-                        className={dataTableStyles.editButton}
-                        onClick={() => handleEditIncome(income)}
-                      >
-                        <BsPencil />
-                      </button>
-                      <button
-                        className={dataTableStyles.deleteButton}
-                        onClick={() => handleDeleteIncome(income)}
-                      >
-                        <BsTrash />
-                      </button>
-                    </div>
-                  </td>
+                  </th>
+                  <th>Descrição</th>
+                  <th>Valor</th>
+                  <th>Data</th>
+                  <th>Categoria</th>
+                  <th>Banco</th>
+                  <th>Tipo</th>
+                  <th>Ações</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {safeIncomes.map((income) => (
+                  <tr key={income.id}>
+                    <td>
+                      <div className={dataTableStyles.checkboxContainer}>
+                        <input
+                          type="checkbox"
+                          checked={selectedIncomes.includes(income.id)}
+                          onChange={() => handleSelectIncome(income.id)}
+                        />
+                        <span className={dataTableStyles.checkmark}></span>
+                      </div>
+                    </td>
+                    <td>{income.description}</td>
+                    <td>
+                      <span className={`${dataTableStyles.amountBadge} ${dataTableStyles.incomeAmount}`}>
+                        {formatCurrency(income.amount)}
+                      </span>
+                    </td>
+                    <td>{formatDate(income.date)}</td>
+                    <td>{income.Category?.category_name || '-'}</td>
+                    <td>{income.Bank?.name || '-'}</td>
+                    <td>
+                      <span className={`${dataTableStyles.typeStatus} ${income.is_recurring ? dataTableStyles.fixedType : dataTableStyles.oneTimeType}`}>
+                        {income.is_recurring ? (
+                          <><BsRepeat size={14} /> Fixa</>
+                        ) : (
+                          <><BsCurrencyDollar size={14} /> Única</>
+                        )}
+                      </span>
+                    </td>
+                    <td>
+                      <div className={dataTableStyles.actionButtons}>
+                        <button
+                          className={dataTableStyles.editButton}
+                          onClick={() => handleEditIncome(income)}
+                        >
+                          <BsPencil />
+                        </button>
+                        <button
+                          className={dataTableStyles.deleteButton}
+                          onClick={() => handleDeleteIncome(income)}
+                        >
+                          <BsTrash />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
+
+      {showDeleteModal && (
+        <div className={dataTableStyles.modalOverlay}>
+          <div className={dataTableStyles.modalContent}>
+            <div className={dataTableStyles.modalHeader}>
+              <BsExclamationTriangle className={dataTableStyles.warningIcon} />
+              <h3>Confirmar exclusão</h3>
+            </div>
+            <div className={dataTableStyles.modalBody}>
+              <p>Tem certeza que deseja excluir esta receita?</p>
+              <p><strong>{incomeToDelete?.description}</strong></p>
+            </div>
+            <div className={dataTableStyles.modalActions}>
+              <button
+                className={dataTableStyles.secondaryButton}
+                onClick={() => setShowDeleteModal(false)}
+              >
+                Cancelar
+              </button>
+              <button
+                className={`${dataTableStyles.primaryButton} ${dataTableStyles.deleteButton}`}
+                onClick={handleConfirmDelete}
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
