@@ -225,6 +225,12 @@ const Login = () => {
       console.log('handleSubmit ignorado porque loading=true');
       return;
     }
+    
+    if (step === 'email' && !formData.acceptedTerms) {
+      setError('Você precisa aceitar os termos de uso para continuar');
+      return;
+    }
+    
     setLoading(true);
     console.log('Loading definido como true');
 
@@ -686,6 +692,26 @@ const Login = () => {
                 autoFocus
               />
               <BsEnvelope className={styles.inputIcon} />
+            </motion.div>
+            
+            <motion.div 
+              className={styles.termsContainer}
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.4 }}
+            >
+              <div className={styles.termsCheckbox}>
+                <input
+                  type="checkbox"
+                  id="acceptTerms"
+                  checked={formData.acceptedTerms}
+                  onChange={() => setFormData(prev => ({ ...prev, acceptedTerms: !prev.acceptedTerms }))}
+                />
+                <label htmlFor="acceptTerms">
+                  Eu li e aceito os <button type="button" className={styles.termsLink} onClick={() => setShowTermsModal(true)}>Termos de Uso</button>
+                </label>
+              </div>
+              {error && error.includes("termos") && <p className={styles.termsError}>{error}</p>}
             </motion.div>
           </motion.div>
         );
