@@ -16,6 +16,7 @@ import FinancialGoal from '../models/financialGoal.js';
 
 dotenv.config();
 
+
 // Create a new Sequelize instance to connect to the local database
 const sequelize = new Sequelize(
   process.env.DB_NAME || 'planejador',
