@@ -2,7 +2,7 @@ const https = require("https");
 const fs = require("fs");
 const express = require("express");
 const bodyParser = require("body-parser");
-
+const { exec } = require("child_process");
 const app = express();
 const PORT = 9000;
 const domain = "https://planejador.galaxias.com.br";
