@@ -285,6 +285,16 @@ router.post('/', async (req, res) => {
       const startDateObj = adjustDate(date);
       const endDateObj = end_date ? adjustDate(end_date) : new Date('2099-12-31');
 
+      // Criar a regra de recorrência
+      const recurrenceRule = {
+        user_id: req.user.id,
+        recurrence_type: recurrence_type,
+        category_id: category_id,
+        bank_id: bank_id,
+        start_date: startDateObj,
+        end_date: endDateObj
+      };
+
       incomeData = {
         user_id: req.user.id,
         description,

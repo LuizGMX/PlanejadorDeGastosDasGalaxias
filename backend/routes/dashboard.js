@@ -209,8 +209,8 @@ router.get('/', async (req, res) => {
 
     // Busca despesas recorrentes
     const recurringExpenses = await Expense.findAll({
-      where: {
-        user_id: req.user.id,
+          where: {
+            user_id: req.user.id,
         is_recurring: true,
         start_date: {
           [Op.lte]: endDate
@@ -239,8 +239,8 @@ router.get('/', async (req, res) => {
 
     // Busca receitas recorrentes
     const recurringIncomes = await Income.findAll({
-      where: {
-        user_id: req.user.id,
+          where: {
+            user_id: req.user.id,
         is_recurring: true,
         start_date: {
           [Op.lte]: endDate
@@ -359,7 +359,7 @@ router.get('/', async (req, res) => {
     // Prepara as categorias e bancos para o filtro
     const [categories, banks] = await Promise.all([
       Category.findAll({
-        where: { user_id: req.user.id },
+      where: { user_id: req.user.id },
         attributes: ['id', 'category_name', 'type', 'color']
       }),
       Bank.findAll({

@@ -254,8 +254,6 @@ router.post('/', async (req, res) => {
       total_installments,
       is_recurring,
       is_in_cash,
-      start_date,
-      end_date,
       recurrence_type
     } = req.body;
 
@@ -342,60 +340,36 @@ router.post('/', async (req, res) => {
         });
       }
     } else if (is_recurring) {
+      // Criar uma única despesa recorrente
       const startDateObj = adjustDate(expense_date);
-      const endDateObj = end_date ? adjustDate(end_date) : new Date(startDateObj);
-      endDateObj.setFullYear(2099);
-      endDateObj.setMonth(11);
-      endDateObj.setDate(31);
+      const endDateObj = new Date('2099-12-31'); // Data padrão de fim distante
 
-      let currentDate = new Date(startDateObj);
-      let count = 0;
-      const maxRecurrences = 500; // Limite de segurança
+      // Criar a regra de recorrência
+      const recurrenceRule = {
+        user_id: req.user.id,
+        recurrence_type: recurrence_type,
+        category_id: category_id,
+        bank_id: bank_id,
+        start_date: startDateObj,
+        end_date: endDateObj
+      };
 
-      while (currentDate <= endDateObj && count < maxRecurrences) {
-        expenses.push({
-          user_id: req.user.id,
-          description,
-          amount: parsedAmount,
-          category_id,
-          bank_id,
-          expense_date: new Date(currentDate),
-          payment_method,
-          has_installments: false,
-          is_recurring: true,
-          recurring_group_id: recurringGroupId,
-          start_date: startDateObj,
-          end_date: endDateObj,
-          recurrence_type
-        });
-
-        // Atualiza a data baseado no tipo de recorrência
-        const nextDate = new Date(currentDate);
-        switch (recurrence_type) {
-          case 'daily':
-            nextDate.setDate(nextDate.getDate() + 1);
-            break;
-          case 'weekly':
-            nextDate.setDate(nextDate.getDate() + 7);
-            break;
-          case 'monthly':
-            nextDate.setMonth(nextDate.getMonth() + 1);
-            break;
-          case 'quarterly':
-            nextDate.setMonth(nextDate.getMonth() + 3);
-            break;
-          case 'semiannual':
-            nextDate.setMonth(nextDate.getMonth() + 6);
-            break;
-          case 'annual':
-            nextDate.setFullYear(nextDate.getFullYear() + 1);
-            break;
-          default:
-            nextDate.setMonth(nextDate.getMonth() + 1);
-        }
-        currentDate = nextDate;
-        count++;
-      }
+      // Criar a despesa única com vinculação à recorrência
+      expenses.push({
+        user_id: req.user.id,
+        description,
+        amount: parsedAmount,
+        category_id,
+        bank_id,
+        expense_date: startDateObj,
+        payment_method,
+        has_installments: false,
+        is_recurring: true,
+        recurring_group_id: recurringGroupId,
+        start_date: startDateObj,
+        end_date: endDateObj,
+        recurrence_type
+      });
     } else {
       expenses.push({
         user_id: req.user.id,
