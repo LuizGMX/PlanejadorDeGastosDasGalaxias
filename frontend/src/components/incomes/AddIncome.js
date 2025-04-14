@@ -34,6 +34,8 @@ const AddIncome = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isIncomeAdded, setIsIncomeAdded] = useState(false);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -101,35 +103,26 @@ const AddIncome = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
-    setLoading(true);
+    setIsSubmitting(true);
 
     try {
-      // Verificar se os campos obrigatórios estão preenchidos
-      if (!formData.description || !formData.amount || !formData.category_id || !formData.bank_id || !formData.date) {
-        throw new Error('Preencha todos os campos obrigatórios: descrição, valor, data, categoria e banco');
-      }
-
-      // Define as datas para receitas fixos
-      let start_date = null;
-      let end_date = null;
-      if (formData.is_recurring) {
-        start_date = formData.date;
-        const endDateObj = new Date(formData.date);
-        endDateObj.setMonth(11); // Define o mês como dezembro
-        endDateObj.setDate(31); // Define o dia como 31
-        endDateObj.setYear(2099);
-        end_date = endDateObj.toISOString().split('T')[0];
-      }
-
-      // Usar o amount do formData
-      const dataToSend = {
-        ...formData,
+      const requestData = {
+        description: formData.description,
         amount: formData.amount,
-        start_date,
-        end_date
+        category_id: formData.category_id || formData.category?.id,
+        income_date: formData.date,
+        bank_id: formData.bank_id || formData.bank?.id,
+        payment_method: formData.payment_method,
+        is_recurring: formData.is_recurring,
       };
+
+      // Adicionando informações específicas de recorrência quando é receita recorrente
+      if (formData.is_recurring) {
+        requestData.recurrence_rule = {
+          frequency: formData.recurrence_type || 'monthly',
+          start_date: formData.date
+        };
+      }
 
       const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes`, {
         method: 'POST',
@@ -137,22 +130,46 @@ const AddIncome = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${auth.token}`
         },
-        body: JSON.stringify(dataToSend)
+        body: JSON.stringify(requestData)
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Falha ao adicionar ganho');
-      }
+      if (response.status === 201) {
+        setBanks((prevBanks) => {
+          const updatedBanks = [...prevBanks];
+          const bankIndex = updatedBanks.findIndex(
+            (bank) => bank.id === formData.bank.id
+          );
+          
+          if (bankIndex !== -1) {
+            updatedBanks[bankIndex] = {
+              ...updatedBanks[bankIndex],
+              balance: Number(updatedBanks[bankIndex].balance) + Number(formData.amount),
+            };
+          }
+          
+          return updatedBanks;
+        });
 
-      setSuccess('Ganho adicionado com sucesso!');
-      setTimeout(() => {
-        navigate('/incomes');
-      }, 2000);
-    } catch (err) {
-      setError(err.message || 'Erro ao adicionar ganho. Por favor, tente novamente.');
+        // Atualizar a UI após a criação bem-sucedida
+        setIsIncomeAdded(true);
+        setSuccess('Receita adicionada com sucesso!');
+        
+        if (formData.is_recurring) {
+          // Handle recurring income
+          // This is a placeholder and should be replaced with the actual implementation
+          console.log('Recurring income added');
+        } else {
+          setTimeout(() => {
+            navigate('/incomes');
+          }, 2000);
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao adicionar receita:', error);
+      const errorMessage = error.response?.data?.message || 'Erro ao adicionar receita. Tente novamente.';
+      setError(errorMessage);
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 

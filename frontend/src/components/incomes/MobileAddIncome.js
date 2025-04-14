@@ -231,108 +231,53 @@ const MobileAddIncome = () => {
     setLoading(true);
 
     try {
-      // Verificar se os campos obrigatórios estão preenchidos
-      if (!formData.description || !formData.amount || !formData.category_id || !formData.bank_id) {
-        throw new Error('Preencha todos os campos obrigatórios: descrição, valor, categoria e banco');
-      }
-
-      // Validação da data para receita única
-      if (!formData.is_recurring) {
-        const incomeDate = new Date(formData.date);
-        if (isNaN(incomeDate.getTime())) {
-          throw new Error('A data da receita é obrigatória para receita única');
-        }
-      }
-
-      // Informe o usuário que o valor inserido é o valor da parcela e não o total
-      let amount = formData.amount;
-
-      // Validações específicas para receita parcelada
-   
-      // Validação para receitas recorrentes
-      if (formData.is_recurring) {
-        const startDate = new Date(formData.start_date || formData.date);
-        
-        if (isNaN(startDate.getTime())) {
-          throw new Error('A data inicial da recorrência é inválida');
-        }
-      }
-
-      const dataToSend = {
+      const requestData = {
         description: formData.description,
-        amount: amount,
-        category_id: parseInt(formData.category_id),
-        bank_id: parseInt(formData.bank_id),
-        date: formData.date,        
-        is_recurring: Boolean(formData.is_recurring),        
-        recurrence_type: formData.is_recurring ? formData.recurrence_type : null,
-        user_id: auth.user?.id // Garante que o ID do usuário está incluído
+        amount: formData.amount,
+        category_id: formData.category ? formData.category.id : null,
+        income_date: formData.income_date || formData.date,
+        bank_id: formData.bank ? formData.bank.id : null,
+        payment_method: formData.payment_method,
+        is_recurring: formData.is_recurring,
+        recurrence_type: formData.recurrence_type
       };
-
-      console.log('Enviando dados:', JSON.stringify(dataToSend, null, 2));
-
-      // Obter um token válido, tentando primeiro o contexto e depois localStorage
-      let token = auth.token;
-      if (!token) {
-        console.log('Token não encontrado no contexto, buscando do localStorage para handleSubmit...');
-        token = localStorage.getItem('token');
-        if (!token) {
-          console.error('Nenhum token de autenticação encontrado para handleSubmit');
-          navigate('/login');
-          return;
-        }
-      }
 
       const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${auth.token}`
         },
-        body: JSON.stringify(dataToSend)
+        body: JSON.stringify(requestData)
       });
 
-      // Verificar se a resposta parece ser HTML (possível página de erro 502)
-      const contentType = response.headers.get('content-type');
-      const responseText = await response.text();
-      
-      // Se parece ser HTML ou contém <!doctype, é provavelmente uma página de erro
-      if (contentType?.includes('text/html') || responseText.toLowerCase().includes('<!doctype')) {
-        console.error('Resposta da API contém HTML ao invés de JSON. Possível erro 502 Bad Gateway.');
-        console.log('Conteúdo da resposta (primeiros 100 caracteres):', responseText.substring(0, 100));
-        throw new Error('Servidor temporariamente indisponível. Por favor, tente novamente em alguns instantes.');
-      }
+      if (response.status === 201) {
+        setBanks((prevBanks) => {
+          const updatedBanks = [...prevBanks];
+          const bankIndex = updatedBanks.findIndex(
+            (bank) => bank.id === formData.bank.id
+          );
+          
+          if (bankIndex !== -1) {
+            updatedBanks[bankIndex] = {
+              ...updatedBanks[bankIndex],
+              balance: Number(updatedBanks[bankIndex].balance) + Number(formData.amount),
+            };
+          }
+          
+          return updatedBanks;
+        });
 
-      if (!response.ok) {
-        // Parsear o JSON manualmente já que usamos text() acima
-        try {
-          const errorData = JSON.parse(responseText);
-          console.error('Erro da API:', errorData);
-          throw new Error(errorData.message || 'Falha ao adicionar receita');
-        } catch (jsonError) {
-          console.error('Erro ao parsear JSON da resposta de erro:', jsonError);
-          throw new Error('Erro ao processar resposta do servidor');
-        }
+        // Atualizar a UI após a criação bem-sucedida
+        setSuccess('Receita adicionada com sucesso!');
+        setTimeout(() => {
+          navigate('/incomes');
+        }, 2000);
       }
-
-      // Parsear o JSON manualmente já que usamos text() acima
-      let result;
-      try {
-        result = JSON.parse(responseText);
-      } catch (jsonError) {
-        console.error('Erro ao parsear JSON da resposta:', jsonError);
-        throw new Error('Erro ao processar resposta do servidor');
-      }
-      
-      console.log('Resposta do servidor:', result);
-
-      setSuccess('Receita adicionada com sucesso!');
-      setTimeout(() => {
-        navigate('/incomes');
-      }, 2000);
-    } catch (err) {
-      console.error('Erro completo:', err);
-      setError(err.message || 'Erro ao adicionar receita. Por favor, tente novamente.');
+    } catch (error) {
+      console.error('Erro ao adicionar receita:', error);
+      const errorMessage = error.response?.data?.message || 'Erro ao adicionar receita. Tente novamente.';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

@@ -238,20 +238,21 @@ router.post('/', async (req, res) => {
     const {
       description,
       amount: rawAmount,
-      date,
-      is_recurring,     
       category_id,
+      income_date,
       bank_id,
-      recurrence_type,
-      end_date
+      payment_method,
+      is_recurring,
+      recurrence_type
     } = req.body;
 
     // Validações básicas
-    if (!description || !rawAmount || !date || !category_id || !bank_id) {
+    if (!description || !rawAmount || !category_id || !bank_id || !payment_method) {
       await t.rollback();
       return res.status(400).json({ message: 'Todos os campos obrigatórios devem ser preenchidos' });
     }
 
+    // Validação de recorrência
     if (is_recurring && !recurrence_type) {
       await t.rollback();
       return res.status(400).json({ message: 'Para receitas recorrentes, a periodicidade é obrigatória' });
@@ -259,7 +260,8 @@ router.post('/', async (req, res) => {
 
     const parsedAmount = Number(rawAmount);
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      return res.status(400).json({ message: 'O valor do ganho deve ser um número positivo' });
+      await t.rollback();
+      return res.status(400).json({ message: 'O valor da receita deve ser um número positivo' });
     }
 
     // Validação e ajuste da data
@@ -277,57 +279,58 @@ router.post('/', async (req, res) => {
       return date;
     };
 
-    // Receita a ser criada
-    let incomeData;
+    // Validação da data
+    if (!income_date || isNaN(new Date(income_date).getTime())) {
+      await t.rollback();
+      return res.status(400).json({ message: 'Data da receita inválida' });
+    }
+
+    const incomes = [];
     const recurringGroupId = is_recurring ? uuidv4() : null;
 
+    // Processamento com base no tipo de receita
     if (is_recurring) {
-      const startDateObj = adjustDate(date);
-      const endDateObj = end_date ? adjustDate(end_date) : new Date('2099-12-31');
-
-      // Criar a regra de recorrência
-      const recurrenceRule = {
-        user_id: req.user.id,
-        recurrence_type: recurrence_type,
-        category_id: category_id,
-        bank_id: bank_id,
-        start_date: startDateObj,
-        end_date: endDateObj
-      };
-
-      incomeData = {
+      // Criar a receita recorrente - apenas um registro
+      const startDateObj = adjustDate(income_date);
+      const endDateObj = new Date('2099-12-31'); // Data padrão de fim distante
+      
+      // Cria um único registro para a receita recorrente com seus metadados
+      incomes.push({
         user_id: req.user.id,
         description,
         amount: parsedAmount,
-        date: startDateObj, // Data de início como data da receita
-        is_recurring: true,
-        recurring_group_id: recurringGroupId,
         category_id,
         bank_id,
+        income_date: startDateObj,
+        payment_method,
+        is_recurring: true,
+        recurring_group_id: recurringGroupId,
         start_date: startDateObj,
         end_date: endDateObj,
         recurrence_type
-      };
+      });
     } else {
-      incomeData = {
+      // Receita única simples
+      incomes.push({
         user_id: req.user.id,
         description,
         amount: parsedAmount,
-        date: adjustDate(date),
-        is_recurring: false,
         category_id,
-        bank_id
-      };
+        bank_id,
+        income_date: adjustDate(income_date),
+        payment_method,
+        is_recurring: false
+      });
     }
 
-    const createdIncome = await Income.create(incomeData, { transaction: t });
+    const createdIncomes = await Income.bulkCreate(incomes, { transaction: t });
     await t.commit();
 
-    res.status(201).json(createdIncome);
+    res.status(201).json(createdIncomes);
   } catch (error) {
     await t.rollback();
     console.error('Erro ao criar receita:', error);
-    res.status(500).json({ message: 'Erro ao criar receita', error: error.message });
+    res.status(500).json({ message: 'Erro ao criar receita' });
   }
 });
 

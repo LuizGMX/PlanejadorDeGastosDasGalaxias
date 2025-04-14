@@ -247,13 +247,12 @@ router.post('/', async (req, res) => {
       description,
       amount: rawAmount,
       category_id,
-      bank_id,
       expense_date,
+      bank_id,
       payment_method,
       has_installments,
-      total_installments,
+      installments,
       is_recurring,
-      is_in_cash,
       recurrence_type
     } = req.body;
 
@@ -263,11 +262,13 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'Todos os campos obrigatórios devem ser preenchidos' });
     }
 
-    if (has_installments && (!total_installments || total_installments < 2)) {
+    // Validação de parcelas
+    if (has_installments && (!installments || installments <= 1)) {
       await t.rollback();
-      return res.status(400).json({ message: 'Para despesas parceladas, o número de parcelas deve ser maior que 1' });
+      return res.status(400).json({ message: 'Número de parcelas deve ser maior que 1' });
     }
 
+    // Validação de recorrência
     if (is_recurring && !recurrence_type) {
       await t.rollback();
       return res.status(400).json({ message: 'Para despesas recorrentes, a periodicidade é obrigatória' });
@@ -300,61 +301,45 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'Data da despesa inválida' });
     }
 
-    // Validação do tipo de pagamento
-    if (!is_recurring && !has_installments && !is_in_cash) {
-      return res.status(400).json({
-        error: 'Selecione uma forma de pagamento: Fixo, Parcelado ou À Vista'
-      });
-    }
-
     const expenses = [];
+    const installmentGroupId = has_installments ? uuidv4() : null;
     const recurringGroupId = is_recurring ? uuidv4() : null;
 
+    // Processamento com base no tipo de despesa
     if (has_installments) {
-      const installmentGroupId = uuidv4();
-      // Usar o valor da parcela informado pelo usuário diretamente
-      // current_installment começa a partir da parcela atual e vai até o total
-      const current = req.body.current_installment || 1;
-      
-      // Criar apenas as parcelas restantes
-      for (let i = current - 1; i < total_installments; i++) {
-        const installmentDate = adjustDate(expense_date);
-        // Ajustar data apenas para parcelas futuras em relação à atual
-        if (i > current - 1) {
-          installmentDate.setMonth(installmentDate.getMonth() + (i - (current - 1)));
-        }
+      // Criar múltiplas parcelas
+      const baseDate = adjustDate(expense_date);
+      const installmentAmount = Number((parsedAmount / installments).toFixed(2));
+      const remainder = parsedAmount - (installmentAmount * installments);
 
+      for (let i = 0; i < installments; i++) {
+        const installmentDate = new Date(baseDate);
+        installmentDate.setMonth(baseDate.getMonth() + i);
+        
+        // Adicionar o resto na primeira parcela
+        const finalAmount = i === 0 ? installmentAmount + remainder : installmentAmount;
+        
         expenses.push({
           user_id: req.user.id,
-          description: `${description} (${i + 1}/${total_installments})`,
-          amount: parsedAmount, // Usa o valor da parcela diretamente, sem calcular
+          description: `${description} (${i + 1}/${installments})`,
+          amount: finalAmount,
           category_id,
           bank_id,
           expense_date: installmentDate,
           payment_method,
           has_installments: true,
-          current_installment: i + 1,
-          total_installments,
+          installment_number: i + 1,
+          total_installments: installments,
           installment_group_id: installmentGroupId,
           is_recurring: false
         });
       }
     } else if (is_recurring) {
-      // Criar uma única despesa recorrente
+      // Criar a despesa recorrente - apenas um registro
       const startDateObj = adjustDate(expense_date);
       const endDateObj = new Date('2099-12-31'); // Data padrão de fim distante
-
-      // Criar a regra de recorrência
-      const recurrenceRule = {
-        user_id: req.user.id,
-        recurrence_type: recurrence_type,
-        category_id: category_id,
-        bank_id: bank_id,
-        start_date: startDateObj,
-        end_date: endDateObj
-      };
-
-      // Criar a despesa única com vinculação à recorrência
+      
+      // Cria um único registro para a despesa recorrente com seus metadados
       expenses.push({
         user_id: req.user.id,
         description,
@@ -371,6 +356,7 @@ router.post('/', async (req, res) => {
         recurrence_type
       });
     } else {
+      // Despesa única simples
       expenses.push({
         user_id: req.user.id,
         description,
@@ -380,8 +366,7 @@ router.post('/', async (req, res) => {
         expense_date: adjustDate(expense_date),
         payment_method,
         has_installments: false,
-        is_recurring: false,
-        is_in_cash
+        is_recurring: false
       });
     }
 

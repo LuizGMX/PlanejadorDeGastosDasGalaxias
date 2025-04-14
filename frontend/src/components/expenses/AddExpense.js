@@ -381,9 +381,16 @@ const AddExpense = ({ installment = false }) => {
         is_in_cash: !formData.is_recurring && !formData.has_installments,
         current_installment: formData.has_installments ? parseInt(formData.current_installment) : null,
         total_installments: formData.has_installments ? parseInt(formData.total_installments) : null,
-        recurrence_type: formData.is_recurring ? formData.frequency : null,
         user_id: auth.user?.id // Garante que o ID do usuário está incluído
       };
+
+      // Adicionando informações específicas de recorrência quando é despesa recorrente
+      if (formData.is_recurring) {
+        dataToSend.recurrence_rule = {
+          frequency: formData.frequency || 'monthly',
+          start_date: formData.expense_date
+        };
+      }
 
       console.log('Enviando dados:', JSON.stringify(dataToSend, null, 2));
 
