@@ -366,11 +366,12 @@ const IncomesWrapper = () => {
   useEffect(() => {
     console.log('IncomesWrapper - Carregando dados iniciais');
     const today = new Date();
-    const thisMonth = today.getMonth();
-    const thisYear = today.getFullYear();
+    const zonedToday = toZonedTime(today, timeZone);
+    const thisMonth = zonedToday.getMonth(); // 3 (April, 0-based)
+    const thisYear = zonedToday.getFullYear(); // 2025
     
-    const startDate = toZonedTime(startOfMonth(today), timeZone);
-    const endDate = toZonedTime(endOfMonth(today), timeZone);
+    const startDate = toZonedTime(startOfMonth(zonedToday), timeZone);
+    const endDate = toZonedTime(endOfMonth(zonedToday), timeZone);
 
 
     // Definir filtros iniciais
