@@ -459,7 +459,7 @@ const MobileAddIncome = () => {
             )}
 
             {/* Configurações de Receita Fixa */}
-            {formData.is_recurring(
+            {formData.is_recurring && (
               <div style={{marginBottom: '20px'}}>
                 <label className={addIncomeStyles.formLabel}>
                   <div className={`${addIncomeStyles.typeStatus} ${addIncomeStyles.fixedType}`}>
