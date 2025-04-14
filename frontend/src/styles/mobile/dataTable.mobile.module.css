@@ -1007,4 +1007,103 @@
     background-position: right 12px center;
     padding-right: 32px;
   }
+}
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  background-color: var(--card-background);
+  border-radius: 12px;
+  padding: 24px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.modalHeader h3 {
+  color: var(--text-color);
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.warningIcon {
+  color: var(--warning-color);
+  font-size: 24px;
+}
+
+.modalBody {
+  margin-bottom: 24px;
+}
+
+.modalBody p {
+  color: var(--text-color);
+  font-size: 15px;
+  margin: 0 0 8px;
+}
+
+.modalBody p:last-child {
+  margin-bottom: 0;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.secondaryButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: transparent;
+  color: var(--text-color);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.secondaryButton:hover {
+  background-color: var(--hover-bg);
+}
+
+.primaryButton.deleteButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--error-color);
+  color: var(--secondary-color);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.primaryButton.deleteButton:hover {
+  background-color: var(--error-hover-color);
 } 

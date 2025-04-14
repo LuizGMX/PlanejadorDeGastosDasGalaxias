@@ -5,6 +5,7 @@ import Income from './Income';
 import MobileIncomes from './MobileIncomes';
 import dataTableStyles from '../../styles/dataTable.module.css';
 import sharedStyles from '../../styles/shared.module.css';
+import { toast } from 'react-hot-toast';
 
 const IncomesWrapper = () => {
   const navigate = useNavigate();
@@ -59,9 +60,26 @@ const IncomesWrapper = () => {
     navigate(`/incomes/edit/${income.id}`);
   };
 
-  const handleDeleteIncome = (income) => {
-    setIncomeToDelete(income);
-    setShowDeleteModal(true);
+  const handleDeleteIncome = async (income) => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${income.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${auth.token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao excluir receita');
+      }
+
+      const data = await response.json();
+      toast.success(data.message);
+      await fetchData(filters);
+    } catch (err) {
+      console.error('Erro ao excluir receita:', err);
+      toast.error('Erro ao excluir receita');
+    }
   };
 
   const handleSearch = (term) => {

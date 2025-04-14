@@ -5,6 +5,7 @@ import Expenses from './Expenses';
 import MobileExpenses from './MobileExpenses';
 import styles from '../../styles/shared.module.css';
 import '../../styles/dataTable.module.css';
+import { toast } from 'react-hot-toast';
 
 const ExpensesWrapper = () => {
   const navigate = useNavigate();
@@ -17,6 +18,8 @@ const ExpensesWrapper = () => {
   const [selectedExpenses, setSelectedExpenses] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState(null);
+  const [editingExpense, setEditingExpense] = useState(null);
+  const [deleteSuccess, setDeleteSuccess] = useState(null);
   
   const [filters, setFilters] = useState({
     months: [new Date().getMonth() + 1],
@@ -60,9 +63,26 @@ const ExpensesWrapper = () => {
     navigate(`/expenses/edit/${expense.id}`);
   };
 
-  const handleDeleteExpense = (expense) => {
-    setExpenseToDelete(expense);
-    setShowDeleteModal(true);
+  const handleDeleteExpense = async (expense) => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses/${expense.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${auth.token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao excluir despesa');
+      }
+
+      const data = await response.json();
+      toast.success(data.message);
+      await fetchData(filters);
+    } catch (err) {
+      console.error('Erro ao excluir despesa:', err);
+      toast.error('Erro ao excluir despesa');
+    }
   };
 
   const handleSearch = (term) => {
