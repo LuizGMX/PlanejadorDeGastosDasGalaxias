@@ -15,7 +15,6 @@ import bankRoutes from './routes/banks.js';
 import budgetRoutes from './routes/budgets.js';
 import spreadsheetRoutes from './routes/spreadsheetRoutes.js';
 import userRoutes from './routes/users.js';
-import recurrencesRouter from './routes/recurrences.js';
 import telegramRoutes from './routes/telegramRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import { sequelize, User, Category, Bank, Expense, Income, Budget, VerificationCode, UserBank, RecurrenceRule, ExpensesRecurrenceException, IncomesRecurrenceException, Payment, FinancialGoal } from './models/index.js';
