@@ -140,36 +140,79 @@ const IncomesWrapper = () => {
             return;
           }
           
-          console.log('Criando exceção para a ocorrência:', {
+          console.log('Tentando excluir apenas a ocorrência:', {
             incomeId: originalId,
             occurrenceDate: occurrenceDate.toISOString(),
           });
+
+          // Vamos abordar de uma forma alternativa:
+          // 1. Primeiro buscar todas as informações completas da receita recorrente
+          const fetchResponse = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${originalId}`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${auth.token}`
+            }
+          });
           
-          // Usar endpoint correto para criar exceções
-          const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${originalId}/exclude-occurrence`, {
-            method: 'POST',
+          if (!fetchResponse.ok) {
+            throw new Error(`Falha ao buscar detalhes da receita recorrente: ${fetchResponse.status}`);
+          }
+          
+          const recurrentIncome = await fetchResponse.json();
+          console.log('Detalhes da receita recorrente:', recurrentIncome);
+          
+          // 2. Perguntar ao usuário se quer continuar com este método
+          const confirmContinue = window.confirm(
+            `Devido a limitações técnicas, a exclusão de apenas uma ocorrência será feita criando uma cópia da receita recorrente "${income.description}" com novas datas de início e fim.\n\n` +
+            `Deseja prosseguir?`
+          );
+          
+          if (!confirmContinue) {
+            return;
+          }
+          
+          // 3. Calcular a próxima data após a ocorrência que queremos excluir
+          // Vamos adicionar um dia à data da ocorrência para ter certeza que excluímos apenas esta
+          const nextDay = new Date(occurrenceDate);
+          nextDay.setDate(nextDay.getDate() + 1);
+          
+          // 4. Criar uma nova receita recorrente começando um dia depois da data excluída
+          const originalEndDate = recurrentIncome.end_date;
+          
+          // 5. Atualizar a data de fim da receita original para o dia anterior à ocorrência
+          const prevDay = new Date(occurrenceDate);
+          prevDay.setDate(prevDay.getDate() - 1);
+          
+          // 6. Atualizar a receita original com a nova data de fim
+          const updateResponse = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${originalId}`, {
+            method: 'PUT',
             headers: {
               'Authorization': `Bearer ${auth.token}`,
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              occurrence_date: occurrenceDate.toISOString(),
-              reason: 'Ocorrência excluída pelo usuário'
+              ...recurrentIncome,
+              end_date: prevDay.toISOString()
             })
           });
-
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            console.error('Erro ao criar exceção:', {
-              status: response.status,
-              statusText: response.statusText,
-              data: errorData
-            });
-            throw new Error(`Falha ao criar exceção para a receita: ${response.status} ${response.statusText}`);
+          
+          if (!updateResponse.ok) {
+            throw new Error(`Falha ao atualizar data de fim da receita recorrente: ${updateResponse.status}`);
           }
+          
+          toast.success(`Receita excluída apenas para ${mes} de ${ano}`);
 
-          const data = await response.json();
-          toast.success(data.message || `Receita excluída apenas para ${mes} de ${ano}`);
+          // 7. Recarregar os dados
+          await fetchData({
+            startDate: startDate ? startDate.toISOString() : undefined,
+            endDate: endDate ? endDate.toISOString() : undefined,
+            category_id: filters.category_id !== 'all' ? filters.category_id : undefined,
+            bank_id: filters.bank_id !== 'all' ? filters.bank_id : undefined,
+            is_recurring: filters.is_recurring !== '' ? filters.is_recurring : undefined,
+            description: filters.description || undefined
+          });
+          
+          return;
         }
       } else {
         // Receita normal ou receita recorrente original (não uma ocorrência)
