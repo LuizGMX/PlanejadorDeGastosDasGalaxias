@@ -19,51 +19,61 @@ router.get('/', async (req, res) => {
   try {
     const { months, years, description, category_id, is_recurring } = req.query;
     const where = { user_id: req.user.id };
+    
+    // Inicializa a condição AND para combinar todos os filtros
+    where[Op.and] = where[Op.and] || [];
 
     // Filtro de meses e anos
     const monthsArray = months ? (Array.isArray(months) ? months : months.split(',').map(Number)) : [];
     const yearsArray = years ? (Array.isArray(years) ? years : years.split(',').map(Number)) : [];
 
-    if (monthsArray.length > 0 || yearsArray.length > 0) {
-      where[Op.and] = where[Op.and] || [];
+    if (monthsArray.length > 0) {
+      where[Op.and].push(
+        Sequelize.where(
+          Sequelize.fn('MONTH', Sequelize.col('date')),
+          { [Op.in]: monthsArray }
+        )
+      );
+    }
 
-      if (monthsArray.length > 0) {
-        where[Op.and].push(
-          Sequelize.where(
-            Sequelize.fn('MONTH', Sequelize.col('date')),
-            { [Op.in]: monthsArray }
-          )
-        );
-      }
-
-      if (yearsArray.length > 0) {
-        where[Op.and].push(
-          Sequelize.where(
-            Sequelize.fn('YEAR', Sequelize.col('date')),
-            { [Op.in]: yearsArray }
-          )
-        );
-      }
+    if (yearsArray.length > 0) {
+      where[Op.and].push(
+        Sequelize.where(
+          Sequelize.fn('YEAR', Sequelize.col('date')),
+          { [Op.in]: yearsArray }
+        )
+      );
     }
 
     // Filtro de descrição
     if (description) {
-      where.description = {
-        [Op.like]: `%${description}%`
-      };
+      where[Op.and].push({
+        description: {
+          [Op.like]: `%${description}%`
+        }
+      });
     }
 
     // Filtro de categoria
     if (category_id) {
-      where.category_id = category_id;
+      where[Op.and].push({
+        category_id: category_id
+      });
     }
 
     // Filtro de recorrência
     if (is_recurring !== undefined) {
-      where.is_recurring = is_recurring === 'true';
+      where[Op.and].push({
+        is_recurring: is_recurring === 'true'
+      });
+    }
+    
+    // Remove a condição AND se estiver vazia
+    if (where[Op.and].length === 0) {
+      delete where[Op.and];
     }
 
-    console.log('Filtros aplicados:', where);
+    console.log('Filtros aplicados:', JSON.stringify(where, null, 2));
 
     // Buscar todas as receitas
     const incomes = await Income.findAll({
@@ -75,7 +85,11 @@ router.get('/', async (req, res) => {
         'date',
         'is_recurring',
         'recurring_group_id',
-        'recurrence_type'
+        'recurrence_type',
+        'has_installments',
+        'current_installment',
+        'total_installments',
+        'installment_group_id'
       ],
       include: [
         { model: Category, as: 'Category' },

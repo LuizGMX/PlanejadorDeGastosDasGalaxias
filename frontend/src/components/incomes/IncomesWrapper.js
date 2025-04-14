@@ -68,19 +68,32 @@ const IncomesWrapper = () => {
     console.log('Searching for:', term);
     setSearchTerm(term);
     
-    // Atualizar o termo de busca e aplicar filtros no backend
-    setTimeout(() => {
-      const backendFilters = {
-        month: filters.months !== 'all' ? filters.months : undefined,
-        year: filters.years !== 'all' ? filters.years : undefined,
-        category_id: filters.category_id !== 'all' ? filters.category_id : undefined,
-        bank_id: filters.bank_id !== 'all' ? filters.bank_id : undefined,
-        is_recurring: filters.is_recurring !== '' ? filters.is_recurring : undefined,
-        description: term || undefined
+    // Atualizar o termo de busca e manter os outros filtros
+    setFilters(prevFilters => {
+      const updatedFilters = {
+        ...prevFilters,
+        description: term
       };
       
-      fetchData(backendFilters);
-    }, 0);
+      console.log('Filtros atualizados após busca:', updatedFilters);
+      
+      // Aplicar todos os filtros juntos
+      setTimeout(() => {
+        const backendFilters = {
+          months: updatedFilters.months,
+          years: updatedFilters.years,
+          description: updatedFilters.description || undefined,
+          category_id: updatedFilters.category_id !== 'all' ? updatedFilters.category_id : undefined,
+          bank_id: updatedFilters.bank_id !== 'all' ? updatedFilters.bank_id : undefined,
+          is_recurring: updatedFilters.is_recurring !== '' ? updatedFilters.is_recurring : undefined
+        };
+        
+        console.log('Enviando filtros completos para API após busca:', backendFilters);
+        fetchData(backendFilters);
+      }, 0);
+      
+      return updatedFilters;
+    });
   };
 
   const handleFilter = (type, value) => {
@@ -101,6 +114,7 @@ const IncomesWrapper = () => {
       };
       
       setFilters(resetFilters);
+      setSearchTerm('');
       
       // Buscar todos os dados sem filtros
       fetchData(resetFilters);
@@ -114,7 +128,7 @@ const IncomesWrapper = () => {
       // Atualizar o valor do filtro específico
       newFilters[type] = value;
       
-      console.log('Novos filtros para receitas:', newFilters);
+      console.log('Novos filtros para receitas (combinando todos):', newFilters);
       
       // Buscar dados com os novos filtros após atualizar o estado
       setTimeout(() => {
@@ -128,7 +142,7 @@ const IncomesWrapper = () => {
           is_recurring: newFilters.is_recurring !== '' ? newFilters.is_recurring : undefined
         };
         
-        console.log('Filtros enviados para a API de receitas:', backendFilters);
+        console.log('Filtros completos enviados para a API de receitas:', backendFilters);
         fetchData(backendFilters);
       }, 0);
       

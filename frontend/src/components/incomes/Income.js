@@ -65,6 +65,8 @@ function Income({
   const [touchStartX, setTouchStartX] = useState(0);
   const [touchCurrentX, setTouchCurrentX] = useState(0);
   const [lastClickTime, setLastClickTime] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTimeout, setSearchTimeout] = useState(null);
 
   // Garantir que filters exista e tenha valores padrão - sem has_installments
   const safeFilters = filters || {
@@ -143,7 +145,21 @@ function Income({
   };
 
   const handleSearch = (term) => {
-    onSearch(term);
+    console.log('Termo de busca:', term);
+    setSearchTerm(term);
+    
+    // Cancela o timeout anterior se existir
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+    
+    // Define um novo timeout para enviar a busca após 300ms
+    const timeout = setTimeout(() => {
+      console.log('Enviando termo de busca para o componente pai:', term);
+      onSearch(term);
+    }, 300);
+    
+    setSearchTimeout(timeout);
   };
 
   const handleFilter = () => {
@@ -265,6 +281,8 @@ function Income({
     console.log('handleFilterChange em Income.js:', type, value);
     
     if (type === 'description') {
+      // Atualiza o searchTerm local e envia para o componente pai
+      setSearchTerm(value);
       onSearch(value);
       return;
     }
@@ -473,6 +491,15 @@ function Income({
     );
   };
 
+  // Limpa o timeout quando o componente for desmontado
+  useEffect(() => {
+    return () => {
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+    };
+  }, [searchTimeout]);
+
   if (loading) {
     return (
       <div className={dataTableStyles.loadingContainer}>
@@ -555,6 +582,7 @@ function Income({
                   type="text"
                   className={dataTableStyles.searchInput}
                   placeholder="Buscar receitas..."
+                  value={searchTerm}
                   onChange={(e) => handleSearch(e.target.value)}
                 />
               </div>
