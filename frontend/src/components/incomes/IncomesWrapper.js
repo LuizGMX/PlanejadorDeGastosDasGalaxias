@@ -77,9 +77,29 @@ const IncomesWrapper = () => {
         );
 
         if (confirmAction) {
+          // Extrair o ID da receita recorrente original a partir do ID da ocorrência
+          // Formato esperado: "rec_ORIGINAL_ID_TIMESTAMP"
+          let originalId = income.originalRecurrenceId;
+          
+          if (!originalId && income.id && typeof income.id === 'string' && income.id.startsWith('rec_')) {
+            // Se não tiver o campo originalRecurrenceId, tentar extrair do ID
+            const parts = income.id.split('_');
+            if (parts.length >= 2) {
+              originalId = parts[1];
+              console.log('ID original extraído do ID da ocorrência:', originalId);
+            }
+          }
+          
+          if (!originalId) {
+            toast.error('Não foi possível identificar a receita recorrente original');
+            return;
+          }
+          
+          console.log('Excluindo receita recorrente completa:', originalId);
+          
           // Excluir a receita recorrente original (todas as ocorrências)
           // Usar o endpoint específico para receitas recorrentes
-          const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${income.originalRecurrenceId}/recurring${queryParams}`, {
+          const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${originalId}/recurring${queryParams}`, {
             method: 'DELETE',
             headers: {
               'Authorization': `Bearer ${auth.token}`
@@ -87,7 +107,13 @@ const IncomesWrapper = () => {
           });
 
           if (!response.ok) {
-            throw new Error('Falha ao excluir receita recorrente');
+            const errorData = await response.json().catch(() => ({}));
+            console.error('Erro ao excluir receita recorrente:', {
+              status: response.status,
+              statusText: response.statusText,
+              data: errorData
+            });
+            throw new Error(`Falha ao excluir receita recorrente: ${response.status} ${response.statusText}`);
           }
 
           const data = await response.json();
@@ -96,8 +122,31 @@ const IncomesWrapper = () => {
           // Criar uma exceção para esta ocorrência específica
           const occurrenceDate = new Date(income.date);
           
+          // Extrair o ID da receita recorrente original a partir do ID da ocorrência
+          // Formato esperado: "rec_ORIGINAL_ID_TIMESTAMP"
+          let originalId = income.originalRecurrenceId;
+          
+          if (!originalId && income.id && typeof income.id === 'string' && income.id.startsWith('rec_')) {
+            // Se não tiver o campo originalRecurrenceId, tentar extrair do ID
+            const parts = income.id.split('_');
+            if (parts.length >= 2) {
+              originalId = parts[1];
+              console.log('ID original extraído do ID da ocorrência:', originalId);
+            }
+          }
+          
+          if (!originalId) {
+            toast.error('Não foi possível identificar a receita recorrente original');
+            return;
+          }
+          
+          console.log('Criando exceção para a ocorrência:', {
+            incomeId: originalId,
+            occurrenceDate: occurrenceDate.toISOString(),
+          });
+          
           // Usar endpoint correto para criar exceções
-          const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${income.originalRecurrenceId}/exclude-occurrence`, {
+          const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${originalId}/exclude-occurrence`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${auth.token}`,
@@ -110,7 +159,13 @@ const IncomesWrapper = () => {
           });
 
           if (!response.ok) {
-            throw new Error('Falha ao criar exceção para a receita');
+            const errorData = await response.json().catch(() => ({}));
+            console.error('Erro ao criar exceção:', {
+              status: response.status,
+              statusText: response.statusText,
+              data: errorData
+            });
+            throw new Error(`Falha ao criar exceção para a receita: ${response.status} ${response.statusText}`);
           }
 
           const data = await response.json();
