@@ -62,20 +62,91 @@ const IncomesWrapper = () => {
 
   const handleDeleteIncome = async (income, queryParams = '') => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${income.id}${queryParams}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${auth.token}`
+      // Verificar se é uma ocorrência de uma receita recorrente
+      if (income.isRecurringOccurrence) {
+        // Perguntar ao usuário se quer excluir só esta ocorrência ou todas
+        const confirmAction = window.confirm(
+          "Esta é uma ocorrência de uma receita recorrente. Deseja excluir todas as ocorrências futuras também? " +
+          "Clique 'OK' para excluir todas as ocorrências futuras, ou 'Cancelar' para criar uma exceção apenas para esta data."
+        );
+
+        if (confirmAction) {
+          // Excluir a receita recorrente original (todas as ocorrências)
+          const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${income.originalRecurrenceId}${queryParams}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${auth.token}`
+            }
+          });
+
+          if (!response.ok) {
+            throw new Error('Falha ao excluir receita');
+          }
+
+          const data = await response.json();
+          toast.success(data.message);
+        } else {
+          // Criar uma exceção para esta ocorrência específica
+          const occurrenceDate = new Date(income.date);
+          
+          const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${income.originalRecurrenceId}/exceptions`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${auth.token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              exception_date: occurrenceDate.toISOString()
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error('Falha ao criar exceção para a receita');
+          }
+
+          const data = await response.json();
+          toast.success(data.message || 'Exceção criada com sucesso');
         }
-      });
+      } else {
+        // Receita normal ou receita recorrente original (não uma ocorrência)
+        const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${income.id}${queryParams}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${auth.token}`
+          }
+        });
 
-      if (!response.ok) {
-        throw new Error('Falha ao excluir receita');
+        if (!response.ok) {
+          throw new Error('Falha ao excluir receita');
+        }
+
+        const data = await response.json();
+        toast.success(data.message);
       }
-
-      const data = await response.json();
-      toast.success(data.message);
-      await fetchData(filters);
+      
+      // Recarregar os dados após a exclusão ou criação de exceção
+      // Calcular datas atuais para atualizar a visualização
+      let startDate, endDate;
+      
+      if (filters.months && filters.months.length > 0 && filters.years && filters.years.length > 0) {
+        const minMonth = Math.min(...filters.months);
+        const maxMonth = Math.max(...filters.months);
+        const minYear = Math.min(...filters.years);
+        const maxYear = Math.max(...filters.years);
+        
+        startDate = new Date(minYear, minMonth - 1, 1);
+        const lastDay = new Date(maxYear, maxMonth, 0).getDate();
+        endDate = new Date(maxYear, maxMonth - 1, lastDay, 23, 59, 59);
+      }
+      
+      await fetchData({
+        startDate: startDate ? startDate.toISOString() : undefined,
+        endDate: endDate ? endDate.toISOString() : undefined,
+        category_id: filters.category_id !== 'all' ? filters.category_id : undefined,
+        bank_id: filters.bank_id !== 'all' ? filters.bank_id : undefined,
+        is_recurring: filters.is_recurring !== '' ? filters.is_recurring : undefined,
+        description: filters.description || undefined
+      });
     } catch (err) {
       console.error('Erro ao excluir receita:', err);
       toast.error('Erro ao excluir receita');
@@ -97,9 +168,23 @@ const IncomesWrapper = () => {
       
       // Aplicar todos os filtros juntos
       setTimeout(() => {
+        // Calcular datas com base nos meses e anos selecionados
+        let startDate, endDate;
+        
+        if (updatedFilters.months && updatedFilters.months.length > 0 && updatedFilters.years && updatedFilters.years.length > 0) {
+          const minMonth = Math.min(...updatedFilters.months);
+          const maxMonth = Math.max(...updatedFilters.months);
+          const minYear = Math.min(...updatedFilters.years);
+          const maxYear = Math.max(...updatedFilters.years);
+          
+          startDate = new Date(minYear, minMonth - 1, 1);
+          const lastDay = new Date(maxYear, maxMonth, 0).getDate();
+          endDate = new Date(maxYear, maxMonth - 1, lastDay, 23, 59, 59);
+        }
+        
         const backendFilters = {
-          months: updatedFilters.months,
-          years: updatedFilters.years,
+          startDate: startDate ? startDate.toISOString() : undefined,
+          endDate: endDate ? endDate.toISOString() : undefined,
           description: updatedFilters.description || undefined,
           category_id: updatedFilters.category_id !== 'all' ? updatedFilters.category_id : undefined,
           bank_id: updatedFilters.bank_id !== 'all' ? updatedFilters.bank_id : undefined,
@@ -135,7 +220,7 @@ const IncomesWrapper = () => {
       setSearchTerm('');
       
       // Buscar todos os dados sem filtros
-      fetchData(resetFilters);
+      fetchData({});
       return;
     }
     
@@ -150,10 +235,24 @@ const IncomesWrapper = () => {
       
       // Buscar dados com os novos filtros após atualizar o estado
       setTimeout(() => {
+        // Calcular datas com base nos meses e anos selecionados
+        let startDate, endDate;
+        
+        if (newFilters.months && newFilters.months.length > 0 && newFilters.years && newFilters.years.length > 0) {
+          const minMonth = Math.min(...newFilters.months);
+          const maxMonth = Math.max(...newFilters.months);
+          const minYear = Math.min(...newFilters.years);
+          const maxYear = Math.max(...newFilters.years);
+          
+          startDate = new Date(minYear, minMonth - 1, 1);
+          const lastDay = new Date(maxYear, maxMonth, 0).getDate();
+          endDate = new Date(maxYear, maxMonth - 1, lastDay, 23, 59, 59);
+        }
+        
         // Converter filtros internos para o formato da API
         const backendFilters = {
-          months: newFilters.months,
-          years: newFilters.years,
+          startDate: startDate ? startDate.toISOString() : undefined,
+          endDate: endDate ? endDate.toISOString() : undefined,
           description: newFilters.description || undefined,
           category_id: newFilters.category_id !== 'all' ? newFilters.category_id : undefined,
           bank_id: newFilters.bank_id !== 'all' ? newFilters.bank_id : undefined,
@@ -196,6 +295,11 @@ const IncomesWrapper = () => {
     const thisMonth = today.getMonth() + 1;
     const thisYear = today.getFullYear();
     
+    // Calcular datas de início e fim do mês atual
+    const startDate = new Date(thisYear, thisMonth - 1, 1);
+    const lastDay = new Date(thisYear, thisMonth, 0).getDate();
+    const endDate = new Date(thisYear, thisMonth - 1, lastDay, 23, 59, 59);
+    
     // Definir filtros iniciais
     setFilters({
       months: [thisMonth],
@@ -206,10 +310,10 @@ const IncomesWrapper = () => {
       is_recurring: ''
     });
     
-    // Buscar dados com os filtros iniciais
+    // Buscar dados com os filtros iniciais de data
     fetchData({
-      months: [thisMonth],
-      years: [thisYear]
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString()
     });
   }, [auth.token]);
 
@@ -221,12 +325,21 @@ const IncomesWrapper = () => {
       // Construir os parâmetros da query
       const queryParams = new URLSearchParams();
       
-      // Adicionar os parâmetros de filtro à URL
-      if (filterParams.months && filterParams.months.length > 0) {
+      // Adicionar parâmetros de período (nova abordagem com startDate e endDate)
+      if (filterParams.startDate) {
+        queryParams.append('startDate', filterParams.startDate);
+      }
+      
+      if (filterParams.endDate) {
+        queryParams.append('endDate', filterParams.endDate);
+      }
+      
+      // Adicionar os parâmetros de filtro à URL para compatibilidade com filtros existentes
+      if (!filterParams.startDate && !filterParams.endDate && filterParams.months && filterParams.months.length > 0) {
         filterParams.months.forEach(month => queryParams.append('months[]', month));
       }
       
-      if (filterParams.years && filterParams.years.length > 0) {
+      if (!filterParams.startDate && !filterParams.endDate && filterParams.years && filterParams.years.length > 0) {
         filterParams.years.forEach(year => queryParams.append('years[]', year));
       }
       
@@ -290,20 +403,9 @@ const IncomesWrapper = () => {
         extractedIncomes = [];
       }
       
-      // Processar as receitas para lidar com o novo formato de recorrência
-      // Identificar receitas recorrentes e suas ocorrências
-      const isRecurrenceOccurrence = (income) => {
-        return income.isRecurringOccurrence === true;
-      };
-      
-      // Separar receitas normais das ocorrências de receitas recorrentes
-      const normalIncomes = extractedIncomes.filter(income => !isRecurrenceOccurrence(income));
-      const recurrenceOccurrences = extractedIncomes.filter(isRecurrenceOccurrence);
-      
-      console.log('Receitas extraídas e processadas:', {
-        total: extractedIncomes.length,
-        normalIncomes: normalIncomes.length,
-        recurrenceOccurrences: recurrenceOccurrences.length
+      // Processar as receitas para lidar com o formato de recorrência
+      console.log('Receitas extraídas:', {
+        total: extractedIncomes.length
       });
       
       setOriginalIncomes(extractedIncomes);
@@ -318,6 +420,14 @@ const IncomesWrapper = () => {
         console.log("Exemplo de receita:", extractedIncomes[0]);
         console.log("Data da receita:", extractedIncomes[0].date);
         console.log("Formato da data:", typeof extractedIncomes[0].date);
+        // Verificar se a receita tem campos de recorrência
+        if (extractedIncomes[0].is_recurring) {
+          console.log("Dados de recorrência:", {
+            start_date: extractedIncomes[0].start_date,
+            end_date: extractedIncomes[0].end_date,
+            recurrence_type: extractedIncomes[0].recurrence_type
+          });
+        }
       }
 
       // Buscar categorias
@@ -431,14 +541,41 @@ const IncomesWrapper = () => {
 
   // Aplicar filtros no backend
   const applyFilters = async () => {
+    console.log('Aplicando filtros para receitas no backend');
+    
+    // Construir as datas de início e fim com base nos filtros de mês e ano
+    let startDate, endDate;
+    
+    if (filters.months && filters.months.length > 0 && filters.years && filters.years.length > 0) {
+      // Se temos meses e anos específicos, calcular o intervalo de datas
+      const minMonth = Math.min(...filters.months);
+      const maxMonth = Math.max(...filters.months);
+      const minYear = Math.min(...filters.years);
+      const maxYear = Math.max(...filters.years);
+      
+      // Criar data de início (primeiro dia do mês mínimo)
+      startDate = new Date(minYear, minMonth - 1, 1);
+      
+      // Criar data de fim (último dia do mês máximo)
+      const lastDay = new Date(maxYear, maxMonth, 0).getDate();
+      endDate = new Date(maxYear, maxMonth - 1, lastDay, 23, 59, 59);
+      
+      console.log('Filtro por período:', {
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        meses: filters.months,
+        anos: filters.years
+      });
+    }
+    
     // Mapear os filtros do estado para o formato que o backend espera
     const backendFilters = {
-      month: filters.months !== 'all' ? filters.months : undefined,
-      year: filters.years !== 'all' ? filters.years : undefined,
+      startDate: startDate ? startDate.toISOString() : undefined,
+      endDate: endDate ? endDate.toISOString() : undefined,
       category_id: filters.category_id !== 'all' ? filters.category_id : undefined,
       bank_id: filters.bank_id !== 'all' ? filters.bank_id : undefined,
       is_recurring: filters.is_recurring !== '' ? filters.is_recurring : undefined,
-      description: searchTerm || undefined
+      description: filters.description || undefined
     };
     
     console.log('Aplicando filtros no backend:', backendFilters);
