@@ -4,7 +4,7 @@ import { AuthContext } from '../../contexts/AuthContext';
 import Income from './Income';
 import MobileIncomes from './MobileIncomes';
 import dataTableStyles from '../../styles/dataTable.module.css';
-import sharedStyles from '../../styles/shared.module.css';
+import { startOfMonth, endOfMonth } from 'date-fns';
 import { toast } from 'react-hot-toast';
 import { BsExclamationTriangle, BsX } from 'react-icons/bs';
 import { FiTrash2 } from 'react-icons/fi';
@@ -361,12 +361,8 @@ const IncomesWrapper = () => {
   useEffect(() => {
     console.log('IncomesWrapper - Carregando dados iniciais');
     const today = new Date();
-    const thisMonth = today.getMonth(); // 0-based (janeiro = 0)
-    const thisYear = today.getFullYear();
-
-    // Calcular datas de início e fim do mês atual
-    const startDate = new Date(thisYear, thisMonth, 1);
-    const endDate = new Date(thisYear, thisMonth + 1, 0, 23, 59, 59);
+    const startDate = startOfMonth(today);
+    const endDate = endOfMonth(today);
 
 
     // Definir filtros iniciais
