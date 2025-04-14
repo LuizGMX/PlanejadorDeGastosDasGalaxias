@@ -97,14 +97,15 @@ const IncomesWrapper = () => {
           const occurrenceDate = new Date(income.date);
           
           // Usar endpoint correto para criar exceções
-          const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${income.originalRecurrenceId}/recurring/exception`, {
+          const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${income.originalRecurrenceId}/exclude-occurrence`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${auth.token}`,
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              exception_date: occurrenceDate.toISOString()
+              occurrence_date: occurrenceDate.toISOString(),
+              reason: 'Ocorrência excluída pelo usuário'
             })
           });
 
