@@ -1106,4 +1106,47 @@
 
 .primaryButton.deleteButton:hover {
   background-color: var(--error-hover-color);
+}
+
+.modalOptions {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+}
+
+.modalOptionsTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-color);
+  margin-bottom: 12px;
+}
+
+.modalOptionButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.optionButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--card-background);
+  color: var(--text-color);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.optionButton:hover {
+  background-color: var(--hover-bg);
+}
+
+.optionButton:active {
+  transform: scale(0.98);
 } 

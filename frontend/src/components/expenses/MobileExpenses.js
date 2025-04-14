@@ -79,9 +79,25 @@ const MobileExpenses = ({
     setShowDeleteModal(true);
   };
 
-  const handleConfirmDelete = async () => {
+  const handleConfirmDelete = async (deleteOption) => {
     if (expenseToDelete) {
-      await onDelete(expenseToDelete);
+      let queryParams = '';
+      if (expenseToDelete.is_recurring) {
+        switch (deleteOption) {
+          case 'all':
+            queryParams = '?delete_all=true';
+            break;
+          case 'future':
+            queryParams = '?delete_future=true';
+            break;
+          case 'past':
+            queryParams = '?delete_past=true';
+            break;
+          default:
+            queryParams = '';
+        }
+      }
+      await onDelete(expenseToDelete, queryParams);
       setShowDeleteModal(false);
       setExpenseToDelete(null);
     }
@@ -350,6 +366,38 @@ const MobileExpenses = ({
             <div className={styles.modalBody}>
               <p>Tem certeza que deseja excluir esta despesa?</p>
               <p><strong>{expenseToDelete?.description}</strong></p>
+              
+              {expenseToDelete?.is_recurring && (
+                <div className={styles.modalOptions}>
+                  <p className={styles.modalOptionsTitle}>Como deseja excluir esta despesa recorrente?</p>
+                  <div className={styles.modalOptionButtons}>
+                    <button
+                      className={styles.optionButton}
+                      onClick={() => handleConfirmDelete()}
+                    >
+                      Apenas esta
+                    </button>
+                    <button
+                      className={styles.optionButton}
+                      onClick={() => handleConfirmDelete('all')}
+                    >
+                      Todas as recorrências
+                    </button>
+                    <button
+                      className={styles.optionButton}
+                      onClick={() => handleConfirmDelete('future')}
+                    >
+                      Esta e próximas
+                    </button>
+                    <button
+                      className={styles.optionButton}
+                      onClick={() => handleConfirmDelete('past')}
+                    >
+                      Esta e anteriores
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
             <div className={styles.modalActions}>
               <button
@@ -358,12 +406,14 @@ const MobileExpenses = ({
               >
                 <BsX /> Cancelar
               </button>
-              <button
-                className={`${styles.primaryButton} ${styles.deleteButton}`}
-                onClick={handleConfirmDelete}
-              >
-                <FiTrash2 /> Confirmar
-              </button>
+              {!expenseToDelete?.is_recurring && (
+                <button
+                  className={`${styles.primaryButton} ${styles.deleteButton}`}
+                  onClick={() => handleConfirmDelete()}
+                >
+                  <FiTrash2 /> Confirmar
+                </button>
+              )}
             </div>
           </div>
         </div>

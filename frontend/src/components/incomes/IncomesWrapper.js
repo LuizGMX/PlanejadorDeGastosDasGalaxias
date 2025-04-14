@@ -60,9 +60,9 @@ const IncomesWrapper = () => {
     navigate(`/incomes/edit/${income.id}`);
   };
 
-  const handleDeleteIncome = async (income) => {
+  const handleDeleteIncome = async (income, queryParams = '') => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${income.id}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${income.id}${queryParams}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${auth.token}`

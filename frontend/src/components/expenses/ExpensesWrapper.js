@@ -63,9 +63,9 @@ const ExpensesWrapper = () => {
     navigate(`/expenses/edit/${expense.id}`);
   };
 
-  const handleDeleteExpense = async (expense) => {
+  const handleDeleteExpense = async (expense, queryParams = '') => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses/${expense.id}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses/${expense.id}${queryParams}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${auth.token}`
