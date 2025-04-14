@@ -13,6 +13,7 @@ import { FiTrash2 } from 'react-icons/fi';
 // Replace 'America/Sao_Paulo' with your local timezone
 const timeZone = 'America/Sao_Paulo';
 
+
 const IncomesWrapper = () => {
   const navigate = useNavigate();
   const { auth } = useContext(AuthContext);
