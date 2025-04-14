@@ -76,25 +76,25 @@ const IncomesWrapper = () => {
           "Clique em 'Cancelar' para excluir APENAS a ocorrência deste mês."
         );
 
+        // Extrair o ID da receita recorrente original a partir do ID da ocorrência
+        let originalId = income.originalRecurrenceId;
+        
+        if (!originalId && income.id && typeof income.id === 'string' && income.id.startsWith('rec_')) {
+          // Se não tiver o campo originalRecurrenceId, tentar extrair do ID
+          const parts = income.id.split('_');
+          if (parts.length >= 2) {
+            originalId = parts[1];
+            console.log('ID original extraído do ID da ocorrência:', originalId);
+          }
+        }
+        
+        if (!originalId) {
+          toast.error('Não foi possível identificar a receita recorrente original');
+          return;
+        }
+
         if (confirmAction) {
-          // Extrair o ID da receita recorrente original a partir do ID da ocorrência
-          // Formato esperado: "rec_ORIGINAL_ID_TIMESTAMP"
-          let originalId = income.originalRecurrenceId;
-          
-          if (!originalId && income.id && typeof income.id === 'string' && income.id.startsWith('rec_')) {
-            // Se não tiver o campo originalRecurrenceId, tentar extrair do ID
-            const parts = income.id.split('_');
-            if (parts.length >= 2) {
-              originalId = parts[1];
-              console.log('ID original extraído do ID da ocorrência:', originalId);
-            }
-          }
-          
-          if (!originalId) {
-            toast.error('Não foi possível identificar a receita recorrente original');
-            return;
-          }
-          
+          // Usuário escolheu excluir TODAS as ocorrências
           console.log('Excluindo receita recorrente completa:', originalId);
           
           // Excluir a receita recorrente original (todas as ocorrências)
@@ -119,26 +119,8 @@ const IncomesWrapper = () => {
           const data = await response.json();
           toast.success(data.message || 'Receita recorrente excluída com sucesso (todas as ocorrências)');
         } else {
-          // Criar uma exceção para esta ocorrência específica
+          // Usuário escolheu excluir APENAS a ocorrência atual
           const occurrenceDate = new Date(income.date);
-          
-          // Extrair o ID da receita recorrente original a partir do ID da ocorrência
-          // Formato esperado: "rec_ORIGINAL_ID_TIMESTAMP"
-          let originalId = income.originalRecurrenceId;
-          
-          if (!originalId && income.id && typeof income.id === 'string' && income.id.startsWith('rec_')) {
-            // Se não tiver o campo originalRecurrenceId, tentar extrair do ID
-            const parts = income.id.split('_');
-            if (parts.length >= 2) {
-              originalId = parts[1];
-              console.log('ID original extraído do ID da ocorrência:', originalId);
-            }
-          }
-          
-          if (!originalId) {
-            toast.error('Não foi possível identificar a receita recorrente original');
-            return;
-          }
           
           console.log('Tentando excluir apenas a ocorrência:', {
             incomeId: originalId,
@@ -161,29 +143,11 @@ const IncomesWrapper = () => {
           const recurrentIncome = await fetchResponse.json();
           console.log('Detalhes da receita recorrente:', recurrentIncome);
           
-          // 2. Perguntar ao usuário se quer continuar com este método
-          const confirmContinue = window.confirm(
-            `Devido a limitações técnicas, a exclusão de apenas uma ocorrência será feita criando uma cópia da receita recorrente "${income.description}" com novas datas de início e fim.\n\n` +
-            `Deseja prosseguir?`
-          );
-          
-          if (!confirmContinue) {
-            return;
-          }
-          
-          // 3. Calcular a próxima data após a ocorrência que queremos excluir
-          // Vamos adicionar um dia à data da ocorrência para ter certeza que excluímos apenas esta
-          const nextDay = new Date(occurrenceDate);
-          nextDay.setDate(nextDay.getDate() + 1);
-          
-          // 4. Criar uma nova receita recorrente começando um dia depois da data excluída
-          const originalEndDate = recurrentIncome.end_date;
-          
-          // 5. Atualizar a data de fim da receita original para o dia anterior à ocorrência
+          // 2. Calcular a data anterior à ocorrência que queremos excluir
           const prevDay = new Date(occurrenceDate);
           prevDay.setDate(prevDay.getDate() - 1);
           
-          // 6. Atualizar a receita original com a nova data de fim
+          // 3. Atualizar a receita original com a nova data de fim
           const updateResponse = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${originalId}`, {
             method: 'PUT',
             headers: {
@@ -201,18 +165,6 @@ const IncomesWrapper = () => {
           }
           
           toast.success(`Receita excluída apenas para ${mes} de ${ano}`);
-
-          // 7. Recarregar os dados
-          await fetchData({
-            startDate: startDate ? startDate.toISOString() : undefined,
-            endDate: endDate ? endDate.toISOString() : undefined,
-            category_id: filters.category_id !== 'all' ? filters.category_id : undefined,
-            bank_id: filters.bank_id !== 'all' ? filters.bank_id : undefined,
-            is_recurring: filters.is_recurring !== '' ? filters.is_recurring : undefined,
-            description: filters.description || undefined
-          });
-          
-          return;
         }
       } else {
         // Receita normal ou receita recorrente original (não uma ocorrência)
