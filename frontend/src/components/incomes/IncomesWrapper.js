@@ -64,10 +64,16 @@ const IncomesWrapper = () => {
     try {
       // Verificar se é uma ocorrência de uma receita recorrente
       if (income.isRecurringOccurrence) {
+        // Formatar a data para exibição
+        const dataOcorrencia = new Date(income.date);
+        const mes = dataOcorrencia.toLocaleString('pt-BR', { month: 'long' });
+        const ano = dataOcorrencia.getFullYear();
+        
         // Perguntar ao usuário se quer excluir só esta ocorrência ou todas
         const confirmAction = window.confirm(
-          "Esta é uma ocorrência de uma receita recorrente. Deseja excluir todas as ocorrências futuras também? " +
-          "Clique 'OK' para excluir todas as ocorrências futuras, ou 'Cancelar' para criar uma exceção apenas para esta data."
+          `Deseja excluir a receita "${income.description}" somente para o mês de ${mes} de ${ano} ou todas as ocorrências futuras?\n\n` +
+          "Clique em 'OK' para excluir TODAS as ocorrências (atual e futuras).\n" +
+          "Clique em 'Cancelar' para excluir APENAS a ocorrência deste mês."
         );
 
         if (confirmAction) {
@@ -85,7 +91,7 @@ const IncomesWrapper = () => {
           }
 
           const data = await response.json();
-          toast.success(data.message || 'Receita recorrente excluída com sucesso');
+          toast.success(data.message || 'Receita recorrente excluída com sucesso (todas as ocorrências)');
         } else {
           // Criar uma exceção para esta ocorrência específica
           const occurrenceDate = new Date(income.date);
@@ -107,10 +113,30 @@ const IncomesWrapper = () => {
           }
 
           const data = await response.json();
-          toast.success(data.message || 'Exceção criada com sucesso');
+          toast.success(data.message || `Receita excluída apenas para ${mes} de ${ano}`);
         }
       } else {
         // Receita normal ou receita recorrente original (não uma ocorrência)
+        // Para receitas recorrentes, perguntar se quer excluir todas
+        if (income.is_recurring) {
+          const confirmAction = window.confirm(
+            `Deseja realmente excluir a receita recorrente "${income.description}" e todas as suas ocorrências futuras?`
+          );
+          
+          if (!confirmAction) {
+            return; // Usuário cancelou a exclusão
+          }
+        } else {
+          // Para receitas não recorrentes, confirmação padrão
+          const confirmAction = window.confirm(
+            `Deseja realmente excluir a receita "${income.description}"?`
+          );
+          
+          if (!confirmAction) {
+            return; // Usuário cancelou a exclusão
+          }
+        }
+        
         // Verificar se a receita é recorrente para usar o endpoint adequado
         const endpoint = income.is_recurring 
           ? `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${income.id}/recurring${queryParams}`
