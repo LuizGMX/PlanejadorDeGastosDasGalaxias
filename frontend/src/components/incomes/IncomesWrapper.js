@@ -148,41 +148,20 @@ const IncomesWrapper = () => {
             occurrenceDate: occurrenceDate.toISOString(),
           });
 
-          // Vamos abordar de uma forma alternativa:
-          // 1. Primeiro buscar todas as informações completas da receita recorrente
-          const fetchResponse = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${originalId}`, {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${auth.token}`
-            }
-          });
-
-          if (!fetchResponse.ok) {
-            throw new Error(`Falha ao buscar detalhes da receita recorrente: ${fetchResponse.status}`);
-          }
-
-          const recurrentIncome = await fetchResponse.json();
-          console.log('Detalhes da receita recorrente:', recurrentIncome);
-
-          // 2. Calcular a data anterior à ocorrência que queremos excluir
-          const prevDay = new Date(occurrenceDate);
-          prevDay.setDate(prevDay.getDate() - 1);
-
-          // 3. Atualizar a receita original com a nova data de fim
-          const updateResponse = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${originalId}`, {
-            method: 'PUT',
+          const inserirRecurrenceException = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${originalId}/exclude-occurrence`, {
+            method: 'POST',
             headers: {
               'Authorization': `Bearer ${auth.token}`,
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              ...recurrentIncome,
-              end_date: prevDay.toISOString()
+              occurrence_date: occurrenceDate.toISOString(),
+              reason: 'Exclusão manual pelo usuário'
             })
           });
 
-          if (!updateResponse.ok) {
-            throw new Error(`Falha ao atualizar data de fim da receita recorrente: ${updateResponse.status}`);
+          if (!inserirRecurrenceException.ok) {
+            throw new Error(`Falha ao excluir ocorrência da receita recorrente: ${inserirRecurrenceException.status}`);
           }
 
           toast.success(`Receita excluída apenas para ${mes} de ${ano}`);
