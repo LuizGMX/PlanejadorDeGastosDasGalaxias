@@ -4,8 +4,7 @@ import { AuthContext } from '../../contexts/AuthContext';
 import Income from './Income';
 import MobileIncomes from './MobileIncomes';
 import dataTableStyles from '../../styles/dataTable.module.css';
-import { startOfMonth, endOfMonth } from 'date-fns';
-import { toZonedTime  } from 'date-fns-tz';
+import moment from 'moment-timezone';
 import { toast } from 'react-hot-toast';
 import { BsExclamationTriangle, BsX } from 'react-icons/bs';
 import { FiTrash2 } from 'react-icons/fi';
@@ -365,14 +364,14 @@ const IncomesWrapper = () => {
   // Efeito para carregar dados
   useEffect(() => {
     console.log('IncomesWrapper - Carregando dados iniciais');
-    const today = new Date();
-    const zonedToday = toZonedTime(today, timeZone);
-    const thisMonth = zonedToday.getMonth(); // 3 (April, 0-based)
-    const thisYear = zonedToday.getFullYear(); // 2025
+    const today = new Date();    
+    const zonedToday = moment.tz(today, timeZone);
     
-    const startDate = toZonedTime(startOfMonth(zonedToday), timeZone);
-    const endDate = toZonedTime(endOfMonth(zonedToday), timeZone);
-
+    const thisMonth = zonedToday.month(); // 3 (April, 0-based)
+    const thisYear = zonedToday.year(); // 2025
+    
+    const startDate = zonedToday.clone().startOf('month'); // Start of April 2025
+    const endDate = zonedToday.clone().endOf('month'); // End of April 2025
 
     // Definir filtros iniciais
     setFilters({
