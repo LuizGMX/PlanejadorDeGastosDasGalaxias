@@ -361,6 +361,9 @@ const IncomesWrapper = () => {
   useEffect(() => {
     console.log('IncomesWrapper - Carregando dados iniciais');
     const today = new Date();
+    const thisMonth = today.getMonth();
+    const thisYear = today.getFullYear();
+    
     const startDate = startOfMonth(today);
     const endDate = endOfMonth(today);
 
