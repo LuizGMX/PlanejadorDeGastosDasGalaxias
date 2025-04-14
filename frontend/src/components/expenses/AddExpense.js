@@ -374,13 +374,14 @@ const AddExpense = ({ installment = false }) => {
         amount: amount,
         category_id: parseInt(formData.categoryId),
         bank_id: parseInt(formData.bankId),
-        expense_date: formData.expense_date,
-        payment_method: formData.payment_method,
+        expense_date: formData.expense_date || formData.date || new Date().toISOString().split('T')[0],
+        payment_method: formData.payment_method || 'credit_card',
         has_installments: Boolean(formData.has_installments),
         is_recurring: Boolean(formData.is_recurring),
         is_in_cash: !formData.is_recurring && !formData.has_installments,
         current_installment: formData.has_installments ? parseInt(formData.current_installment) : null,
         total_installments: formData.has_installments ? parseInt(formData.total_installments) : null,
+        installments: formData.has_installments ? parseInt(formData.total_installments) : null,
         user_id: auth.user?.id // Garante que o ID do usuário está incluído
       };
 
@@ -388,8 +389,9 @@ const AddExpense = ({ installment = false }) => {
       if (formData.is_recurring) {
         dataToSend.recurrence_rule = {
           frequency: formData.frequency || 'monthly',
-          start_date: formData.expense_date
+          start_date: formData.expense_date || formData.date || new Date().toISOString().split('T')[0]
         };
+        dataToSend.recurrence_type = formData.frequency || 'monthly';
       }
 
       console.log('Enviando dados:', JSON.stringify(dataToSend, null, 2));

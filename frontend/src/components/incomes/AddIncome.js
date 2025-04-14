@@ -104,15 +104,22 @@ const AddIncome = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError('');
+    setSuccess('');
 
     try {
+      // Verificar se os campos obrigatórios estão preenchidos
+      if (!formData.description || !formData.amount || !formData.category_id || !formData.bank_id || !formData.date) {
+        throw new Error('Preencha todos os campos obrigatórios: descrição, valor, categoria, banco e data');
+      }
+      
       const requestData = {
         description: formData.description,
         amount: formData.amount,
         category_id: formData.category_id || formData.category?.id,
         income_date: formData.date,
         bank_id: formData.bank_id || formData.bank?.id,
-        payment_method: formData.payment_method,
+        payment_method: 'transfer', // Método de pagamento padrão para receitas
         is_recurring: formData.is_recurring,
       };
 
@@ -122,7 +129,10 @@ const AddIncome = () => {
           frequency: formData.recurrence_type || 'monthly',
           start_date: formData.date
         };
+        requestData.recurrence_type = formData.recurrence_type || 'monthly';
       }
+
+      console.log('Enviando dados:', JSON.stringify(requestData, null, 2));
 
       const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes`, {
         method: 'POST',
@@ -137,7 +147,7 @@ const AddIncome = () => {
         setBanks((prevBanks) => {
           const updatedBanks = [...prevBanks];
           const bankIndex = updatedBanks.findIndex(
-            (bank) => bank.id === formData.bank.id
+            (bank) => bank.id === parseInt(formData.bank_id)
           );
           
           if (bankIndex !== -1) {

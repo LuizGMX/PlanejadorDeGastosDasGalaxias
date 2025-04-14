@@ -231,16 +231,31 @@ const MobileAddIncome = () => {
     setLoading(true);
 
     try {
+      // Verifica se todos os campos obrigatórios estão preenchidos
+      if (!formData.description || !formData.amount || !formData.category_id || !formData.bank_id) {
+        throw new Error('Preencha todos os campos obrigatórios: descrição, valor, categoria e banco');
+      }
+
       const requestData = {
         description: formData.description,
         amount: formData.amount,
-        category_id: formData.category ? formData.category.id : null,
-        income_date: formData.income_date || formData.date,
-        bank_id: formData.bank ? formData.bank.id : null,
-        payment_method: formData.payment_method,
-        is_recurring: formData.is_recurring,
-        recurrence_type: formData.recurrence_type
+        category_id: parseInt(formData.category_id),
+        income_date: formData.date,
+        bank_id: parseInt(formData.bank_id),
+        payment_method: 'transfer', // Método de pagamento padrão para receitas
+        is_recurring: formData.is_recurring
       };
+
+      // Adicionando informações específicas de recorrência quando é receita recorrente
+      if (formData.is_recurring) {
+        requestData.recurrence_rule = {
+          frequency: formData.recurrence_type || 'monthly',
+          start_date: formData.date
+        };
+        requestData.recurrence_type = formData.recurrence_type || 'monthly';
+      }
+
+      console.log('Enviando dados:', JSON.stringify(requestData, null, 2));
 
       const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes`, {
         method: 'POST',
@@ -255,7 +270,7 @@ const MobileAddIncome = () => {
         setBanks((prevBanks) => {
           const updatedBanks = [...prevBanks];
           const bankIndex = updatedBanks.findIndex(
-            (bank) => bank.id === formData.bank.id
+            (bank) => bank.id === formData.bank_id
           );
           
           if (bankIndex !== -1) {
