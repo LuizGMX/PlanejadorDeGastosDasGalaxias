@@ -1,6 +1,6 @@
-import { sequelize } from '../models/index.js';
-
 // Sincroniza o banco de dados
+import sequelize from '../config/db.js';
+
 async function syncDatabase() {
   try {
     console.log('Iniciando sincronização do banco de dados...');

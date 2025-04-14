@@ -345,6 +345,21 @@ const Expenses = () => {
         throw new Error('Erro ao processar resposta do servidor');
       }
 
+      // Função para verificar se uma despesa é uma ocorrência de uma despesa recorrente
+      const isRecurrenceOccurrence = (expense) => {
+        return expense.isRecurringOccurrence === true;
+      };
+      
+      // Separar despesas normais das ocorrências de despesas recorrentes
+      const normalExpenses = Array.isArray(data) ? data.filter(expense => !isRecurrenceOccurrence(expense)) : [];
+      const recurrenceOccurrences = Array.isArray(data) ? data.filter(isRecurrenceOccurrence) : [];
+      
+      console.log('Despesas carregadas:', {
+        total: data.length,
+        normalExpenses: normalExpenses.length,
+        recurrenceOccurrences: recurrenceOccurrences.length
+      });
+
       setExpenses(Array.isArray(data) ? data : []);
       setSelectedExpenses([]);
 

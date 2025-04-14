@@ -290,9 +290,20 @@ const IncomesWrapper = () => {
         extractedIncomes = [];
       }
       
-      console.log('Receitas extraídas:', {
-        length: extractedIncomes.length,
-        data: extractedIncomes
+      // Processar as receitas para lidar com o novo formato de recorrência
+      // Identificar receitas recorrentes e suas ocorrências
+      const isRecurrenceOccurrence = (income) => {
+        return income.isRecurringOccurrence === true;
+      };
+      
+      // Separar receitas normais das ocorrências de receitas recorrentes
+      const normalIncomes = extractedIncomes.filter(income => !isRecurrenceOccurrence(income));
+      const recurrenceOccurrences = extractedIncomes.filter(isRecurrenceOccurrence);
+      
+      console.log('Receitas extraídas e processadas:', {
+        total: extractedIncomes.length,
+        normalIncomes: normalIncomes.length,
+        recurrenceOccurrences: recurrenceOccurrences.length
       });
       
       setOriginalIncomes(extractedIncomes);

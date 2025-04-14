@@ -8,6 +8,7 @@ import { literal } from 'sequelize';
 import { Router } from 'express';
 import sequelize from '../config/db.js';
 import checkSubscription from '../middleware/subscriptionCheck.js';
+import { calculateRecurringOccurrences, getNextRecurringDate } from '../utils/recurrenceUtils.js';
 
 const router = Router();
 
@@ -17,71 +18,7 @@ router.use(checkSubscription);
 
 // Função para calcular ocorrências de despesas recorrentes
 const calculateRecurringExpenseOccurrences = async (expense, startDate, endDate) => {
-  const occurrences = [];
-  const recurrenceType = expense.recurrence_type;
-  const startDateObj = new Date(expense.start_date);
-  const endDateObj = expense.end_date ? new Date(expense.end_date) : new Date('2099-12-31');
-  
-  // Se a data de início da recorrência é posterior ao período ou a data de fim é anterior, retorna vazio
-  if (startDateObj > endDate || endDateObj < startDate) {
-    return [];
-  }
-
-  let currentDate = new Date(Math.max(startDateObj, startDate));
-  
-  // Mapeia exceções para verificar datas a serem puladas
-  const exceptionDates = new Set(expense.exceptions.map(ex => 
-    new Date(ex.exception_date).toISOString().split('T')[0]
-  ));
-
-  while (currentDate <= endDate && currentDate <= endDateObj) {
-    const dateKey = currentDate.toISOString().split('T')[0];
-    
-    // Verifica se esta data não é uma exceção
-    if (!exceptionDates.has(dateKey)) {
-      occurrences.push({
-        ...expense.toJSON(),
-        id: `rec_${expense.id}_${currentDate.getTime()}`,
-        expense_date: new Date(currentDate),
-        isRecurringOccurrence: true
-      });
-    }
-
-    // Avança para a próxima data baseada no tipo de recorrência
-    currentDate = getNextRecurringDate(currentDate, recurrenceType);
-  }
-
-  return occurrences;
-};
-
-// Função auxiliar para calcular próxima data de recorrência
-const getNextRecurringDate = (date, recurrenceType) => {
-  const next = new Date(date);
-  
-  switch (recurrenceType) {
-    case 'daily':
-      next.setDate(next.getDate() + 1);
-      break;
-    case 'weekly':
-      next.setDate(next.getDate() + 7);
-      break;
-    case 'monthly':
-      next.setMonth(next.getMonth() + 1);
-      break;
-    case 'quarterly':
-      next.setMonth(next.getMonth() + 3);
-      break;
-    case 'semiannual':
-      next.setMonth(next.getMonth() + 6);
-      break;
-    case 'annual':
-      next.setFullYear(next.getFullYear() + 1);
-      break;
-    default:
-      next.setMonth(next.getMonth() + 1); // Por padrão assume mensal
-  }
-  
-  return next;
+  return calculateRecurringOccurrences(expense, startDate, endDate, 'expense_date');
 };
 
 router.get('/', async (req, res) => {

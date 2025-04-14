@@ -102,9 +102,20 @@ function Income({
   // Garantir que incomes seja um array
   const safeIncomes = Array.isArray(incomes) ? incomes : [];
   
+  // Função para verificar se uma receita é uma ocorrência de uma receita recorrente
+  const isRecurrenceOccurrence = (income) => {
+    return income.isRecurringOccurrence === true;
+  };
+  
+  // Separar receitas normais das ocorrências de receitas recorrentes
+  const normalIncomes = safeIncomes.filter(income => !isRecurrenceOccurrence(income));
+  const recurrenceOccurrences = safeIncomes.filter(isRecurrenceOccurrence);
+  
   // Log após o tratamento dos dados
   console.log('Income safeIncomes:', {
-    length: safeIncomes.length,
+    total: safeIncomes.length,
+    normalIncomes: normalIncomes.length,
+    recurrenceOccurrences: recurrenceOccurrences.length,
     data: safeIncomes
   });
 
