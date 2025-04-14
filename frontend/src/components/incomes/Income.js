@@ -129,16 +129,9 @@ function Income({
   };
 
   const handleDeleteIncome = (income) => {
-    setIncomeToDelete(income);
-    setShowDeleteModal(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (incomeToDelete) {
-      onDelete(incomeToDelete);
-      setShowDeleteModal(false);
-      setIncomeToDelete(null);
-    }
+    // Chamar diretamente a função onDelete para usar a confirmação
+    // implementada no IncomesWrapper
+    onDelete(income);
   };
 
   const handleSearch = (term) => {
@@ -835,35 +828,6 @@ function Income({
           </div>
         )}
       </div>
-
-      {showDeleteModal && (
-        <div className={dataTableStyles.modalOverlay}>
-          <div className={dataTableStyles.modalContent}>
-            <div className={dataTableStyles.modalHeader}>
-              <BsExclamationTriangle className={dataTableStyles.warningIcon} />
-              <h3>Confirmar exclusão</h3>
-            </div>
-            <div className={dataTableStyles.modalBody}>
-              <p>Tem certeza que deseja excluir esta receita?</p>
-              <p><strong>{incomeToDelete?.description}</strong></p>
-            </div>
-            <div className={dataTableStyles.modalActions}>
-              <button
-                className={dataTableStyles.secondaryButton}
-                onClick={() => setShowDeleteModal(false)}
-              >
-                Cancelar
-              </button>
-              <button
-                className={`${dataTableStyles.primaryButton} ${dataTableStyles.deleteButton}`}
-                onClick={handleConfirmDelete}
-              >
-                Confirmar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

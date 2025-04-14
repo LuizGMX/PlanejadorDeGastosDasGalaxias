@@ -20,8 +20,6 @@ const MobileIncomes = ({
 }) => {
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [incomeToDelete, setIncomeToDelete] = useState(null);
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
 
@@ -36,32 +34,7 @@ const MobileIncomes = ({
   };
 
   const handleDelete = (income) => {
-    setIncomeToDelete(income);
-    setShowDeleteModal(true);
-  };
-
-  const handleConfirmDelete = async (deleteOption) => {
-    if (incomeToDelete) {
-      let queryParams = '';
-      if (incomeToDelete.is_recurring) {
-        switch (deleteOption) {
-          case 'all':
-            queryParams = '?delete_all=true';
-            break;
-          case 'future':
-            queryParams = '?delete_future=true';
-            break;
-          case 'past':
-            queryParams = '?delete_past=true';
-            break;
-          default:
-            queryParams = '';
-        }
-      }
-      await onDelete(incomeToDelete, queryParams);
-      setShowDeleteModal(false);
-      setIncomeToDelete(null);
-    }
+    onDelete(income);
   };
 
   // Componente de filtros que será reutilizado
@@ -314,69 +287,6 @@ const MobileIncomes = ({
           )})}
         </div>
       </div>
-
-      {showDeleteModal && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContent}>
-            <div className={styles.modalHeader}>
-              <BsExclamationTriangle className={styles.warningIcon} />
-              <h3>Confirmar exclusão</h3>
-            </div>
-            <div className={styles.modalBody}>
-              <p>Tem certeza que deseja excluir esta receita?</p>
-              <p><strong>{incomeToDelete?.description}</strong></p>
-              
-              {incomeToDelete?.is_recurring && (
-                <div className={styles.modalOptions}>
-                  <p className={styles.modalOptionsTitle}>Como deseja excluir esta receita recorrente?</p>
-                  <div className={styles.modalOptionButtons}>
-                    <button
-                      className={styles.optionButton}
-                      onClick={() => handleConfirmDelete()}
-                    >
-                      Apenas esta
-                    </button>
-                    <button
-                      className={styles.optionButton}
-                      onClick={() => handleConfirmDelete('all')}
-                    >
-                      Todas as recorrências
-                    </button>
-                    <button
-                      className={styles.optionButton}
-                      onClick={() => handleConfirmDelete('future')}
-                    >
-                      Esta e próximas
-                    </button>
-                    <button
-                      className={styles.optionButton}
-                      onClick={() => handleConfirmDelete('past')}
-                    >
-                      Esta e anteriores
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className={styles.modalActions}>
-              <button
-                className={styles.secondaryButton}
-                onClick={() => setShowDeleteModal(false)}
-              >
-                <BsX /> Cancelar
-              </button>
-              {!incomeToDelete?.is_recurring && (
-                <button
-                  className={`${styles.primaryButton} ${styles.deleteButton}`}
-                  onClick={() => handleConfirmDelete()}
-                >
-                  <FiTrash2 /> Confirmar
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
