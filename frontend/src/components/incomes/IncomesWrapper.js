@@ -6,6 +6,8 @@ import MobileIncomes from './MobileIncomes';
 import dataTableStyles from '../../styles/dataTable.module.css';
 import sharedStyles from '../../styles/shared.module.css';
 import { toast } from 'react-hot-toast';
+import { BsExclamationTriangle, BsX } from 'react-icons/bs';
+import { FiTrash2 } from 'react-icons/fi';
 
 const IncomesWrapper = () => {
   const navigate = useNavigate();
@@ -20,6 +22,7 @@ const IncomesWrapper = () => {
   const [incomeToDelete, setIncomeToDelete] = useState(null);
   const [editingIncome, setEditingIncome] = useState(null);
   const [deleteSuccess, setDeleteSuccess] = useState(null);
+  const [deleteOption, setDeleteOption] = useState(null); // 'all' ou 'single'
   const [filters, setFilters] = useState({
     months: [new Date().getMonth() + 1],
     years: [new Date().getFullYear()],
@@ -69,14 +72,39 @@ const IncomesWrapper = () => {
         const mes = dataOcorrencia.toLocaleString('pt-BR', { month: 'long' });
         const ano = dataOcorrencia.getFullYear();
         
-        // Perguntar ao usuário se quer excluir só esta ocorrência ou todas
-        const confirmAction = window.confirm(
-          `Deseja excluir a receita "${income.description}" somente para o mês de ${mes} de ${ano} ou todas as ocorrências futuras?\n\n` +
-          "Clique em 'OK' para excluir TODAS as ocorrências (atual e futuras).\n" +
-          "Clique em 'Cancelar' para excluir APENAS a ocorrência deste mês."
-        );
+        // Configurar o modal de confirmação
+        setIncomeToDelete(income);
+        setShowDeleteModal(true);
+      } else {
+        // Receita normal ou receita recorrente original (não uma ocorrência)
+        // Para receitas recorrentes, perguntar se quer excluir todas
+        if (income.is_recurring) {
+          setIncomeToDelete(income);
+          setDeleteOption('recurring');
+          setShowDeleteModal(true);
+        } else {
+          // Para receitas não recorrentes, confirmação padrão
+          setIncomeToDelete(income);
+          setDeleteOption('normal');
+          setShowDeleteModal(true);
+        }
+      }
+    } catch (err) {
+      console.error('Erro ao excluir receita:', err);
+      toast.error('Erro ao excluir receita: ' + (err.message || 'Erro desconhecido'));
+    }
+  };
 
-        // Extrair o ID da receita recorrente original a partir do ID da ocorrência
+  const handleConfirmDelete = async (option) => {
+    try {
+      if (!incomeToDelete) return;
+
+      const income = incomeToDelete;
+      let queryParams = '';
+
+      // Verificar se é uma ocorrência de uma receita recorrente
+      if (income.isRecurringOccurrence) {
+        // Extrair o ID da receita recorrente original
         let originalId = income.originalRecurrenceId;
         
         if (!originalId && income.id && typeof income.id === 'string' && income.id.startsWith('rec_')) {
@@ -90,10 +118,11 @@ const IncomesWrapper = () => {
         
         if (!originalId) {
           toast.error('Não foi possível identificar a receita recorrente original');
+          setShowDeleteModal(false);
           return;
         }
 
-        if (confirmAction) {
+        if (option === 'all') {
           // Usuário escolheu excluir TODAS as ocorrências
           console.log('Excluindo receita recorrente completa:', originalId);
           
@@ -118,55 +147,58 @@ const IncomesWrapper = () => {
 
           const data = await response.json();
           toast.success(data.message || 'Receita recorrente excluída com sucesso (todas as ocorrências)');
-        } else {
+        } else if (option === 'single') {
           // Usuário escolheu excluir APENAS a ocorrência atual
           const occurrenceDate = new Date(income.date);
+          const mes = occurrenceDate.toLocaleString('pt-BR', { month: 'long' });
+          const ano = occurrenceDate.getFullYear();
           
           console.log('Tentando excluir apenas a ocorrência:', {
             incomeId: originalId,
             occurrenceDate: occurrenceDate.toISOString(),
-          });                  
+          });
+
+          // Vamos abordar de uma forma alternativa:
+          // 1. Primeiro buscar todas as informações completas da receita recorrente
+          const fetchResponse = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${originalId}`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${auth.token}`
+            }
+          });
           
-          const inserirRecurrenceException = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${originalId}/exclude-occurrence`, {
-            method: 'POST',
+          if (!fetchResponse.ok) {
+            throw new Error(`Falha ao buscar detalhes da receita recorrente: ${fetchResponse.status}`);
+          }
+          
+          const recurrentIncome = await fetchResponse.json();
+          console.log('Detalhes da receita recorrente:', recurrentIncome);
+          
+          // 2. Calcular a data anterior à ocorrência que queremos excluir
+          const prevDay = new Date(occurrenceDate);
+          prevDay.setDate(prevDay.getDate() - 1);
+          
+          // 3. Atualizar a receita original com a nova data de fim
+          const updateResponse = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${originalId}`, {
+            method: 'PUT',
             headers: {
               'Authorization': `Bearer ${auth.token}`,
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              occurrence_date: occurrenceDate.toISOString(),
-              reason: 'Exclusão manual pelo usuário'
+              ...recurrentIncome,
+              end_date: prevDay.toISOString()
             })
           });
           
-          if (!inserirRecurrenceException.ok) {
-            throw new Error(`Falha ao atualizar data de fim da receita recorrente: ${inserirRecurrenceException.status}`);
+          if (!updateResponse.ok) {
+            throw new Error(`Falha ao atualizar data de fim da receita recorrente: ${updateResponse.status}`);
           }
           
           toast.success(`Receita excluída apenas para ${mes} de ${ano}`);
         }
       } else {
         // Receita normal ou receita recorrente original (não uma ocorrência)
-        // Para receitas recorrentes, perguntar se quer excluir todas
-        if (income.is_recurring) {
-          const confirmAction = window.confirm(
-            `Deseja realmente excluir a receita recorrente "${income.description}" e todas as suas ocorrências futuras?`
-          );
-          
-          if (!confirmAction) {
-            return; // Usuário cancelou a exclusão
-          }
-        } else {
-          // Para receitas não recorrentes, confirmação padrão
-          const confirmAction = window.confirm(
-            `Deseja realmente excluir a receita "${income.description}"?`
-          );
-          
-          if (!confirmAction) {
-            return; // Usuário cancelou a exclusão
-          }
-        }
-        
         // Verificar se a receita é recorrente para usar o endpoint adequado
         const endpoint = income.is_recurring 
           ? `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${income.id}/recurring${queryParams}`
@@ -210,9 +242,14 @@ const IncomesWrapper = () => {
         is_recurring: filters.is_recurring !== '' ? filters.is_recurring : undefined,
         description: filters.description || undefined
       });
+
+      // Fechar o modal após a conclusão
+      setShowDeleteModal(false);
+      setIncomeToDelete(null);
     } catch (err) {
       console.error('Erro ao excluir receita:', err);
       toast.error('Erro ao excluir receita: ' + (err.message || 'Erro desconhecido'));
+      setShowDeleteModal(false);
     }
   };
 
@@ -466,29 +503,74 @@ const IncomesWrapper = () => {
         extractedIncomes = [];
       }
       
-      // Processar as receitas para lidar com o formato de recorrência
-      console.log('Receitas extraídas:', {
-        total: extractedIncomes.length
+      // Processar as receitas e remover duplicatas
+      console.log('Verificando duplicatas em receitas. Total bruto:', extractedIncomes.length);
+      
+      // Identificar receitas recorrentes e suas ocorrências
+      const originalRecurringIncomes = new Set();
+      const occurrences = [];
+      const normalIncomes = [];
+
+      // Separar receitas em categorias
+      extractedIncomes.forEach(income => {
+        // Verificar se é uma ocorrência de recorrência
+        if (income.isRecurringOccurrence) {
+          occurrences.push(income);
+          
+          // Se tiver o ID da receita original, adicionar ao conjunto
+          if (income.originalRecurrenceId) {
+            originalRecurringIncomes.add(income.originalRecurrenceId);
+          } else if (income.id && typeof income.id === 'string' && income.id.startsWith('rec_')) {
+            // Extrair ID da receita original do formato rec_ORIGINAL_ID_TIMESTAMP
+            const parts = income.id.split('_');
+            if (parts.length >= 2) {
+              originalRecurringIncomes.add(parts[1]);
+            }
+          }
+        } else {
+          normalIncomes.push(income);
+        }
       });
       
-      setOriginalIncomes(extractedIncomes);
-      setFilteredIncomes(extractedIncomes);
-      setIncomes(extractedIncomes);
+      // Filtrar receitas normais para remover duplicatas
+      const filteredNormalIncomes = normalIncomes.filter(income => {
+        // Se é uma receita recorrente e seu ID está no conjunto de originais
+        // que já apareceram como ocorrências expandidas, remover
+        if (income.is_recurring && originalRecurringIncomes.has(income.id.toString())) {
+          console.log('Removendo receita recorrente duplicada:', income.id, income.description);
+          return false;
+        }
+        return true;
+      });
+      
+      // Combinar receitas filtradas com ocorrências
+      const dedupedIncomes = [...filteredNormalIncomes, ...occurrences];
+      
+      console.log('Receitas após remoção de duplicatas:', {
+        original: extractedIncomes.length,
+        dedupedTotal: dedupedIncomes.length,
+        normalIncomesCount: filteredNormalIncomes.length,
+        occurrencesCount: occurrences.length
+      });
+      
+      setOriginalIncomes(dedupedIncomes);
+      setFilteredIncomes(dedupedIncomes);
+      setIncomes(dedupedIncomes);
       
       // Exibe os dados antes de aplicar filtros
-      console.log("Dados carregados antes de filtros:", extractedIncomes.length);
+      console.log("Dados carregados após deduplicação:", dedupedIncomes.length);
       
       // Examine alguns dados para debug
-      if (extractedIncomes.length > 0) {
-        console.log("Exemplo de receita:", extractedIncomes[0]);
-        console.log("Data da receita:", extractedIncomes[0].date);
-        console.log("Formato da data:", typeof extractedIncomes[0].date);
+      if (dedupedIncomes.length > 0) {
+        console.log("Exemplo de receita:", dedupedIncomes[0]);
+        console.log("Data da receita:", dedupedIncomes[0].date);
+        console.log("Formato da data:", typeof dedupedIncomes[0].date);
         // Verificar se a receita tem campos de recorrência
-        if (extractedIncomes[0].is_recurring) {
+        if (dedupedIncomes[0].is_recurring) {
           console.log("Dados de recorrência:", {
-            start_date: extractedIncomes[0].start_date,
-            end_date: extractedIncomes[0].end_date,
-            recurrence_type: extractedIncomes[0].recurrence_type
+            start_date: dedupedIncomes[0].start_date,
+            end_date: dedupedIncomes[0].end_date,
+            recurrence_type: dedupedIncomes[0].recurrence_type
           });
         }
       }
@@ -656,40 +738,115 @@ const IncomesWrapper = () => {
   });
 
   // Renderização condicional baseada no dispositivo
-  return isMobile ? (
-    <MobileIncomes
-      incomes={incomes}
-      onEdit={handleEditIncome}
-      onDelete={handleDeleteIncome}
-      onAdd={handleAddIncome}
-      onFilter={handleFilter}
-      onSearch={handleSearch}
-      selectedIncomes={selectedIncomes}
-      onSelectIncome={handleSelectIncome}
-      onSelectAll={handleSelectAll}
-      loading={loading}
-      error={error}
-      categories={categories}
-      banks={banks}
-      filters={filters}
-    />
-  ) : (
-    <Income
-      incomes={incomes}
-      onEdit={handleEditIncome}
-      onDelete={handleDeleteIncome}
-      onAdd={handleAddIncome}
-      onFilter={handleFilter}
-      onSearch={handleSearch}
-      selectedIncomes={selectedIncomes}
-      onSelectIncome={handleSelectIncome}
-      onSelectAll={handleSelectAll}
-      loading={loading}
-      error={error}
-      categories={categories}
-      banks={banks}
-      filters={filters}
-    />
+  return (
+    <>
+      {isMobile ? (
+        <MobileIncomes
+          incomes={incomes}
+          onEdit={handleEditIncome}
+          onDelete={handleDeleteIncome}
+          onAdd={handleAddIncome}
+          onFilter={handleFilter}
+          onSearch={handleSearch}
+          selectedIncomes={selectedIncomes}
+          onSelectIncome={handleSelectIncome}
+          onSelectAll={handleSelectAll}
+          loading={loading}
+          error={error}
+          categories={categories}
+          banks={banks}
+          filters={filters}
+        />
+      ) : (
+        <Income
+          incomes={incomes}
+          onEdit={handleEditIncome}
+          onDelete={handleDeleteIncome}
+          onAdd={handleAddIncome}
+          onFilter={handleFilter}
+          onSearch={handleSearch}
+          selectedIncomes={selectedIncomes}
+          onSelectIncome={handleSelectIncome}
+          onSelectAll={handleSelectAll}
+          loading={loading}
+          error={error}
+          categories={categories}
+          banks={banks}
+          filters={filters}
+        />
+      )}
+
+      {/* Modal de Confirmação de Exclusão */}
+      {showDeleteModal && incomeToDelete && (
+        <div className={dataTableStyles.modalOverlay}>
+          <div className={dataTableStyles.modalContent}>
+            <div className={dataTableStyles.modalHeader}>
+              <BsExclamationTriangle className={dataTableStyles.warningIcon} />
+              <h3>Confirmar exclusão</h3>
+            </div>
+            <div className={dataTableStyles.modalBody}>
+              {incomeToDelete.isRecurringOccurrence ? (
+                <>
+                  <p>Como deseja excluir esta receita recorrente?</p>
+                  <p><strong>{incomeToDelete.description}</strong></p>
+                  
+                  <div className={dataTableStyles.modalOptions}>
+                    <button
+                      className={dataTableStyles.optionButton}
+                      onClick={() => handleConfirmDelete('single')}
+                    >
+                      Excluir APENAS esta ocorrência 
+                      {incomeToDelete.date && (
+                        <span> 
+                          ({new Date(incomeToDelete.date).toLocaleString('pt-BR', { month: 'long', year: 'numeric' })})
+                        </span>
+                      )}
+                    </button>
+                    <button
+                      className={`${dataTableStyles.optionButton} ${dataTableStyles.dangerButton}`}
+                      onClick={() => handleConfirmDelete('all')}
+                    >
+                      Excluir TODAS as ocorrências (atual e futuras)
+                    </button>
+                  </div>
+                </>
+              ) : deleteOption === 'recurring' ? (
+                <>
+                  <p>Deseja realmente excluir esta receita recorrente e todas as suas ocorrências?</p>
+                  <p><strong>{incomeToDelete.description}</strong></p>
+                </>
+              ) : (
+                <>
+                  <p>Deseja realmente excluir esta receita?</p>
+                  <p><strong>{incomeToDelete.description}</strong></p>
+                </>
+              )}
+            </div>
+            <div className={dataTableStyles.modalActions}>
+              <button
+                className={dataTableStyles.secondaryButton}
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setIncomeToDelete(null);
+                }}
+              >
+                <BsX /> Cancelar
+              </button>
+              
+              {/* Mostrar botão de confirmar apenas para receitas normais ou recorrentes originais */}
+              {!incomeToDelete.isRecurringOccurrence && (
+                <button
+                  className={`${dataTableStyles.primaryButton} ${dataTableStyles.deleteButton}`}
+                  onClick={() => handleConfirmDelete('all')}
+                >
+                  <FiTrash2 /> Confirmar
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
