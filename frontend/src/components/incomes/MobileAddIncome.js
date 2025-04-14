@@ -164,16 +164,7 @@ const MobileAddIncome = () => {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
-    if (name === 'total_installments' || name === 'current_installment') {
-      // Remove qualquer caractere que não seja número
-      const numericValue = value.replace(/\D/g, '');
-      
-      // Atualiza o estado com o valor digitado (mesmo que vazio)
-      setFormData(prev => ({
-        ...prev,
-        [name]: numericValue ? parseInt(numericValue) : ''
-      }));
-    } else if (name === 'date' || name === 'start_date') {
+   if (name === 'date' || name === 'start_date') {
       // Formata a data para o formato correto
       const formattedDate = value ? value.split('T')[0] : '';
       setFormData(prev => ({
@@ -198,26 +189,14 @@ const MobileAddIncome = () => {
       case 'normal':
         setFormData(prev => ({
           ...prev,
-          is_recurring: false,
-          has_installments: false,
-          date: prev.date || new Date().toISOString().split('T')[0]
-        }));
-        break;
-      case 'installments':
-        setFormData(prev => ({
-          ...prev,
-          is_recurring: false,
-          has_installments: true,
-          total_installments: prev.total_installments || 2,
-          current_installment: 1,
+          is_recurring: false,        
           date: prev.date || new Date().toISOString().split('T')[0]
         }));
         break;
       case 'recurring':
         setFormData(prev => ({
           ...prev,
-          is_recurring: true,
-          has_installments: false,
+          is_recurring: true,          
           start_date: prev.start_date || new Date().toISOString().split('T')[0],
           date: prev.date || new Date().toISOString().split('T')[0]
         }));
@@ -258,7 +237,7 @@ const MobileAddIncome = () => {
       }
 
       // Validação da data para receita única
-      if (!formData.is_recurring && !formData.has_installments) {
+      if (!formData.is_recurring) {
         const incomeDate = new Date(formData.date);
         if (isNaN(incomeDate.getTime())) {
           throw new Error('A data da receita é obrigatória para receita única');
@@ -269,51 +248,7 @@ const MobileAddIncome = () => {
       let amount = formData.amount;
 
       // Validações específicas para receita parcelada
-      if (formData.has_installments) {
-        // Validação do número de parcelas
-        if (!formData.total_installments) {
-          throw new Error('O número total de parcelas é obrigatório');
-        }
-        if (formData.total_installments < 2) {
-          throw new Error('O número total de parcelas deve ser no mínimo 2');
-        }
-        if (formData.total_installments > 100) {
-          throw new Error('O número total de parcelas não pode ser maior que 100');
-        }
-
-        // Validação da parcela atual
-        if (!formData.current_installment) {
-          throw new Error('O número da parcela atual é obrigatório');
-        }
-        if (formData.current_installment < 1) {
-          throw new Error('O número da parcela atual deve ser no mínimo 1');
-        }
-        if (formData.current_installment > formData.total_installments) {
-          throw new Error('O número da parcela atual não pode ser maior que o total de parcelas');
-        }
-
-        // Validação da data para receita parcelada
-        const incomeDate = new Date(formData.date);
-        if (isNaN(incomeDate.getTime())) {
-          throw new Error('A data da parcela atual é obrigatória');
-        }
-        
-        // Verifica se o amount é uma string e converte para número se necessário
-        if (typeof amount === 'string' && amount) {
-          // Remove caracteres não numéricos exceto pontos e vírgulas
-          amount = amount.replace(/[^\d,.]/g, '');
-          // Substitui vírgula por ponto para conversão correta
-          amount = amount.replace(',', '.');
-          // Converte para número
-          amount = parseFloat(amount);
-        }
-        
-        // Se após a conversão o valor não for um número válido, usa 0
-        if (isNaN(amount)) {
-          amount = 0;
-        }
-      }
-
+   
       // Validação para receitas recorrentes
       if (formData.is_recurring) {
         const startDate = new Date(formData.start_date || formData.date);
@@ -328,11 +263,8 @@ const MobileAddIncome = () => {
         amount: amount,
         category_id: parseInt(formData.category_id),
         bank_id: parseInt(formData.bank_id),
-        date: formData.date,
-        has_installments: Boolean(formData.has_installments),
-        is_recurring: Boolean(formData.is_recurring),
-        current_installment: formData.has_installments ? parseInt(formData.current_installment) : null,
-        total_installments: formData.has_installments ? parseInt(formData.total_installments) : null,
+        date: formData.date,        
+        is_recurring: Boolean(formData.is_recurring),        
         recurrence_type: formData.is_recurring ? formData.recurrence_type : null,
         user_id: auth.user?.id // Garante que o ID do usuário está incluído
       };
@@ -406,19 +338,6 @@ const MobileAddIncome = () => {
     }
   };
 
-  const formatPluralText = (number, singular, plural) => {
-    return `${number} ${number === 1 ? singular : plural}`;
-  };
-
-  const getInstallmentMessage = (total, current) => {
-    if (current === total) {
-      return `Esta é a última parcela de ${total}`;
-    } else {
-      const restantes = total - current;
-      return `Serão registradas apenas ${formatPluralText(restantes, 'a parcela restante', 'as ' + restantes + ' parcelas restantes')} a partir desta`;
-    }
-  };
-
   return (
     <>
       <div className={addIncomeStyles.modalOverlay}>
@@ -455,31 +374,29 @@ const MobileAddIncome = () => {
               <div className={addIncomeStyles.toggleGroup}>
                 <button
                   type="button"
-                  className={`${addIncomeStyles.toggleButton} ${!formData.is_recurring && !formData.has_installments ? addIncomeStyles.active : ''}`}
+                  className={`${addIncomeStyles.toggleButton} ${!formData.is_recurring ? addIncomeStyles.active : ''}`}
                   onClick={() => {
                     setFormData(prev => ({
                       ...prev,
-                      is_recurring: false,
-                      has_installments: false
+                      is_recurring: false
                     }));
                   }}
                 >
-                  <BsCurrencyDollar style={{color: !formData.is_recurring && !formData.has_installments ? 'var(--secondary-color)' : 'white'}} /> 
-                  <span style={{color: !formData.is_recurring && !formData.has_installments ? 'var(--secondary-color)' : 'white'}}>Único</span>
+                  <BsCurrencyDollar style={{color: !formData.is_recurring ? 'var(--secondary-color)' : 'white'}} /> 
+                  <span style={{color: !formData.is_recurring ? 'var(--secondary-color)' : 'white'}}>Único</span>
                 </button>
                 <button
                   type="button"
-                  className={`${addIncomeStyles.toggleButton} ${formData.is_recurring && !formData.has_installments ? addIncomeStyles.active : ''}`}
+                  className={`${addIncomeStyles.toggleButton} ${formData.is_recurring ? addIncomeStyles.active : ''}`}
                   onClick={() => {
                     setFormData(prev => ({
                       ...prev,
                       is_recurring: true,
-                      has_installments: false
                     }));
                   }}
                 >
-                  <BsRepeat style={{color: formData.is_recurring && !formData.has_installments ? 'var(--secondary-color)' : 'white'}} /> 
-                  <span style={{color: formData.is_recurring && !formData.has_installments ? 'var(--secondary-color)' : 'white'}}>Fixo</span>
+                  <BsRepeat style={{color: formData.is_recurring ? 'var(--secondary-color)' : 'white'}} /> 
+                  <span style={{color: formData.is_recurring ? 'var(--secondary-color)' : 'white'}}>Fixo</span>
                 </button>
               </div>
             </div>
@@ -501,7 +418,7 @@ const MobileAddIncome = () => {
 
               <div className={addIncomeStyles.formGroup}>
                 <label className={addIncomeStyles.formLabel}>
-                  {formData.has_installments ? 'Valor Total (calcularemos o valor de cada parcela automaticamente)' : 'Valor'}
+                  Valor
                 </label>
                 <CurrencyInput
                   name="amount"
@@ -522,7 +439,7 @@ const MobileAddIncome = () => {
             </div>
 
             {/* Data para Receita Única */}
-            {!formData.is_recurring && !formData.has_installments && (
+            {!formData.is_recurring && (
               <div className={addIncomeStyles.formGroup}>
                 <label className={addIncomeStyles.formLabel}>
                   Data
@@ -542,7 +459,7 @@ const MobileAddIncome = () => {
             )}
 
             {/* Configurações de Receita Fixa */}
-            {formData.is_recurring && !formData.has_installments && (
+            {formData.is_recurring(
               <div style={{marginBottom: '20px'}}>
                 <label className={addIncomeStyles.formLabel}>
                   <div className={`${addIncomeStyles.typeStatus} ${addIncomeStyles.fixedType}`}>

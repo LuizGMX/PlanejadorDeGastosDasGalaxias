@@ -36,28 +36,14 @@ function Income({
   banks,
   filters
 }) {
-  const navigate = useNavigate();
-  const { auth } = useContext(AuthContext);
+  
+  
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [incomeToDelete, setIncomeToDelete] = useState(null);
-  const [editingIncome, setEditingIncome] = useState(null);
+  
   const [deleteSuccess, setDeleteSuccess] = useState(null);
-  const [showInstallmentMessage, setShowInstallmentMessage] = useState(false);
-  const [messagePosition, setMessagePosition] = useState({ x: 0, y: 0 });
-  const [openFilter, setOpenFilter] = useState(null);
-  const [metadata, setMetadata] = useState({
-    filters: {
-      categories: [],
-      recurring: []
-    },
-    total: 0
-  });
-  const [deleteOption, setDeleteOption] = useState(null);
-  const [deleteOptions, setDeleteOptions] = useState({
-    type: 'single'
-  });
-  const [noIncomesMessage, setNoIncomesMessage] = useState(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [openFilter, setOpenFilter] = useState(null); 
+  const [noIncomesMessage, setNoIncomesMessage] = useState(null);  
   const [isMobile, setIsMobile] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
   const [expandedCardDetails, setExpandedCardDetails] = useState({});

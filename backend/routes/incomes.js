@@ -86,9 +86,6 @@ router.get('/', async (req, res) => {
         'is_recurring',
         'recurring_group_id',
         'recurrence_type',
-        'has_installments',
-        'current_installment',
-        'total_installments',
         'installment_group_id'
       ],
       include: [

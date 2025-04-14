@@ -25,9 +25,6 @@ const AddIncome = () => {
     category_id: '',
     bank_id: '',
     is_recurring: false,
-    has_installments: false,
-    total_installments: '',
-    current_installment: '',
     start_date: '',
     end_date: '',
     recurrence_type: 'monthly'
