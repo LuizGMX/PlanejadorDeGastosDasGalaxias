@@ -30,7 +30,9 @@ export const formatDate = (dateString) => {
   if (!dateString) return '';
   
   try {
-    const date = new Date(dateString);
+    // Garante que a data seja tratada como local, não UTC
+    const [year, month, day] = dateString.split('T')[0].split('-').map(Number);
+    const date = new Date(year, month - 1, day);
     
     // Verifica se a data é válida
     if (isNaN(date.getTime())) return '';

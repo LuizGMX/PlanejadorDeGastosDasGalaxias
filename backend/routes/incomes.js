@@ -1,10 +1,9 @@
 import express from 'express';
 import { Router } from 'express';
-import { Income, Category, Bank } from '../models/index.js';
+import { Income, Category, Bank, IncomesRecurrenceException } from '../models/index.js';
 import { v4 as uuidv4 } from 'uuid';
-import { Op } from 'sequelize';
+import { Op, Sequelize } from 'sequelize';
 import { authenticate } from '../middleware/auth.js';
-import { Sequelize } from 'sequelize';
 import checkSubscription from '../middleware/subscriptionCheck.js';
 import moment from 'moment';
 
@@ -14,35 +13,124 @@ const router = Router();
 router.use(authenticate);
 router.use(checkSubscription);
 
+// Função para calcular ocorrências de receitas recorrentes
+const calculateRecurringIncomeOccurrences = async (income, startDate, endDate) => {
+  const occurrences = [];
+  const recurrenceType = income.recurrence_type;
+  const startDateObj = new Date(income.start_date);
+  const endDateObj = income.end_date ? new Date(income.end_date) : new Date('2099-12-31');
+  
+  // Se a data de início da recorrência é posterior ao período ou a data de fim é anterior, retorna vazio
+  if (startDateObj > endDate || endDateObj < startDate) {
+    return [];
+  }
+
+  let currentDate = new Date(Math.max(startDateObj, startDate));
+  
+  // Mapeia exceções para verificar datas a serem puladas
+  const exceptionDates = new Set(income.exceptions.map(ex => 
+    new Date(ex.exception_date).toISOString().split('T')[0]
+  ));
+
+  while (currentDate <= endDate && currentDate <= endDateObj) {
+    const dateKey = currentDate.toISOString().split('T')[0];
+    
+    // Verifica se esta data não é uma exceção
+    if (!exceptionDates.has(dateKey)) {
+      occurrences.push({
+        ...income.toJSON(),
+        id: `rec_${income.id}_${currentDate.getTime()}`,
+        date: new Date(currentDate),
+        isRecurringOccurrence: true
+      });
+    }
+
+    // Avança para a próxima data baseada no tipo de recorrência
+    currentDate = getNextRecurringDate(currentDate, recurrenceType);
+  }
+
+  return occurrences;
+};
+
+// Função auxiliar para calcular próxima data de recorrência
+const getNextRecurringDate = (date, recurrenceType) => {
+  const next = new Date(date);
+  
+  switch (recurrenceType) {
+    case 'daily':
+      next.setDate(next.getDate() + 1);
+      break;
+    case 'weekly':
+      next.setDate(next.getDate() + 7);
+      break;
+    case 'monthly':
+      next.setMonth(next.getMonth() + 1);
+      break;
+    case 'quarterly':
+      next.setMonth(next.getMonth() + 3);
+      break;
+    case 'semiannual':
+      next.setMonth(next.getMonth() + 6);
+      break;
+    case 'annual':
+      next.setFullYear(next.getFullYear() + 1);
+      break;
+    default:
+      next.setMonth(next.getMonth() + 1); // Por padrão assume mensal
+  }
+  
+  return next;
+};
+
 // Listar todas as receitas do usuário
 router.get('/', async (req, res) => {
   try {
-    const { months, years, description, category_id, is_recurring } = req.query;
+    const { 
+      months, 
+      years, 
+      description, 
+      category_id,
+      min_amount,
+      max_amount,
+      is_recurring,
+      startDate,
+      endDate 
+    } = req.query;
+    
     const where = { user_id: req.user.id };
     
     // Inicializa a condição AND para combinar todos os filtros
     where[Op.and] = where[Op.and] || [];
 
-    // Filtro de meses e anos
-    const monthsArray = months ? (Array.isArray(months) ? months : months.split(',').map(Number)) : [];
-    const yearsArray = years ? (Array.isArray(years) ? years : years.split(',').map(Number)) : [];
+    // Filtro de intervalo de data
+    if (startDate && endDate) {
+      where[Op.and].push({
+        date: {
+          [Op.between]: [new Date(startDate), new Date(endDate)]
+        }
+      });
+    } else {
+      // Filtro de meses e anos
+      const monthsArray = months ? (Array.isArray(months) ? months : months.split(',').map(Number)) : [];
+      const yearsArray = years ? (Array.isArray(years) ? years : years.split(',').map(Number)) : [];
 
-    if (monthsArray.length > 0) {
-      where[Op.and].push(
-        Sequelize.where(
-          Sequelize.fn('MONTH', Sequelize.col('date')),
-          { [Op.in]: monthsArray }
-        )
-      );
-    }
+      if (monthsArray.length > 0) {
+        where[Op.and].push(
+          Sequelize.where(
+            Sequelize.fn('MONTH', Sequelize.col('date')),
+            { [Op.in]: monthsArray }
+          )
+        );
+      }
 
-    if (yearsArray.length > 0) {
-      where[Op.and].push(
-        Sequelize.where(
-          Sequelize.fn('YEAR', Sequelize.col('date')),
-          { [Op.in]: yearsArray }
-        )
-      );
+      if (yearsArray.length > 0) {
+        where[Op.and].push(
+          Sequelize.where(
+            Sequelize.fn('YEAR', Sequelize.col('date')),
+            { [Op.in]: yearsArray }
+          )
+        );
+      }
     }
 
     // Filtro de descrição
@@ -61,6 +149,24 @@ router.get('/', async (req, res) => {
       });
     }
 
+    // Filtro de valor mínimo
+    if (min_amount) {
+      where[Op.and].push({
+        amount: {
+          [Op.gte]: min_amount
+        }
+      });
+    }
+
+    // Filtro de valor máximo
+    if (max_amount) {
+      where[Op.and].push({
+        amount: {
+          [Op.lte]: max_amount
+        }
+      });
+    }
+
     // Filtro de recorrência
     if (is_recurring !== undefined) {
       where[Op.and].push({
@@ -73,20 +179,8 @@ router.get('/', async (req, res) => {
       delete where[Op.and];
     }
 
-    console.log('Filtros aplicados:', JSON.stringify(where, null, 2));
-
-    // Buscar todas as receitas com a query corrigida
     const incomes = await Income.findAll({
       where,
-      attributes: [
-        'id',
-        'description',
-        'amount',
-        'date',
-        'is_recurring',
-        'recurring_group_id',
-        'recurrence_type'
-      ],
       include: [
         { model: Category, as: 'Category' },
         { model: Bank, as: 'bank' }
@@ -94,70 +188,50 @@ router.get('/', async (req, res) => {
       order: [['date', 'DESC']]
     });
 
-    // Buscar metadados para os filtros
-    const [categories, totalRecurring, totalNonRecurring] = await Promise.all([
-      Category.findAll({
-        where: { type: 'income' },
-        attributes: ['id', 'category_name'],
-        order: [['category_name', 'ASC']]
-      }),
-      Income.count({
-        where: { 
-          user_id: req.user.id,
-          is_recurring: true
-        }
-      }),
-      Income.count({
-        where: { 
-          user_id: req.user.id,
-          is_recurring: false
-        }
-      })
-    ]);
+    // Se está buscando por intervalo de data e precisamos incluir receitas recorrentes
+    let expandedRecurringIncomes = [];
+    if (startDate && endDate && is_recurring !== 'false') {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
 
-    // Adiciona informação de recorrência para o frontend
-    const incomesWithRecurring = incomes.map(income => {
-      const plainIncome = income.get({ plain: true });
-      return {
-        ...plainIncome,
-        recurring_info: income.is_recurring ? {
+      // Busca receitas recorrentes que podem ter ocorrências no período
+      const recurringIncomes = await Income.findAll({
+        where: {
+          user_id: req.user.id,
           is_recurring: true,
-          recurring_group_id: income.recurring_group_id,
-          recurrence_type: income.recurrence_type
-        } : null
-      };
-    });
-
-    console.log('Total de receitas encontradas:', incomesWithRecurring.length);
-    console.log('Receitas recorrentes:', incomesWithRecurring.filter(i => i.is_recurring).length);
-    console.log('Receitas não recorrentes:', incomesWithRecurring.filter(i => !i.is_recurring).length);
-
-    res.json({
-      incomes: incomesWithRecurring,
-      metadata: {
-        filters: {
-          categories: categories.map(c => ({
-            id: c.id,
-            name: c.category_name
-          })),
-          recurring: [
-            { id: 'true', name: 'Recorrente', count: totalRecurring },
-            { id: 'false', name: 'Não Recorrente', count: totalNonRecurring }
+          start_date: {
+            [Op.lte]: end
+          },
+          [Op.or]: [
+            { end_date: null },
+            { end_date: { [Op.gte]: start } }
           ]
         },
-        totals: {
-          recurring: totalRecurring,
-          nonRecurring: totalNonRecurring
-        }
+        include: [
+          { model: Category, as: 'Category' },
+          { model: Bank, as: 'bank' },
+          { model: IncomesRecurrenceException, as: 'exceptions' }
+        ]
+      });
+
+      // Para cada receita recorrente, calcular as ocorrências no período
+      for (const income of recurringIncomes) {
+        const occurrences = await calculateRecurringIncomeOccurrences(income, start, end);
+        expandedRecurringIncomes = [...expandedRecurringIncomes, ...occurrences];
       }
-    });
+    }
+
+    // Combina receitas normais e recorrentes expandidas
+    const allIncomes = [...incomes, ...expandedRecurringIncomes];
+    
+    res.json(allIncomes);
   } catch (error) {
     console.error('Erro ao buscar receitas:', error);
-    res.status(500).json({ message: 'Erro ao buscar receitas' });
+    res.status(500).json({ message: 'Erro ao buscar receitas', error: error.message });
   }
 });
 
-// Adicionar nova ganho
+// Adicionar nova receita
 router.post('/', async (req, res) => {
   const t = await Income.sequelize.transaction();
   try {
@@ -168,13 +242,13 @@ router.post('/', async (req, res) => {
       is_recurring,     
       category_id,
       bank_id,
-      start_date,
-      end_date,
-      recurrence_type
+      recurrence_type,
+      end_date
     } = req.body;
 
     // Validações básicas
     if (!description || !rawAmount || !date || !category_id || !bank_id) {
+      await t.rollback();
       return res.status(400).json({ message: 'Todos os campos obrigatórios devem ser preenchidos' });
     }
 
@@ -193,73 +267,39 @@ router.post('/', async (req, res) => {
       if (!dateStr) throw new Error('Data inválida');
       
       // Garante que estamos trabalhando com a data local
-      const [year, month, day] = dateStr.split('-').map(Number);
+      const [year, month, day] = dateStr.split('T')[0].split('-').map(Number);
       if (!year || !month || !day) throw new Error('Data inválida');
       
-      const date = new Date(year, month - 1, day);
+      // Cria a data no fuso horário local
+      const date = new Date(year, month - 1, day, 12, 0, 0);
       if (isNaN(date.getTime())) throw new Error('Data inválida');
       
       return date;
     };
 
-    const incomes = [];
+    // Receita a ser criada
+    let incomeData;
     const recurringGroupId = is_recurring ? uuidv4() : null;
 
     if (is_recurring) {
       const startDateObj = adjustDate(date);
-      const endDateObj = end_date ? adjustDate(end_date) : new Date(startDateObj);
-      endDateObj.setFullYear(2099);
-      endDateObj.setMonth(11);
-      endDateObj.setDate(31);
+      const endDateObj = end_date ? adjustDate(end_date) : new Date('2099-12-31');
 
-      let currentDate = new Date(startDateObj);
-      let count = 0;
-      const maxRecurrences = 500; // Limite de segurança
-
-      while (currentDate <= endDateObj && count < maxRecurrences) {
-        incomes.push({
-          user_id: req.user.id,
-          description,
-          amount: parsedAmount,
-          date: new Date(currentDate),
-          is_recurring: true,
-          recurring_group_id: recurringGroupId,
-          category_id,
-          bank_id,
-          start_date: startDateObj,
-          end_date: endDateObj,
-          recurrence_type
-        });
-
-        // Atualiza a data baseado no tipo de recorrência
-        const nextDate = new Date(currentDate);
-        switch (recurrence_type) {
-          case 'daily':
-            nextDate.setDate(nextDate.getDate() + 1);
-            break;
-          case 'weekly':
-            nextDate.setDate(nextDate.getDate() + 7);
-            break;
-          case 'monthly':
-            nextDate.setMonth(nextDate.getMonth() + 1);
-            break;
-          case 'quarterly':
-            nextDate.setMonth(nextDate.getMonth() + 3);
-            break;
-          case 'semiannual':
-            nextDate.setMonth(nextDate.getMonth() + 6);
-            break;
-          case 'annual':
-            nextDate.setFullYear(nextDate.getFullYear() + 1);
-            break;
-          default:
-            nextDate.setMonth(nextDate.getMonth() + 1);
-        }
-        currentDate = nextDate;
-        count++;
-      }   
+      incomeData = {
+        user_id: req.user.id,
+        description,
+        amount: parsedAmount,
+        date: startDateObj, // Data de início como data da receita
+        is_recurring: true,
+        recurring_group_id: recurringGroupId,
+        category_id,
+        bank_id,
+        start_date: startDateObj,
+        end_date: endDateObj,
+        recurrence_type
+      };
     } else {
-      incomes.push({
+      incomeData = {
         user_id: req.user.id,
         description,
         amount: parsedAmount,
@@ -267,264 +307,123 @@ router.post('/', async (req, res) => {
         is_recurring: false,
         category_id,
         bank_id
-      });
+      };
     }
 
-    const createdIncomes = await Income.bulkCreate(incomes, { transaction: t });
+    const createdIncome = await Income.create(incomeData, { transaction: t });
     await t.commit();
 
-    return res.status(201).json({
-      message: 'Ganho registrado com sucesso',
-      incomes: createdIncomes
-    });
+    res.status(201).json(createdIncome);
   } catch (error) {
-    // Log do erro para diagnóstico
-    console.error(`Erro ao criar ganho: ${error.message}`, error);
-    
-    // Rollback da transação em caso de erro
     await t.rollback();
-    
-    return res.status(500).json({
-      message: 'Erro ao registrar ganho',
-      error: error.message
-    });
+    console.error('Erro ao criar receita:', error);
+    res.status(500).json({ message: 'Erro ao criar receita', error: error.message });
   }
 });
 
-// Atualizar ganho
-router.put('/:id', async (req, res) => {
-  const t = await Income.sequelize.transaction();
-
+// Rota para excluir receita fixa (uma ocorrência específica)
+router.post('/:id/exclude-occurrence', async (req, res) => {
   try {
-    const {
-      description,
-      amount,
-      date,
-      category_id,
-      bank_id,
-      start_date,
-      end_date
-    } = req.body;
-
-    // Validações básicas
-    if (!description || !amount || !date || !category_id || !bank_id) {
-      return res.status(400).json({ message: 'Campos obrigatórios faltando' });
-    }
-
-    if (amount <= 0) {
-      return res.status(400).json({ message: 'O valor deve ser maior que zero' });
-    }
-
+    const { id } = req.params;
+    const { occurrence_date, reason } = req.body;
+    
+    // Busca a receita recorrente
     const income = await Income.findOne({
-      where: {
-        id: req.params.id,
-        user_id: req.user.id
-      },
-      transaction: t
+      where: { 
+        id, 
+        user_id: req.user.id,
+        is_recurring: true
+      }
     });
 
     if (!income) {
-      return res.status(404).json({ message: 'Ganho não encontrado' });
+      return res.status(404).json({ message: 'Receita recorrente não encontrada' });
     }
 
-    if (income.is_recurring) {
-      // Validar período máximo de 10 anos para recorrência
-      if (start_date && end_date) {
-        const startDateObj = new Date(start_date);
-        const endDateObj = new Date(end_date);
-        const maxDate = new Date(startDateObj);
-        maxDate.setFullYear(maxDate.getFullYear() + 10);
-
-        if (endDateObj > maxDate) {
-          return res.status(400).json({ message: 'O período de recorrência não pode ser maior que 10 anos' });
-        }
-      }
-
-      const newStartDate = start_date ? new Date(start_date) : income.start_date;
-      const newEndDate = end_date ? new Date(end_date) : income.end_date;
-      const oldStartDate = income.start_date;
-      const oldEndDate = income.end_date;
-
-      console.log('Atualizando ganho recorrente:', {
-        id: income.id,
-        old_start_date: oldStartDate,
-        old_end_date: oldEndDate,
-        new_start_date: newStartDate,
-        new_end_date: newEndDate
-      });
-
-      // Primeiro, busca todos os receitas do grupo
-      const allGroupIncomes = await Income.findAll({
-        where: {
-          recurring_group_id: income.recurring_group_id,
-          user_id: req.user.id
-        },
-        order: [['date', 'ASC']],
-        transaction: t
-      });
-
-      // Atualiza os dados básicos em todos os receitas existentes
-      await Income.update(
-        {
-          description,
-          amount,
-          category_id,
-          bank_id,
-          start_date: newStartDate,
-          end_date: newEndDate
-        },
-        {
-          where: {
-            recurring_group_id: income.recurring_group_id,
-            user_id: req.user.id,
-            date: {
-              [Op.between]: [oldStartDate, oldEndDate]
-            }
-          },
-          transaction: t
-        }
-      );
-
-      // Remove receitas que estão fora do novo período
-      await Income.destroy({
-        where: {
-          recurring_group_id: income.recurring_group_id,
-          user_id: req.user.id,
-          [Op.or]: [
-            {
-              date: {
-                [Op.lt]: newStartDate
-              }
-            },
-            {
-              date: {
-                [Op.gt]: newEndDate
-              }
-            }
-          ]
-        },
-        transaction: t
-      });
-
-      // Cria novos receitas para as novas datas
-      let currentDate = new Date(newStartDate);
-      currentDate.setDate(newStartDate.getDate()); // Mantém o mesmo dia do mês
-
-      while (currentDate <= newEndDate) {
-        // Verifica se já existe um ganho nesta data
-        const existingIncome = allGroupIncomes.find(inc => 
-          new Date(inc.date).getMonth() === currentDate.getMonth() &&
-          new Date(inc.date).getFullYear() === currentDate.getFullYear()
-        );
-
-        if (!existingIncome) {
-          await Income.create({
-            description,
-            amount,
-            date: new Date(currentDate),
-            category_id,
-            bank_id,
-            user_id: req.user.id,
-            is_recurring: true,
-            recurring_group_id: income.recurring_group_id,
-            start_date: newStartDate,
-            end_date: newEndDate
-          }, { transaction: t });
-        }
-
-        // Avança para o próximo mês
-        currentDate.setMonth(currentDate.getMonth() + 1);
-      }
-
-      // Busca todos os receitas atualizados para verificar
-      const updatedIncomes = await Income.findAll({
-        where: {
-          recurring_group_id: income.recurring_group_id,
-          user_id: req.user.id
-        },
-        order: [['date', 'ASC']],
-        transaction: t
-      });
-
-      console.log('Receitas atualizados:', updatedIncomes.map(inc => ({
-        id: inc.id,
-        date: inc.date,
-        start_date: inc.start_date,
-        end_date: inc.end_date
-      })));
-    } else {
-      // Atualizar apenas o ganho selecionado
-      await income.update(
-        {
-          description,
-          amount,
-          date,
-          category_id,
-          bank_id
-        },
-        { transaction: t }
-      );
-    }
-
-    await t.commit();
-
-    // Busca o ganho atualizado com seus relacionamentos
-    const updatedIncome = await Income.findOne({
-      where: { id: income.id },
-      include: [
-        { model: Category },
-        { model: Bank }
-      ]
+    // Cria uma exceção para esta ocorrência específica
+    await IncomesRecurrenceException.create({
+      user_id: req.user.id,
+      income_id: income.id,
+      recurrence_id: income.recurrence_id,
+      exception_date: new Date(occurrence_date),
+      exception_type: 'SKIP',
+      reason: reason || 'Ocorrência excluída pelo usuário'
     });
 
-    res.json({ 
-      message: 'Ganho atualizado com sucesso',
-      income: updatedIncome
-    });
+    res.status(201).json({ message: 'Ocorrência excluída com sucesso' });
   } catch (error) {
-    await t.rollback();
-    res.status(400).json({ message: error.message });
+    console.error('Erro ao excluir ocorrência:', error);
+    res.status(500).json({ message: 'Erro ao excluir ocorrência' });
   }
 });
 
-// Excluir receitas em lote
-router.delete('/bulk', async (req, res) => {
-  const transaction = await Income.sequelize.transaction();
-  console.log('Iniciando deleção em lote');
+// Rota para excluir todas as ocorrências futuras de uma receita recorrente
+router.delete('/:id/future-occurrences', async (req, res) => {
   try {
-    const { ids } = req.body;
+    const { id } = req.params;
+    const { from_date } = req.body;
     
-    if (!Array.isArray(ids) || ids.length === 0) {
-      await transaction.rollback();
-      return res.status(400).json({ message: 'Lista de IDs inválida' });
+    // Busca a receita recorrente
+    const income = await Income.findOne({
+      where: { 
+        id, 
+        user_id: req.user.id,
+        is_recurring: true
+      }
+    });
+
+    if (!income) {
+      return res.status(404).json({ message: 'Receita recorrente não encontrada' });
     }
 
-    console.log('IDs para deleção:', ids);
+    // Atualiza a data de término para a data anterior à data especificada
+    const newEndDate = new Date(from_date);
+    newEndDate.setDate(newEndDate.getDate() - 1);
 
-    // Faz uma única chamada para deletar todas as receitas
-    const deletedCount = await Income.destroy({
-      where: {
-        id: { [Op.in]: ids },
-        user_id: req.user.id,
-        is_recurring: false
-      },
-      transaction
+    await income.update({
+      end_date: newEndDate
     });
 
-    await transaction.commit();
-    console.log(`${deletedCount} receitas deletadas com sucesso`);
-    res.json({ 
-      message: `${deletedCount} ganho(s) deletada(s) com sucesso`,
-      count: deletedCount
-    });
-
+    res.json({ message: 'Ocorrências futuras excluídas com sucesso' });
   } catch (error) {
-    await transaction.rollback();
-    console.error('Erro na deleção em lote:', error);
-    res.status(500).json({ 
-      message: 'Erro ao deletar receitas',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    console.error('Erro ao excluir ocorrências futuras:', error);
+    res.status(500).json({ message: 'Erro ao excluir ocorrências futuras' });
+  }
+});
+
+// Rota para excluir completamente uma receita recorrente
+router.delete('/:id/recurring', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Busca a receita recorrente
+    const income = await Income.findOne({
+      where: { 
+        id, 
+        user_id: req.user.id,
+        is_recurring: true
+      }
     });
+
+    if (!income) {
+      return res.status(404).json({ message: 'Receita recorrente não encontrada' });
+    }
+
+    // Exclui todas as exceções associadas
+    await IncomesRecurrenceException.destroy({
+      where: {
+        income_id: income.id,
+        user_id: req.user.id
+      }
+    });
+
+    // Exclui a receita recorrente
+    await income.destroy();
+
+    res.json({ message: 'Receita recorrente excluída com sucesso' });
+  } catch (error) {
+    console.error('Erro ao excluir receita recorrente:', error);
+    res.status(500).json({ message: 'Erro ao excluir receita recorrente' });
   }
 });
 
@@ -533,7 +432,6 @@ router.delete('/:id', async (req, res) => {
   const t = await Income.sequelize.transaction();
 
   try {
-    const { delete_future, delete_past, delete_all } = req.query;
     const income = await Income.findOne({
       where: {
         id: req.params.id,
@@ -543,60 +441,97 @@ router.delete('/:id', async (req, res) => {
     });
 
     if (!income) {
-      return res.status(404).json({ message: 'Ganho não encontrado' });
+      await t.rollback();
+      return res.status(404).json({ message: 'Receita não encontrada' });
     }
 
+    // Se for receita recorrente, redireciona para a rota específica
     if (income.is_recurring) {
-      if (delete_all === 'true') {
-        // Excluir todas as receitas do grupo
-        await Income.destroy({
-          where: {
-            recurring_group_id: income.recurring_group_id,
-            user_id: req.user.id
-          },
-          transaction: t
-        });
-      } else if (delete_future === 'true') {
-        // Excluir todas as receitas futuras do mesmo grupo (incluindo a atual)
-        await Income.destroy({
-          where: {
-            recurring_group_id: income.recurring_group_id,
-            user_id: req.user.id,
-            date: {
-              [Op.gte]: income.date
-            }
-          },
-          transaction: t
-        });
-      } else if (delete_past === 'true') {
-        // Excluir todas as receitas passadas do mesmo grupo (incluindo a atual)
-        await Income.destroy({
-          where: {
-            recurring_group_id: income.recurring_group_id,
-            user_id: req.user.id,
-            date: {
-              [Op.lte]: income.date
-            }
-          },
-          transaction: t
-        });
-      } else {
-        // Excluir apenas a ganho selecionada
-        await income.destroy({ transaction: t });
-      }
+      await t.rollback();
+      return res.status(400).json({ 
+        message: 'Para excluir receita recorrente, use o endpoint específico',
+        redirectTo: '/incomes/:id/recurring'
+      });
+    }
+
+    // Excluir apenas a receita selecionada
+    await income.destroy({ transaction: t });
+
+    await t.commit();
+    res.json({ message: 'Receita excluída com sucesso' });
+  } catch (error) {
+    await t.rollback();
+    console.error('Erro ao excluir receita:', error);
+    res.status(500).json({ message: 'Erro ao excluir receita' });
+  }
+});
+
+// Atualizar receita
+router.put('/:id', async (req, res) => {
+  const t = await Income.sequelize.transaction();
+
+  try {
+    const {
+      description,
+      amount: rawAmount,
+      date,
+      category_id,
+      bank_id,
+      is_recurring,
+      recurrence_type,
+      start_date,
+      end_date
+    } = req.body;
+
+    const income = await Income.findOne({
+      where: {
+        id: req.params.id,
+        user_id: req.user.id
+      },
+      transaction: t
+    });
+
+    if (!income) {
+      await t.rollback();
+      return res.status(404).json({ message: 'Receita não encontrada' });
+    }
+
+    const parsedAmount = Number(rawAmount);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      await t.rollback();
+      return res.status(400).json({ message: 'O valor deve ser um número positivo' });
+    }
+
+    // Se for uma receita recorrente
+    if (income.is_recurring) {
+      await income.update({
+        description,
+        amount: parsedAmount,
+        category_id,
+        bank_id,
+        start_date: start_date ? new Date(start_date) : income.start_date,
+        end_date: end_date ? new Date(end_date) : income.end_date,
+        recurrence_type: recurrence_type || income.recurrence_type
+      }, { transaction: t });
     } else {
-      // Se não for recorrente, exclui apenas a ganho selecionada
-      await income.destroy({ transaction: t });
+      await income.update({
+        description,
+        amount: parsedAmount,
+        date: new Date(date),
+        category_id,
+        bank_id
+      }, { transaction: t });
     }
 
     await t.commit();
-    res.json({ 
-      message: 'Ganho excluído com sucesso',
-      isRecurring: income.is_recurring 
-    });
+    
+    // Busca a receita atualizada
+    const updatedIncome = await Income.findByPk(req.params.id);
+    res.json(updatedIncome);
   } catch (error) {
     await t.rollback();
-    res.status(500).json({ message: 'Erro ao excluir ganho' });
+    console.error('Erro ao atualizar receita:', error);
+    res.status(500).json({ message: 'Erro ao atualizar receita', error: error.message });
   }
 });
 
@@ -614,143 +549,6 @@ router.get('/categories', async (req, res) => {
   } catch (error) {
     console.error('Erro ao listar categorias:', error);
     res.status(500).json({ message: 'Erro ao buscar categorias' });
-  }
-});
-
-// Rota para excluir ganho fixo
-router.delete('/:id/recurring', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { deleteType } = req.body;
-    const income = await Income.findByPk(id);
-
-    if (!income) {
-      return res.status(404).json({ message: 'Ganho não encontrado' });
-    }
-
-    if (income.user_id !== req.user.id) {
-      return res.status(403).json({ message: 'Não autorizado' });
-    }
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    let whereClause = {
-      user_id: req.user.id,
-      recurring_group_id: income.recurring_group_id
-    };
-
-    switch (deleteType) {
-      case 'all':
-        // Não adiciona condição de data - exclui tudo
-        break;
-      case 'past':
-        whereClause.date = {
-          [Op.lt]: today
-        };
-        break;
-      case 'future':
-        whereClause.date = {
-          [Op.gte]: today
-        };
-        break;
-      default:
-        return res.status(400).json({ message: 'Tipo de exclusão inválido' });
-    }
-
-    await Income.destroy({
-      where: whereClause
-    });
-
-    res.json({ message: 'Ganho(s) excluído(s) com sucesso' });
-  } catch (error) {
-    console.error('Erro ao excluir ganho fixo:', error);
-    res.status(500).json({ message: 'Erro ao excluir ganho fixo' });
-  }
-});
-
-// Rota para criar ganho
-router.post('/', async (req, res) => {
-  try {
-    const incomeData = {
-      ...req.body,
-      user_id: req.user.id
-    };
-
-    if (incomeData.is_recurring) {
-      incomeData.recurring_group_id = uuidv4();
-      incomeData.start_date = incomeData.date;
-      incomeData.end_date = '2099-12-31';
-    }
-
-    const income = await Income.create(incomeData);
-    res.status(201).json(income);
-  } catch (error) {
-    console.error('Erro ao criar ganho:', error);
-    res.status(500).json({ message: 'Erro ao criar ganho' });
-  }
-});
-
-// Rota para atualizar ganho
-router.put('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const income = await Income.findByPk(id);
-
-    if (!income) {
-      return res.status(404).json({ message: 'Ganho não encontrado' });
-    }
-
-    if (income.user_id !== req.user.id) {
-      return res.status(403).json({ message: 'Não autorizado' });
-    }
-
-    const incomeData = {
-      ...req.body
-    };
-
-    if (incomeData.is_recurring && !income.is_recurring) {
-      incomeData.recurring_group_id = uuidv4();
-      incomeData.start_date = incomeData.date;
-      incomeData.end_date = '2099-12-31';
-    }
-
-    await income.update(incomeData);
-    res.json(income);
-  } catch (error) {
-    console.error('Erro ao atualizar ganho:', error);
-    res.status(500).json({ message: 'Erro ao atualizar ganho' });
-  }
-});
-
-// Rota para buscar um único ganho
-router.get('/:id', async (req, res) => {
-  try {
-    const income = await Income.findOne({
-      where: {
-        id: req.params.id,
-        user_id: req.user.id
-      },
-      include: [
-        { 
-          model: Category,
-          as: 'Category'
-        },
-        { 
-          model: Bank,
-          as: 'bank'
-        }
-      ]
-    });
-
-    if (!income) {
-      return res.status(404).json({ message: 'Ganho não encontrado' });
-    }
-
-    res.json(income);
-  } catch (error) {
-    console.error('Erro ao buscar ganho:', error);
-    res.status(500).json({ message: 'Erro ao buscar ganho' });
   }
 });
 

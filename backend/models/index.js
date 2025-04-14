@@ -11,6 +11,8 @@ import defineVerificationCodeModel from './verificationCode.js';
 import defineUserBankModel from './userBank.js';
 import defineRecurrenceRuleModel from './recurrenceRule.js';
 import defineRecurrenceExceptionModel from './recurrenceException.js';
+import defineExpensesRecurrenceExceptionModel from './expensesRecurrenceException.js';
+import defineIncomesRecurrenceExceptionModel from './incomesRecurrenceException.js';
 import definePaymentModel from './payment.js';
 import defineFinancialGoalModel from './financialGoal.js';
 
@@ -19,7 +21,7 @@ dotenv.config();
 const sequelize = new Sequelize(
   process.env.DB_NAME || 'planejador',
   process.env.DB_USER || 'root',
-  process.env.DB_PASSWORD || '',
+  process.env.DB_PASSWORD || 'root',
   {
     host: process.env.DB_HOST || 'localhost',
     dialect: 'mysql',
@@ -43,6 +45,8 @@ const VerificationCode = defineVerificationCodeModel(sequelize);
 const UserBank = defineUserBankModel(sequelize);
 const RecurrenceRule = defineRecurrenceRuleModel(sequelize);
 const RecurrenceException = defineRecurrenceExceptionModel(sequelize);
+const ExpensesRecurrenceException = defineExpensesRecurrenceExceptionModel(sequelize);
+const IncomesRecurrenceException = defineIncomesRecurrenceExceptionModel(sequelize);
 const Payment = definePaymentModel(sequelize);
 const FinancialGoal = defineFinancialGoalModel(sequelize);
 
@@ -53,7 +57,8 @@ User.hasMany(Expense, {
   as: 'expenses'
 });
 Expense.belongsTo(User, {
-  foreignKey: 'user_id'
+  foreignKey: 'user_id',
+  as: 'user'
 });
 
 // User-Income
@@ -62,7 +67,8 @@ User.hasMany(Income, {
   as: 'incomes'
 });
 Income.belongsTo(User, {
-  foreignKey: 'user_id'
+  foreignKey: 'user_id',
+  as: 'user'
 });
 
 // User-Category
@@ -71,16 +77,28 @@ User.hasMany(Category, {
   as: 'categories'
 });
 Category.belongsTo(User, {
-  foreignKey: 'user_id'
+  foreignKey: 'user_id',
+  as: 'user'
 });
 
-// User-FinancialGoal
-User.hasMany(FinancialGoal, {
+// User-Budget
+User.hasMany(Budget, {
   foreignKey: 'user_id',
-  as: 'financial_goals'
+  as: 'budgets'
 });
-FinancialGoal.belongsTo(User, {
-  foreignKey: 'user_id'
+Budget.belongsTo(User, {
+  foreignKey: 'user_id',
+  as: 'user'
+});
+
+// User-VerificationCode
+User.hasMany(VerificationCode, {
+  foreignKey: 'user_id',
+  as: 'verificationCodes'
+});
+VerificationCode.belongsTo(User, {
+  foreignKey: 'user_id',
+  as: 'user'
 });
 
 // Category-Expense
@@ -89,7 +107,8 @@ Category.hasMany(Expense, {
   as: 'expenses'
 });
 Expense.belongsTo(Category, {
-  foreignKey: 'category_id'
+  foreignKey: 'category_id',
+  as: 'Category'
 });
 
 // Category-Income
@@ -98,7 +117,18 @@ Category.hasMany(Income, {
   as: 'incomes'
 });
 Income.belongsTo(Category, {
-  foreignKey: 'category_id'
+  foreignKey: 'category_id',
+  as: 'Category'
+});
+
+// Category-Budget
+Category.hasMany(Budget, {
+  foreignKey: 'category_id',
+  as: 'budgets'
+});
+Budget.belongsTo(Category, {
+  foreignKey: 'category_id',
+  as: 'category'
 });
 
 // Bank-Expense
@@ -121,25 +151,7 @@ Income.belongsTo(Bank, {
   as: 'bank'
 });
 
-// User-Budget
-User.hasMany(Budget, {
-  foreignKey: 'user_id',
-  as: 'budgets'
-});
-Budget.belongsTo(User, {
-  foreignKey: 'user_id'
-});
-
-// Category-Budget
-Category.hasMany(Budget, {
-  foreignKey: 'category_id',
-  as: 'budgets'
-});
-Budget.belongsTo(Category, {
-  foreignKey: 'category_id'
-});
-
-// User-Bank (através de UserBank)
+// User-Bank (Many-to-Many)
 User.belongsToMany(Bank, {
   through: UserBank,
   foreignKey: 'user_id',
@@ -153,23 +165,34 @@ Bank.belongsToMany(User, {
   as: 'users'
 });
 
-// UserBank-User
-UserBank.belongsTo(User, {
-  foreignKey: 'user_id'
-});
-User.hasMany(UserBank, {
+// User-RecurrenceRule
+User.hasMany(RecurrenceRule, {
   foreignKey: 'user_id',
-  as: 'user_banks'
+  as: 'recurrenceRules'
+});
+RecurrenceRule.belongsTo(User, {
+  foreignKey: 'user_id',
+  as: 'user'
 });
 
-// UserBank-Bank
-UserBank.belongsTo(Bank, {
+// RecurrenceRule-Category
+Category.hasMany(RecurrenceRule, {
+  foreignKey: 'category_id',
+  as: 'recurrenceRules'
+});
+RecurrenceRule.belongsTo(Category, {
+  foreignKey: 'category_id',
+  as: 'Category'
+});
+
+// RecurrenceRule-Bank
+Bank.hasMany(RecurrenceRule, {
+  foreignKey: 'bank_id',
+  as: 'recurrenceRules'
+});
+RecurrenceRule.belongsTo(Bank, {
   foreignKey: 'bank_id',
   as: 'bank'
-});
-Bank.hasMany(UserBank, {
-  foreignKey: 'bank_id',
-  as: 'user_banks'
 });
 
 // RecurrenceRule-Expense
@@ -192,14 +215,14 @@ RecurrenceException.belongsTo(RecurrenceRule, {
   as: 'RecurrenceRule'
 });
 
-// RecurrenceRule associations
-RecurrenceRule.belongsTo(Category, {
-  foreignKey: 'category_id',
-  as: 'Category'
+// RecurrenceRule-Income
+RecurrenceRule.hasMany(Income, {
+  foreignKey: 'recurrence_id',
+  as: 'incomes'
 });
-RecurrenceRule.belongsTo(Bank, {
-  foreignKey: 'bank_id',
-  as: 'bank'
+Income.belongsTo(RecurrenceRule, {
+  foreignKey: 'recurrence_id',
+  as: 'recurrence'
 });
 
 // User-Payment
@@ -208,11 +231,83 @@ User.hasMany(Payment, {
   as: 'payments'
 });
 Payment.belongsTo(User, {
-  foreignKey: 'user_id'
+  foreignKey: 'user_id',
+  as: 'user'
 });
 
-// Exportar modelos
+// RecurrenceRule-ExpensesRecurrenceException
+RecurrenceRule.hasMany(ExpensesRecurrenceException, {
+  foreignKey: 'recurrence_id',
+  as: 'expenseExceptions'
+});
+ExpensesRecurrenceException.belongsTo(RecurrenceRule, {
+  foreignKey: 'recurrence_id',
+  as: 'recurrenceRule'
+});
+
+// Expense-ExpensesRecurrenceException
+Expense.hasMany(ExpensesRecurrenceException, {
+  foreignKey: 'expense_id',
+  as: 'exceptions'
+});
+ExpensesRecurrenceException.belongsTo(Expense, {
+  foreignKey: 'expense_id',
+  as: 'expense'
+});
+
+// User-ExpensesRecurrenceException
+User.hasMany(ExpensesRecurrenceException, {
+  foreignKey: 'user_id',
+  as: 'expenseExceptions'
+});
+ExpensesRecurrenceException.belongsTo(User, {
+  foreignKey: 'user_id',
+  as: 'user'
+});
+
+// RecurrenceRule-IncomesRecurrenceException
+RecurrenceRule.hasMany(IncomesRecurrenceException, {
+  foreignKey: 'recurrence_id',
+  as: 'incomeExceptions'
+});
+IncomesRecurrenceException.belongsTo(RecurrenceRule, {
+  foreignKey: 'recurrence_id',
+  as: 'recurrenceRule'
+});
+
+// Income-IncomesRecurrenceException
+Income.hasMany(IncomesRecurrenceException, {
+  foreignKey: 'income_id',
+  as: 'exceptions'
+});
+IncomesRecurrenceException.belongsTo(Income, {
+  foreignKey: 'income_id',
+  as: 'income'
+});
+
+// User-IncomesRecurrenceException
+User.hasMany(IncomesRecurrenceException, {
+  foreignKey: 'user_id',
+  as: 'incomeExceptions'
+});
+IncomesRecurrenceException.belongsTo(User, {
+  foreignKey: 'user_id',
+  as: 'user'
+});
+
+// User-FinancialGoal
+User.hasMany(FinancialGoal, {
+  foreignKey: 'user_id',
+  as: 'financialGoals'
+});
+FinancialGoal.belongsTo(User, {
+  foreignKey: 'user_id',
+  as: 'user'
+});
+
+// Exporta os modelos e a instância do Sequelize
 export {
+  sequelize,
   User,
   Category,
   Expense,
@@ -223,7 +318,8 @@ export {
   UserBank,
   RecurrenceRule,
   RecurrenceException,
+  ExpensesRecurrenceException,
+  IncomesRecurrenceException,
   Payment,
-  FinancialGoal,
-  sequelize
+  FinancialGoal
 };

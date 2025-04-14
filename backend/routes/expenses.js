@@ -1,5 +1,5 @@
 import express from 'express';
-import { Expense, Category, Bank } from '../models/index.js';
+import { Expense, Category, Bank, ExpensesRecurrenceException } from '../models/index.js';
 import { authenticate } from '../middleware/auth.js';
 import { v4 as uuidv4 } from 'uuid';
 import { Op } from 'sequelize';
@@ -15,17 +15,106 @@ const router = Router();
 router.use(authenticate);
 router.use(checkSubscription);
 
+// Função para calcular ocorrências de despesas recorrentes
+const calculateRecurringExpenseOccurrences = async (expense, startDate, endDate) => {
+  const occurrences = [];
+  const recurrenceType = expense.recurrence_type;
+  const startDateObj = new Date(expense.start_date);
+  const endDateObj = expense.end_date ? new Date(expense.end_date) : new Date('2099-12-31');
+  
+  // Se a data de início da recorrência é posterior ao período ou a data de fim é anterior, retorna vazio
+  if (startDateObj > endDate || endDateObj < startDate) {
+    return [];
+  }
+
+  let currentDate = new Date(Math.max(startDateObj, startDate));
+  
+  // Mapeia exceções para verificar datas a serem puladas
+  const exceptionDates = new Set(expense.exceptions.map(ex => 
+    new Date(ex.exception_date).toISOString().split('T')[0]
+  ));
+
+  while (currentDate <= endDate && currentDate <= endDateObj) {
+    const dateKey = currentDate.toISOString().split('T')[0];
+    
+    // Verifica se esta data não é uma exceção
+    if (!exceptionDates.has(dateKey)) {
+      occurrences.push({
+        ...expense.toJSON(),
+        id: `rec_${expense.id}_${currentDate.getTime()}`,
+        expense_date: new Date(currentDate),
+        isRecurringOccurrence: true
+      });
+    }
+
+    // Avança para a próxima data baseada no tipo de recorrência
+    currentDate = getNextRecurringDate(currentDate, recurrenceType);
+  }
+
+  return occurrences;
+};
+
+// Função auxiliar para calcular próxima data de recorrência
+const getNextRecurringDate = (date, recurrenceType) => {
+  const next = new Date(date);
+  
+  switch (recurrenceType) {
+    case 'daily':
+      next.setDate(next.getDate() + 1);
+      break;
+    case 'weekly':
+      next.setDate(next.getDate() + 7);
+      break;
+    case 'monthly':
+      next.setMonth(next.getMonth() + 1);
+      break;
+    case 'quarterly':
+      next.setMonth(next.getMonth() + 3);
+      break;
+    case 'semiannual':
+      next.setMonth(next.getMonth() + 6);
+      break;
+    case 'annual':
+      next.setFullYear(next.getFullYear() + 1);
+      break;
+    default:
+      next.setMonth(next.getMonth() + 1); // Por padrão assume mensal
+  }
+  
+  return next;
+};
+
 router.get('/', async (req, res) => {
   try {
-    const { months, years, category_id, payment_method, has_installments, description, is_recurring } = req.query;
+    const { 
+      months, 
+      years, 
+      description, 
+      category_id, 
+      min_amount, 
+      max_amount, 
+      payment_method,
+      is_recurring,
+      startDate,
+      endDate
+    } = req.query;
+    
     const where = { user_id: req.user.id };
+    
+    // Inicializa a condição AND para combinar todos os filtros
+    where[Op.and] = where[Op.and] || [];
 
-    // Filtro de meses e anos
-    const monthsArray = months ? (Array.isArray(months) ? months : months.split(',').map(Number)) : [];
-    const yearsArray = years ? (Array.isArray(years) ? years : years.split(',').map(Number)) : [];
-
-    if (monthsArray.length > 0 || yearsArray.length > 0) {
-      where[Op.and] = [];
+    // Filtro de intervalo de data
+    if (startDate && endDate) {
+      where[Op.and].push({
+        expense_date: {
+          [Op.between]: [new Date(startDate), new Date(endDate)]
+        }
+      });
+    } else {
+      // Filtro de meses e anos
+      const monthsArray = months ? (Array.isArray(months) ? months : months.split(',').map(Number)) : [];
+      const yearsArray = years ? (Array.isArray(years) ? years : years.split(',').map(Number)) : [];
 
       if (monthsArray.length > 0) {
         where[Op.and].push(
@@ -46,35 +135,59 @@ router.get('/', async (req, res) => {
       }
     }
 
+    // Filtro de descrição
+    if (description) {
+      where[Op.and].push({
+        description: {
+          [Op.like]: `%${description}%`
+        }
+      });
+    }
+
     // Filtro de categoria
-    if (category_id && category_id !== 'all') {
-      where.category_id = category_id;
+    if (category_id) {
+      where[Op.and].push({
+        category_id: category_id
+      });
+    }
+
+    // Filtro de valor mínimo
+    if (min_amount) {
+      where[Op.and].push({
+        amount: {
+          [Op.gte]: min_amount
+        }
+      });
+    }
+
+    // Filtro de valor máximo
+    if (max_amount) {
+      where[Op.and].push({
+        amount: {
+          [Op.lte]: max_amount
+        }
+      });
     }
 
     // Filtro de método de pagamento
-    if (payment_method && payment_method !== 'all') {
-      where.payment_method = payment_method;
-    }
-
-    // Filtro de parcelas
-    if (has_installments !== undefined && has_installments !== 'all') {
-      where.has_installments = has_installments === 'true' || has_installments === 'yes';
+    if (payment_method) {
+      where[Op.and].push({
+        payment_method: payment_method
+      });
     }
 
     // Filtro de recorrência
-    if (is_recurring !== undefined && is_recurring !== '') {
-      where.is_recurring = is_recurring === 'true';
+    if (is_recurring !== undefined) {
+      where[Op.and].push({
+        is_recurring: is_recurring === 'true'
+      });
     }
 
-    // Filtro de descrição
-    if (description) {
-      where.description = {
-        [Op.like]: `%${description}%`
-      };
+    // Remove a condição AND se estiver vazia
+    if (where[Op.and].length === 0) {
+      delete where[Op.and];
     }
-
-    console.log('Query where:', where);
-
+    
     const expenses = await Expense.findAll({
       where,
       include: [
@@ -84,10 +197,46 @@ router.get('/', async (req, res) => {
       order: [['expense_date', 'DESC']]
     });
 
-    res.json(expenses);
+    // Se está buscando por intervalo de data e precisamos incluir despesas recorrentes
+    let expandedRecurringExpenses = [];
+    if (startDate && endDate && is_recurring !== 'false') {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+
+      // Busca despesas recorrentes que podem ter ocorrências no período
+      const recurringExpenses = await Expense.findAll({
+        where: {
+          user_id: req.user.id,
+          is_recurring: true,
+          start_date: {
+            [Op.lte]: end
+          },
+          [Op.or]: [
+            { end_date: null },
+            { end_date: { [Op.gte]: start } }
+          ]
+        },
+        include: [
+          { model: Category, as: 'Category' },
+          { model: Bank, as: 'bank' },
+          { model: ExpensesRecurrenceException, as: 'exceptions' }
+        ]
+      });
+
+      // Para cada despesa recorrente, calcular as ocorrências no período
+      for (const expense of recurringExpenses) {
+        const occurrences = await calculateRecurringExpenseOccurrences(expense, start, end);
+        expandedRecurringExpenses = [...expandedRecurringExpenses, ...occurrences];
+      }
+    }
+
+    // Combina despesas normais e recorrentes expandidas
+    const allExpenses = [...expenses, ...expandedRecurringExpenses];
+    
+    res.json(allExpenses);
   } catch (error) {
     console.error('Erro ao buscar despesas:', error);
-    res.status(500).json({ message: 'Erro ao buscar despesas' });
+    res.status(500).json({ message: 'Erro ao buscar despesas', error: error.message });
   }
 });
 
@@ -137,10 +286,11 @@ router.post('/', async (req, res) => {
       if (!dateStr) throw new Error('Data inválida');
       
       // Garante que estamos trabalhando com a data local
-      const [year, month, day] = dateStr.split('-').map(Number);
+      const [year, month, day] = dateStr.split('T')[0].split('-').map(Number);
       if (!year || !month || !day) throw new Error('Data inválida');
       
-      const date = new Date(year, month - 1, day);
+      // Cria a data no fuso horário local
+      const date = new Date(year, month - 1, day, 12, 0, 0);
       if (isNaN(date.getTime())) throw new Error('Data inválida');
       
       return date;
@@ -912,6 +1062,271 @@ router.get('/stats', async (req, res) => {
   } catch (error) {
     console.error('Erro ao buscar estatísticas:', error);
     res.status(500).json({ message: 'Erro ao buscar estatísticas' });
+  }
+});
+
+// Rota para excluir despesa fixa (uma ocorrência específica)
+router.post('/:id/exclude-occurrence', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { occurrence_date, reason } = req.body;
+    
+    // Busca a despesa recorrente
+    const expense = await Expense.findOne({
+      where: { 
+        id, 
+        user_id: req.user.id,
+        is_recurring: true
+      }
+    });
+
+    if (!expense) {
+      return res.status(404).json({ message: 'Despesa recorrente não encontrada' });
+    }
+
+    // Cria uma exceção para esta ocorrência específica
+    await ExpensesRecurrenceException.create({
+      user_id: req.user.id,
+      expense_id: expense.id,
+      recurrence_id: expense.recurrence_id,
+      exception_date: new Date(occurrence_date),
+      exception_type: 'SKIP',
+      reason: reason || 'Ocorrência excluída pelo usuário'
+    });
+
+    res.status(201).json({ message: 'Ocorrência excluída com sucesso' });
+  } catch (error) {
+    console.error('Erro ao excluir ocorrência:', error);
+    res.status(500).json({ message: 'Erro ao excluir ocorrência' });
+  }
+});
+
+// Rota para excluir todas as ocorrências futuras de uma despesa recorrente
+router.delete('/:id/future-occurrences', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { from_date } = req.body;
+    
+    // Busca a despesa recorrente
+    const expense = await Expense.findOne({
+      where: { 
+        id, 
+        user_id: req.user.id,
+        is_recurring: true
+      }
+    });
+
+    if (!expense) {
+      return res.status(404).json({ message: 'Despesa recorrente não encontrada' });
+    }
+
+    // Atualiza a data de término para a data anterior à data especificada
+    const newEndDate = new Date(from_date);
+    newEndDate.setDate(newEndDate.getDate() - 1);
+
+    await expense.update({
+      end_date: newEndDate
+    });
+
+    res.json({ message: 'Ocorrências futuras excluídas com sucesso' });
+  } catch (error) {
+    console.error('Erro ao excluir ocorrências futuras:', error);
+    res.status(500).json({ message: 'Erro ao excluir ocorrências futuras' });
+  }
+});
+
+// Rota para excluir completamente uma despesa recorrente
+router.delete('/:id/recurring', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Busca a despesa recorrente
+    const expense = await Expense.findOne({
+      where: { 
+        id, 
+        user_id: req.user.id,
+        is_recurring: true
+      }
+    });
+
+    if (!expense) {
+      return res.status(404).json({ message: 'Despesa recorrente não encontrada' });
+    }
+
+    // Exclui todas as exceções associadas
+    await ExpensesRecurrenceException.destroy({
+      where: {
+        expense_id: expense.id,
+        user_id: req.user.id
+      }
+    });
+
+    // Exclui a despesa recorrente
+    await expense.destroy();
+
+    res.json({ message: 'Despesa recorrente excluída com sucesso' });
+  } catch (error) {
+    console.error('Erro ao excluir despesa recorrente:', error);
+    res.status(500).json({ message: 'Erro ao excluir despesa recorrente' });
+  }
+});
+
+// Rota para excluir despesa (não recorrente)
+router.delete('/:id', async (req, res) => {
+  try {
+    const expense = await Expense.findByPk(req.params.id);
+    
+    if (!expense) {
+      return res.status(404).json({ message: 'Despesa não encontrada' });
+    }
+    
+    if (expense.user_id !== req.user.id) {
+      return res.status(403).json({ message: 'Não autorizado' });
+    }
+
+    // Se for despesa recorrente, redireciona para a rota específica
+    if (expense.is_recurring) {
+      return res.status(400).json({ 
+        message: 'Para excluir despesa recorrente, use o endpoint específico',
+        redirectTo: '/expenses/:id/recurring'
+      });
+    }
+
+    // Se for despesa parcelada, verifica se deve excluir todas as parcelas
+    if (expense.has_installments && expense.installment_group_id) {
+      const { delete_all_installments } = req.query;
+      
+      if (delete_all_installments === 'true') {
+        // Exclui todas as parcelas
+        await Expense.destroy({
+          where: {
+            installment_group_id: expense.installment_group_id,
+            user_id: req.user.id
+          }
+        });
+        
+        return res.json({ message: 'Todas as parcelas foram excluídas com sucesso' });
+      }
+    }
+    
+    // Se não for parcelada ou não for para excluir todas, exclui apenas esta
+    await expense.destroy();
+    res.json({ message: 'Despesa excluída com sucesso' });
+  } catch (error) {
+    console.error('Erro ao excluir despesa:', error);
+    res.status(500).json({ message: 'Erro ao excluir despesa' });
+  }
+});
+
+// Rota para atualizar despesa
+router.put('/:id', async (req, res) => {
+  const transaction = await Expense.sequelize.transaction();
+
+  try {
+    const { 
+      description, 
+      amount: rawAmount, 
+      expense_date, 
+      category_id, 
+      bank_id, 
+      payment_method,
+      is_recurring,
+      start_date,
+      end_date,
+      recurrence_type
+    } = req.body;
+    
+    const expense = await Expense.findByPk(req.params.id);
+    
+    if (!expense) {
+      await transaction.rollback();
+      return res.status(404).json({ message: 'Despesa não encontrada' });
+    }
+    
+    if (expense.user_id !== req.user.id) {
+      await transaction.rollback();
+      return res.status(403).json({ message: 'Não autorizado' });
+    }
+
+    const parsedAmount = Number(rawAmount);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      await transaction.rollback();
+      return res.status(400).json({ message: 'O valor deve ser um número positivo' });
+    }
+
+    // Se a despesa for recorrente
+    if (expense.is_recurring) {
+      // Atualiza a despesa principal
+      await expense.update(
+        {
+          description,
+          amount: parsedAmount,
+          category_id,
+          bank_id,
+          payment_method,
+          is_recurring,
+          start_date: start_date ? new Date(start_date) : expense.start_date,
+          end_date: end_date ? new Date(end_date) : expense.end_date,
+          recurrence_type: recurrence_type || expense.recurrence_type
+        },
+        { transaction }
+      );
+    }
+    // Se a despesa for parcelada
+    else if (expense.has_installments && expense.installment_group_id) {
+      // Atualiza todas as parcelas futuras
+      const currentDate = new Date(expense.expense_date);
+      await Expense.update(
+        {
+          description,
+          category_id,
+          bank_id,
+          payment_method
+        },
+        {
+          where: {
+            installment_group_id: expense.installment_group_id,
+            expense_date: {
+              [Op.gte]: currentDate
+            },
+            user_id: req.user.id
+          },
+          transaction
+        }
+      );
+
+      // Atualiza separadamente o valor apenas desta parcela
+      await expense.update(
+        {
+          amount: parsedAmount
+        },
+        { transaction }
+      );
+    }
+    // Se for uma despesa única
+    else {
+      await expense.update(
+        {
+          description,
+          amount: parsedAmount,
+          expense_date: new Date(expense_date),
+          category_id,
+          bank_id,
+          payment_method
+        },
+        { transaction }
+      );
+    }
+
+    await transaction.commit();
+
+    // Busca a despesa atualizada
+    const updatedExpense = await Expense.findByPk(req.params.id);
+    res.json(updatedExpense);
+  } catch (error) {
+    await transaction.rollback();
+    console.error('Erro ao atualizar despesa:', error);
+    res.status(500).json({ message: 'Erro ao atualizar despesa' });
   }
 });
 
