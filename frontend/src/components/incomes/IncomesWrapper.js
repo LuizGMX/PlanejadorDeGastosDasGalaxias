@@ -41,13 +41,13 @@ const IncomesWrapper = () => {
 
   // Estado para controlar se é mobile
   const [isMobile, setIsMobile] = useState(isMobileView());
-  
+
   // Efeito para monitorar mudanças no tamanho da tela
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(isMobileView());
     };
-    
+
     window.addEventListener('resize', handleResize);
     return () => {
       window.removeEventListener('resize', handleResize);
@@ -65,30 +65,20 @@ const IncomesWrapper = () => {
 
   const handleDeleteIncome = async (income, queryParams = '') => {
     try {
-      // Verificar se é uma ocorrência de uma receita recorrente
-      if (income.isRecurringOccurrence) {
-        // Formatar a data para exibição
-        const dataOcorrencia = new Date(income.date);
-        const mes = dataOcorrencia.toLocaleString('pt-BR', { month: 'long' });
-        const ano = dataOcorrencia.getFullYear();
-        
-        // Configurar o modal de confirmação
+
+      // Receita normal ou receita recorrente original (não uma ocorrência)
+      // Para receitas recorrentes, perguntar se quer excluir todas
+      if (income.is_recurring) {
         setIncomeToDelete(income);
+        setDeleteOption('recurring');
         setShowDeleteModal(true);
       } else {
-        // Receita normal ou receita recorrente original (não uma ocorrência)
-        // Para receitas recorrentes, perguntar se quer excluir todas
-        if (income.is_recurring) {
-          setIncomeToDelete(income);
-          setDeleteOption('recurring');
-          setShowDeleteModal(true);
-        } else {
-          // Para receitas não recorrentes, confirmação padrão
-          setIncomeToDelete(income);
-          setDeleteOption('normal');
-          setShowDeleteModal(true);
-        }
+        // Para receitas não recorrentes, confirmação padrão
+        setIncomeToDelete(income);
+        setDeleteOption('normal');
+        setShowDeleteModal(true);
       }
+
     } catch (err) {
       console.error('Erro ao excluir receita:', err);
       toast.error('Erro ao excluir receita: ' + (err.message || 'Erro desconhecido'));
@@ -106,7 +96,7 @@ const IncomesWrapper = () => {
       if (income.isRecurringOccurrence) {
         // Extrair o ID da receita recorrente original
         let originalId = income.originalRecurrenceId;
-        
+
         if (!originalId && income.id && typeof income.id === 'string' && income.id.startsWith('rec_')) {
           // Se não tiver o campo originalRecurrenceId, tentar extrair do ID
           const parts = income.id.split('_');
@@ -115,7 +105,7 @@ const IncomesWrapper = () => {
             console.log('ID original extraído do ID da ocorrência:', originalId);
           }
         }
-        
+
         if (!originalId) {
           toast.error('Não foi possível identificar a receita recorrente original');
           setShowDeleteModal(false);
@@ -125,7 +115,7 @@ const IncomesWrapper = () => {
         if (option === 'all') {
           // Usuário escolheu excluir TODAS as ocorrências
           console.log('Excluindo receita recorrente completa:', originalId);
-          
+
           // Excluir a receita recorrente original (todas as ocorrências)
           // Usar o endpoint específico para receitas recorrentes
           const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${originalId}/recurring${queryParams}`, {
@@ -152,7 +142,7 @@ const IncomesWrapper = () => {
           const occurrenceDate = new Date(income.date);
           const mes = occurrenceDate.toLocaleString('pt-BR', { month: 'long' });
           const ano = occurrenceDate.getFullYear();
-          
+
           console.log('Tentando excluir apenas a ocorrência:', {
             incomeId: originalId,
             occurrenceDate: occurrenceDate.toISOString(),
@@ -166,18 +156,18 @@ const IncomesWrapper = () => {
               'Authorization': `Bearer ${auth.token}`
             }
           });
-          
+
           if (!fetchResponse.ok) {
             throw new Error(`Falha ao buscar detalhes da receita recorrente: ${fetchResponse.status}`);
           }
-          
+
           const recurrentIncome = await fetchResponse.json();
           console.log('Detalhes da receita recorrente:', recurrentIncome);
-          
+
           // 2. Calcular a data anterior à ocorrência que queremos excluir
           const prevDay = new Date(occurrenceDate);
           prevDay.setDate(prevDay.getDate() - 1);
-          
+
           // 3. Atualizar a receita original com a nova data de fim
           const updateResponse = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${originalId}`, {
             method: 'PUT',
@@ -190,20 +180,20 @@ const IncomesWrapper = () => {
               end_date: prevDay.toISOString()
             })
           });
-          
+
           if (!updateResponse.ok) {
             throw new Error(`Falha ao atualizar data de fim da receita recorrente: ${updateResponse.status}`);
           }
-          
+
           toast.success(`Receita excluída apenas para ${mes} de ${ano}`);
         }
       } else {
         // Receita normal ou receita recorrente original (não uma ocorrência)
         // Verificar se a receita é recorrente para usar o endpoint adequado
-        const endpoint = income.is_recurring 
+        const endpoint = income.is_recurring
           ? `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${income.id}/recurring${queryParams}`
           : `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${income.id}${queryParams}`;
-          
+
         const response = await fetch(endpoint, {
           method: 'DELETE',
           headers: {
@@ -218,22 +208,22 @@ const IncomesWrapper = () => {
         const data = await response.json();
         toast.success(data.message || 'Receita excluída com sucesso');
       }
-      
+
       // Recarregar os dados após a exclusão ou criação de exceção
       // Calcular datas atuais para atualizar a visualização
       let startDate, endDate;
-      
+
       if (filters.months && filters.months.length > 0 && filters.years && filters.years.length > 0) {
         const minMonth = Math.min(...filters.months);
         const maxMonth = Math.max(...filters.months);
         const minYear = Math.min(...filters.years);
         const maxYear = Math.max(...filters.years);
-        
+
         startDate = new Date(minYear, minMonth - 1, 1);
         const lastDay = new Date(maxYear, maxMonth, 0).getDate();
         endDate = new Date(maxYear, maxMonth - 1, lastDay, 23, 59, 59);
       }
-      
+
       await fetchData({
         startDate: startDate ? startDate.toISOString() : undefined,
         endDate: endDate ? endDate.toISOString() : undefined,
@@ -256,32 +246,32 @@ const IncomesWrapper = () => {
   const handleSearch = (term) => {
     console.log('Searching for:', term);
     setSearchTerm(term);
-    
+
     // Atualizar o termo de busca e manter os outros filtros
     setFilters(prevFilters => {
       const updatedFilters = {
         ...prevFilters,
         description: term
       };
-      
+
       console.log('Filtros atualizados após busca:', updatedFilters);
-      
+
       // Aplicar todos os filtros juntos
       setTimeout(() => {
         // Calcular datas com base nos meses e anos selecionados
         let startDate, endDate;
-        
+
         if (updatedFilters.months && updatedFilters.months.length > 0 && updatedFilters.years && updatedFilters.years.length > 0) {
           const minMonth = Math.min(...updatedFilters.months);
           const maxMonth = Math.max(...updatedFilters.months);
           const minYear = Math.min(...updatedFilters.years);
           const maxYear = Math.max(...updatedFilters.years);
-          
+
           startDate = new Date(minYear, minMonth - 1, 1);
           const lastDay = new Date(maxYear, maxMonth, 0).getDate();
           endDate = new Date(maxYear, maxMonth - 1, lastDay, 23, 59, 59);
         }
-        
+
         const backendFilters = {
           startDate: startDate ? startDate.toISOString() : undefined,
           endDate: endDate ? endDate.toISOString() : undefined,
@@ -290,22 +280,22 @@ const IncomesWrapper = () => {
           bank_id: updatedFilters.bank_id !== 'all' ? updatedFilters.bank_id : undefined,
           is_recurring: updatedFilters.is_recurring !== '' ? updatedFilters.is_recurring : undefined
         };
-        
+
         console.log('Enviando filtros completos para API após busca:', backendFilters);
         fetchData(backendFilters);
       }, 0);
-      
+
       return updatedFilters;
     });
   };
 
   const handleFilter = (type, value) => {
     console.log('Applying filter for incomes:', type, value, typeof value);
-    
+
     // Caso especial para resetar todos os filtros
     if (type === 'resetAllFilters' && value === true) {
       console.log('Resetting all filters for incomes - showing all data');
-      
+
       // Resetar o estado dos filtros para valores padrão
       const resetFilters = {
         months: [],
@@ -315,40 +305,40 @@ const IncomesWrapper = () => {
         bank_id: 'all',
         is_recurring: ''
       };
-      
+
       setFilters(resetFilters);
       setSearchTerm('');
-      
+
       // Buscar todos os dados sem filtros
       fetchData({});
       return;
     }
-    
+
     // Atualizar o estado do filtro e depois buscar os dados
     setFilters(prevFilters => {
       const newFilters = { ...prevFilters };
-      
+
       // Atualizar o valor do filtro específico
       newFilters[type] = value;
-      
+
       console.log('Novos filtros para receitas (combinando todos):', newFilters);
-      
+
       // Buscar dados com os novos filtros após atualizar o estado
       setTimeout(() => {
         // Calcular datas com base nos meses e anos selecionados
         let startDate, endDate;
-        
+
         if (newFilters.months && newFilters.months.length > 0 && newFilters.years && newFilters.years.length > 0) {
           const minMonth = Math.min(...newFilters.months);
           const maxMonth = Math.max(...newFilters.months);
           const minYear = Math.min(...newFilters.years);
           const maxYear = Math.max(...newFilters.years);
-          
+
           startDate = new Date(minYear, minMonth - 1, 1);
           const lastDay = new Date(maxYear, maxMonth, 0).getDate();
           endDate = new Date(maxYear, maxMonth - 1, lastDay, 23, 59, 59);
         }
-        
+
         // Converter filtros internos para o formato da API
         const backendFilters = {
           startDate: startDate ? startDate.toISOString() : undefined,
@@ -358,11 +348,11 @@ const IncomesWrapper = () => {
           bank_id: newFilters.bank_id !== 'all' ? newFilters.bank_id : undefined,
           is_recurring: newFilters.is_recurring !== '' ? newFilters.is_recurring : undefined
         };
-        
+
         console.log('Filtros completos enviados para a API de receitas:', backendFilters);
         fetchData(backendFilters);
       }, 0);
-      
+
       return newFilters;
     });
   };
@@ -380,7 +370,7 @@ const IncomesWrapper = () => {
   const handleSelectAll = () => {
     // Garantir que incomes seja um array
     const safeIncomes = Array.isArray(incomes) ? incomes : [];
-    
+
     if (selectedIncomes.length === safeIncomes.length) {
       setSelectedIncomes([]);
     } else {
@@ -394,12 +384,12 @@ const IncomesWrapper = () => {
     const today = new Date();
     const thisMonth = today.getMonth() + 1;
     const thisYear = today.getFullYear();
-    
+
     // Calcular datas de início e fim do mês atual
     const startDate = new Date(thisYear, thisMonth - 1, 1);
     const lastDay = new Date(thisYear, thisMonth, 0).getDate();
     const endDate = new Date(thisYear, thisMonth - 1, lastDay, 23, 59, 59);
-    
+
     // Definir filtros iniciais
     setFilters({
       months: [thisMonth],
@@ -409,7 +399,7 @@ const IncomesWrapper = () => {
       bank_id: 'all',
       is_recurring: ''
     });
-    
+
     // Buscar dados com os filtros iniciais de data
     fetchData({
       startDate: startDate.toISOString(),
@@ -421,67 +411,67 @@ const IncomesWrapper = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Construir os parâmetros da query
       const queryParams = new URLSearchParams();
-      
+
       // Adicionar parâmetros de período (nova abordagem com startDate e endDate)
       if (filterParams.startDate) {
         queryParams.append('startDate', filterParams.startDate);
       }
-      
+
       if (filterParams.endDate) {
         queryParams.append('endDate', filterParams.endDate);
       }
-      
+
       // Adicionar os parâmetros de filtro à URL para compatibilidade com filtros existentes
       if (!filterParams.startDate && !filterParams.endDate && filterParams.months && filterParams.months.length > 0) {
         filterParams.months.forEach(month => queryParams.append('months[]', month));
       }
-      
+
       if (!filterParams.startDate && !filterParams.endDate && filterParams.years && filterParams.years.length > 0) {
         filterParams.years.forEach(year => queryParams.append('years[]', year));
       }
-      
+
       if (filterParams.description) {
         queryParams.append('description', filterParams.description);
       }
-      
+
       if (filterParams.category_id && filterParams.category_id !== 'all') {
         queryParams.append('category_id', filterParams.category_id);
       }
-      
+
       if (filterParams.bank_id && filterParams.bank_id !== 'all') {
         queryParams.append('bank_id', filterParams.bank_id);
       }
-      
+
       if (filterParams.is_recurring !== undefined && filterParams.is_recurring !== '') {
         queryParams.append('is_recurring', filterParams.is_recurring);
       }
-      
+
       // Construir a URL com query params
       const queryString = queryParams.toString();
       const url = `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes${queryString ? `?${queryString}` : ''}`;
-      
+
       console.log('URL da requisição:', url);
-      
+
       // Buscar receitas com os filtros
       const incomesResponse = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${auth.token}`
         }
       });
-      
+
       console.log('Resposta da API de receitas:', {
         status: incomesResponse.status,
         ok: incomesResponse.ok,
         statusText: incomesResponse.statusText
       });
-      
+
       if (!incomesResponse.ok) {
         throw new Error('Erro ao carregar receitas');
       }
-      
+
       const incomesData = await incomesResponse.json();
       console.log('Dados de receitas recebidos:', {
         type: typeof incomesData,
@@ -489,10 +479,10 @@ const IncomesWrapper = () => {
         length: incomesData?.length,
         data: incomesData
       });
-      
+
       // Extrair os dados de receitas do objeto retornado
       let extractedIncomes = [];
-      
+
       // Verificar se é um objeto e contém a propriedade 'incomes'
       if (typeof incomesData === 'object' && 'incomes' in incomesData) {
         extractedIncomes = incomesData.incomes;
@@ -502,10 +492,10 @@ const IncomesWrapper = () => {
         console.error('Formato de dados inesperado:', incomesData);
         extractedIncomes = [];
       }
-      
+
       // Processar as receitas e remover duplicatas
       console.log('Verificando duplicatas em receitas. Total bruto:', extractedIncomes.length);
-      
+
       // Identificar receitas recorrentes e suas ocorrências
       const originalRecurringIncomes = new Set();
       const occurrences = [];
@@ -516,7 +506,7 @@ const IncomesWrapper = () => {
         // Verificar se é uma ocorrência de recorrência
         if (income.isRecurringOccurrence) {
           occurrences.push(income);
-          
+
           // Se tiver o ID da receita original, adicionar ao conjunto
           if (income.originalRecurrenceId) {
             originalRecurringIncomes.add(income.originalRecurrenceId);
@@ -531,7 +521,7 @@ const IncomesWrapper = () => {
           normalIncomes.push(income);
         }
       });
-      
+
       // Filtrar receitas normais para remover duplicatas
       const filteredNormalIncomes = normalIncomes.filter(income => {
         // Se é uma receita recorrente e seu ID está no conjunto de originais
@@ -542,24 +532,24 @@ const IncomesWrapper = () => {
         }
         return true;
       });
-      
+
       // Combinar receitas filtradas com ocorrências
       const dedupedIncomes = [...filteredNormalIncomes, ...occurrences];
-      
+
       console.log('Receitas após remoção de duplicatas:', {
         original: extractedIncomes.length,
         dedupedTotal: dedupedIncomes.length,
         normalIncomesCount: filteredNormalIncomes.length,
         occurrencesCount: occurrences.length
       });
-      
+
       setOriginalIncomes(dedupedIncomes);
       setFilteredIncomes(dedupedIncomes);
       setIncomes(dedupedIncomes);
-      
+
       // Exibe os dados antes de aplicar filtros
       console.log("Dados carregados após deduplicação:", dedupedIncomes.length);
-      
+
       // Examine alguns dados para debug
       if (dedupedIncomes.length > 0) {
         console.log("Exemplo de receita:", dedupedIncomes[0]);
@@ -581,21 +571,21 @@ const IncomesWrapper = () => {
           'Authorization': `Bearer ${auth.token}`
         }
       });
-      
+
       if (!categoriesResponse.ok) {
         throw new Error('Erro ao carregar categorias');
       }
-      
+
       const categoriesData = await categoriesResponse.json();
       console.log('Dados de categorias recebidos:', {
         type: typeof categoriesData,
         isArray: Array.isArray(categoriesData),
         data: categoriesData
       });
-      
+
       // Extrair os dados de categorias do objeto retornado
       let extractedCategories = [];
-      
+
       if (typeof categoriesData === 'object' && !Array.isArray(categoriesData)) {
         if (categoriesData.data && Array.isArray(categoriesData.data)) {
           extractedCategories = categoriesData.data;
@@ -616,12 +606,12 @@ const IncomesWrapper = () => {
       } else if (Array.isArray(categoriesData)) {
         extractedCategories = categoriesData;
       }
-      
+
       console.log('Categorias extraídas:', {
         length: extractedCategories.length,
         data: extractedCategories
       });
-      
+
       setCategories(extractedCategories);
 
       // Buscar bancos
@@ -630,21 +620,21 @@ const IncomesWrapper = () => {
           'Authorization': `Bearer ${auth.token}`
         }
       });
-      
+
       if (!banksResponse.ok) {
         throw new Error('Erro ao carregar bancos');
       }
-      
+
       const banksData = await banksResponse.json();
       console.log('Dados de bancos recebidos:', {
         type: typeof banksData,
         isArray: Array.isArray(banksData),
         data: banksData
       });
-      
+
       // Extrair os dados de bancos do objeto retornado
       let extractedBanks = [];
-      
+
       if (typeof banksData === 'object' && !Array.isArray(banksData)) {
         if (banksData.data && Array.isArray(banksData.data)) {
           extractedBanks = banksData.data;
@@ -665,12 +655,12 @@ const IncomesWrapper = () => {
       } else if (Array.isArray(banksData)) {
         extractedBanks = banksData;
       }
-      
+
       console.log('Bancos extraídos:', {
         length: extractedBanks.length,
         data: extractedBanks
       });
-      
+
       setBanks(extractedBanks);
 
     } catch (error) {
@@ -687,24 +677,24 @@ const IncomesWrapper = () => {
   // Aplicar filtros no backend
   const applyFilters = async () => {
     console.log('Aplicando filtros para receitas no backend');
-    
+
     // Construir as datas de início e fim com base nos filtros de mês e ano
     let startDate, endDate;
-    
+
     if (filters.months && filters.months.length > 0 && filters.years && filters.years.length > 0) {
       // Se temos meses e anos específicos, calcular o intervalo de datas
       const minMonth = Math.min(...filters.months);
       const maxMonth = Math.max(...filters.months);
       const minYear = Math.min(...filters.years);
       const maxYear = Math.max(...filters.years);
-      
+
       // Criar data de início (primeiro dia do mês mínimo)
       startDate = new Date(minYear, minMonth - 1, 1);
-      
+
       // Criar data de fim (último dia do mês máximo)
       const lastDay = new Date(maxYear, maxMonth, 0).getDate();
       endDate = new Date(maxYear, maxMonth - 1, lastDay, 23, 59, 59);
-      
+
       console.log('Filtro por período:', {
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
@@ -712,7 +702,7 @@ const IncomesWrapper = () => {
         anos: filters.years
       });
     }
-    
+
     // Mapear os filtros do estado para o formato que o backend espera
     const backendFilters = {
       startDate: startDate ? startDate.toISOString() : undefined,
@@ -722,9 +712,9 @@ const IncomesWrapper = () => {
       is_recurring: filters.is_recurring !== '' ? filters.is_recurring : undefined,
       description: filters.description || undefined
     };
-    
+
     console.log('Aplicando filtros no backend:', backendFilters);
-    
+
     // Buscar dados com filtros
     await fetchData(backendFilters);
   };
@@ -789,15 +779,15 @@ const IncomesWrapper = () => {
                 <>
                   <p>Como deseja excluir esta receita recorrente?</p>
                   <p><strong>{incomeToDelete.description}</strong></p>
-                  
+
                   <div className={dataTableStyles.modalOptions}>
                     <button
                       className={dataTableStyles.optionButton}
                       onClick={() => handleConfirmDelete('single')}
                     >
-                      Excluir APENAS esta ocorrência 
+                      Excluir APENAS esta ocorrência
                       {incomeToDelete.date && (
-                        <span> 
+                        <span>
                           ({new Date(incomeToDelete.date).toLocaleString('pt-BR', { month: 'long', year: 'numeric' })})
                         </span>
                       )}
@@ -832,7 +822,7 @@ const IncomesWrapper = () => {
               >
                 <BsX /> Cancelar
               </button>
-              
+
               {/* Mostrar botão de confirmar apenas para receitas normais ou recorrentes originais */}
               {!incomeToDelete.isRecurringOccurrence && (
                 <button
