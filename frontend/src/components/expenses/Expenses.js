@@ -1081,11 +1081,17 @@ const Expenses = () => {
                 <span className={dataTableStyles.mobileCardLabel}>Tipo</span>
                 <span className={dataTableStyles.mobileCardValue}>
                   {expense.is_recurring ? (
-                    <><BsRepeat style={{color: 'var(--primary-color)'}} /> Despesa fixa</> 
+                    <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
+                      <BsRepeat size={14} /> Despesa fixa
+                    </span>
                   ) : expense.has_installments ? (
-                    <><BsCreditCard2Front style={{color: '#598FFF'}} /> Parcelado</>
+                    <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.installmentsType}`}>
+                      <BsCreditCard2Front size={14} /> Despesa parcelada
+                    </span>
                   ) : (
-                    <><BsCurrencyDollar style={{color: 'var(--text-color)'}} /> Único</>
+                    <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
+                      <BsCurrencyDollar size={14} /> Único
+                    </span>
                   )}
                 </span>
               </div>
@@ -1248,15 +1254,15 @@ const Expenses = () => {
                           <td data-label="Pagamento">{expense.payment_method}</td>
                           <td data-label="Tipo">
                             {expense.is_recurring ? (
-                              <span className={dataTableStyles.typeWithIcon}>
+                              <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
                                 <BsRepeat size={14} /> Fixo
                               </span>
                             ) : expense.has_installments ? (
-                              <span className={dataTableStyles.typeWithIcon}>
+                              <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.installmentsType}`}>
                                 <BsCreditCard2Front size={14} /> Parcelado
                               </span>
                             ) : (
-                              <span className={dataTableStyles.typeWithIcon}>
+                              <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
                                 <BsCurrencyDollar size={14} /> Único
                               </span>
                             )}
@@ -1328,15 +1334,15 @@ const Expenses = () => {
                         <td>{expense.payment_method}</td>
                         <td>
                           {expense.is_recurring ? (
-                            <span className={dataTableStyles.typeWithIcon}>
+                            <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
                               <BsRepeat size={14} /> Fixo
                             </span>
                           ) : expense.has_installments ? (
-                            <span className={dataTableStyles.typeWithIcon}>
+                            <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.installmentsType}`}>
                               <BsCreditCard2Front size={14} /> Parcelado
                             </span>
                           ) : (
-                            <span className={dataTableStyles.typeWithIcon}>
+                            <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
                               <BsCurrencyDollar size={14} /> Único
                             </span>
                           )}

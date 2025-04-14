@@ -31,7 +31,10 @@ function Income({
   onSelectIncome,
   onSelectAll,
   loading,
-  error
+  error,
+  categories,
+  banks,
+  filters
 }) {
   const navigate = useNavigate();
   const { auth } = useContext(AuthContext);
@@ -54,8 +57,6 @@ function Income({
     type: 'single'
   });
   const [noIncomesMessage, setNoIncomesMessage] = useState(null);
-  const [categories, setCategories] = useState([]);
-  const [banks, setBanks] = useState([]);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
@@ -63,6 +64,15 @@ function Income({
   const [activeSwipeCard, setActiveSwipeCard] = useState(null);
   const [touchStartX, setTouchStartX] = useState(0);
   const [touchCurrentX, setTouchCurrentX] = useState(0);
+
+  // Garantir que filters exista e tenha valores padrão - sem has_installments
+  const safeFilters = filters || {
+    months: [],
+    years: [],
+    category_id: 'all',
+    is_recurring: '',
+    description: ''
+  };
 
   // Add useEffect for detecting mobile screen size
   useEffect(() => {
@@ -84,6 +94,11 @@ function Income({
       window.removeEventListener('resize', handleResize);
     };
   }, []);
+
+  // Log para monitorar as mudanças nos filtros
+  useEffect(() => {
+    console.log('Filtros atualizados em Income.js:', safeFilters);
+  }, [safeFilters]);
 
   // Log do estado antes da renderização
   console.log('Income render:', { 
@@ -203,6 +218,7 @@ function Income({
   };
 
   const handleFilterChange = (type, value) => {
+    console.log('handleFilterChange em Income.js:', type, value);
     if (type === 'description') {
       onSearch(value);
       return;
@@ -212,7 +228,41 @@ function Income({
   };
 
   const formatSelectedPeriod = (type) => {
-    return "Filtro aplicado";
+    switch(type) {
+      case 'months':
+        if (!safeFilters?.months?.length) return 'Selecione o mês';
+        if (safeFilters.months.length === 1) {
+          const selectedMonth = months.find(m => m.value === safeFilters.months[0]);
+          return selectedMonth ? selectedMonth.label : 'Selecione o mês';
+        }
+        if (safeFilters.months.length > 2) {
+          return `${safeFilters.months.length} meses selecionados`;
+        }
+        return safeFilters.months
+          .map(m => months.find(month => month.value === m)?.label)
+          .filter(Boolean)
+          .join(', ');
+          
+      case 'years':
+        if (!safeFilters?.years?.length) return 'Selecione o ano';
+        if (safeFilters.years.length === 1) {
+          return safeFilters.years[0].toString();
+        }
+        if (safeFilters.years.length > 2) {
+          return `${safeFilters.years.length} anos selecionados`;
+        }
+        return safeFilters.years.join(', ');
+        
+      case 'category':
+        if (!safeFilters?.category_id || safeFilters.category_id === 'all') {
+          return 'Todas as categorias';
+        }
+        const selectedCategory = categories.find(c => c.id.toString() === safeFilters.category_id);
+        return selectedCategory ? selectedCategory.category_name : 'Selecione a categoria';
+        
+      default:
+        return "Filtro aplicado";
+    }
   };
 
   const formatCurrency = (value) => {
@@ -450,7 +500,7 @@ function Income({
                 onClick={() => handleFilterClick('months')}
               >
                 <div className={dataTableStyles.modernSelectHeader}>
-                  <span>Selecione o mês</span>
+                  <span>{formatSelectedPeriod('months')}</span>
                   <span className={dataTableStyles.arrow}>▼</span>
                 </div>
                 {openFilter === 'months' && (
@@ -461,7 +511,7 @@ function Income({
                           <input
                             type="checkbox"
                             className={dataTableStyles.hiddenCheckbox}
-                            checked={selectedIncomes.includes(month.value)}
+                            checked={safeFilters?.months?.includes(month.value)}
                             onChange={() => handleFilterChange('months', month.value)}
                             onClick={handleCheckboxClick}
                           />
@@ -484,7 +534,7 @@ function Income({
                 onClick={() => handleFilterClick('years')}
               >
                 <div className={dataTableStyles.modernSelectHeader}>
-                  <span>Selecione o ano</span>
+                  <span>{formatSelectedPeriod('years')}</span>
                   <span className={dataTableStyles.arrow}>▼</span>
                 </div>
                 {openFilter === 'years' && (
@@ -495,7 +545,7 @@ function Income({
                           <input
                             type="checkbox"
                             className={dataTableStyles.hiddenCheckbox}
-                            checked={selectedIncomes.includes(year.value)}
+                            checked={safeFilters?.years?.includes(year.value)}
                             onChange={() => handleFilterChange('years', year.value)}
                             onClick={handleCheckboxClick}
                           />
@@ -518,7 +568,7 @@ function Income({
                 onClick={() => handleFilterClick('category')}
               >
                 <div className={dataTableStyles.modernSelectHeader}>
-                  <span>Selecione a categoria</span>
+                  <span>{formatSelectedPeriod('category')}</span>
                   <span className={dataTableStyles.arrow}>▼</span>
                 </div>
                 {openFilter === 'category' && (
@@ -528,14 +578,29 @@ function Income({
                         <input
                           type="radio"
                           className={dataTableStyles.hiddenCheckbox}
-                          checked={true}
-                          onChange={() => handleFilterChange('category', 'all')}
+                          checked={!safeFilters.category_id || safeFilters.category_id === 'all'}
+                          onChange={() => handleFilterChange('category_id', 'all')}
                           onClick={handleCheckboxClick}
                         />
                         <div className={dataTableStyles.customCheckbox}></div>
                       </div>
                       Todas as categorias
                     </label>
+                    {categories && categories.length > 0 && categories.map((category) => (
+                      <label key={category.id} className={dataTableStyles.modernCheckboxLabel}>
+                        <div className={dataTableStyles.modernCheckbox}>
+                          <input
+                            type="radio"
+                            className={dataTableStyles.hiddenCheckbox}
+                            checked={safeFilters.category_id === category.id.toString()}
+                            onChange={() => handleFilterChange('category_id', category.id.toString())}
+                            onClick={handleCheckboxClick}
+                          />
+                          <div className={dataTableStyles.customCheckbox}></div>
+                        </div>
+                        {category.category_name}
+                      </label>
+                    ))}
                   </div>
                 )}
               </div>
@@ -547,19 +612,19 @@ function Income({
               </label>
               <div className={dataTableStyles.toggleGroup}>
                 <button
-                  className={`${dataTableStyles.recurringButton} ${selectedIncomes.includes('') ? dataTableStyles.active : ''}`}
+                  className={`${dataTableStyles.recurringButton} ${safeFilters.is_recurring === '' ? dataTableStyles.active : ''}`}
                   onClick={() => handleFilterChange('is_recurring', '')}
                 >
                   <BsArrowClockwise /> Todos
                 </button>
                 <button
-                  className={`${dataTableStyles.recurringButton} ${selectedIncomes.includes(true) ? dataTableStyles.active : ''}`}
+                  className={`${dataTableStyles.recurringButton} ${safeFilters.is_recurring === true ? dataTableStyles.active : ''}`}
                   onClick={() => handleFilterChange('is_recurring', true)}
                 >
                   <BsRepeat /> Fixos
                 </button>
                 <button
-                  className={`${dataTableStyles.recurringButton} ${selectedIncomes.includes(false) ? dataTableStyles.active : ''}`}
+                  className={`${dataTableStyles.recurringButton} ${safeFilters.is_recurring === false ? dataTableStyles.active : ''}`}
                   onClick={() => handleFilterChange('is_recurring', false)}
                 >
                   <BsCurrencyDollar /> Únicos
