@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FiEdit2, FiTrash2, FiFilter, FiSearch, FiPlus } from 'react-icons/fi';
-import { BsRepeat, BsCurrencyDollar } from 'react-icons/bs';
+import { BsRepeat, BsCurrencyDollar, BsExclamationTriangle, BsX } from 'react-icons/bs';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import styles from '../../styles/mobile/dataTable.mobile.module.css';
 
@@ -20,7 +20,8 @@ const MobileIncomes = ({
 }) => {
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [deletingId, setDeletingId] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [incomeToDelete, setIncomeToDelete] = useState(null);
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
 
@@ -34,16 +35,16 @@ const MobileIncomes = ({
     setShowFilters(!showFilters);
   };
 
-  const handleDelete = async (income) => {
-    if (window.confirm('Tem certeza que deseja excluir esta receita?')) {
-      setDeletingId(income.id);
-      try {
-        await onDelete(income);
-      } catch (err) {
-        console.error('Erro ao excluir receita:', err);
-      } finally {
-        setDeletingId(null);
-      }
+  const handleDelete = (income) => {
+    setIncomeToDelete(income);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (incomeToDelete) {
+      await onDelete(incomeToDelete);
+      setShowDeleteModal(false);
+      setIncomeToDelete(null);
     }
   };
 
@@ -282,7 +283,6 @@ const MobileIncomes = ({
                   className={styles.editButton}
                   onClick={() => onEdit(income)}
                   aria-label="Editar receita"
-                  disabled={deletingId === income.id}
                 >
                   <FiEdit2 />
                 </button>
@@ -290,19 +290,43 @@ const MobileIncomes = ({
                   className={styles.deleteButton}
                   onClick={() => handleDelete(income)}
                   aria-label="Excluir receita"
-                  disabled={deletingId === income.id}
                 >
-                  {deletingId === income.id ? (
-                    <div className={styles.loadingSpinner} />
-                  ) : (
-                    <FiTrash2 />
-                  )}
+                  <FiTrash2 />
                 </button>
               </div>
             </div>
           )})}
         </div>
       </div>
+
+      {showDeleteModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <div className={styles.modalHeader}>
+              <BsExclamationTriangle className={styles.warningIcon} />
+              <h3>Confirmar exclusão</h3>
+            </div>
+            <div className={styles.modalBody}>
+              <p>Tem certeza que deseja excluir esta receita?</p>
+              <p><strong>{incomeToDelete?.description}</strong></p>
+            </div>
+            <div className={styles.modalActions}>
+              <button
+                className={styles.secondaryButton}
+                onClick={() => setShowDeleteModal(false)}
+              >
+                <BsX /> Cancelar
+              </button>
+              <button
+                className={`${styles.primaryButton} ${styles.deleteButton}`}
+                onClick={handleConfirmDelete}
+              >
+                <FiTrash2 /> Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FiEdit2, FiTrash2, FiFilter, FiSearch, FiPlus } from 'react-icons/fi';
-import { BsRepeat, BsCreditCard2Front, BsCurrencyDollar } from 'react-icons/bs';
+import { BsRepeat, BsCreditCard2Front, BsCurrencyDollar, BsExclamationTriangle, BsX } from 'react-icons/bs';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import styles from '../../styles/mobile/dataTable.mobile.module.css';
 
@@ -23,7 +23,8 @@ const MobileExpenses = ({
 }) => {
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [deletingId, setDeletingId] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [expenseToDelete, setExpenseToDelete] = useState(null);
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
   const initialFilterApplied = useRef(false);
@@ -73,16 +74,16 @@ const MobileExpenses = ({
     setShowFilters(!showFilters);
   };
 
-  const handleDelete = async (expense) => {
-    if (window.confirm('Tem certeza que deseja excluir esta despesa?')) {
-      setDeletingId(expense.id);
-      try {
-        await onDelete(expense);
-      } catch (err) {
-        console.error('Erro ao excluir despesa:', err);
-      } finally {
-        setDeletingId(null);
-      }
+  const handleDelete = (expense) => {
+    setExpenseToDelete(expense);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (expenseToDelete) {
+      await onDelete(expenseToDelete);
+      setShowDeleteModal(false);
+      setExpenseToDelete(null);
     }
   };
 
@@ -323,7 +324,6 @@ const MobileExpenses = ({
                   className={styles.editButton}
                   onClick={() => onEdit(expense)}
                   aria-label="Editar despesa"
-                  disabled={deletingId === expense.id}
                 >
                   <FiEdit2 />
                 </button>
@@ -331,19 +331,43 @@ const MobileExpenses = ({
                   className={styles.deleteButton}
                   onClick={() => handleDelete(expense)}
                   aria-label="Excluir despesa"
-                  disabled={deletingId === expense.id}
                 >
-                  {deletingId === expense.id ? (
-                    <div className={styles.loadingSpinner} />
-                  ) : (
-                    <FiTrash2 />
-                  )}
+                  <FiTrash2 />
                 </button>
               </div>
             </div>
           )})}
         </div>
       </div>
+
+      {showDeleteModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <div className={styles.modalHeader}>
+              <BsExclamationTriangle className={styles.warningIcon} />
+              <h3>Confirmar exclusão</h3>
+            </div>
+            <div className={styles.modalBody}>
+              <p>Tem certeza que deseja excluir esta despesa?</p>
+              <p><strong>{expenseToDelete?.description}</strong></p>
+            </div>
+            <div className={styles.modalActions}>
+              <button
+                className={styles.secondaryButton}
+                onClick={() => setShowDeleteModal(false)}
+              >
+                <BsX /> Cancelar
+              </button>
+              <button
+                className={`${styles.primaryButton} ${styles.deleteButton}`}
+                onClick={handleConfirmDelete}
+              >
+                <FiTrash2 /> Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
