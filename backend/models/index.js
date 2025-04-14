@@ -10,7 +10,6 @@ import defineBudgetModel from './budget.js';
 import defineVerificationCodeModel from './verificationCode.js';
 import defineUserBankModel from './userBank.js';
 import defineRecurrenceRuleModel from './recurrenceRule.js';
-import defineRecurrenceExceptionModel from './recurrenceException.js';
 import defineExpensesRecurrenceExceptionModel from './expensesRecurrenceException.js';
 import defineIncomesRecurrenceExceptionModel from './incomesRecurrenceException.js';
 import definePaymentModel from './payment.js';

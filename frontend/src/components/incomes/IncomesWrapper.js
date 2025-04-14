@@ -134,21 +134,9 @@ const IncomesWrapper = () => {
               'Content-Type': 'application/json'
             },
           });
-
-          const updateResponse = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${originalId}`, {
-            method: 'PUT',
-            headers: {
-              'Authorization': `Bearer ${auth.token}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              ...recurrentIncome,
-              end_date: prevDay.toISOString()
-            })
-          });
           
-          if (!updateResponse.ok) {
-            throw new Error(`Falha ao atualizar data de fim da receita recorrente: ${updateResponse.status}`);
+          if (!inserirRecurrenceException.ok) {
+            throw new Error(`Falha ao atualizar data de fim da receita recorrente: ${inserirRecurrenceException.status}`);
           }
           
           toast.success(`Receita excluída apenas para ${mes} de ${ano}`);

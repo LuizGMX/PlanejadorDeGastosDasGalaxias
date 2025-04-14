@@ -10,9 +10,10 @@ import Budget from '../models/budget.js';
 import VerificationCode from '../models/verificationCode.js';
 import UserBank from '../models/userBank.js';
 import RecurrenceRule from '../models/recurrenceRule.js';
-import RecurrenceException from '../models/recurrenceException.js';
 import Payment from '../models/payment.js';
 import FinancialGoal from '../models/financialGoal.js';
+import ExpensesRecurrenceException from '../models/expensesRecurrenceException.js';
+import IncomesRecurrenceException from '../models/incomesRecurrenceException.js';
 
 dotenv.config();
 
