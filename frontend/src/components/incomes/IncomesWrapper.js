@@ -125,29 +125,16 @@ const IncomesWrapper = () => {
           console.log('Tentando excluir apenas a ocorrência:', {
             incomeId: originalId,
             occurrenceDate: occurrenceDate.toISOString(),
+          });                  
+          
+          const inserirRecurrenceException = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${originalId}/exclude-occurrence`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${auth.token}`,
+              'Content-Type': 'application/json'
+            },
           });
 
-          // Vamos abordar de uma forma alternativa:
-          // 1. Primeiro buscar todas as informações completas da receita recorrente
-          const fetchResponse = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${originalId}`, {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${auth.token}`
-            }
-          });
-          
-          if (!fetchResponse.ok) {
-            throw new Error(`Falha ao buscar detalhes da receita recorrente: ${fetchResponse.status}`);
-          }
-          
-          const recurrentIncome = await fetchResponse.json();
-          console.log('Detalhes da receita recorrente:', recurrentIncome);
-          
-          // 2. Calcular a data anterior à ocorrência que queremos excluir
-          const prevDay = new Date(occurrenceDate);
-          prevDay.setDate(prevDay.getDate() - 1);
-          
-          // 3. Atualizar a receita original com a nova data de fim
           const updateResponse = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${originalId}`, {
             method: 'PUT',
             headers: {

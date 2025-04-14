@@ -25,14 +25,6 @@ const ExpensesRecurrenceExceptionModel = (sequelize) => {
         key: 'id'
       }
     },
-    recurrence_id: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: 'recurrence_rules',
-        key: 'id'
-      }
-    },
     exception_date: {
       type: DataTypes.DATE,
       allowNull: false

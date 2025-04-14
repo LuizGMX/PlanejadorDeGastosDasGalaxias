@@ -293,8 +293,7 @@ router.post('/:id/exclude-occurrence', async (req, res) => {
     // Cria uma exceção para esta ocorrência específica
     await IncomesRecurrenceException.create({
       user_id: req.user.id,
-      income_id: income.id,
-      recurrence_id: income.recurrence_id,
+      income_id: income.id,    
       exception_date: new Date(occurrence_date),
       exception_type: 'SKIP',
       reason: reason || 'Ocorrência excluída pelo usuário'

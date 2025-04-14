@@ -984,7 +984,6 @@ router.post('/:id/exclude-occurrence', async (req, res) => {
     await ExpensesRecurrenceException.create({
       user_id: req.user.id,
       expense_id: expense.id,
-      recurrence_id: expense.recurrence_id,
       exception_date: new Date(occurrence_date),
       exception_type: 'SKIP',
       reason: reason || 'Ocorrência excluída pelo usuário'

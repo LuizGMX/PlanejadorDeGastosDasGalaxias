@@ -7,14 +7,6 @@ const RecurrenceExceptionModel = (sequelize) => {
       primaryKey: true,
       autoIncrement: true
     },
-    recurrence_id: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: 'recurrence_rules',
-        key: 'id'
-      }
-    },
     exception_date: {
       type: DataTypes.DATE,
       allowNull: false

@@ -104,56 +104,6 @@ router.delete('/:id', authenticate, async (req, res) => {
   }
 });
 
-// Adicionar uma exceção
-router.post('/:id/exceptions', authenticate, async (req, res) => {
-  try {
-    const rule = await RecurrenceRule.findOne({
-      where: { id: req.params.id, user_id: req.user.id }
-    });
-
-    if (!rule) {
-      return res.status(404).json({ message: 'Regra de recorrência não encontrada' });
-    }
-
-    const exception = await RecurrenceException.create({
-      recurrence_id: rule.id,
-      ...req.body
-    });
-
-    res.status(201).json(exception);
-  } catch (error) {
-    console.error('Erro ao criar exceção:', error);
-    res.status(500).json({ message: 'Erro ao criar exceção' });
-  }
-});
-
-// Remover uma exceção
-router.delete('/:id/exceptions/:exceptionId', authenticate, async (req, res) => {
-  try {
-    const rule = await RecurrenceRule.findOne({
-      where: { id: req.params.id, user_id: req.user.id }
-    });
-
-    if (!rule) {
-      return res.status(404).json({ message: 'Regra de recorrência não encontrada' });
-    }
-
-    const exception = await RecurrenceException.findOne({
-      where: { id: req.params.exceptionId, recurrence_id: rule.id }
-    });
-
-    if (!exception) {
-      return res.status(404).json({ message: 'Exceção não encontrada' });
-    }
-
-    await exception.destroy();
-    res.json({ message: 'Exceção removida com sucesso' });
-  } catch (error) {
-    console.error('Erro ao remover exceção:', error);
-    res.status(500).json({ message: 'Erro ao remover exceção' });
-  }
-});
-
 // Calcular ocorrências em um período
 router.get('/:id/occurrences', authenticate, async (req, res) => {
   try {

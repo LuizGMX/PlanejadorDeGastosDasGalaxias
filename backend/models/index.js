@@ -205,36 +205,6 @@ RecurrenceRule.belongsTo(Bank, {
   as: 'bank'
 });
 
-// RecurrenceRule-Expense
-RecurrenceRule.hasMany(Expense, {
-  foreignKey: 'recurrence_id',
-  as: 'expenses'
-});
-Expense.belongsTo(RecurrenceRule, {
-  foreignKey: 'recurrence_id',
-  as: 'recurrence'
-});
-
-// RecurrenceRule-RecurrenceException
-RecurrenceRule.hasMany(RecurrenceException, {
-  foreignKey: 'recurrence_id',
-  as: 'exceptions'
-});
-RecurrenceException.belongsTo(RecurrenceRule, {
-  foreignKey: 'recurrence_id',
-  as: 'RecurrenceRule'
-});
-
-// RecurrenceRule-Income
-RecurrenceRule.hasMany(Income, {
-  foreignKey: 'recurrence_id',
-  as: 'incomes'
-});
-Income.belongsTo(RecurrenceRule, {
-  foreignKey: 'recurrence_id',
-  as: 'recurrence'
-});
-
 // User-Payment
 User.hasMany(Payment, {
   foreignKey: 'user_id',
@@ -243,16 +213,6 @@ User.hasMany(Payment, {
 Payment.belongsTo(User, {
   foreignKey: 'user_id',
   as: 'user'
-});
-
-// RecurrenceRule-ExpensesRecurrenceException
-RecurrenceRule.hasMany(ExpensesRecurrenceException, {
-  foreignKey: 'recurrence_id',
-  as: 'expenseExceptions'
-});
-ExpensesRecurrenceException.belongsTo(RecurrenceRule, {
-  foreignKey: 'recurrence_id',
-  as: 'recurrenceRule'
 });
 
 // Expense-ExpensesRecurrenceException
@@ -273,16 +233,6 @@ User.hasMany(ExpensesRecurrenceException, {
 ExpensesRecurrenceException.belongsTo(User, {
   foreignKey: 'user_id',
   as: 'user'
-});
-
-// RecurrenceRule-IncomesRecurrenceException
-RecurrenceRule.hasMany(IncomesRecurrenceException, {
-  foreignKey: 'recurrence_id',
-  as: 'incomeExceptions'
-});
-IncomesRecurrenceException.belongsTo(RecurrenceRule, {
-  foreignKey: 'recurrence_id',
-  as: 'recurrenceRule'
 });
 
 // Income-IncomesRecurrenceException
