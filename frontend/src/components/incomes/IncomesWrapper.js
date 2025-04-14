@@ -5,7 +5,7 @@ import Income from './Income';
 import MobileIncomes from './MobileIncomes';
 import dataTableStyles from '../../styles/dataTable.module.css';
 import { startOfMonth, endOfMonth } from 'date-fns';
-import { zonedTimeToUtc } from 'date-fns-tz';
+import { toZonedTime  } from 'date-fns-tz';
 import { toast } from 'react-hot-toast';
 import { BsExclamationTriangle, BsX } from 'react-icons/bs';
 import { FiTrash2 } from 'react-icons/fi';
@@ -369,8 +369,8 @@ const IncomesWrapper = () => {
     const thisMonth = today.getMonth();
     const thisYear = today.getFullYear();
     
-    const startDate = zonedTimeToUtc(startOfMonth(today), timeZone);
-    const endDate = zonedTimeToUtc(endOfMonth(today), timeZone);
+    const startDate = toZonedTime(startOfMonth(today), timeZone);
+    const endDate = toZonedTime(endOfMonth(today), timeZone);
 
 
     // Definir filtros iniciais
