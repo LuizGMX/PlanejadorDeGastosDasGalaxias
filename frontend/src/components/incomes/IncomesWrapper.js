@@ -5,9 +5,13 @@ import Income from './Income';
 import MobileIncomes from './MobileIncomes';
 import dataTableStyles from '../../styles/dataTable.module.css';
 import { startOfMonth, endOfMonth } from 'date-fns';
+import { utcToZonedTime } from 'date-fns-tz';
 import { toast } from 'react-hot-toast';
 import { BsExclamationTriangle, BsX } from 'react-icons/bs';
 import { FiTrash2 } from 'react-icons/fi';
+
+// Replace 'America/Sao_Paulo' with your local timezone
+const timeZone = 'America/Sao_Paulo';
 
 const IncomesWrapper = () => {
   const navigate = useNavigate();
@@ -364,8 +368,8 @@ const IncomesWrapper = () => {
     const thisMonth = today.getMonth();
     const thisYear = today.getFullYear();
     
-    const startDate = startOfMonth(today);
-    const endDate = endOfMonth(today);
+    const startDate = utcToZonedTime(startOfMonth(today), timeZone);
+    const endDate = utcToZonedTime(endOfMonth(today), timeZone);
 
 
     // Definir filtros iniciais
