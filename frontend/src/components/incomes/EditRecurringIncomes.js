@@ -59,7 +59,7 @@ const EditRecurringIncomes = () => {
         income.is_recurring
       );
       
-      // Agrupa os receitas por recurring_group_id ou installment_group_id
+      
       const groupedIncomes = filteredIncomes.reduce((acc, income) => {
         const groupId = income.recurring_group_id
         if (!acc[groupId]) {

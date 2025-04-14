@@ -54,7 +54,7 @@ function Income({
   const [searchTerm, setSearchTerm] = useState('');
   const [searchTimeout, setSearchTimeout] = useState(null);
 
-  // Garantir que filters exista e tenha valores padrão - sem has_installments
+  
   const safeFilters = filters || {
     months: [],
     years: [],

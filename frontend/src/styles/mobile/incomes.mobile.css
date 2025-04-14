@@ -178,10 +178,6 @@
   font-size: 12px;
 }
 
-.mobileIncomesTableCell.installments {
-  color: var(--text-secondary);
-  font-size: 12px;
-}
 
 .mobileIncomesTableCell.actions {
   display: flex;

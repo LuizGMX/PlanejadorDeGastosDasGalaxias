@@ -84,16 +84,7 @@ const AddIncome = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    if (name === 'total_installments' || name === 'current_installment') {
-      // Remove qualquer caractere que não seja número
-      const numericValue = value.replace(/\D/g, '');
-      
-      // Atualiza o estado com o valor digitado (mesmo que vazio)
-      setFormData(prev => ({
-        ...prev,
-        [name]: numericValue ? parseInt(numericValue) : ''
-      }));
-    } else if (name === 'date' || name === 'end_date') {
+    if (name === 'date' || name === 'end_date') {
       // Formata a data para o formato correto
       const formattedDate = value ? value.split('T')[0] : '';
       setFormData(prev => ({
