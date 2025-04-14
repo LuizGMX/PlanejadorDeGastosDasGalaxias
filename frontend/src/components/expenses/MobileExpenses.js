@@ -23,6 +23,7 @@ const MobileExpenses = ({
 }) => {
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [deletingId, setDeletingId] = useState(null);
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
   const initialFilterApplied = useRef(false);
@@ -70,6 +71,19 @@ const MobileExpenses = ({
 
   const toggleFilters = () => {
     setShowFilters(!showFilters);
+  };
+
+  const handleDelete = async (expense) => {
+    if (window.confirm('Tem certeza que deseja excluir esta despesa?')) {
+      setDeletingId(expense.id);
+      try {
+        await onDelete(expense);
+      } catch (err) {
+        console.error('Erro ao excluir despesa:', err);
+      } finally {
+        setDeletingId(null);
+      }
+    }
   };
 
   // Componente de filtros que será reutilizado
@@ -309,15 +323,21 @@ const MobileExpenses = ({
                   className={styles.editButton}
                   onClick={() => onEdit(expense)}
                   aria-label="Editar despesa"
+                  disabled={deletingId === expense.id}
                 >
                   <FiEdit2 />
                 </button>
                 <button
                   className={styles.deleteButton}
-                  onClick={() => onDelete(expense)}
+                  onClick={() => handleDelete(expense)}
                   aria-label="Excluir despesa"
+                  disabled={deletingId === expense.id}
                 >
-                  <FiTrash2 />
+                  {deletingId === expense.id ? (
+                    <div className={styles.loadingSpinner} />
+                  ) : (
+                    <FiTrash2 />
+                  )}
                 </button>
               </div>
             </div>

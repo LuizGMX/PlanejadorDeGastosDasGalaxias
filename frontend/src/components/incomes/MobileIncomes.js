@@ -20,6 +20,7 @@ const MobileIncomes = ({
 }) => {
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [deletingId, setDeletingId] = useState(null);
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
 
@@ -31,6 +32,19 @@ const MobileIncomes = ({
 
   const toggleFilters = () => {
     setShowFilters(!showFilters);
+  };
+
+  const handleDelete = async (income) => {
+    if (window.confirm('Tem certeza que deseja excluir esta receita?')) {
+      setDeletingId(income.id);
+      try {
+        await onDelete(income);
+      } catch (err) {
+        console.error('Erro ao excluir receita:', err);
+      } finally {
+        setDeletingId(null);
+      }
+    }
   };
 
   // Componente de filtros que será reutilizado
@@ -268,15 +282,21 @@ const MobileIncomes = ({
                   className={styles.editButton}
                   onClick={() => onEdit(income)}
                   aria-label="Editar receita"
+                  disabled={deletingId === income.id}
                 >
                   <FiEdit2 />
                 </button>
                 <button
                   className={styles.deleteButton}
-                  onClick={() => onDelete(income)}
+                  onClick={() => handleDelete(income)}
                   aria-label="Excluir receita"
+                  disabled={deletingId === income.id}
                 >
-                  <FiTrash2 />
+                  {deletingId === income.id ? (
+                    <div className={styles.loadingSpinner} />
+                  ) : (
+                    <FiTrash2 />
+                  )}
                 </button>
               </div>
             </div>
