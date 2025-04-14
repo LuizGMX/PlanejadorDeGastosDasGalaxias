@@ -75,7 +75,7 @@ router.get('/', async (req, res) => {
 
     console.log('Filtros aplicados:', JSON.stringify(where, null, 2));
 
-    // Buscar todas as receitas
+    // Buscar todas as receitas com a query corrigida
     const incomes = await Income.findAll({
       where,
       attributes: [
@@ -85,8 +85,7 @@ router.get('/', async (req, res) => {
         'date',
         'is_recurring',
         'recurring_group_id',
-        'recurrence_type',
-        'installment_group_id'
+        'recurrence_type'
       ],
       include: [
         { model: Category, as: 'Category' },
