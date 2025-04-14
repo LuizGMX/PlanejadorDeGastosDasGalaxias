@@ -75,7 +75,11 @@ router.get('/', async (req, res) => {
         'date',
         'is_recurring',
         'recurring_group_id',
-        'recurrence_type'
+        'recurrence_type',
+        'has_installments',
+        'current_installment',
+        'total_installments',
+        'installment_group_id'
       ],
       include: [
         { model: Category, as: 'Category' },
