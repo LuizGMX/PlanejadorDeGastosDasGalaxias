@@ -43,7 +43,6 @@ const Budget = defineBudgetModel(sequelize);
 const VerificationCode = defineVerificationCodeModel(sequelize);
 const UserBank = defineUserBankModel(sequelize);
 const RecurrenceRule = defineRecurrenceRuleModel(sequelize);
-const RecurrenceException = defineRecurrenceExceptionModel(sequelize);
 const ExpensesRecurrenceException = defineExpensesRecurrenceExceptionModel(sequelize);
 const IncomesRecurrenceException = defineIncomesRecurrenceExceptionModel(sequelize);
 const Payment = definePaymentModel(sequelize);
@@ -276,7 +275,6 @@ export {
   VerificationCode,
   UserBank,
   RecurrenceRule,
-  RecurrenceException,
   ExpensesRecurrenceException,
   IncomesRecurrenceException,
   Payment,
