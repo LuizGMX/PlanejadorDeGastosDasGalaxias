@@ -76,7 +76,7 @@ router.get('/', async (req, res) => {
         'is_recurring',
         'recurring_group_id',
         'recurrence_type',
-        'has_installments',
+        
         'current_installment',
         'total_installments',
         'installment_group_id'
@@ -159,10 +159,7 @@ router.post('/', async (req, res) => {
       description,
       amount: rawAmount,
       date,
-      is_recurring,
-      has_installments,
-      total_installments,
-      current_installment,
+      is_recurring,     
       category_id,
       bank_id,
       start_date,
@@ -254,41 +251,7 @@ router.post('/', async (req, res) => {
         }
         currentDate = nextDate;
         count++;
-      }
-    } else if (has_installments) {
-      // Validações específicas para receitas parceladas
-      if (!total_installments || total_installments < 2) {
-        await t.rollback();
-        return res.status(400).json({ message: 'Para receitas parceladas, o número total de parcelas deve ser maior que 1' });
-      }
-
-      const installmentGroupId = uuidv4();
-      // Usar o valor da parcela informado pelo usuário diretamente
-      // current_installment começa a partir da parcela atual e vai até o total
-      const current = current_installment || 1;
-      
-      // Criar apenas as parcelas restantes
-      for (let i = current - 1; i < total_installments; i++) {
-        const installmentDate = adjustDate(date);
-        // Ajustar data apenas para parcelas futuras em relação à atual
-        if (i > current - 1) {
-          installmentDate.setMonth(installmentDate.getMonth() + (i - (current - 1)));
-        }
-
-        incomes.push({
-          user_id: req.user.id,
-          description: `${description} (${i + 1}/${total_installments})`,
-          amount: parsedAmount, // Usa o valor da parcela diretamente, sem calcular
-          category_id,
-          bank_id,
-          date: installmentDate,
-          has_installments: true,
-          current_installment: i + 1,
-          total_installments,
-          installment_group_id: installmentGroupId,
-          is_recurring: false
-        });
-      }
+      }   
     } else {
       incomes.push({
         user_id: req.user.id,
@@ -296,7 +259,6 @@ router.post('/', async (req, res) => {
         amount: parsedAmount,
         date: adjustDate(date),
         is_recurring: false,
-        has_installments: false,
         category_id,
         bank_id
       });
@@ -484,58 +446,6 @@ router.put('/:id', async (req, res) => {
         start_date: inc.start_date,
         end_date: inc.end_date
       })));
-    } else if (income.has_installments) {
-      // Atualizar todas as parcelas (atual e futuras)
-      const currentInstallment = income.current_installment;
-      await Income.update(
-        {
-          description: description.replace(/\(\d+\/\d+\)/, ''),
-          amount,
-          category_id,
-          bank_id
-        },
-        {
-          where: {
-            installment_group_id: income.installment_group_id,
-            current_installment: {
-              [Op.gte]: currentInstallment
-            },
-            user_id: req.user.id
-          },
-          transaction: t
-        }
-      );
-
-      // Atualiza também o ganho atual
-      await income.update(
-        {
-          description: `${description} (${income.current_installment}/${income.total_installments})`,
-          amount,
-          date,
-          category_id,
-          bank_id
-        },
-        { transaction: t }
-      );
-
-      // Atualiza a descrição das parcelas com o novo número
-      const remainingIncomes = await Income.findAll({
-        where: {
-          installment_group_id: income.installment_group_id,
-          current_installment: {
-            [Op.gt]: currentInstallment
-          },
-          user_id: req.user.id
-        },
-        order: [['current_installment', 'ASC']],
-        transaction: t
-      });
-
-      for (const inc of remainingIncomes) {
-        await inc.update({
-          description: `${description} (${inc.current_installment}/${income.total_installments})`
-        }, { transaction: t });
-      }
     } else {
       // Atualizar apenas o ganho selecionado
       await income.update(
