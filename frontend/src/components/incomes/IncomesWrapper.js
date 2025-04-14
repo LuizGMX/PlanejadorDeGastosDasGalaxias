@@ -72,7 +72,8 @@ const IncomesWrapper = () => {
 
         if (confirmAction) {
           // Excluir a receita recorrente original (todas as ocorrências)
-          const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${income.originalRecurrenceId}${queryParams}`, {
+          // Usar o endpoint específico para receitas recorrentes
+          const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${income.originalRecurrenceId}/recurring${queryParams}`, {
             method: 'DELETE',
             headers: {
               'Authorization': `Bearer ${auth.token}`
@@ -80,16 +81,17 @@ const IncomesWrapper = () => {
           });
 
           if (!response.ok) {
-            throw new Error('Falha ao excluir receita');
+            throw new Error('Falha ao excluir receita recorrente');
           }
 
           const data = await response.json();
-          toast.success(data.message);
+          toast.success(data.message || 'Receita recorrente excluída com sucesso');
         } else {
           // Criar uma exceção para esta ocorrência específica
           const occurrenceDate = new Date(income.date);
           
-          const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${income.originalRecurrenceId}/exceptions`, {
+          // Usar endpoint correto para criar exceções
+          const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${income.originalRecurrenceId}/recurring/exception`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${auth.token}`,
@@ -109,7 +111,12 @@ const IncomesWrapper = () => {
         }
       } else {
         // Receita normal ou receita recorrente original (não uma ocorrência)
-        const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${income.id}${queryParams}`, {
+        // Verificar se a receita é recorrente para usar o endpoint adequado
+        const endpoint = income.is_recurring 
+          ? `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${income.id}/recurring${queryParams}`
+          : `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/${income.id}${queryParams}`;
+          
+        const response = await fetch(endpoint, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${auth.token}`
@@ -121,7 +128,7 @@ const IncomesWrapper = () => {
         }
 
         const data = await response.json();
-        toast.success(data.message);
+        toast.success(data.message || 'Receita excluída com sucesso');
       }
       
       // Recarregar os dados após a exclusão ou criação de exceção
@@ -149,7 +156,7 @@ const IncomesWrapper = () => {
       });
     } catch (err) {
       console.error('Erro ao excluir receita:', err);
-      toast.error('Erro ao excluir receita');
+      toast.error('Erro ao excluir receita: ' + (err.message || 'Erro desconhecido'));
     }
   };
 
