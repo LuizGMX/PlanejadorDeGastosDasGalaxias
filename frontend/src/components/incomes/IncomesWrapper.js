@@ -133,6 +133,10 @@ const IncomesWrapper = () => {
               'Authorization': `Bearer ${auth.token}`,
               'Content-Type': 'application/json'
             },
+            body: JSON.stringify({
+              occurrence_date: occurrenceDate.toISOString(),
+              reason: 'Exclusão manual pelo usuário'
+            })
           });
           
           if (!inserirRecurrenceException.ok) {
