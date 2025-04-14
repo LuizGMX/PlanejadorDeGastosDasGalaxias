@@ -165,6 +165,16 @@ Bank.belongsToMany(User, {
   as: 'users'
 });
 
+// Associações adicionais para UserBank
+UserBank.belongsTo(Bank, {
+  foreignKey: 'bank_id',
+  as: 'bank'
+});
+UserBank.belongsTo(User, {
+  foreignKey: 'user_id',
+  as: 'user'
+});
+
 // User-RecurrenceRule
 User.hasMany(RecurrenceRule, {
   foreignKey: 'user_id',
