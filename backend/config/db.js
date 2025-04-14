@@ -51,7 +51,8 @@ export const syncDatabase = async () => {
     await VerificationCode.sync({ force: false });
     await UserBank.sync({ force: false });
     await RecurrenceRule.sync({ force: false });
-    await RecurrenceException.sync({ force: false });
+    await ExpensesRecurrenceException.sync({ force: false });
+    await IncomesRecurrenceException.sync({ force: false });
     await Payment.sync({ force: false });
     await FinancialGoal.sync({ force: false });
 
