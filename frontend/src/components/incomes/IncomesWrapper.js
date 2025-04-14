@@ -361,13 +361,13 @@ const IncomesWrapper = () => {
   useEffect(() => {
     console.log('IncomesWrapper - Carregando dados iniciais');
     const today = new Date();
-    const thisMonth = today.getMonth() + 1;
+    const thisMonth = today.getMonth(); // 0-based (janeiro = 0)
     const thisYear = today.getFullYear();
 
     // Calcular datas de início e fim do mês atual
-    const startDate = new Date(thisYear, thisMonth - 1, 1);
-    const lastDay = new Date(thisYear, thisMonth, 0).getDate();
-    const endDate = new Date(thisYear, thisMonth - 1, lastDay, 23, 59, 59);
+    const startDate = new Date(thisYear, thisMonth, 1);
+    const endDate = new Date(thisYear, thisMonth + 1, 0, 23, 59, 59);
+
 
     // Definir filtros iniciais
     setFilters({
