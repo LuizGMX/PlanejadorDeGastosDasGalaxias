@@ -232,6 +232,16 @@ const MobileAddExpense = ({ installment = false }) => {
         setFormData(prev => ({
           ...prev,
           is_recurring: false,
+          has_installments: false,
+          expense_date: prev.expense_date || new Date().toISOString().split('T')[0]
+        }));
+        break;
+      case 'installments':
+        setFormData(prev => ({
+          ...prev,
+          is_recurring: false,
+          has_installments: true,
+          total_installments: prev.total_installments || 2,
           expense_date: prev.expense_date || new Date().toISOString().split('T')[0]
         }));
         break;
@@ -239,8 +249,9 @@ const MobileAddExpense = ({ installment = false }) => {
         setFormData(prev => ({
           ...prev,
           is_recurring: true,
+          has_installments: false,
           start_date: prev.start_date || new Date().toISOString().split('T')[0],
-          expense_date: prev.expense_date || new Date().toISOString().split('T')[0]
+          end_date: prev.end_date || ''
         }));
         break;
       default:
@@ -284,18 +295,16 @@ const MobileAddExpense = ({ installment = false }) => {
       }
 
       // Validação da data para pagamento à vista
-      if (!formData.is_recurring) {
+      if (!formData.is_recurring && !formData.has_installments) {
         const expenseDate = new Date(formData.expense_date);
         if (isNaN(expenseDate.getTime())) {
           throw new Error('A data da despesa é obrigatória para pagamento único');
         }
       }
 
-       // Informe o usuário que o valor inserido é o valor da parcela e não o total
-       let amount = formData.amount;
+      // Informe o usuário que o valor inserido é o valor da parcela e não o total
+      let amount = formData.amount;
 
-       
-       
       // Validações específicas para pagamento parcelado
       if (formData.has_installments) {
         // Validação do número de parcelas
@@ -326,8 +335,6 @@ const MobileAddExpense = ({ installment = false }) => {
           throw new Error('A data da parcela atual é obrigatória');
         }
         
-       
-        
         // Verifica se o amount é uma string e converte para número se necessário
         if (typeof amount === 'string' && amount) {
           // Remove caracteres não numéricos exceto pontos e vírgulas
@@ -344,21 +351,6 @@ const MobileAddExpense = ({ installment = false }) => {
         }
       }
 
-      // Validação para despesas recorrentes
-      if (formData.is_recurring) {
-        const startDate = new Date(formData.start_date || formData.expense_date);
-        
-        if (isNaN(startDate.getTime())) {
-          throw new Error('A data inicial da recorrência é inválida');
-        }
-      }
-
-      // Não calculamos mais o valor da parcela - usamos diretamente o valor informado
-      // Para parcelas, o amount já é o valor de cada parcela
-
-      // Não precisamos mais calcular a data da primeira parcela, pois só registramos
-      // as parcelas a partir da atual
-
       const dataToSend = {
         description: formData.description,
         amount: amount,
@@ -372,7 +364,7 @@ const MobileAddExpense = ({ installment = false }) => {
         current_installment: formData.has_installments ? parseInt(formData.current_installment) : null,
         total_installments: formData.has_installments ? parseInt(formData.total_installments) : null,
         recurrence_type: formData.is_recurring ? formData.frequency : null,
-        user_id: auth.user?.id // Garante que o ID do usuário está incluído
+        user_id: auth.user?.id
       };
 
       console.log('Enviando dados:', JSON.stringify(dataToSend, null, 2));
@@ -493,11 +485,19 @@ const MobileAddExpense = ({ installment = false }) => {
               <div className={addExpenseStyles.toggleGroup}>
                 <button
                   type="button"
-                  className={`${addExpenseStyles.toggleButton} ${!formData.is_recurring ? addExpenseStyles.active : ''}`}
+                  className={`${addExpenseStyles.toggleButton} ${!formData.is_recurring && !formData.has_installments ? addExpenseStyles.active : ''}`}
                   onClick={() => handleToggleChange('normal')}
                 >
-                  <BsCurrencyDollar style={{color: !formData.is_recurring ? 'var(--secondary-color)' : 'white'}} /> 
-                  <span style={{color: !formData.is_recurring ? 'var(--secondary-color)' : 'white'}}>Único</span>
+                  <BsCurrencyDollar style={{color: !formData.is_recurring && !formData.has_installments ? 'var(--secondary-color)' : 'white'}} /> 
+                  <span style={{color: !formData.is_recurring && !formData.has_installments ? 'var(--secondary-color)' : 'white'}}>Único</span>
+                </button>
+                <button
+                  type="button"
+                  className={`${addExpenseStyles.toggleButton} ${formData.has_installments ? addExpenseStyles.active : ''}`}
+                  onClick={() => handleToggleChange('installments')}
+                >
+                  <BsListCheck style={{color: formData.has_installments ? 'var(--secondary-color)' : 'white'}} /> 
+                  <span style={{color: formData.has_installments ? 'var(--secondary-color)' : 'white'}}>Parcelado</span>
                 </button>
                 <button
                   type="button"
@@ -698,6 +698,59 @@ const MobileAddExpense = ({ installment = false }) => {
                 </button>
               </div>
             </div>
+
+            {/* Configurações de Parcelas */}
+            {formData.has_installments && (
+              <div style={{marginBottom: '20px'}}>
+                <label className={addExpenseStyles.formLabel}>
+                  <div className={`${addExpenseStyles.typeStatus} ${addExpenseStyles.installmentType}`}>
+                    <BsListCheck /> Despesa Parcelada
+                  </div>
+                </label>
+                <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginTop: '10px'}}>
+                  <div className={addExpenseStyles.formGroup}>
+                    <label className={addExpenseStyles.formLabel}>Data da Parcela Atual</label>
+                    <input
+                      type="date"
+                      name="expense_date"
+                      value={formData.expense_date}
+                      onChange={handleChange}
+                      className={addExpenseStyles.formInput}
+                      required
+                    />
+                  </div>
+                  
+                  <div className={addExpenseStyles.formGroup}>
+                    <label className={addExpenseStyles.formLabel}>Parcela Atual / Total</label>
+                    <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
+                      <input
+                        type="number"
+                        min="1"
+                        max={formData.total_installments}
+                        name="current_installment"
+                        value={formData.current_installment}
+                        onChange={handleChange}
+                        className={addExpenseStyles.formInput}
+                        style={{width: '45%'}}
+                        required
+                      />
+                      <span style={{margin: '0 5px'}}>/</span>
+                      <input
+                        type="number"
+                        min={formData.current_installment}
+                        max="60"
+                        name="total_installments"
+                        value={formData.total_installments}
+                        onChange={handleChange}
+                        className={addExpenseStyles.formInput}
+                        style={{width: '45%'}}
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Botões de Ação */}
             <div className={addExpenseStyles.modalActions}>
