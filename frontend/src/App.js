@@ -175,14 +175,7 @@ function App() {
                     <AddExpenseWrapper />
                   </Layout>
                 </ProtectedRoute>
-              } />
-              <Route path="/add-installment" element={
-                <ProtectedRoute>
-                  <Layout>
-                    <AddExpenseWrapper installment={true} />
-                  </Layout>
-                </ProtectedRoute>
-              } />
+              } />            
               <Route path="/profile" element={
                 <ProtectedRoute allowWithoutSubscription={true}>
                   <Layout>
