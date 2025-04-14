@@ -86,10 +86,10 @@ app.use(`${API_PREFIX}/banks`, bankRoutes);
 app.use(`${API_PREFIX}/budgets`, budgetRoutes);
 app.use(`${API_PREFIX}/spreadsheet`, spreadsheetRoutes);
 app.use(`${API_PREFIX}/users`, userRoutes);
-app.use(`${API_PREFIX}/recurrences`, recurrencesRouter);
 app.use(`${API_PREFIX}/telegram`, telegramRoutes);
 app.use(`${API_PREFIX}/health`, healthRoutes);
 app.use(`${API_PREFIX}/payments`, paymentRoutes);
+
 
 let server;
 
