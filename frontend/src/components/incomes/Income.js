@@ -64,6 +64,7 @@ function Income({
   const [activeSwipeCard, setActiveSwipeCard] = useState(null);
   const [touchStartX, setTouchStartX] = useState(0);
   const [touchCurrentX, setTouchCurrentX] = useState(0);
+  const [lastClickTime, setLastClickTime] = useState(null);
 
   // Garantir que filters exista e tenha valores padrão - sem has_installments
   const safeFilters = filters || {
@@ -185,11 +186,12 @@ function Income({
   };
 
   // Lista de anos para o filtro
+  const currentYear = new Date().getFullYear();
   const years = Array.from(
     { length: 11 },
     (_, i) => ({
-      value: 2025 + i,
-      label: (2025 + i).toString()
+      value: currentYear - 5 + i,
+      label: (currentYear - 5 + i).toString()
     })
   );
 
@@ -209,21 +211,88 @@ function Income({
     { value: 12, label: 'Dezembro' }
   ];
 
+  // Efeito para fechar os dropdowns quando clicar fora deles
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // Encontre todos os elementos com a classe modernSelect
+      const selectElements = document.querySelectorAll(`.${dataTableStyles.modernSelect}`);
+      
+      // Verifica se o clique foi fora de todos os elementos modernSelect
+      const isOutside = ![...selectElements].some(el => el.contains(event.target));
+      
+      if (isOutside && openFilter) {
+        console.log('Clique fora do dropdown, fechando:', openFilter);
+        setOpenFilter(null);
+      }
+    };
+    
+    // Adiciona o listener ao documento
+    document.addEventListener('mousedown', handleClickOutside);
+    
+    // Remove o listener quando o componente é desmontado
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [openFilter]);
+
   const handleFilterClick = (filterType) => {
-    setOpenFilter(openFilter === filterType ? null : filterType);
+    console.log('Clicando no filtro:', filterType);
+    
+    // Prevenção de cliques acidentais muito rápidos
+    const now = Date.now();
+    if (lastClickTime && now - lastClickTime < 200) {
+      return; // Ignora cliques muito rápidos
+    }
+    
+    // Atualiza o tempo do último clique
+    setLastClickTime(now);
+    
+    // Se clicar no mesmo filtro que já está aberto, fecha-o
+    if (openFilter === filterType) {
+      setOpenFilter(null);
+    } else {
+      // Caso contrário, abre o novo filtro
+      setOpenFilter(filterType);
+    }
   };
 
   const handleCheckboxClick = (e) => {
+    console.log('Checkbox clicado:', e.target.checked);
     e.stopPropagation();
   };
 
   const handleFilterChange = (type, value) => {
     console.log('handleFilterChange em Income.js:', type, value);
+    
     if (type === 'description') {
       onSearch(value);
       return;
     }
     
+    // Tratamentos especiais para meses e anos que são arrays
+    if (type === 'months') {
+      // Se o valor já existe no array, remova-o, caso contrário adicione-o
+      const updatedMonths = safeFilters.months.includes(value)
+        ? safeFilters.months.filter(month => month !== value)
+        : [...safeFilters.months, value];
+      
+      console.log('Atualizando meses:', { atual: safeFilters.months, novo: updatedMonths });
+      onFilter(type, updatedMonths);
+      return;
+    }
+    
+    if (type === 'years') {
+      // Se o valor já existe no array, remova-o, caso contrário adicione-o
+      const updatedYears = safeFilters.years.includes(value)
+        ? safeFilters.years.filter(year => year !== value)
+        : [...safeFilters.years, value];
+        
+      console.log('Atualizando anos:', { atual: safeFilters.years, novo: updatedYears });
+      onFilter(type, updatedYears);
+      return;
+    }
+    
+    // Para outros tipos (category_id, is_recurring, etc.), use o valor diretamente
     onFilter(type, value);
   };
 
@@ -506,14 +575,21 @@ function Income({
                 {openFilter === 'months' && (
                   <div className={dataTableStyles.modernSelectDropdown}>
                     {months.map((month) => (
-                      <label key={month.value} className={dataTableStyles.modernCheckboxLabel}>
+                      <label 
+                        key={month.value} 
+                        className={dataTableStyles.modernCheckboxLabel}
+                        onClick={() => {
+                          handleFilterChange('months', month.value);
+                          handleCheckboxClick({ target: { checked: !safeFilters?.months?.includes(month.value) }, stopPropagation: () => {} });
+                        }}
+                      >
                         <div className={dataTableStyles.modernCheckbox}>
                           <input
                             type="checkbox"
                             className={dataTableStyles.hiddenCheckbox}
                             checked={safeFilters?.months?.includes(month.value)}
-                            onChange={() => handleFilterChange('months', month.value)}
-                            onClick={handleCheckboxClick}
+                            onChange={() => {}} // Manipulado pelo onClick do label
+                            onClick={(e) => e.stopPropagation()}
                           />
                           <div className={dataTableStyles.customCheckbox}></div>
                         </div>
@@ -540,14 +616,21 @@ function Income({
                 {openFilter === 'years' && (
                   <div className={dataTableStyles.modernSelectDropdown}>
                     {years.map((year) => (
-                      <label key={year.value} className={dataTableStyles.modernCheckboxLabel}>
+                      <label 
+                        key={year.value} 
+                        className={dataTableStyles.modernCheckboxLabel}
+                        onClick={() => {
+                          handleFilterChange('years', year.value);
+                          handleCheckboxClick({ target: { checked: !safeFilters?.years?.includes(year.value) }, stopPropagation: () => {} });
+                        }}
+                      >
                         <div className={dataTableStyles.modernCheckbox}>
                           <input
                             type="checkbox"
                             className={dataTableStyles.hiddenCheckbox}
                             checked={safeFilters?.years?.includes(year.value)}
-                            onChange={() => handleFilterChange('years', year.value)}
-                            onClick={handleCheckboxClick}
+                            onChange={() => {}} // Manipulado pelo onClick do label
+                            onClick={(e) => e.stopPropagation()}
                           />
                           <div className={dataTableStyles.customCheckbox}></div>
                         </div>
@@ -573,28 +656,41 @@ function Income({
                 </div>
                 {openFilter === 'category' && (
                   <div className={dataTableStyles.modernSelectDropdown}>
-                    <label className={dataTableStyles.modernCheckboxLabel}>
+                    <label 
+                      className={dataTableStyles.modernCheckboxLabel}
+                      onClick={() => {
+                        handleFilterChange('category_id', 'all');
+                        setOpenFilter(null); // Fechar o dropdown após a seleção
+                      }}
+                    >
                       <div className={dataTableStyles.modernCheckbox}>
                         <input
                           type="radio"
                           className={dataTableStyles.hiddenCheckbox}
                           checked={!safeFilters.category_id || safeFilters.category_id === 'all'}
-                          onChange={() => handleFilterChange('category_id', 'all')}
-                          onClick={handleCheckboxClick}
+                          onChange={() => {}} // Manipulado pelo onClick do label
+                          onClick={(e) => e.stopPropagation()}
                         />
                         <div className={dataTableStyles.customCheckbox}></div>
                       </div>
                       Todas as categorias
                     </label>
                     {categories && categories.length > 0 && categories.map((category) => (
-                      <label key={category.id} className={dataTableStyles.modernCheckboxLabel}>
+                      <label 
+                        key={category.id} 
+                        className={dataTableStyles.modernCheckboxLabel}
+                        onClick={() => {
+                          handleFilterChange('category_id', category.id.toString());
+                          setOpenFilter(null); // Fechar o dropdown após a seleção
+                        }}
+                      >
                         <div className={dataTableStyles.modernCheckbox}>
                           <input
                             type="radio"
                             className={dataTableStyles.hiddenCheckbox}
                             checked={safeFilters.category_id === category.id.toString()}
-                            onChange={() => handleFilterChange('category_id', category.id.toString())}
-                            onClick={handleCheckboxClick}
+                            onChange={() => {}} // Manipulado pelo onClick do label
+                            onClick={(e) => e.stopPropagation()}
                           />
                           <div className={dataTableStyles.customCheckbox}></div>
                         </div>
