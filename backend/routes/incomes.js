@@ -132,18 +132,49 @@ router.get('/', async (req, res) => {
       const end = new Date(endDate);
 
       // Busca receitas recorrentes que podem ter ocorrências no período
-      const recurringIncomes = await Income.findAll({
-        where: {
-          user_id: req.user.id,
-          is_recurring: true,
-          start_date: {
-            [Op.lte]: end
-          },
-          [Op.or]: [
-            { end_date: null },
-            { end_date: { [Op.gte]: start } }
-          ]
+      const recurringWhere = {
+        user_id: req.user.id,
+        is_recurring: true,
+        start_date: {
+          [Op.lte]: end
         },
+        [Op.or]: [
+          { end_date: null },
+          { end_date: { [Op.gte]: start } }
+        ]
+      };
+
+      // Adicionar filtro de descrição para receitas recorrentes, se fornecido
+      if (description) {
+        recurringWhere.description = {
+          [Op.like]: `%${description}%`
+        };
+      }
+
+      // Adicionar filtro de categoria para receitas recorrentes, se fornecido
+      if (category_id) {
+        recurringWhere.category_id = category_id;
+      }
+
+      // Adicionar filtro de banco para receitas recorrentes, se fornecido
+      if (req.query.bank_id) {
+        recurringWhere.bank_id = req.query.bank_id;
+      }
+
+      // Adicionar filtro de valor mínimo, se fornecido
+      if (min_amount) {
+        recurringWhere.amount = recurringWhere.amount || {};
+        recurringWhere.amount[Op.gte] = min_amount;
+      }
+
+      // Adicionar filtro de valor máximo, se fornecido
+      if (max_amount) {
+        recurringWhere.amount = recurringWhere.amount || {};
+        recurringWhere.amount[Op.lte] = max_amount;
+      }
+
+      const recurringIncomes = await Income.findAll({
+        where: recurringWhere,
         include: [
           { model: Category, as: 'Category' },
           { model: Bank, as: 'bank' },
