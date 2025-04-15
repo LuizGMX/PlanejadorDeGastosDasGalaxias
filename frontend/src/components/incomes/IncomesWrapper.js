@@ -368,8 +368,8 @@ const IncomesWrapper = () => {
     const startDate = moment.tz(timeZone).startOf('month').toISOString();
     const endDate = moment.tz(timeZone).endOf('month').toISOString();
     
-    const thisMonth = startDate.month();
-    const thisYear = startDate.year();
+    const thisMonth = moment.tz(timeZone).month();
+    const thisYear = moment.tz(timeZone).year();
     
 
     // Definir filtros iniciais
