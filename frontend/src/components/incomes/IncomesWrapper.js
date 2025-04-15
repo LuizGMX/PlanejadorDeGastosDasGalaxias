@@ -531,8 +531,9 @@ const IncomesWrapper = () => {
       });
       
       // Verificar duplicação no mês atual
-      const currentMonth = moment.tz(timeZone).month() + 1; // +1 porque o moment começa em 0
-      const currentYear = moment.tz(timeZone).year();
+      const now = new Date();
+      const currentMonth = now.getMonth() + 1;
+      const currentYear = now.getFullYear();
       
       console.log("Mês e ano atuais:", currentMonth, currentYear);
       
