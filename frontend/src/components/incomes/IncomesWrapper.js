@@ -365,9 +365,8 @@ const IncomesWrapper = () => {
   useEffect(() => {
     console.log('IncomesWrapper - Carregando dados iniciais');  
 
-    const startDate = moment.tz(timeZone).startOf('month').toISOString();
-    const endDate = moment.tz(timeZone).endOf('month').toISOString();
-    
+    const startDate = moment.tz(timeZone).startOf('month').toDate().toISOString();
+    const endDate =moment.tz(timeZone).endOf('month').toDate().toISOString();
     const thisMonth = moment.tz(timeZone).month();
     const thisYear = moment.tz(timeZone).year();
     
