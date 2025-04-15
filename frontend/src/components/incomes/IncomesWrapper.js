@@ -69,6 +69,21 @@ const IncomesWrapper = () => {
 
   const handleDeleteIncome = async (income, queryParams = '') => {
     try {
+      // Verificar se é uma ocorrência de receita recorrente
+      if (income.isRecurringOccurrence) {
+        const occurrenceDate = new Date(income.date);
+        setIncomeToDelete({
+          ...income,
+          formattedDate: occurrenceDate.toLocaleDateString('pt-BR', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+          })
+        });
+        setDeleteOption('occurrence');
+        setShowDeleteModal(true);
+        return;
+      }
 
       // Receita normal ou receita recorrente original (não uma ocorrência)
       // Para receitas recorrentes, perguntar se quer excluir todas
@@ -97,7 +112,7 @@ const IncomesWrapper = () => {
       let queryParams = '';
 
       // Verificar se é uma ocorrência de uma receita recorrente
-      if (income.isRecurringOccurrence) {
+      if (income.isRecurringOccurrence || deleteOption === 'occurrence') {
         // Extrair o ID da receita recorrente original
         let originalId = income.originalRecurrenceId;
 
@@ -219,6 +234,7 @@ const IncomesWrapper = () => {
       // Fechar o modal após a conclusão
       setShowDeleteModal(false);
       setIncomeToDelete(null);
+      setDeleteOption(null);
     } catch (err) {
       console.error('Erro ao excluir receita:', err);
       toast.error('Erro ao excluir receita: ' + (err.message || 'Erro desconhecido'));
@@ -488,8 +504,18 @@ const IncomesWrapper = () => {
       // Criar um mapa de IDs originais de ocorrências recorrentes
       const originalRecurringIds = new Map();
       
+      // Mapa para armazenar exceções por ID da receita original
+      const exceptionsMap = new Map();
+      
       // Primeiro passo: identificar todas as ocorrências recorrentes e seus IDs originais
       extractedIncomes.forEach(income => {
+        // Coletar exceções se existirem
+        if (income.exceptions && Array.isArray(income.exceptions) && income.exceptions.length > 0) {
+          const originalId = income.originalRecurrenceId || income.id;
+          exceptionsMap.set(originalId.toString(), income.exceptions);
+          console.log(`Exceções encontradas para a receita ${originalId}:`, income.exceptions.length);
+        }
+        
         if (income.isRecurringOccurrence) {
           recurrenceOccurrences.push(income);
           
@@ -526,12 +552,23 @@ const IncomesWrapper = () => {
         }))
       );
       
+      console.log('Exceções encontradas:', 
+        Array.from(exceptionsMap.entries()).map(([id, exceptions]) => ({
+          id, 
+          exceptionCount: exceptions.length,
+          exceptionDates: exceptions.map(ex => new Date(ex.exception_date).toISOString().slice(0, 10))
+        }))
+      );
+      
       // Lista final de receitas sem duplicatas
       const dedupedIncomes = [];
       
       // Segundo passo: processar receitas normais, excluindo duplicatas de recorrências
       normalIncomes.forEach(income => {
         const incomeId = income.id?.toString();
+        
+        // Se a receita tem exceções, isso significa que ela não deve aparecer em certos meses
+        const hasExceptions = income.exceptions && Array.isArray(income.exceptions) && income.exceptions.length > 0;
         
         // Se é uma receita recorrente que aparece como ocorrência, verificar se há duplicação
         if (income.is_recurring && originalRecurringIds.has(incomeId)) {
@@ -543,7 +580,8 @@ const IncomesWrapper = () => {
           // Verificar se há ocorrências no mesmo mês/ano da receita original
           const duplicatedOccurrence = occurrences.find(occ => {
             const occDate = occ.date;
-            return occDate.getMonth() + 1 === incomeMonth && occDate.getFullYear() === incomeYear;
+            return occDate.getMonth() + 1 === incomeMonth && 
+                   occDate.getFullYear() === incomeYear;
           });
           
           if (duplicatedOccurrence) {
@@ -560,13 +598,32 @@ const IncomesWrapper = () => {
         processedIncomeIds.add(incomeId);
       });
       
-      // Terceiro passo: adicionar ocorrências recorrentes que não duplicam com originais
+      // Terceiro passo: adicionar ocorrências recorrentes
       recurrenceOccurrences.forEach(occurrence => {
-        // Adicionar todas as ocorrências recorrentes
+        // Verificar se esta ocorrência deve ser mostrada ou se é uma exceção
+        const originalId = occurrence.originalRecurrenceId || 
+          (typeof occurrence.id === 'string' && occurrence.id.startsWith('rec_') ? 
+           occurrence.id.split('_')[1] : null);
+           
+        const occurrenceDate = new Date(occurrence.date);
+        const occurrenceDateStr = occurrenceDate.toISOString().slice(0, 10);
+        
+        // Verificar se existe exceção para esta data
+        const hasException = originalId && exceptionsMap.has(originalId.toString()) && 
+          exceptionsMap.get(originalId.toString()).some(ex => 
+            new Date(ex.exception_date).toISOString().slice(0, 10) === occurrenceDateStr
+          );
+          
+        if (hasException) {
+          console.log(`Ocorrência ${occurrence.id} excluída por ser uma exceção para a data ${occurrenceDateStr}`);
+          return; // Pular esta ocorrência pois é uma exceção
+        }
+        
+        // Adicionar a ocorrência à lista final
         dedupedIncomes.push(occurrence);
       });
       
-      console.log('Receitas após remoção de duplicatas:', {
+      console.log('Receitas após remoção de duplicatas e exceções:', {
         original: extractedIncomes.length,
         dedupedTotal: dedupedIncomes.length,
         normalIncomesRetained: normalIncomes.length - (normalIncomes.length - dedupedIncomes.length + recurrenceOccurrences.length),
@@ -805,11 +862,21 @@ const IncomesWrapper = () => {
               <h3>Confirmar exclusão</h3>
             </div>
             <div className={dataTableStyles.modalBody}>
-              {incomeToDelete.isRecurringOccurrence ? (
+              {incomeToDelete.isRecurringOccurrence || deleteOption === 'occurrence' ? (
                 // Modal para ocorrências de receitas recorrentes
                 <>
                   <p>Como deseja excluir esta receita recorrente?</p>
                   <p><strong>{incomeToDelete.description}</strong></p>
+                  
+                  {incomeToDelete.date && (
+                    <p className={dataTableStyles.modalInfo}>
+                      Data desta ocorrência: {new Date(incomeToDelete.date).toLocaleDateString('pt-BR', {
+                        day: 'numeric', 
+                        month: 'long', 
+                        year: 'numeric'
+                      })}
+                    </p>
+                  )}
                   
                   <div className={dataTableStyles.modalOptions}>
                     <button
@@ -837,6 +904,7 @@ const IncomesWrapper = () => {
                       onClick={() => {
                         setShowDeleteModal(false);
                         setIncomeToDelete(null);
+                        setDeleteOption(null);
                       }}
                     >
                       <BsX /> Cancelar
@@ -848,6 +916,36 @@ const IncomesWrapper = () => {
                 <>
                   <p>Deseja realmente excluir esta receita recorrente e todas as suas ocorrências?</p>
                   <p><strong>{incomeToDelete.description}</strong></p>
+                  
+                  {incomeToDelete.date && (
+                    <p className={dataTableStyles.modalInfo}>
+                      Data de início: {new Date(incomeToDelete.start_date || incomeToDelete.date).toLocaleDateString('pt-BR', {
+                        day: 'numeric', 
+                        month: 'long', 
+                        year: 'numeric'
+                      })}
+                    </p>
+                  )}
+                  
+                  {incomeToDelete.exceptions && incomeToDelete.exceptions.length > 0 && (
+                    <div className={dataTableStyles.exceptionsInfo}>
+                      <p>Esta receita recorrente possui {incomeToDelete.exceptions.length} exceções:</p>
+                      <ul>
+                        {incomeToDelete.exceptions.slice(0, 3).map((exception, index) => (
+                          <li key={index}>
+                            {new Date(exception.exception_date).toLocaleDateString('pt-BR', {
+                              day: 'numeric', 
+                              month: 'long', 
+                              year: 'numeric'
+                            })}
+                          </li>
+                        ))}
+                        {incomeToDelete.exceptions.length > 3 && (
+                          <li>...e mais {incomeToDelete.exceptions.length - 3} exceções</li>
+                        )}
+                      </ul>
+                    </div>
+                  )}
                   
                   <div className={dataTableStyles.modalActions}>
                     <button
@@ -872,6 +970,16 @@ const IncomesWrapper = () => {
                 <>
                   <p>Deseja realmente excluir esta receita?</p>
                   <p><strong>{incomeToDelete.description}</strong></p>
+                  
+                  {incomeToDelete.date && (
+                    <p className={dataTableStyles.modalInfo}>
+                      Data: {new Date(incomeToDelete.date).toLocaleDateString('pt-BR', {
+                        day: 'numeric', 
+                        month: 'long', 
+                        year: 'numeric'
+                      })}
+                    </p>
+                  )}
                   
                   <div className={dataTableStyles.modalActions}>
                     <button

@@ -1283,3 +1283,78 @@
   }
 }
 
+/* Estilos para exibição de exceções */
+.exceptionsInfo {
+  margin: 12px 0;
+  padding: 12px;
+  background-color: rgba(255, 184, 0, 0.1);
+  border: 1px solid #ffb800;
+  border-radius: 8px;
+}
+
+.exceptionsInfo p {
+  font-size: 14px;
+  font-weight: 500;
+  color: #d68b00;
+  margin-bottom: 8px;
+}
+
+.exceptionsInfo ul {
+  margin: 0;
+  padding-left: 24px;
+}
+
+.exceptionsInfo li {
+  font-size: 13px;
+  color: var(--text-color);
+  margin-bottom: 4px;
+}
+
+.modalInfo {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 8px 0 16px;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--border-color);
+}
+
+.modalOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.optionButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: var(--card-background);
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  text-align: center;
+}
+
+.optionButton:hover {
+  background-color: var(--hover-bg);
+  border-color: var(--primary-color);
+}
+
+.dangerButton {
+  color: var(--error-color);
+  border-color: var(--error-color);
+  background-color: rgba(255, 71, 87, 0.05);
+}
+
+.dangerButton:hover {
+  background-color: var(--error-color);
+  color: white;
+  border-color: var(--error-color);
+}
+
