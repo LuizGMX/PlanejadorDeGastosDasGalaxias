@@ -363,15 +363,14 @@ const IncomesWrapper = () => {
 
   // Efeito para carregar dados
   useEffect(() => {
-    console.log('IncomesWrapper - Carregando dados iniciais');
-    const today = new Date();    
-    const zonedToday = moment.tz(today, timeZone);
+    console.log('IncomesWrapper - Carregando dados iniciais');  
+
+    const startDate = moment.tz(timeZone).startOf('month').toISOString();
+    const endDate = moment.tz(timeZone).endOf('month').toISOString();
     
-    const thisMonth = zonedToday.month(); // 3 (April, 0-based)
-    const thisYear = zonedToday.year(); // 2025
+    const thisMonth = startDate.month();
+    const thisYear = startDate.year();
     
-    const startDate = zonedToday.clone().startOf('month'); // Start of April 2025
-    const endDate = zonedToday.clone().endOf('month'); // End of April 2025
 
     // Definir filtros iniciais
     setFilters({
