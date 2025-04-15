@@ -574,19 +574,21 @@ const IncomesWrapper = () => {
         if (income.is_recurring && originalRecurringIds.has(incomeId)) {
           const occurrences = originalRecurringIds.get(incomeId);
           const incomeDate = new Date(income.date);
+          const incomeDay = incomeDate.getDate();
           const incomeMonth = incomeDate.getMonth() + 1;
           const incomeYear = incomeDate.getFullYear();
           
-          // Verificar se há ocorrências no mesmo mês/ano da receita original
+          // Verificar se há ocorrências no mesmo mês/ano/dia da receita original
           const duplicatedOccurrence = occurrences.find(occ => {
             const occDate = occ.date;
-            return occDate.getMonth() + 1 === incomeMonth && 
+            return occDate.getDate() === incomeDay && 
+                   occDate.getMonth() + 1 === incomeMonth && 
                    occDate.getFullYear() === incomeYear;
           });
           
           if (duplicatedOccurrence) {
-            console.log(`Receita recorrente ${incomeId} (${income.description}) duplicada no mês ${incomeMonth}/${incomeYear} - excluindo original`);
-            return; // Pular esta receita, pois já temos uma ocorrência para este mês
+            console.log(`Receita recorrente ${incomeId} (${income.description}) duplicada no dia ${incomeDay}/${incomeMonth}/${incomeYear} - excluindo original`);
+            return; // Pular esta receita, pois já temos uma ocorrência para este dia
           }
           
           // Verificar se a data original tem uma exceção
@@ -623,6 +625,9 @@ const IncomesWrapper = () => {
            
         const occurrenceDate = new Date(occurrence.date);
         const occurrenceDateStr = occurrenceDate.toISOString().slice(0, 10);
+        const occurrenceDay = occurrenceDate.getDate();
+        const occurrenceMonth = occurrenceDate.getMonth() + 1;
+        const occurrenceYear = occurrenceDate.getFullYear();
         
         // Verificar se existe exceção para esta data
         const hasException = originalId && exceptionsMap.has(originalId.toString()) && 
@@ -635,25 +640,24 @@ const IncomesWrapper = () => {
           return; // Pular esta ocorrência pois é uma exceção
         }
         
-        // Verificar se já existe a receita original para esta mesma data/mês
+        // Verificar se já existe a receita original para esta mesma data/mês/dia
         // Isso pode acontecer quando a data original da receita coincide com uma das ocorrências
-        const occurrenceMonth = occurrenceDate.getMonth() + 1;
-        const occurrenceYear = occurrenceDate.getFullYear();
         
         // Procurar nas receitas já adicionadas (evitar duplicação com a original)
         const alreadyAddedOriginal = dedupedIncomes.some(income => {
           // Se for a receita original com mesmo ID
           if (income.id?.toString() === originalId?.toString() && income.is_recurring) {
             const incomeDate = new Date(income.date);
-            return incomeDate.getMonth() + 1 === occurrenceMonth && 
+            return incomeDate.getDate() === occurrenceDay && 
+                   incomeDate.getMonth() + 1 === occurrenceMonth && 
                    incomeDate.getFullYear() === occurrenceYear;
           }
           return false;
         });
         
         if (alreadyAddedOriginal) {
-          console.log(`Ocorrência ${occurrence.id} duplicada com a receita original no mês ${occurrenceMonth}/${occurrenceYear} - ignorando`);
-          return; // Pular esta ocorrência pois a original já está no mesmo mês
+          console.log(`Ocorrência ${occurrence.id} duplicada com a receita original no dia ${occurrenceDay}/${occurrenceMonth}/${occurrenceYear} - ignorando`);
+          return; // Pular esta ocorrência pois a original já está no mesmo dia
         }
         
         // Adicionar a ocorrência à lista final
@@ -674,6 +678,22 @@ const IncomesWrapper = () => {
         `${new Date(filterParams.startDate || '').toLocaleDateString()} - ${new Date(filterParams.endDate || '').toLocaleDateString()}`
       );
 
+      // Log detalhado de todas as receitas antes do filtro final
+      console.log("Todas as receitas antes do filtro final:", 
+        dedupedIncomes.map(inc => ({
+          id: inc.id,
+          type: inc.isRecurringOccurrence ? 'ocorrência' : (inc.is_recurring ? 'recorrente original' : 'normal'),
+          description: inc.description,
+          date: new Date(inc.date).toLocaleDateString(),
+          dateObj: new Date(inc.date),
+          day: new Date(inc.date).getDate(),
+          month: new Date(inc.date).getMonth() + 1,
+          year: new Date(inc.date).getFullYear(),
+          hasExceptions: inc.exceptions?.length > 0,
+          originalRecurrenceId: inc.originalRecurrenceId
+        }))
+      );
+
       // Log adicional para mostrar quais receitas recorrentes originais foram mantidas
       const recurringOriginals = dedupedIncomes.filter(inc => inc.is_recurring && !inc.isRecurringOccurrence);
       console.log(`Receitas recorrentes originais após filtro: ${recurringOriginals.length}`, 
@@ -688,7 +708,35 @@ const IncomesWrapper = () => {
       // Verificação final para receitas com exceções
       const finalFilteredIncomes = dedupedIncomes.filter(income => {
         // Se não tem exceções, manter na lista
-        if (!income.exceptions || !income.exceptions.length) return true;
+        if (!income.exceptions || !income.exceptions.length) {
+          // Verificar se é uma receita original que tem uma ocorrência no mesmo dia
+          if (income.is_recurring && !income.isRecurringOccurrence) {
+            // Buscar na lista se existe alguma ocorrência recorrente deste mesmo ID original
+            // que está no mesmo mês E ANO E DIA da receita original
+            const originalDate = new Date(income.date);
+            const originalDay = originalDate.getDate();
+            const originalMonth = originalDate.getMonth() + 1;
+            const originalYear = originalDate.getFullYear();
+            
+            const hasSameDayOccurrence = dedupedIncomes.some(otherIncome => {
+              if (otherIncome.isRecurringOccurrence && otherIncome.originalRecurrenceId == income.id) {
+                const occurrenceDate = new Date(otherIncome.date);
+                return (
+                  occurrenceDate.getDate() === originalDay &&
+                  occurrenceDate.getMonth() + 1 === originalMonth &&
+                  occurrenceDate.getFullYear() === originalYear
+                );
+              }
+              return false;
+            });
+            
+            if (hasSameDayOccurrence) {
+              console.log(`Filtro final: Receita original ${income.id} (${income.description}) tem ocorrência para o mesmo dia ${originalDate.toLocaleDateString()} - removendo a original`);
+              return false; // Remover a receita original, manter a ocorrência
+            }
+          }
+          return true;
+        }
 
         // Se é uma receita original (não ocorrência) com exceções:
         // Verificar novamente se a data da receita está nas exceções
