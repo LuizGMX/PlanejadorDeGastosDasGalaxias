@@ -383,8 +383,8 @@ const IncomesWrapper = () => {
 
     // Buscar dados com os filtros iniciais de data
     fetchData({
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString()
+      startDate: startDate,
+      endDate: endDate
     });
   }, [auth.token]);
 
