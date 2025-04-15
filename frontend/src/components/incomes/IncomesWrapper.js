@@ -478,103 +478,98 @@ const IncomesWrapper = () => {
       // Processar as receitas e remover duplicatas
       console.log('Verificando duplicatas em receitas. Total bruto:', extractedIncomes.length);
       
-      // Criar um mapa para rastrear receitas por ID
-      const incomeMap = new Map();
-      const dedupedIncomes = [];
-      
       // Primeiro, separar receitas normais e ocorrências
       const normalIncomes = [];
       const recurrenceOccurrences = [];
       
+      // Conjunto para rastrear IDs de receitas que já foram processadas
+      const processedIncomeIds = new Set();
+      
+      // Criar um mapa de IDs originais de ocorrências recorrentes
+      const originalRecurringIds = new Map();
+      
+      // Primeiro passo: identificar todas as ocorrências recorrentes e seus IDs originais
       extractedIncomes.forEach(income => {
         if (income.isRecurringOccurrence) {
           recurrenceOccurrences.push(income);
+          
+          // Extrair ID original
+          let originalId = null;
+          if (income.originalRecurrenceId) {
+            originalId = income.originalRecurrenceId;
+          } else if (income.id && typeof income.id === 'string' && income.id.startsWith('rec_')) {
+            const parts = income.id.split('_');
+            if (parts.length >= 2) {
+              originalId = parts[1];
+            }
+          }
+          
+          if (originalId) {
+            // Armazenar a data da ocorrência junto com o ID original
+            if (!originalRecurringIds.has(originalId.toString())) {
+              originalRecurringIds.set(originalId.toString(), []);
+            }
+            originalRecurringIds.get(originalId.toString()).push({
+              date: new Date(income.date),
+              id: income.id
+            });
+          }
         } else {
           normalIncomes.push(income);
         }
       });
       
-      console.log("Separação inicial:", {
-        totalOriginal: extractedIncomes.length,
-        normalIncomes: normalIncomes.length,
-        recurrenceOccurrences: recurrenceOccurrences.length
-      });
+      console.log('IDs originais de receitas recorrentes:', 
+        Array.from(originalRecurringIds.entries()).map(([id, dates]) => ({
+          id, 
+          occurrenceCount: dates.length
+        }))
+      );
       
-      // Identificar receitas recorrentes originais que têm ocorrências expandidas
-      const recurringWithOccurrences = new Set();
+      // Lista final de receitas sem duplicatas
+      const dedupedIncomes = [];
       
-      // Mapear ocorrências recorrentes por ID original
-      const occurrencesByOriginalId = new Map();
-      
-      recurrenceOccurrences.forEach(occurrence => {
-        let originalId = null;
-        
-        // Extrair o ID original da ocorrência
-        if (occurrence.originalRecurrenceId) {
-          originalId = occurrence.originalRecurrenceId;
-        } else if (occurrence.id && typeof occurrence.id === 'string' && occurrence.id.startsWith('rec_')) {
-          const parts = occurrence.id.split('_');
-          if (parts.length >= 2) {
-            originalId = parts[1];
-          }
-        }
-        
-        if (originalId) {
-          recurringWithOccurrences.add(originalId.toString());
-          
-          // Agrupar ocorrências pelo ID original
-          if (!occurrencesByOriginalId.has(originalId.toString())) {
-            occurrencesByOriginalId.set(originalId.toString(), []);
-          }
-          occurrencesByOriginalId.get(originalId.toString()).push(occurrence);
-        }
-      });
-      
-      // Verificar duplicação no mês atual
-      const now = new Date();
-      const currentMonth = now.getMonth() + 1;
-      const currentYear = now.getFullYear();
-      
-      console.log("Mês e ano atuais:", currentMonth, currentYear);
-      
-      // Adicionar receitas normais (excluindo duplicatas de recorrentes)
+      // Segundo passo: processar receitas normais, excluindo duplicatas de recorrências
       normalIncomes.forEach(income => {
-        const incomeId = income.id.toString();
+        const incomeId = income.id?.toString();
         
-        // Se é uma receita recorrente que tem ocorrências, verificamos se deve ser excluída
-        if (income.is_recurring && recurringWithOccurrences.has(incomeId)) {
-          console.log(`Receita recorrente ${incomeId} (${income.description}) tem ocorrências expandidas`);
-          
-          // Obter a data da receita recorrente para comparar com ocorrências
+        // Se é uma receita recorrente que aparece como ocorrência, verificar se há duplicação
+        if (income.is_recurring && originalRecurringIds.has(incomeId)) {
+          const occurrences = originalRecurringIds.get(incomeId);
           const incomeDate = new Date(income.date);
           const incomeMonth = incomeDate.getMonth() + 1;
           const incomeYear = incomeDate.getFullYear();
           
-          // Verificar se alguma ocorrência está no mesmo mês/ano da receita original
-          const hasOccurrenceInSameMonth = occurrencesByOriginalId.has(incomeId) && 
-            occurrencesByOriginalId.get(incomeId).some(occurrence => {
-              const occurrenceDate = new Date(occurrence.date);
-              return occurrenceDate.getMonth() + 1 === incomeMonth && 
-                     occurrenceDate.getFullYear() === incomeYear;
-            });
+          // Verificar se há ocorrências no mesmo mês/ano da receita original
+          const duplicatedOccurrence = occurrences.find(occ => {
+            const occDate = occ.date;
+            return occDate.getMonth() + 1 === incomeMonth && occDate.getFullYear() === incomeYear;
+          });
           
-          if (hasOccurrenceInSameMonth) {
-            console.log(`Excluindo receita recorrente ${incomeId} (${income.description}) porque tem ocorrência no mesmo mês/ano`);
-            return; // Pular esta receita
+          if (duplicatedOccurrence) {
+            console.log(`Receita recorrente ${incomeId} (${income.description}) duplicada no mês ${incomeMonth}/${incomeYear} - excluindo original`);
+            return; // Pular esta receita, pois já temos uma ocorrência para este mês
           }
+          
+          // Se não houver duplicação, mantenha a receita original
+          console.log(`Receita recorrente ${incomeId} (${income.description}) não está duplicada - mantendo`);
         }
         
-        // Adicionar à lista final se não for uma duplicata
+        // Adicionar a receita à lista final
         dedupedIncomes.push(income);
+        processedIncomeIds.add(incomeId);
       });
       
-      // Adicionar todas as ocorrências de recorrência
-      dedupedIncomes.push(...recurrenceOccurrences);
+      // Terceiro passo: adicionar ocorrências recorrentes que não duplicam com originais
+      recurrenceOccurrences.forEach(occurrence => {
+        // Adicionar todas as ocorrências recorrentes
+        dedupedIncomes.push(occurrence);
+      });
       
       console.log('Receitas após remoção de duplicatas:', {
         original: extractedIncomes.length,
         dedupedTotal: dedupedIncomes.length,
-        normalIncomesRetained: dedupedIncomes.length - recurrenceOccurrences.length,
+        normalIncomesRetained: normalIncomes.length - (normalIncomes.length - dedupedIncomes.length + recurrenceOccurrences.length),
         recurrenceOccurrences: recurrenceOccurrences.length
       });
       
@@ -811,18 +806,19 @@ const IncomesWrapper = () => {
             </div>
             <div className={dataTableStyles.modalBody}>
               {incomeToDelete.isRecurringOccurrence ? (
+                // Modal para ocorrências de receitas recorrentes
                 <>
                   <p>Como deseja excluir esta receita recorrente?</p>
                   <p><strong>{incomeToDelete.description}</strong></p>
-
+                  
                   <div className={dataTableStyles.modalOptions}>
                     <button
                       className={dataTableStyles.optionButton}
                       onClick={() => handleConfirmDelete('single')}
                     >
-                      Excluir APENAS esta ocorrência
+                      Excluir APENAS esta ocorrência 
                       {incomeToDelete.date && (
-                        <span>
+                        <span> 
                           ({new Date(incomeToDelete.date).toLocaleString('pt-BR', { month: 'long', year: 'numeric' })})
                         </span>
                       )}
@@ -834,38 +830,67 @@ const IncomesWrapper = () => {
                       Excluir TODAS as ocorrências (atual e futuras)
                     </button>
                   </div>
+                  
+                  <div className={dataTableStyles.modalActions}>
+                    <button
+                      className={dataTableStyles.secondaryButton}
+                      onClick={() => {
+                        setShowDeleteModal(false);
+                        setIncomeToDelete(null);
+                      }}
+                    >
+                      <BsX /> Cancelar
+                    </button>
+                  </div>
                 </>
               ) : deleteOption === 'recurring' ? (
+                // Modal para receitas recorrentes (original)
                 <>
                   <p>Deseja realmente excluir esta receita recorrente e todas as suas ocorrências?</p>
                   <p><strong>{incomeToDelete.description}</strong></p>
+                  
+                  <div className={dataTableStyles.modalActions}>
+                    <button
+                      className={dataTableStyles.secondaryButton}
+                      onClick={() => {
+                        setShowDeleteModal(false);
+                        setIncomeToDelete(null);
+                      }}
+                    >
+                      <BsX /> Cancelar
+                    </button>
+                    <button
+                      className={`${dataTableStyles.primaryButton} ${dataTableStyles.deleteButton}`}
+                      onClick={() => handleConfirmDelete('all')}
+                    >
+                      <FiTrash2 /> Confirmar
+                    </button>
+                  </div>
                 </>
               ) : (
+                // Modal para receitas normais (não recorrentes)
                 <>
                   <p>Deseja realmente excluir esta receita?</p>
                   <p><strong>{incomeToDelete.description}</strong></p>
+                  
+                  <div className={dataTableStyles.modalActions}>
+                    <button
+                      className={dataTableStyles.secondaryButton}
+                      onClick={() => {
+                        setShowDeleteModal(false);
+                        setIncomeToDelete(null);
+                      }}
+                    >
+                      <BsX /> Cancelar
+                    </button>
+                    <button
+                      className={`${dataTableStyles.primaryButton} ${dataTableStyles.deleteButton}`}
+                      onClick={() => handleConfirmDelete('all')}
+                    >
+                      <FiTrash2 /> Confirmar
+                    </button>
+                  </div>
                 </>
-              )}
-            </div>
-            <div className={dataTableStyles.modalActions}>
-              <button
-                className={dataTableStyles.secondaryButton}
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setIncomeToDelete(null);
-                }}
-              >
-                <BsX /> Cancelar
-              </button>
-
-              {/* Mostrar botão de confirmar apenas para receitas normais ou recorrentes originais */}
-              {!incomeToDelete.isRecurringOccurrence && (
-                <button
-                  className={`${dataTableStyles.primaryButton} ${dataTableStyles.deleteButton}`}
-                  onClick={() => handleConfirmDelete('all')}
-                >
-                  <FiTrash2 /> Confirmar
-                </button>
               )}
             </div>
           </div>
