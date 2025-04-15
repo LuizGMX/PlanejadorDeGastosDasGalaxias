@@ -360,7 +360,7 @@ router.get('/', async (req, res) => {
     const [categories, banks] = await Promise.all([
       Category.findAll({
       where: { user_id: req.user.id },
-        attributes: ['id', 'category_name', 'type', 'color']
+        attributes: ['id', 'category_name', 'type']
       }),
       Bank.findAll({
         where: { user_id: req.user.id },

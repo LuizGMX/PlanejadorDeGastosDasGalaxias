@@ -477,54 +477,106 @@ const IncomesWrapper = () => {
 
       // Processar as receitas e remover duplicatas
       console.log('Verificando duplicatas em receitas. Total bruto:', extractedIncomes.length);
-
-      // Identificar receitas recorrentes e suas ocorrências
-      const originalRecurringIncomes = new Set();
-      const occurrences = [];
+      
+      // Criar um mapa para rastrear receitas por ID
+      const incomeMap = new Map();
+      const dedupedIncomes = [];
+      
+      // Primeiro, separar receitas normais e ocorrências
       const normalIncomes = [];
-
-      // Separar receitas em categorias
+      const recurrenceOccurrences = [];
+      
       extractedIncomes.forEach(income => {
-        // Verificar se é uma ocorrência de recorrência
         if (income.isRecurringOccurrence) {
-          occurrences.push(income);
-
-          // Se tiver o ID da receita original, adicionar ao conjunto
-          if (income.originalRecurrenceId) {
-            originalRecurringIncomes.add(income.originalRecurrenceId);
-          } else if (income.id && typeof income.id === 'string' && income.id.startsWith('rec_')) {
-            // Extrair ID da receita original do formato rec_ORIGINAL_ID_TIMESTAMP
-            const parts = income.id.split('_');
-            if (parts.length >= 2) {
-              originalRecurringIncomes.add(parts[1]);
-            }
-          }
+          recurrenceOccurrences.push(income);
         } else {
           normalIncomes.push(income);
         }
       });
-
-      // Filtrar receitas normais para remover duplicatas
-      const filteredNormalIncomes = normalIncomes.filter(income => {
-        // Se é uma receita recorrente e seu ID está no conjunto de originais
-        // que já apareceram como ocorrências expandidas, remover
-        if (income.is_recurring && originalRecurringIncomes.has(income.id.toString())) {
-          console.log('Removendo receita recorrente duplicada:', income.id, income.description);
-          return false;
-        }
-        return true;
+      
+      console.log("Separação inicial:", {
+        totalOriginal: extractedIncomes.length,
+        normalIncomes: normalIncomes.length,
+        recurrenceOccurrences: recurrenceOccurrences.length
       });
-
-      // Combinar receitas filtradas com ocorrências
-      const dedupedIncomes = [...filteredNormalIncomes, ...occurrences];
-
+      
+      // Identificar receitas recorrentes originais que têm ocorrências expandidas
+      const recurringWithOccurrences = new Set();
+      
+      // Mapear ocorrências recorrentes por ID original
+      const occurrencesByOriginalId = new Map();
+      
+      recurrenceOccurrences.forEach(occurrence => {
+        let originalId = null;
+        
+        // Extrair o ID original da ocorrência
+        if (occurrence.originalRecurrenceId) {
+          originalId = occurrence.originalRecurrenceId;
+        } else if (occurrence.id && typeof occurrence.id === 'string' && occurrence.id.startsWith('rec_')) {
+          const parts = occurrence.id.split('_');
+          if (parts.length >= 2) {
+            originalId = parts[1];
+          }
+        }
+        
+        if (originalId) {
+          recurringWithOccurrences.add(originalId.toString());
+          
+          // Agrupar ocorrências pelo ID original
+          if (!occurrencesByOriginalId.has(originalId.toString())) {
+            occurrencesByOriginalId.set(originalId.toString(), []);
+          }
+          occurrencesByOriginalId.get(originalId.toString()).push(occurrence);
+        }
+      });
+      
+      // Verificar duplicação no mês atual
+      const currentMonth = moment.tz(timeZone).month() + 1; // +1 porque o moment começa em 0
+      const currentYear = moment.tz(timeZone).year();
+      
+      console.log("Mês e ano atuais:", currentMonth, currentYear);
+      
+      // Adicionar receitas normais (excluindo duplicatas de recorrentes)
+      normalIncomes.forEach(income => {
+        const incomeId = income.id.toString();
+        
+        // Se é uma receita recorrente que tem ocorrências, verificamos se deve ser excluída
+        if (income.is_recurring && recurringWithOccurrences.has(incomeId)) {
+          console.log(`Receita recorrente ${incomeId} (${income.description}) tem ocorrências expandidas`);
+          
+          // Obter a data da receita recorrente para comparar com ocorrências
+          const incomeDate = new Date(income.date);
+          const incomeMonth = incomeDate.getMonth() + 1;
+          const incomeYear = incomeDate.getFullYear();
+          
+          // Verificar se alguma ocorrência está no mesmo mês/ano da receita original
+          const hasOccurrenceInSameMonth = occurrencesByOriginalId.has(incomeId) && 
+            occurrencesByOriginalId.get(incomeId).some(occurrence => {
+              const occurrenceDate = new Date(occurrence.date);
+              return occurrenceDate.getMonth() + 1 === incomeMonth && 
+                     occurrenceDate.getFullYear() === incomeYear;
+            });
+          
+          if (hasOccurrenceInSameMonth) {
+            console.log(`Excluindo receita recorrente ${incomeId} (${income.description}) porque tem ocorrência no mesmo mês/ano`);
+            return; // Pular esta receita
+          }
+        }
+        
+        // Adicionar à lista final se não for uma duplicata
+        dedupedIncomes.push(income);
+      });
+      
+      // Adicionar todas as ocorrências de recorrência
+      dedupedIncomes.push(...recurrenceOccurrences);
+      
       console.log('Receitas após remoção de duplicatas:', {
         original: extractedIncomes.length,
         dedupedTotal: dedupedIncomes.length,
-        normalIncomesCount: filteredNormalIncomes.length,
-        occurrencesCount: occurrences.length
+        normalIncomesRetained: dedupedIncomes.length - recurrenceOccurrences.length,
+        recurrenceOccurrences: recurrenceOccurrences.length
       });
-
+      
       setOriginalIncomes(dedupedIncomes);
       setFilteredIncomes(dedupedIncomes);
       setIncomes(dedupedIncomes);
