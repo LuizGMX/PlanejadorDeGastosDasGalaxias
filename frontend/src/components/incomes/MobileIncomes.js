@@ -16,7 +16,8 @@ const MobileIncomes = ({
   error,
   categories = [],
   banks = [],
-  filters = {}
+  filters = {},
+  noIncomesMessage
 }) => {
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -190,11 +191,12 @@ const MobileIncomes = ({
           <div className={styles.noDataContainer}>
             <div className={styles.noDataIcon}>💰</div>
             <h3 className={styles.noDataMessage}>
-              {searchTerm ? "Nenhuma receita encontrada para os filtros selecionados." : "Nenhuma receita encontrada"}
+              {noIncomesMessage?.message || 
+                (searchTerm ? "Nenhuma receita encontrada para os filtros selecionados." : "Nenhuma receita encontrada")}
             </h3>
             <p className={styles.noDataSuggestion}>
-              {searchTerm ? "Tente ajustar os filtros ou " : "Comece "}
-              adicionando sua primeira receita
+              {noIncomesMessage?.suggestion || 
+                (searchTerm ? "Tente ajustar os filtros ou " : "Comece ") + "adicionando sua primeira receita"}
             </p>
             <div className={styles.noDataActions}>
               <button className={styles.primaryButton} onClick={onAdd}>

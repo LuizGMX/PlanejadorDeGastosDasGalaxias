@@ -34,7 +34,8 @@ function Income({
   error,
   categories,
   banks,
-  filters
+  filters,
+  noIncomesMessage
 }) {
   
   
@@ -509,10 +510,12 @@ function Income({
   if (safeIncomes.length === 0) {
     return (
       <div className={dataTableStyles.noDataContainer}>
-        <div className={dataTableStyles.noDataIcon}>💰</div>
-        <h3 className={dataTableStyles.noDataMessage}>Nenhuma receita encontrada</h3>
+        <BsCash className={dataTableStyles.noDataIcon} />
+        <h3 className={dataTableStyles.noDataMessage}>
+          {noIncomesMessage?.message || "Nenhuma receita encontrada para os filtros selecionados."}
+        </h3>
         <p className={dataTableStyles.noDataSuggestion}>
-          Comece adicionando sua primeira receita clicando no botão abaixo
+          {noIncomesMessage?.suggestion || "Tente ajustar os filtros ou adicionar uma nova receita."}
         </p>
         <div className={dataTableStyles.noDataActions}>
           <button className={dataTableStyles.primaryButton} onClick={onAdd}>
@@ -748,84 +751,105 @@ function Income({
           </div>
         </div>
 
-        {isMobile ? (
-          renderMobileCards()
-        ) : (
-          <div className={dataTableStyles.tableContainer}>
-            <table className={dataTableStyles.table}>
-              <thead>
-                <tr>
-                  <th>
-                    <div className={dataTableStyles.checkboxContainer}>
-                      <input
-                        type="checkbox"
-                        checked={selectedIncomes.length === safeIncomes.length}
-                        onChange={handleSelectAll}
-                      />
-                      <span className={dataTableStyles.checkmark}></span>
-                    </div>
-                  </th>
-                  <th>Descrição</th>
-                  <th>Valor</th>
-                  <th>Data</th>
-                  <th>Categoria</th>
-                  <th>Banco</th>
-                  <th>Tipo</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {safeIncomes.map((income) => (
-                  <tr key={income.id}>
-                    <td>
-                      <div className={dataTableStyles.checkboxContainer}>
-                        <input
-                          type="checkbox"
-                          checked={selectedIncomes.includes(income.id)}
-                          onChange={() => handleSelectIncome(income.id)}
-                        />
-                        <span className={dataTableStyles.checkmark}></span>
-                      </div>
-                    </td>
-                    <td>{income.description}</td>
-                    <td>
-                      <span className={`${dataTableStyles.incomeAmountBadge} ${dataTableStyles.incomeAmount}`}>
-                        {formatCurrency(income.amount)}
-                      </span>
-                    </td>
-                    <td>{formatDate(income.date)}</td>
-                    <td>{income.Category?.category_name || '-'}</td>
-                    <td>{income.Bank?.name || '-'}</td>
-                    <td>
-                      <span className={`${dataTableStyles.typeStatus} ${income.is_recurring ? dataTableStyles.fixedType : dataTableStyles.oneTimeType}`}>
-                        {income.is_recurring ? (
-                          <><BsRepeat size={14} /> Fixa</>
-                        ) : (
-                          <><BsCurrencyDollar size={14} /> Única</>
-                        )}
-                      </span>
-                    </td>
-                    <td>
-                      <div className={dataTableStyles.actionButtons}>
-                        <button
-                          className={dataTableStyles.editButton}
-                          onClick={() => handleEditIncome(income)}
-                        >
-                          <BsPencil />
-                        </button>
-                        <button
-                          className={dataTableStyles.deleteButton}
-                          onClick={() => handleDeleteIncome(income)}
-                        >
-                          <BsTrash />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {selectedIncomes.length > 0 && (
+          <div className={dataTableStyles.bulkActions}>
+            <button 
+              onClick={handleConfirmDelete} 
+              className={dataTableStyles.deleteButton}
+            >
+              <BsTrash /> Excluir {selectedIncomes.length} {selectedIncomes.length === 1 ? 'item' : 'itens'}
+            </button>
           </div>
+        )}
+
+        {noIncomesMessage ? (
+          <div className={dataTableStyles.noDataContainer}>
+            <BsCash className={dataTableStyles.noDataIcon} />
+            <h3 className={dataTableStyles.noDataMessage}>{noIncomesMessage.message}</h3>
+            <p className={dataTableStyles.noDataSuggestion}>{noIncomesMessage.suggestion}</p>
+          </div>
+        ) : (
+          <>
+            {isMobile ? (
+              renderMobileCards()
+            ) : (
+              <div className={dataTableStyles.tableContainer}>
+                <table className={dataTableStyles.table}>
+                  <thead>
+                    <tr>
+                      <th>
+                        <div className={dataTableStyles.checkboxContainer}>
+                          <input
+                            type="checkbox"
+                            checked={selectedIncomes.length === safeIncomes.length}
+                            onChange={handleSelectAll}
+                          />
+                          <span className={dataTableStyles.checkmark}></span>
+                        </div>
+                      </th>
+                      <th>Descrição</th>
+                      <th>Valor</th>
+                      <th>Data</th>
+                      <th>Categoria</th>
+                      <th>Banco</th>
+                      <th>Tipo</th>
+                      <th>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {safeIncomes.map((income) => (
+                      <tr key={income.id}>
+                        <td>
+                          <div className={dataTableStyles.checkboxContainer}>
+                            <input
+                              type="checkbox"
+                              checked={selectedIncomes.includes(income.id)}
+                              onChange={() => handleSelectIncome(income.id)}
+                            />
+                            <span className={dataTableStyles.checkmark}></span>
+                          </div>
+                        </td>
+                        <td>{income.description}</td>
+                        <td>
+                          <span className={`${dataTableStyles.incomeAmountBadge} ${dataTableStyles.incomeAmount}`}>
+                            {formatCurrency(income.amount)}
+                          </span>
+                        </td>
+                        <td>{formatDate(income.date)}</td>
+                        <td>{income.Category?.category_name || '-'}</td>
+                        <td>{income.Bank?.name || '-'}</td>
+                        <td>
+                          <span className={`${dataTableStyles.typeStatus} ${income.is_recurring ? dataTableStyles.fixedType : dataTableStyles.oneTimeType}`}>
+                            {income.is_recurring ? (
+                              <><BsRepeat size={14} /> Fixa</>
+                            ) : (
+                              <><BsCurrencyDollar size={14} /> Única</>
+                            )}
+                          </span>
+                        </td>
+                        <td>
+                          <div className={dataTableStyles.actionButtons}>
+                            <button
+                              className={dataTableStyles.editButton}
+                              onClick={() => handleEditIncome(income)}
+                            >
+                              <BsPencil />
+                            </button>
+                            <button
+                              className={dataTableStyles.deleteButton}
+                              onClick={() => handleDeleteIncome(income)}
+                            >
+                              <BsTrash />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

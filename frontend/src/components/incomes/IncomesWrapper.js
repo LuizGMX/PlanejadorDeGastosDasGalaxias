@@ -37,6 +37,7 @@ const IncomesWrapper = () => {
   const [originalIncomes, setOriginalIncomes] = useState([]);
   const [filteredIncomes, setFilteredIncomes] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [noIncomesMessage, setNoIncomesMessage] = useState(null);
 
   // Função para verificar se a tela é mobile
   const isMobileView = () => {
@@ -880,6 +881,33 @@ const IncomesWrapper = () => {
 
       setBanks(extractedBanks);
 
+      // Define a mensagem quando não há receitas
+      if (finalFilteredIncomes.length === 0) {
+        console.log('Nenhuma receita encontrada para os filtros aplicados');
+        
+        // Verifica se há filtros ativos
+        const hasActiveFilters = (filters.months && filters.months.length !== 1) || 
+                              (filters.years && filters.years.length !== 1) || 
+                              filters.category_id !== 'all' || 
+                              filters.bank_id !== 'all' || 
+                              filters.description !== '' || 
+                              filters.is_recurring !== '';
+
+        setNoIncomesMessage(hasActiveFilters ? {
+          message: 'Nenhuma receita encontrada para os filtros selecionados.',
+          suggestion: 'Tente ajustar os filtros para ver mais resultados.'
+        } : {
+          message: 'Você ainda não tem receitas cadastradas para este período.',
+          suggestion: 'Que tal começar adicionando sua primeira receita?'
+        });
+      } else {
+        setNoIncomesMessage(null);
+      }
+
+      setIncomes(finalFilteredIncomes);
+      setFilteredIncomes(finalFilteredIncomes);
+      setOriginalIncomes(finalFilteredIncomes);
+
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
       setError(error.message);
@@ -963,6 +991,7 @@ const IncomesWrapper = () => {
           categories={categories}
           banks={banks}
           filters={filters}
+          noIncomesMessage={noIncomesMessage}
         />
       ) : (
         <Income
@@ -980,6 +1009,7 @@ const IncomesWrapper = () => {
           categories={categories}
           banks={banks}
           filters={filters}
+          noIncomesMessage={noIncomesMessage}
         />
       )}
 
