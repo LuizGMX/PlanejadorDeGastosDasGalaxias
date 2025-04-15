@@ -369,116 +369,121 @@ function Income({
       noIncomesMessage 
     });
     
-    if (safeIncomes.length === 0) {
-      return (
-        <div className={dataTableStyles.noDataContainer}>
-          <BsCash className={dataTableStyles.noDataIcon} />
-          <h3 className={dataTableStyles.noDataMessage}>
-            {noIncomesMessage?.message || "Nenhum ganho encontrado para os filtros selecionados."}
-          </h3>
-          <p className={dataTableStyles.noDataSuggestion}>
-            {noIncomesMessage?.suggestion || "Tente ajustar os filtros ou adicionar um novo ganho."}
-          </p>
-        </div>
-      );
-    }
-    
     return (
-      <div className={dataTableStyles.mobileCardView}>
-        {console.log("Rendering mobile card view with", safeIncomes.length, "incomes")}
-        {safeIncomes.map((income) => (
-            <div 
-              key={income.id} 
-              className={dataTableStyles.mobileCard}
-            >
-              {!income.is_recurring && (
-                <div className={dataTableStyles.mobileCardSelect}>
-                  <label className={dataTableStyles.checkboxContainer}>
-                    <input
-                      type="checkbox"
-                      checked={selectedIncomes.includes(income.id)}
-                      onChange={() => handleSelectIncome(income.id)}
-                      className={dataTableStyles.checkbox}
-                    />
-                    <span className={dataTableStyles.checkmark}></span>
-                  </label>
-                </div>
-              )}
-              
-              <div className={dataTableStyles.mobileCardHeader}>
-                <h3 className={dataTableStyles.mobileCardTitle}>{income.description}</h3>
-                <span className={`${dataTableStyles.incomeAmountBadge} ${dataTableStyles.incomeAmount} ${dataTableStyles.mobileCardAmount}`}>
-                  {formatCurrency(income.amount)}
-                </span>
-              </div>
-              
-              <div className={dataTableStyles.mobileCardDetails}>
-                <div className={dataTableStyles.mobileCardDetail}>
-                  <span className={dataTableStyles.mobileCardLabel}>Data</span>
-                  <span className={dataTableStyles.mobileCardValue}>{formatDate(income.date)}</span>
-                </div>
-                
-                <div className={dataTableStyles.mobileCardDetail}>
-                  <span className={dataTableStyles.mobileCardLabel}>Categoria</span>
-                  <span className={dataTableStyles.mobileCardValue}>
-                    <BsFolderSymlink style={{color: 'var(--primary-color)'}} />
-                    {income.Category?.category_name || '-'}
-                  </span>
-                </div>
-                
-                <div className={dataTableStyles.mobileCardDetail}>
-                  <span className={dataTableStyles.mobileCardLabel}>Banco</span>
-                  <span className={dataTableStyles.mobileCardValue}>
-                    <BsBank2 style={{color: 'var(--primary-color)'}} />
-                    {income.Bank?.name || '-'}
-                  </span>
-                </div>
-                
-                <div className={dataTableStyles.mobileCardDetail}>
-                  <span className={dataTableStyles.mobileCardLabel}>Tipo</span>
-                  <span className={dataTableStyles.mobileCardValue}>
-                    {income.is_recurring ? (
-                      <><BsRepeat style={{color: 'var(--primary-color)'}} /> Receita fixa</>
-                    ) : (
-                      <><BsCurrencyDollar style={{color: 'var(--text-color)'}} /> Receita única</>
-                    )}
-                  </span>
-                </div>
-              </div>
-              
-              <div className={dataTableStyles.mobileCardActions}>
-                <div className={dataTableStyles.mobileCardType}>
-                  {income.is_recurring ? (
-                    <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
-                      <BsRepeat /> Fixo
-                    </span>
-                  ) : (
-                    <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
-                      <BsCurrencyDollar /> Único
-                    </span>
-                  )}
-                </div>
-                
-                <div className={dataTableStyles.mobileCardActionButtons}>
-                  <button 
-                    onClick={() => handleEditIncome(income)} 
-                    className={dataTableStyles.actionButton}
-                    title="Editar"
-                  >
-                    <BsPencil />
-                  </button>
-                  <button 
-                    onClick={() => handleDeleteIncome(income)} 
-                    className={`${dataTableStyles.actionButton} ${dataTableStyles.delete}`}
-                    title="Excluir"
-                  >
-                    <BsTrash />
-                  </button>
-                </div>
-              </div>
+      <>
+        {safeIncomes.length === 0 || noIncomesMessage ? (
+          <div className={dataTableStyles.noDataContainer}>
+            <BsCash className={dataTableStyles.noDataIcon} />
+            <h3 className={dataTableStyles.noDataMessage}>
+              {noIncomesMessage?.message || "Nenhuma receita encontrada para os filtros selecionados."}
+            </h3>
+            <p className={dataTableStyles.noDataSuggestion}>
+              {noIncomesMessage?.suggestion || "Tente ajustar os filtros ou adicionar uma nova receita."}
+            </p>
+            <div className={dataTableStyles.noDataActions}>
+              <button className={dataTableStyles.primaryButton} onClick={onAdd}>
+                <BsPlusLg /> Adicionar Receita
+              </button>
             </div>
-        ))}
-      </div>
+          </div>
+        ) : (
+          <div className={dataTableStyles.mobileCardView}>
+            {console.log("Rendering mobile card view with", safeIncomes.length, "incomes")}
+            {safeIncomes.map((income) => (
+              <div 
+                key={income.id} 
+                className={dataTableStyles.mobileCard}
+              >
+                {!income.is_recurring && (
+                  <div className={dataTableStyles.mobileCardSelect}>
+                    <label className={dataTableStyles.checkboxContainer}>
+                      <input
+                        type="checkbox"
+                        checked={selectedIncomes.includes(income.id)}
+                        onChange={() => handleSelectIncome(income.id)}
+                        className={dataTableStyles.checkbox}
+                      />
+                      <span className={dataTableStyles.checkmark}></span>
+                    </label>
+                  </div>
+                )}
+                
+                <div className={dataTableStyles.mobileCardHeader}>
+                  <h3 className={dataTableStyles.mobileCardTitle}>{income.description}</h3>
+                  <span className={`${dataTableStyles.incomeAmountBadge} ${dataTableStyles.incomeAmount} ${dataTableStyles.mobileCardAmount}`}>
+                    {formatCurrency(income.amount)}
+                  </span>
+                </div>
+                
+                <div className={dataTableStyles.mobileCardDetails}>
+                  <div className={dataTableStyles.mobileCardDetail}>
+                    <span className={dataTableStyles.mobileCardLabel}>Data</span>
+                    <span className={dataTableStyles.mobileCardValue}>{formatDate(income.date)}</span>
+                  </div>
+                  
+                  <div className={dataTableStyles.mobileCardDetail}>
+                    <span className={dataTableStyles.mobileCardLabel}>Categoria</span>
+                    <span className={dataTableStyles.mobileCardValue}>
+                      <BsFolderSymlink style={{color: 'var(--primary-color)'}} />
+                      {income.Category?.category_name || '-'}
+                    </span>
+                  </div>
+                  
+                  <div className={dataTableStyles.mobileCardDetail}>
+                    <span className={dataTableStyles.mobileCardLabel}>Banco</span>
+                    <span className={dataTableStyles.mobileCardValue}>
+                      <BsBank2 style={{color: 'var(--primary-color)'}} />
+                      {income.Bank?.name || '-'}
+                    </span>
+                  </div>
+                  
+                  <div className={dataTableStyles.mobileCardDetail}>
+                    <span className={dataTableStyles.mobileCardLabel}>Tipo</span>
+                    <span className={dataTableStyles.mobileCardValue}>
+                      {income.is_recurring ? (
+                        <><BsRepeat style={{color: 'var(--primary-color)'}} /> Receita fixa</>
+                      ) : (
+                        <><BsCurrencyDollar style={{color: 'var(--text-color)'}} /> Receita única</>
+                      )}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className={dataTableStyles.mobileCardActions}>
+                  <div className={dataTableStyles.mobileCardType}>
+                    {income.is_recurring ? (
+                      <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
+                        <BsRepeat /> Fixo
+                      </span>
+                    ) : (
+                      <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.oneTimeType}`}>
+                        <BsCurrencyDollar /> Único
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className={dataTableStyles.mobileCardActionButtons}>
+                    <button 
+                      onClick={() => handleEditIncome(income)} 
+                      className={dataTableStyles.actionButton}
+                      title="Editar"
+                    >
+                      <BsPencil />
+                    </button>
+                    <button 
+                      onClick={() => handleDeleteIncome(income)} 
+                      className={`${dataTableStyles.actionButton} ${dataTableStyles.delete}`}
+                      title="Excluir"
+                    >
+                      <BsTrash />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </>
     );
   };
 
@@ -503,25 +508,6 @@ function Income({
     return (
       <div className={dataTableStyles.errorContainer}>
         <div className={dataTableStyles.errorText}>Erro ao carregar receitas: {error}</div>
-      </div>
-    );
-  }
-
-  if (safeIncomes.length === 0) {
-    return (
-      <div className={dataTableStyles.noDataContainer}>
-        <BsCash className={dataTableStyles.noDataIcon} />
-        <h3 className={dataTableStyles.noDataMessage}>
-          {noIncomesMessage?.message || "Nenhuma receita encontrada para os filtros selecionados."}
-        </h3>
-        <p className={dataTableStyles.noDataSuggestion}>
-          {noIncomesMessage?.suggestion || "Tente ajustar os filtros ou adicionar uma nova receita."}
-        </p>
-        <div className={dataTableStyles.noDataActions}>
-          <button className={dataTableStyles.primaryButton} onClick={onAdd}>
-            <BsPlusLg /> Adicionar Receita
-          </button>
-        </div>
       </div>
     );
   }
@@ -762,16 +748,25 @@ function Income({
           </div>
         )}
 
-        {noIncomesMessage ? (
-          <div className={dataTableStyles.noDataContainer}>
-            <BsCash className={dataTableStyles.noDataIcon} />
-            <h3 className={dataTableStyles.noDataMessage}>{noIncomesMessage.message}</h3>
-            <p className={dataTableStyles.noDataSuggestion}>{noIncomesMessage.suggestion}</p>
-          </div>
+        {isMobile ? (
+          renderMobileCards()
         ) : (
           <>
-            {isMobile ? (
-              renderMobileCards()
+            {safeIncomes.length === 0 || noIncomesMessage ? (
+              <div className={dataTableStyles.noDataContainer}>
+                <BsCash className={dataTableStyles.noDataIcon} />
+                <h3 className={dataTableStyles.noDataMessage}>
+                  {noIncomesMessage?.message || "Nenhuma receita encontrada para os filtros selecionados."}
+                </h3>
+                <p className={dataTableStyles.noDataSuggestion}>
+                  {noIncomesMessage?.suggestion || "Tente ajustar os filtros ou adicionar uma nova receita."}
+                </p>
+                <div className={dataTableStyles.noDataActions}>
+                  <button className={dataTableStyles.primaryButton} onClick={onAdd}>
+                    <BsPlusLg /> Adicionar Receita
+                  </button>
+                </div>
+              </div>
             ) : (
               <div className={dataTableStyles.tableContainer}>
                 <table className={dataTableStyles.table}>

@@ -887,11 +887,11 @@ const IncomesWrapper = () => {
         
         // Verifica se há filtros ativos
         const hasActiveFilters = (filters.months && filters.months.length !== 1) || 
-                              (filters.years && filters.years.length !== 1) || 
-                              filters.category_id !== 'all' || 
-                              filters.bank_id !== 'all' || 
-                              filters.description !== '' || 
-                              filters.is_recurring !== '';
+                               (filters.years && filters.years.length !== 1) || 
+                               filters.category_id !== 'all' || 
+                               filters.bank_id !== 'all' || 
+                               filters.description !== '' || 
+                               filters.is_recurring !== '';
 
         setNoIncomesMessage(hasActiveFilters ? {
           message: 'Nenhuma receita encontrada para os filtros selecionados.',
