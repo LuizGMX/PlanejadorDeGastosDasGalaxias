@@ -44,7 +44,7 @@ function Income({
   
   const [deleteSuccess, setDeleteSuccess] = useState(null);
   const [openFilter, setOpenFilter] = useState(null); 
-  const [noIncomesMessage, setNoIncomesMessage] = useState(null);  
+  
   const [isMobile, setIsMobile] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
   const [expandedCardDetails, setExpandedCardDetails] = useState({});
