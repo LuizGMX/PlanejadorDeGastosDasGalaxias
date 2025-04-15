@@ -589,6 +589,22 @@ const IncomesWrapper = () => {
             return; // Pular esta receita, pois já temos uma ocorrência para este mês
           }
           
+          // Verificar se a data original tem uma exceção
+          if (hasExceptions) {
+            const originalDate = new Date(income.date);
+            const originalDateStr = originalDate.toISOString().slice(0, 10);
+            
+            // Se a data original está nas exceções, não mostrar a receita original
+            const isOriginalDateException = income.exceptions.some(ex => 
+              new Date(ex.exception_date).toISOString().slice(0, 10) === originalDateStr
+            );
+            
+            if (isOriginalDateException) {
+              console.log(`Receita original ${incomeId} (${income.description}) tem exceção para a data ${originalDateStr} - ocultando`);
+              return; // Pular esta receita original pois tem exceção para sua data
+            }
+          }
+          
           // Se não houver duplicação, mantenha a receita original
           console.log(`Receita recorrente ${incomeId} (${income.description}) não está duplicada - mantendo`);
         }
@@ -619,6 +635,27 @@ const IncomesWrapper = () => {
           return; // Pular esta ocorrência pois é uma exceção
         }
         
+        // Verificar se já existe a receita original para esta mesma data/mês
+        // Isso pode acontecer quando a data original da receita coincide com uma das ocorrências
+        const occurrenceMonth = occurrenceDate.getMonth() + 1;
+        const occurrenceYear = occurrenceDate.getFullYear();
+        
+        // Procurar nas receitas já adicionadas (evitar duplicação com a original)
+        const alreadyAddedOriginal = dedupedIncomes.some(income => {
+          // Se for a receita original com mesmo ID
+          if (income.id?.toString() === originalId?.toString() && income.is_recurring) {
+            const incomeDate = new Date(income.date);
+            return incomeDate.getMonth() + 1 === occurrenceMonth && 
+                   incomeDate.getFullYear() === occurrenceYear;
+          }
+          return false;
+        });
+        
+        if (alreadyAddedOriginal) {
+          console.log(`Ocorrência ${occurrence.id} duplicada com a receita original no mês ${occurrenceMonth}/${occurrenceYear} - ignorando`);
+          return; // Pular esta ocorrência pois a original já está no mesmo mês
+        }
+        
         // Adicionar a ocorrência à lista final
         dedupedIncomes.push(occurrence);
       });
@@ -630,12 +667,57 @@ const IncomesWrapper = () => {
         recurrenceOccurrences: recurrenceOccurrences.length
       });
       
-      setOriginalIncomes(dedupedIncomes);
-      setFilteredIncomes(dedupedIncomes);
-      setIncomes(dedupedIncomes);
-
       // Exibe os dados antes de aplicar filtros
       console.log("Dados carregados após deduplicação:", dedupedIncomes.length);
+      console.log("Período solicitado:", 
+        filters.months?.map(m => `${m}/${filters.years?.[0] || new Date().getFullYear()}`).join(', ') || 
+        `${new Date(filterParams.startDate || '').toLocaleDateString()} - ${new Date(filterParams.endDate || '').toLocaleDateString()}`
+      );
+
+      // Log adicional para mostrar quais receitas recorrentes originais foram mantidas
+      const recurringOriginals = dedupedIncomes.filter(inc => inc.is_recurring && !inc.isRecurringOccurrence);
+      console.log(`Receitas recorrentes originais após filtro: ${recurringOriginals.length}`, 
+        recurringOriginals.map(inc => ({
+          id: inc.id,
+          description: inc.description,
+          date: new Date(inc.date).toLocaleDateString(),
+          hasExceptions: inc.exceptions?.length > 0
+        }))
+      );
+
+      // Verificação final para receitas com exceções
+      const finalFilteredIncomes = dedupedIncomes.filter(income => {
+        // Se não tem exceções, manter na lista
+        if (!income.exceptions || !income.exceptions.length) return true;
+
+        // Se é uma receita original (não ocorrência) com exceções:
+        // Verificar novamente se a data da receita está nas exceções
+        if (income.is_recurring && !income.isRecurringOccurrence) {
+          const incomeDate = new Date(income.date);
+          const incomeDateStr = incomeDate.toISOString().slice(0, 10);
+          const matchingException = income.exceptions.find(ex => 
+            new Date(ex.exception_date).toISOString().slice(0, 10) === incomeDateStr
+          );
+          
+          if (matchingException) {
+            console.log(`Filtro final: Receita original ${income.id} (${income.description}) com exceção para ${incomeDateStr} - removendo`);
+            return false;
+          }
+        }
+
+        return true;
+      });
+
+      if (dedupedIncomes.length !== finalFilteredIncomes.length) {
+        console.log(`Filtro final removeu ${dedupedIncomes.length - finalFilteredIncomes.length} receitas com exceções`);
+        setIncomes(finalFilteredIncomes);
+        setFilteredIncomes(finalFilteredIncomes);
+        setOriginalIncomes(finalFilteredIncomes);
+      } else {
+        setIncomes(dedupedIncomes);
+        setFilteredIncomes(dedupedIncomes);
+        setOriginalIncomes(dedupedIncomes);
+      }
 
       // Examine alguns dados para debug
       if (dedupedIncomes.length > 0) {
