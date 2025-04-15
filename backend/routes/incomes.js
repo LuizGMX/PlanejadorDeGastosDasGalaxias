@@ -161,24 +161,22 @@ router.get('/', async (req, res) => {
     // Combina receitas normais e recorrentes expandidas
     const allIncomes = [...incomes, ...expandedRecurringIncomes];
 
-    // Remove duplicatas de ocorrências recorrentes, priorizando as que têm ID no formato rec_
+    // Remove duplicatas e filtra receitas recorrentes
     const uniqueIncomes = allIncomes.filter((income, index, self) => {
-      // Converte o ID para string para garantir que podemos usar startsWith
       const incomeId = String(income.id);
       
-      // Se o ID começa com 'rec_', mantém
+      // Se é uma ocorrência recorrente (começa com rec_), mantém
       if (incomeId.startsWith('rec_')) {
         return true;
       }
       
-      // Se não começa com 'rec_', verifica se existe uma ocorrência com 'rec_' para o mesmo ID
-      const hasRecurringOccurrence = self.some(t => {
-        const tId = String(t.id);
-        return tId.startsWith('rec_') && tId.includes(incomeId);
-      });
+      // Se é uma receita normal (não recorrente), mantém
+      if (!income.is_recurring) {
+        return true;
+      }
       
-      // Mantém apenas se não houver ocorrência recorrente
-      return !hasRecurringOccurrence;
+      // Se é uma receita recorrente mas não é uma ocorrência, remove
+      return false;
     });
 
 
