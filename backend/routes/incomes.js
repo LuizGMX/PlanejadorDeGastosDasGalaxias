@@ -160,8 +160,13 @@ router.get('/', async (req, res) => {
 
     // Combina receitas normais e recorrentes expandidas
     const allIncomes = [...incomes, ...expandedRecurringIncomes];
+
+    // Remove duplicatas de ocorrências recorrentes
+    const uniqueIncomes = allIncomes.filter((income, index, self) =>
+      index === self.findIndex(t => t.id === income.id)
+    );
     
-    res.json(allIncomes);
+    res.json(uniqueIncomes);
   } catch (error) {
     console.error('Erro ao buscar receitas:', error);
     res.status(500).json({ message: 'Erro ao buscar receitas', error: error.message });
