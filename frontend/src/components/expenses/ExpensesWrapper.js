@@ -6,6 +6,8 @@ import MobileExpenses from './MobileExpenses';
 import styles from '../../styles/shared.module.css';
 import '../../styles/dataTable.module.css';
 import { toast } from 'react-hot-toast';
+import { BsExclamationTriangle, BsX } from 'react-icons/bs';
+import { FiTrash2 } from 'react-icons/fi';
 
 const ExpensesWrapper = () => {
   const navigate = useNavigate();
@@ -20,6 +22,7 @@ const ExpensesWrapper = () => {
   const [expenseToDelete, setExpenseToDelete] = useState(null);
   const [editingExpense, setEditingExpense] = useState(null);
   const [deleteSuccess, setDeleteSuccess] = useState(null);
+  const [deleteOption, setDeleteOption] = useState(null); // 'all', 'future', 'past', 'single'
   
   const [filters, setFilters] = useState({
     months: [new Date().getMonth() + 1],
@@ -33,6 +36,7 @@ const ExpensesWrapper = () => {
   const [originalExpenses, setOriginalExpenses] = useState([]);
   const [filteredExpenses, setFilteredExpenses] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [noExpensesMessage, setNoExpensesMessage] = useState(null);
 
   // Função para verificar se a tela é mobile
   const isMobileView = () => {
@@ -63,26 +67,113 @@ const ExpensesWrapper = () => {
     navigate(`/expenses/edit/${expense.id}`);
   };
 
-  const handleDeleteExpense = async (expense, queryParams = '') => {
+  const handleDeleteExpense = (expense) => {
+    setExpenseToDelete(expense);
+    setShowDeleteModal(true);
+    setDeleteOption(null);
+  };
+
+  const handleBulkDelete = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses/${expense.id}${queryParams}`, {
+      if (selectedExpenses.length === 0) return;
+
+      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses/bulk`, {
         method: 'DELETE',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${auth.token}`
-        }
+        },
+        body: JSON.stringify({ ids: selectedExpenses })
       });
 
       if (!response.ok) {
-        throw new Error('Falha ao excluir despesa');
+        throw new Error('Falha ao excluir despesas em lote');
       }
 
       const data = await response.json();
-      toast.success(data.message);
+      toast.success(data.message || 'Despesas excluídas com sucesso');
+      
+      // Limpar seleção e recarregar dados
+      setSelectedExpenses([]);
+      await fetchData(filters);
+    } catch (err) {
+      console.error('Erro ao excluir despesas em lote:', err);
+      toast.error('Erro ao excluir despesas em lote');
+    }
+  };
+
+  const handleConfirmDelete = async (option) => {
+    try {
+      if (!expenseToDelete) return;
+
+      // Se for uma despesa parcelada
+      if (expenseToDelete.has_installments && expenseToDelete.installment_group_id) {
+        const queryParams = option === 'all' ? '?delete_all_installments=true' : '';
+        
+        const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses/${expenseToDelete.id}${queryParams}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${auth.token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Falha ao excluir despesa parcelada');
+        }
+
+        const data = await response.json();
+        toast.success(data.message);
+      } 
+      // Se for uma despesa recorrente
+      else if (expenseToDelete.is_recurring) {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses/${expenseToDelete.id}/recurring`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${auth.token}`
+          },
+          body: JSON.stringify({ deleteType: option || 'single' })
+        });
+
+        if (!response.ok) {
+          throw new Error('Falha ao excluir despesa recorrente');
+        }
+
+        const data = await response.json();
+        toast.success(data.message);
+      } 
+      // Se for uma despesa comum
+      else {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses/${expenseToDelete.id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${auth.token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Falha ao excluir despesa');
+        }
+
+        const data = await response.json();
+        toast.success(data.message);
+      }
+
+      // Limpar estado e recarregar dados
+      setShowDeleteModal(false);
+      setExpenseToDelete(null);
+      setDeleteOption(null);
       await fetchData(filters);
     } catch (err) {
       console.error('Erro ao excluir despesa:', err);
       toast.error('Erro ao excluir despesa');
     }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setExpenseToDelete(null);
+    setDeleteOption(null);
   };
 
   const handleSearch = (term) => {
@@ -296,6 +387,13 @@ const ExpensesWrapper = () => {
       // Exibe os dados antes de aplicar filtros
       console.log("Dados carregados antes de filtros:", extractedExpenses.length);
       
+      // Verifica se não há despesas para exibir mensagem
+      if (extractedExpenses.length === 0) {
+        setNoExpensesMessage("Nenhuma despesa encontrada para o período selecionado.");
+      } else {
+        setNoExpensesMessage(null);
+      }
+      
       // Examine alguns dados para debug
       if (extractedExpenses.length > 0) {
         console.log("Exemplo de despesa:", extractedExpenses[0]);
@@ -438,38 +536,133 @@ const ExpensesWrapper = () => {
     isMobile
   });
 
-  // Renderização condicional baseada no dispositivo
-  return isMobile ? (
-    <MobileExpenses
-      expenses={expenses}
-      onEdit={handleEditExpense}
-      onDelete={handleDeleteExpense}
-      onAdd={handleAddExpense}
-      onFilter={handleFilter}
-      onSearch={handleSearch}
-      selectedExpenses={selectedExpenses}
-      onSelectExpense={handleSelectExpense}
-      onSelectAll={handleSelectAll}
-      loading={loading}
-      error={error}
-      categories={categories}
-      banks={banks}
-      filters={filters}
-    />
-  ) : (
-    <Expenses
-      expenses={expenses}
-      onEdit={handleEditExpense}
-      onDelete={handleDeleteExpense}
-      onAdd={handleAddExpense}
-      onFilter={handleFilter}
-      onSearch={handleSearch}
-      selectedExpenses={selectedExpenses}
-      onSelectExpense={handleSelectExpense}
-      onSelectAll={handleSelectAll}
-      loading={loading}
-      error={error}
-    />
+  return (
+    <>
+      {isMobile ? (
+        <MobileExpenses
+          expenses={expenses}
+          onEdit={handleEditExpense}
+          onDelete={handleDeleteExpense}
+          onAdd={handleAddExpense}
+          onFilter={handleFilter}
+          onSearch={handleSearch}
+          selectedExpenses={selectedExpenses}
+          onSelectExpense={handleSelectExpense}
+          onSelectAll={handleSelectAll}
+          loading={loading}
+          error={error}
+          categories={categories}
+          banks={banks}
+          filters={filters}
+          noExpensesMessage={noExpensesMessage}
+        />
+      ) : (
+        <Expenses
+          expenses={expenses}
+          onEdit={handleEditExpense}
+          onDelete={handleDeleteExpense}
+          onAdd={handleAddExpense}
+          onFilter={handleFilter}
+          onSearch={handleSearch}
+          selectedExpenses={selectedExpenses}
+          onSelectExpense={handleSelectExpense}
+          onSelectAll={handleSelectAll}
+          loading={loading}
+          error={error}
+          categories={categories}
+          banks={banks}
+          filters={filters}
+          noExpensesMessage={noExpensesMessage}
+        />
+      )}
+
+      {/* Modal de Confirmação de Exclusão */}
+      {showDeleteModal && (
+        <div className={dataTableStyles.modalOverlay}>
+          <div className={dataTableStyles.modal}>
+            <div className={dataTableStyles.modalHeader}>
+              <h2 className={dataTableStyles.modalTitle}>
+                <BsExclamationTriangle size={20} color="#e74c3c" /> Confirmar Exclusão
+              </h2>
+              <button 
+                className={dataTableStyles.modalCloseButton} 
+                onClick={handleCancelDelete}
+              >
+                <BsX size={24} />
+              </button>
+            </div>
+            <div className={dataTableStyles.modalBody}>
+              {expenseToDelete?.is_recurring ? (
+                <>
+                  <p>Como deseja excluir esta despesa recorrente?</p>
+                  <div className={dataTableStyles.deleteOptions}>
+                    <button
+                      className={`${dataTableStyles.deleteOptionButton} ${deleteOption === 'single' ? dataTableStyles.active : ''}`}
+                      onClick={() => setDeleteOption('single')}
+                    >
+                      Apenas esta ocorrência
+                    </button>
+                    <button
+                      className={`${dataTableStyles.deleteOptionButton} ${deleteOption === 'future' ? dataTableStyles.active : ''}`}
+                      onClick={() => setDeleteOption('future')}
+                    >
+                      Esta e todas as futuras
+                    </button>
+                    <button
+                      className={`${dataTableStyles.deleteOptionButton} ${deleteOption === 'past' ? dataTableStyles.active : ''}`}
+                      onClick={() => setDeleteOption('past')}
+                    >
+                      Esta e todas as anteriores
+                    </button>
+                    <button
+                      className={`${dataTableStyles.deleteOptionButton} ${deleteOption === 'all' ? dataTableStyles.active : ''}`}
+                      onClick={() => setDeleteOption('all')}
+                    >
+                      Todas as ocorrências
+                    </button>
+                  </div>
+                </>
+              ) : expenseToDelete?.has_installments ? (
+                <>
+                  <p>Como deseja excluir esta despesa parcelada?</p>
+                  <div className={dataTableStyles.deleteOptions}>
+                    <button
+                      className={`${dataTableStyles.deleteOptionButton} ${deleteOption === 'single' ? dataTableStyles.active : ''}`}
+                      onClick={() => setDeleteOption('single')}
+                    >
+                      Apenas esta parcela
+                    </button>
+                    <button
+                      className={`${dataTableStyles.deleteOptionButton} ${deleteOption === 'all' ? dataTableStyles.active : ''}`}
+                      onClick={() => setDeleteOption('all')}
+                    >
+                      Todas as parcelas
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <p>Tem certeza que deseja excluir esta despesa?</p>
+              )}
+            </div>
+            <div className={dataTableStyles.modalFooter}>
+              <button 
+                className={dataTableStyles.cancelButton} 
+                onClick={handleCancelDelete}
+              >
+                Cancelar
+              </button>
+              <button 
+                className={dataTableStyles.confirmButton} 
+                onClick={() => handleConfirmDelete(deleteOption)}
+                disabled={(expenseToDelete?.is_recurring || expenseToDelete?.has_installments) && !deleteOption}
+              >
+                <FiTrash2 /> Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

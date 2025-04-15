@@ -19,12 +19,11 @@ const MobileExpenses = ({
   error,
   categories = [],
   banks = [],
-  filters = {}
+  filters = {},
+  noExpensesMessage
 }) => {
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [expenseToDelete, setExpenseToDelete] = useState(null);
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
   const initialFilterApplied = useRef(false);
@@ -75,32 +74,7 @@ const MobileExpenses = ({
   };
 
   const handleDelete = (expense) => {
-    setExpenseToDelete(expense);
-    setShowDeleteModal(true);
-  };
-
-  const handleConfirmDelete = async (deleteOption) => {
-    if (expenseToDelete) {
-      let queryParams = '';
-      if (expenseToDelete.is_recurring) {
-        switch (deleteOption) {
-          case 'all':
-            queryParams = '?delete_all=true';
-            break;
-          case 'future':
-            queryParams = '?delete_future=true';
-            break;
-          case 'past':
-            queryParams = '?delete_past=true';
-            break;
-          default:
-            queryParams = '';
-        }
-      }
-      await onDelete(expenseToDelete, queryParams);
-      setShowDeleteModal(false);
-      setExpenseToDelete(null);
-    }
+    onDelete(expense);
   };
 
   // Componente de filtros que será reutilizado
@@ -240,7 +214,7 @@ const MobileExpenses = ({
     );
   }
 
-  if (expenses.length === 0) {
+  if (!expenses || expenses.length === 0) {
     return (
       <div className={styles.container}>
         <div className={styles.header}>
@@ -249,25 +223,9 @@ const MobileExpenses = ({
             <FiPlus /> Adicionar
           </button>
         </div>
-
-        <div className={styles.dataContainer}>
-          {renderFilters()}
-
-          <div className={styles.noDataContainer}>
-            <div className={styles.noDataIcon}>💰</div>
-            <h3 className={styles.noDataMessage}>
-              {searchTerm ? "Nenhuma despesa encontrada para os filtros selecionados." : "Nenhuma despesa encontrada"}
-            </h3>
-            <p className={styles.noDataSuggestion}>
-              {searchTerm ? "Tente ajustar os filtros ou " : "Comece "}
-              adicionando sua primeira despesa
-            </p>
-            <div className={styles.noDataActions}>
-              <button className={styles.primaryButton} onClick={onAdd}>
-                <FiPlus /> Adicionar Despesa
-              </button>
-            </div>
-          </div>
+        {renderFilters()}
+        <div className={styles.noDataContainer}>
+          <p className={styles.noDataText}>{noExpensesMessage || 'Nenhuma despesa encontrada.'}</p>
         </div>
       </div>
     );
@@ -282,142 +240,89 @@ const MobileExpenses = ({
         </button>
       </div>
 
-      <div className={styles.dataContainer}>
-        {renderFilters()}
+      {renderFilters()}
 
-        <div className={styles.cardsContainer}>
-          {expenses.map((expense) => {
-            console.log('Renderizando expense:', expense);
-            return (
-            <div key={expense.id} className={styles.card} style={{ borderLeftColor: '#ff6b6b' }}>
-              <div className={styles.cardHeader}>
-                <h3 className={styles.cardTitle}>{expense.description}</h3>
-                <span className={`${styles.amountBadge} ${styles.expenseAmount}`}>
-                  {formatCurrency(expense.amount)}
-                </span>
-              </div>
-
-              <div className={styles.cardDetails}>
-                <div className={styles.cardDetail}>
-                  <span className={styles.cardLabel}>Data</span>
-                  <span className={styles.cardValue}>{expense.date ? formatDate(expense.date) : (expense.expense_date ? formatDate(expense.expense_date) : '-')}</span>
-                </div>
-
-                <div className={styles.cardDetail}>
-                  <span className={styles.cardLabel}>Categoria</span>
-                  <span className={styles.cardValue}>
-                    {expense.Category ? expense.Category.category_name : '-'}
-                  </span>
-                </div>
-
-                <div className={styles.cardDetail}>
-                  <span className={styles.cardLabel}>Banco</span>
-                  <span className={styles.cardValue}>
-                    {expense.Bank 
-                      ? expense.Bank.name 
-                      : (expense.bank 
-                        ? expense.bank.name 
-                        : '-')}
-                  </span>
-                </div>
-
-                <div className={styles.cardDetail}>
-                  <span className={styles.cardLabel}>Tipo</span>
-                  <span className={`${styles.typeStatus} ${expense.is_recurring ? styles.fixedType : expense.has_installments ? styles.installmentsType : styles.oneTimeType}`}>
-                    {expense.is_recurring ? (
-                      <><BsRepeat size={14} /> Fixa</>
-                    ) : expense.has_installments ? (
-                      <><BsCreditCard2Front size={14} /> Parcelada</>
-                    ) : (
-                      <><BsCurrencyDollar size={14} /> Única</>
-                    )}
-                  </span>
-                </div>
-              </div>
-
-              <div className={styles.cardActions}>
-                <button
-                  className={styles.editButton}
-                  onClick={() => onEdit(expense)}
-                  aria-label="Editar despesa"
-                >
-                  <FiEdit2 />
-                </button>
-                <button
-                  className={styles.deleteButton}
-                  onClick={() => handleDelete(expense)}
-                  aria-label="Excluir despesa"
-                >
-                  <FiTrash2 />
-                </button>
-              </div>
-            </div>
-          )})}
-        </div>
-      </div>
-
-      {showDeleteModal && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContent}>
-            <div className={styles.modalHeader}>
-              <BsExclamationTriangle className={styles.warningIcon} />
-              <h3>Confirmar exclusão</h3>
-            </div>
-            <div className={styles.modalBody}>
-              <p>Tem certeza que deseja excluir esta despesa?</p>
-              <p><strong>{expenseToDelete?.description}</strong></p>
-              
-              {expenseToDelete?.is_recurring && (
-                <div className={styles.modalOptions}>
-                  <p className={styles.modalOptionsTitle}>Como deseja excluir esta despesa recorrente?</p>
-                  <div className={styles.modalOptionButtons}>
-                    <button
-                      className={styles.optionButton}
-                      onClick={() => handleConfirmDelete()}
-                    >
-                      Apenas esta
-                    </button>
-                    <button
-                      className={styles.optionButton}
-                      onClick={() => handleConfirmDelete('all')}
-                    >
-                      Todas as recorrências
-                    </button>
-                    <button
-                      className={styles.optionButton}
-                      onClick={() => handleConfirmDelete('future')}
-                    >
-                      Esta e próximas
-                    </button>
-                    <button
-                      className={styles.optionButton}
-                      onClick={() => handleConfirmDelete('past')}
-                    >
-                      Esta e anteriores
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className={styles.modalActions}>
-              <button
-                className={styles.secondaryButton}
-                onClick={() => setShowDeleteModal(false)}
-              >
-                <BsX /> Cancelar
-              </button>
-              {!expenseToDelete?.is_recurring && (
-                <button
-                  className={`${styles.primaryButton} ${styles.deleteButton}`}
-                  onClick={() => handleConfirmDelete()}
-                >
-                  <FiTrash2 /> Confirmar
-                </button>
-              )}
-            </div>
-          </div>
+      {selectedExpenses.length > 0 && (
+        <div className={styles.bulkActions}>
+          <button 
+            onClick={() => {
+              if (window.confirm(`Tem certeza que deseja excluir ${selectedExpenses.length} ${selectedExpenses.length === 1 ? 'item' : 'itens'}?`)) {
+                onDelete({ ids: selectedExpenses });
+              }
+            }} 
+            className={styles.deleteButton}
+          >
+            <FiTrash2 /> Excluir {selectedExpenses.length} {selectedExpenses.length === 1 ? 'item' : 'itens'}
+          </button>
         </div>
       )}
+
+      <div className={styles.expenseList}>
+        {expenses.map((expense) => (
+          <div 
+            key={expense.id} 
+            className={styles.expenseCard}
+          >
+            <div className={styles.expenseCardHeader}>
+              <div className={styles.expenseDescription}>
+                <h3>{expense.description}</h3>
+                {expense.is_recurring ? (
+                  <span className={styles.recurringBadge}>
+                    <BsRepeat /> Fixa
+                  </span>
+                ) : expense.has_installments ? (
+                  <span className={styles.installmentBadge}>
+                    <BsCreditCard2Front /> {expense.current_installment}/{expense.total_installments}
+                  </span>
+                ) : (
+                  <span className={styles.oneTimeBadge}>
+                    <BsCurrencyDollar /> Única
+                  </span>
+                )}
+              </div>
+              <div className={styles.expenseAmount}>
+                {formatCurrency(expense.amount)}
+              </div>
+            </div>
+
+            <div className={styles.expenseDetails}>
+              <div className={styles.expenseDate}>
+                <span className={styles.detailLabel}>Data:</span>
+                <span className={styles.detailValue}>{formatDate(expense.expense_date)}</span>
+              </div>
+              <div className={styles.expenseCategory}>
+                <span className={styles.detailLabel}>Categoria:</span>
+                <span className={styles.detailValue}>{expense.Category?.category_name || '-'}</span>
+              </div>
+              <div className={styles.expensePayment}>
+                <span className={styles.detailLabel}>Método:</span>
+                <span className={styles.detailValue}>
+                  {expense.payment_method === 'credit_card' && 'Cartão de Crédito'}
+                  {expense.payment_method === 'debit_card' && 'Cartão de Débito'}
+                  {expense.payment_method === 'pix' && 'PIX'}
+                  {expense.payment_method === 'money' && 'Dinheiro'}
+                  {!expense.payment_method && '-'}
+                </span>
+              </div>
+            </div>
+
+            <div className={styles.expenseActions}>
+              <button
+                className={styles.editButton}
+                onClick={() => onEdit(expense)}
+              >
+                <FiEdit2 />
+              </button>
+              <button
+                className={styles.deleteButton}
+                onClick={() => handleDelete(expense)}
+              >
+                <FiTrash2 />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
