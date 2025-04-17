@@ -95,7 +95,7 @@ const ExpensesWrapper = () => {
       
       // Limpar seleção e recarregar dados
       setSelectedExpenses([]);
-      await fetchData(filters);
+      await fetchData(filters, true);
     } catch (err) {
       console.error('Erro ao excluir despesas em lote:', err);
       toast.error('Erro ao excluir despesas em lote');
@@ -163,7 +163,8 @@ const ExpensesWrapper = () => {
       setShowDeleteModal(false);
       setExpenseToDelete(null);
       setDeleteOption(null);
-      await fetchData(filters);
+      // Força um recarregamento completo após a deleção
+      fetchData(filters, true);
     } catch (err) {
       console.error('Erro ao excluir despesa:', err);
       toast.error('Erro ao excluir despesa');
@@ -286,14 +287,11 @@ const ExpensesWrapper = () => {
       is_recurring: ''
     });
     
-    // Buscar dados com os filtros iniciais
-    fetchData({
-      months: [thisMonth],
-      years: [thisYear]
-    });
+    // Buscar dados com os filtros iniciais e forçar inclusão de despesas recorrentes
+    fetchData(filters, true);
   }, [auth.token]);
 
-  const fetchData = async (filterParams = {}) => {
+  const fetchData = async (filterParams = {}, forceIncludeRecurring = false) => {
     try {
       setLoading(true);
       setError(null);
@@ -332,6 +330,11 @@ const ExpensesWrapper = () => {
       
       if (filterParams.is_recurring !== undefined && filterParams.is_recurring !== '') {
         queryParams.append('is_recurring', filterParams.is_recurring);
+      }
+      
+      // Adicionar parâmetro para forçar o backend a incluir todas as despesas recorrentes
+      if (forceIncludeRecurring) {
+        queryParams.append('include_all_recurring', 'true');
       }
       
       // Construir a URL com query params

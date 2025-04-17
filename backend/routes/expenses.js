@@ -33,7 +33,8 @@ router.get('/', async (req, res) => {
       payment_method,
       is_recurring,
       startDate,
-      endDate
+      endDate,
+      include_all_recurring
     } = req.query;
     
     const where = { user_id: req.user.id };
@@ -114,7 +115,7 @@ router.get('/', async (req, res) => {
     }
 
     // Filtro de recorrência
-    if (is_recurring !== undefined) {
+    if (is_recurring !== undefined && include_all_recurring !== 'true') {
       where[Op.and].push({
         is_recurring: is_recurring === 'true'
       });
@@ -125,34 +126,127 @@ router.get('/', async (req, res) => {
       delete where[Op.and];
     }
     
-    const expenses = await Expense.findAll({
-      where,
-      include: [
-        { model: Category, as: 'Category' },
-        { model: Bank, as: 'bank' }
-      ],
-      order: [['expense_date', 'DESC']]
-    });
+    // Se include_all_recurring for true, fazemos duas consultas separadas
+    let allExpenses = [];
+    
+    // 1. Busca despesas normais com os filtros aplicados
+    if (include_all_recurring !== 'true' || is_recurring !== 'true') {
+      const expenses = await Expense.findAll({
+        where,
+        include: [
+          { model: Category, as: 'Category' },
+          { model: Bank, as: 'bank' }
+        ],
+        order: [['expense_date', 'DESC']]
+      });
+      
+      allExpenses = [...expenses];
+    }
+    
+    // 2. Se include_all_recurring for true ou estamos buscando despesas recorrentes,
+    // busca separadamente todas as despesas recorrentes
+    if (include_all_recurring === 'true' || is_recurring === 'true') {
+      // Cria uma cópia do where original para despesas recorrentes
+      const recurringWhere = { ...where };
+      
+      // Adiciona a condição de ser recorrente
+      if (!recurringWhere[Op.and]) {
+        recurringWhere[Op.and] = [];
+      }
+      
+      recurringWhere[Op.and] = [
+        ...recurringWhere[Op.and].filter(condition => 
+          !condition.is_recurring // Remove qualquer condição is_recurring existente
+        ),
+        { is_recurring: true } // Adiciona a condição de ser recorrente
+      ];
+
+      // Se estamos usando filtros de mês/ano, precisamos ajustar para despesas recorrentes
+      // pois a data da ocorrência pode ser diferente da expense_date original
+      if (months && months.length > 0 && years && years.length > 0) {
+        // Remove os filtros de mês e ano para as despesas recorrentes
+        recurringWhere[Op.and] = recurringWhere[Op.and].filter(condition => 
+          !condition[Op.and] || 
+          !(condition[0] && condition[0][0] && condition[0][0].val === 'MONTH') // Remove filtro de mês
+        );
+      }
+      
+      const recurringExpenses = await Expense.findAll({
+        where: recurringWhere,
+        include: [
+          { model: Category, as: 'Category' },
+          { model: Bank, as: 'bank' }
+        ],
+        order: [['expense_date', 'DESC']]
+      });
+      
+      // Se já incluímos despesas normais, verificamos duplicidade
+      if (allExpenses.length > 0) {
+        // Adiciona apenas despesas recorrentes que não estão na lista
+        const existingIds = allExpenses.map(e => e.id);
+        const newRecurringExpenses = recurringExpenses.filter(e => !existingIds.includes(e.id));
+        allExpenses = [...allExpenses, ...newRecurringExpenses];
+      } else {
+        allExpenses = [...recurringExpenses];
+      }
+    }
 
     // Se está buscando por intervalo de data e precisamos incluir despesas recorrentes
     let expandedRecurringExpenses = [];
-    if (startDate && endDate && is_recurring !== 'false') {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
+    if ((startDate && endDate && is_recurring !== 'false') || include_all_recurring === 'true') {
+      // Define o período para buscar ocorrências recorrentes
+      let start, end;
+      
+      if (startDate && endDate) {
+        start = new Date(startDate);
+        end = new Date(endDate);
+      } else if (months && months.length > 0 && years && years.length > 0) {
+        // Se não temos startDate/endDate, usamos os meses e anos do filtro
+        const monthsArray = Array.isArray(months) ? months : [months].map(Number);
+        const yearsArray = Array.isArray(years) ? years : [years].map(Number);
+        
+        // Pega o primeiro mês e ano como início
+        const minMonth = Math.min(...monthsArray.map(Number));
+        const minYear = Math.min(...yearsArray.map(Number));
+        start = new Date(minYear, minMonth - 1, 1); // Primeiro dia do mês
+        
+        // Pega o último mês e ano como fim
+        const maxMonth = Math.max(...monthsArray.map(Number));
+        const maxYear = Math.max(...yearsArray.map(Number));
+        // Último dia do mês
+        const lastDay = new Date(maxYear, maxMonth, 0).getDate();
+        end = new Date(maxYear, maxMonth - 1, lastDay, 23, 59, 59);
+      } else {
+        // Se não há filtros específicos, usa o mês atual
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+        
+        start = new Date(currentYear, currentMonth, 1); // Primeiro dia do mês atual
+        end = new Date(currentYear, currentMonth + 1, 0); // Último dia do mês atual
+      }
 
       // Busca despesas recorrentes que podem ter ocorrências no período
+      const whereRecurring = {
+        user_id: req.user.id,
+        is_recurring: true
+      };
+      
+      // Filtra por categoria, método de pagamento, etc. se aplicável
+      if (category_id) {
+        whereRecurring.category_id = category_id;
+      }
+      
+      if (payment_method) {
+        whereRecurring.payment_method = payment_method;
+      }
+      
+      if (description) {
+        whereRecurring.description = { [Op.like]: `%${description}%` };
+      }
+
       const recurringExpenses = await Expense.findAll({
-        where: {
-          user_id: req.user.id,
-          is_recurring: true,
-          start_date: {
-            [Op.lte]: end
-          },
-          [Op.or]: [
-            { end_date: null },
-            { end_date: { [Op.gte]: start } }
-          ]
-        },
+        where: whereRecurring,
         include: [
           { model: Category, as: 'Category' },
           { model: Bank, as: 'bank' },
@@ -163,14 +257,53 @@ router.get('/', async (req, res) => {
       // Para cada despesa recorrente, calcular as ocorrências no período
       for (const expense of recurringExpenses) {
         const occurrences = await calculateRecurringExpenseOccurrences(expense, start, end);
-        expandedRecurringExpenses = [...expandedRecurringExpenses, ...occurrences];
+        
+        // Adiciona marcador para identificar que esta é uma ocorrência gerada
+        const markedOccurrences = occurrences.map(occurrence => ({
+          ...occurrence,
+          isRecurringOccurrence: true,
+          original_id: expense.id
+        }));
+        
+        expandedRecurringExpenses = [...expandedRecurringExpenses, ...markedOccurrences];
       }
     }
 
-    // Combina despesas normais e recorrentes expandidas
-    const allExpenses = [...expenses, ...expandedRecurringExpenses];
+    // Combina despesas comuns/recorrentes existentes com as ocorrências recorrentes geradas
+    // Remove duplicatas baseadas na data de ocorrência para despesas recorrentes
+    const allExpensesWithRecurring = [...allExpenses];
     
-    res.json(allExpenses);
+    // Adiciona apenas ocorrências que não conflitam com despesas reais
+    if (expandedRecurringExpenses.length > 0) {
+      // Filtra as ocorrências para não duplicar com despesas já existentes
+      const existingDates = new Set();
+      
+      allExpenses.forEach(expense => {
+        if (expense.is_recurring) {
+          // Para despesas recorrentes, criamos uma chave única com id + data
+          const dateStr = new Date(expense.expense_date).toISOString().split('T')[0];
+          existingDates.add(`${expense.id}_${dateStr}`);
+        }
+      });
+      
+      // Adiciona apenas ocorrências que não existem no banco de dados
+      for (const occurrence of expandedRecurringExpenses) {
+        const dateStr = new Date(occurrence.expense_date).toISOString().split('T')[0];
+        const key = `${occurrence.original_id}_${dateStr}`;
+        
+        if (!existingDates.has(key)) {
+          allExpensesWithRecurring.push(occurrence);
+          existingDates.add(key);
+        }
+      }
+    }
+    
+    // Ordena as despesas por data
+    allExpensesWithRecurring.sort((a, b) => {
+      return new Date(b.expense_date) - new Date(a.expense_date);
+    });
+    
+    res.json(allExpensesWithRecurring);
   } catch (error) {
     console.error('Erro ao buscar despesas:', error);
     res.status(500).json({ message: 'Erro ao buscar despesas', error: error.message });
