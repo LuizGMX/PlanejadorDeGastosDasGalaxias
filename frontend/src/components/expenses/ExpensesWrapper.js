@@ -67,10 +67,48 @@ const ExpensesWrapper = () => {
     navigate(`/expenses/edit/${expense.id}`);
   };
 
-  const handleDeleteExpense = (expense) => {
-    setExpenseToDelete(expense);
-    setShowDeleteModal(true);
-    setDeleteOption(null);
+  const handleDeleteExpense = async (expense, queryParams = '') => {
+    try {
+      // Verificar se é uma ocorrência de despesa recorrente ou despesa original filtrada por mês
+      if (expense.isRecurringOccurrence || (expense.is_recurring && expense.originalRecurrenceId) || expense.isFilteredOriginalRecurrence) {
+        const occurrenceDate = new Date(expense.date || expense.expense_date);
+        setExpenseToDelete({
+          ...expense,
+          formattedDate: occurrenceDate.toLocaleDateString('pt-BR', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+          })
+        });
+        setDeleteOption('occurrence');
+        setShowDeleteModal(true);
+        return;
+      }
+
+      // Para despesas com parcelamento
+      if (expense.has_installments && expense.installment_group_id) {
+        setExpenseToDelete(expense);
+        setDeleteOption('installment');
+        setShowDeleteModal(true);
+        return;
+      }
+
+      // Despesa recorrente original (não uma ocorrência)
+      if (expense.is_recurring) {
+        setExpenseToDelete(expense);
+        setDeleteOption('recurring');
+        setShowDeleteModal(true);
+      } else {
+        // Para despesas não recorrentes, confirmação padrão
+        setExpenseToDelete(expense);
+        setDeleteOption('normal');
+        setShowDeleteModal(true);
+      }
+
+    } catch (err) {
+      console.error('Erro ao excluir despesa:', err);
+      toast.error('Erro ao excluir despesa: ' + (err.message || 'Erro desconhecido'));
+    }
   };
 
   const handleBulkDelete = async () => {
@@ -106,78 +144,129 @@ const ExpensesWrapper = () => {
     try {
       if (!expenseToDelete) return;
 
-      // Se for uma ocorrência de despesa recorrente
-      if (expenseToDelete.is_recurring && option === 'single' && expenseToDelete.isRecurringOccurrence) {
+      const expense = expenseToDelete;
+      let queryParams = '';
+
+      // Verificar se é uma ocorrência de uma despesa recorrente ou despesa original filtrada por mês
+      if (expense.isRecurringOccurrence || deleteOption === 'occurrence' || (expense.is_recurring && expense.originalRecurrenceId) || expense.isFilteredOriginalRecurrence) {
         // Extrair o ID da despesa recorrente original
-        let originalId = expenseToDelete.original_id || expenseToDelete.id;
+        let originalId = expense.originalRecurrenceId;
+
+        if (!originalId && expense.id && typeof expense.id === 'string' && expense.id.startsWith('rec_')) {
+          // Se não tiver o campo originalRecurrenceId, tentar extrair do ID
+          const parts = expense.id.split('_');
+          if (parts.length >= 2) {
+            originalId = parts[1];
+            console.log('ID original extraído do ID da ocorrência:', originalId);
+          }
+        }
+
+        // Se é a despesa original filtrada por mês, usar seu próprio ID
+        if (!originalId && expense.isFilteredOriginalRecurrence) {
+          originalId = expense.id;
+          console.log('Usando ID da própria despesa original filtrada:', originalId);
+        }
 
         if (!originalId) {
-          throw new Error('Não foi possível identificar a despesa recorrente original');
+          toast.error('Não foi possível identificar a despesa recorrente original');
+          setShowDeleteModal(false);
+          return;
         }
 
-        // Criar uma exceção para esta ocorrência específica
-        const occurrenceDate = new Date(expenseToDelete.expense_date);
-        console.log('Excluindo apenas a ocorrência:', {
-          expenseId: originalId,
-          occurrenceDate: occurrenceDate.toISOString(),
-        });
+        if (option === 'all') {
+          // Usuário escolheu excluir TODAS as ocorrências
+          console.log('Excluindo despesa recorrente completa:', originalId);
 
-        const inserirRecurrenceException = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses/${originalId}/exclude-occurrence`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${auth.token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            occurrence_date: occurrenceDate.toISOString(),
-            reason: 'Exclusão manual pelo usuário'
-          })
-        });
+          // Excluir a despesa recorrente original (todas as ocorrências)
+          const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses/${originalId}/recurring${queryParams}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${auth.token}`
+            }
+          });
 
-        if (!inserirRecurrenceException.ok) {
-          throw new Error(`Falha ao excluir ocorrência da despesa recorrente: ${inserirRecurrenceException.status}`);
-        }
-
-        const responseData = await inserirRecurrenceException.json();
-        toast.success(responseData.message || `Despesa excluída apenas para ${occurrenceDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}`);
-      } 
-      // Se for uma despesa recorrente (não uma ocorrência)
-      else if (expenseToDelete.is_recurring) {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses/${expenseToDelete.id}/recurring`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${auth.token}`
-          },
-          body: JSON.stringify({ deleteType: option || 'single' })
-        });
-
-        if (!response.ok) {
-          throw new Error('Falha ao excluir despesa recorrente');
-        }
-
-        const data = await response.json();
-        toast.success(data.message);
-      } 
-      // Se for parcelada e quiser excluir todas as parcelas
-      else if (expenseToDelete.has_installments && expenseToDelete.installment_group_id && option === 'all') {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses/${expenseToDelete.id}?delete_all_installments=true`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${auth.token}`
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            console.error('Erro ao excluir despesa recorrente:', {
+              status: response.status,
+              statusText: response.statusText,
+              data: errorData
+            });
+            throw new Error(`Falha ao excluir despesa recorrente: ${response.status} ${response.statusText}`);
           }
-        });
 
-        if (!response.ok) {
-          throw new Error('Falha ao excluir todas as parcelas');
+          const data = await response.json();
+          toast.success(data.message || 'Despesa recorrente excluída com sucesso (todas as ocorrências)');
+        } else if (option === 'single') {
+          // Usuário escolheu excluir APENAS a ocorrência atual
+          const occurrenceDate = new Date(expense.date || expense.expense_date);
+          const mes = occurrenceDate.toLocaleString('pt-BR', { month: 'long' });
+          const ano = occurrenceDate.getFullYear();
+
+          console.log('Tentando excluir apenas a ocorrência:', {
+            expenseId: originalId,
+            occurrenceDate: occurrenceDate.toISOString(),
+          });
+
+          const inserirRecurrenceException = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses/${originalId}/exclude-occurrence`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${auth.token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              occurrence_date: occurrenceDate.toISOString(),
+              reason: 'Exclusão manual pelo usuário'
+            })
+          });
+
+          if (!inserirRecurrenceException.ok) {
+            throw new Error(`Falha ao excluir ocorrência da despesa recorrente: ${inserirRecurrenceException.status}`);
+          }
+
+          toast.success(`Despesa excluída apenas para ${mes} de ${ano}`);
         }
+      } else if (deleteOption === 'installment') {
+        // Tratamento para despesas parceladas
+        if (option === 'all') {
+          // Excluir todas as parcelas
+          const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses/${expense.id}?delete_all_installments=true`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${auth.token}`
+            }
+          });
 
-        const data = await response.json();
-        toast.success(data.message);
-      }
-      // Se for uma despesa comum
-      else {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses/${expenseToDelete.id}`, {
+          if (!response.ok) {
+            throw new Error('Falha ao excluir todas as parcelas');
+          }
+
+          const data = await response.json();
+          toast.success(data.message || 'Todas as parcelas excluídas com sucesso');
+        } else if (option === 'single') {
+          // Excluir apenas esta parcela
+          const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses/${expense.id}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${auth.token}`
+            }
+          });
+
+          if (!response.ok) {
+            throw new Error('Falha ao excluir a parcela');
+          }
+
+          const data = await response.json();
+          toast.success(data.message || 'Parcela excluída com sucesso');
+        }
+      } else {
+        // Despesa normal ou despesa recorrente original (não uma ocorrência)
+        // Verificar se a despesa é recorrente para usar o endpoint adequado
+        const endpoint = expense.is_recurring
+          ? `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses/${expense.id}/recurring${queryParams}`
+          : `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses/${expense.id}${queryParams}`;
+
+        const response = await fetch(endpoint, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${auth.token}`
@@ -189,18 +278,41 @@ const ExpensesWrapper = () => {
         }
 
         const data = await response.json();
-        toast.success(data.message);
+        toast.success(data.message || 'Despesa excluída com sucesso');
       }
 
-      // Limpar estado e recarregar dados
+      // Recarregar os dados após a exclusão ou criação de exceção
+      // Calcular datas atuais para atualizar a visualização
+      let startDate, endDate;
+
+      if (filters.months && filters.months.length > 0 && filters.years && filters.years.length > 0) {
+        const minMonth = Math.min(...filters.months);
+        const maxMonth = Math.max(...filters.months);
+        const minYear = Math.min(...filters.years);
+        const maxYear = Math.max(...filters.years);
+
+        startDate = new Date(minYear, minMonth - 1, 1);
+        const lastDay = new Date(maxYear, maxMonth, 0).getDate();
+        endDate = new Date(maxYear, maxMonth - 1, lastDay, 23, 59, 59);
+      }
+
+      await fetchData({
+        startDate: startDate ? startDate.toISOString() : undefined,
+        endDate: endDate ? endDate.toISOString() : undefined,
+        category_id: filters.category !== 'all' ? filters.category : undefined,
+        bank_id: filters.paymentMethod !== 'all' ? filters.paymentMethod : undefined,
+        is_recurring: filters.is_recurring !== '' ? filters.is_recurring : undefined,
+        description: filters.description || undefined
+      });
+
+      // Fechar o modal após a conclusão
       setShowDeleteModal(false);
       setExpenseToDelete(null);
       setDeleteOption(null);
-      // Força um recarregamento completo após a deleção
-      fetchData(filters, true);
     } catch (err) {
       console.error('Erro ao excluir despesa:', err);
-      toast.error('Erro ao excluir despesa');
+      toast.error('Erro ao excluir despesa: ' + (err.message || 'Erro desconhecido'));
+      setShowDeleteModal(false);
     }
   };
 
@@ -658,87 +770,196 @@ const ExpensesWrapper = () => {
       )}
 
       {/* Modal de Confirmação de Exclusão */}
-      {showDeleteModal && (
+      {showDeleteModal && expenseToDelete && (
         <div className={dataTableStyles.modalOverlay}>
-          <div className={dataTableStyles.modal}>
+          <div className={dataTableStyles.modalContent}>
             <div className={dataTableStyles.modalHeader}>
-              <h2 className={dataTableStyles.modalTitle}>
-                <BsExclamationTriangle size={20} color="#e74c3c" /> Confirmar Exclusão
-              </h2>
-              <button 
-                className={dataTableStyles.modalCloseButton} 
-                onClick={handleCancelDelete}
-              >
-                <BsX size={24} />
-              </button>
+              <BsExclamationTriangle className={dataTableStyles.warningIcon} />
+              <h3>Confirmar exclusão</h3>
             </div>
             <div className={dataTableStyles.modalBody}>
-              {expenseToDelete?.is_recurring ? (
+              {expenseToDelete.isRecurringOccurrence || deleteOption === 'occurrence' || (expenseToDelete.is_recurring && expenseToDelete.originalRecurrenceId) || expenseToDelete.isFilteredOriginalRecurrence ? (
+                // Modal para ocorrências de despesas recorrentes
                 <>
                   <p>Como deseja excluir esta despesa recorrente?</p>
-                  <div className={dataTableStyles.deleteOptions}>
+                  <p><strong>{expenseToDelete.description}</strong></p>
+                  
+                  {expenseToDelete.date && (
+                    <p className={dataTableStyles.modalInfo}>
+                      Data desta ocorrência: {new Date(expenseToDelete.date || expenseToDelete.expense_date).toLocaleDateString('pt-BR', {
+                        day: 'numeric', 
+                        month: 'long', 
+                        year: 'numeric'
+                      })}
+                    </p>
+                  )}
+                  
+                  <div className={dataTableStyles.modalOptions}>
                     <button
-                      className={`${dataTableStyles.deleteOptionButton} ${deleteOption === 'single' ? dataTableStyles.active : ''}`}
-                      onClick={() => setDeleteOption('single')}
+                      className={dataTableStyles.optionButton}
+                      onClick={() => handleConfirmDelete('single')}
                     >
-                      Apenas esta ocorrência
+                      Excluir APENAS esta ocorrência 
+                      {expenseToDelete.date && (
+                        <span> 
+                          ({new Date(expenseToDelete.date || expenseToDelete.expense_date).toLocaleString('pt-BR', { month: 'long', year: 'numeric' })})
+                        </span>
+                      )}
                     </button>
                     <button
-                      className={`${dataTableStyles.deleteOptionButton} ${deleteOption === 'future' ? dataTableStyles.active : ''}`}
-                      onClick={() => setDeleteOption('future')}
+                      className={`${dataTableStyles.optionButton} ${dataTableStyles.dangerButton}`}
+                      onClick={() => handleConfirmDelete('all')}
                     >
-                      Esta e todas as futuras
+                      Excluir TODAS as ocorrências (atual e futuras)
                     </button>
+                  </div>
+                  
+                  <div className={dataTableStyles.modalActions}>
                     <button
-                      className={`${dataTableStyles.deleteOptionButton} ${deleteOption === 'past' ? dataTableStyles.active : ''}`}
-                      onClick={() => setDeleteOption('past')}
+                      className={dataTableStyles.secondaryButton}
+                      onClick={() => {
+                        setShowDeleteModal(false);
+                        setExpenseToDelete(null);
+                        setDeleteOption(null);
+                      }}
                     >
-                      Esta e todas as anteriores
-                    </button>
-                    <button
-                      className={`${dataTableStyles.deleteOptionButton} ${deleteOption === 'all' ? dataTableStyles.active : ''}`}
-                      onClick={() => setDeleteOption('all')}
-                    >
-                      Todas as ocorrências
+                      <BsX /> Cancelar
                     </button>
                   </div>
                 </>
-              ) : expenseToDelete?.has_installments ? (
+              ) : deleteOption === 'installment' ? (
+                // Modal para despesas parceladas
                 <>
                   <p>Como deseja excluir esta despesa parcelada?</p>
-                  <div className={dataTableStyles.deleteOptions}>
+                  <p><strong>{expenseToDelete.description}</strong></p>
+                  
+                  {expenseToDelete.date && (
+                    <p className={dataTableStyles.modalInfo}>
+                      Data da parcela: {new Date(expenseToDelete.date || expenseToDelete.expense_date).toLocaleDateString('pt-BR', {
+                        day: 'numeric', 
+                        month: 'long', 
+                        year: 'numeric'
+                      })}
+                    </p>
+                  )}
+                  
+                  <div className={dataTableStyles.modalOptions}>
                     <button
-                      className={`${dataTableStyles.deleteOptionButton} ${deleteOption === 'single' ? dataTableStyles.active : ''}`}
-                      onClick={() => setDeleteOption('single')}
+                      className={dataTableStyles.optionButton}
+                      onClick={() => handleConfirmDelete('single')}
                     >
-                      Apenas esta parcela
+                      Excluir APENAS esta parcela
                     </button>
                     <button
-                      className={`${dataTableStyles.deleteOptionButton} ${deleteOption === 'all' ? dataTableStyles.active : ''}`}
-                      onClick={() => setDeleteOption('all')}
+                      className={`${dataTableStyles.optionButton} ${dataTableStyles.dangerButton}`}
+                      onClick={() => handleConfirmDelete('all')}
                     >
-                      Todas as parcelas
+                      Excluir TODAS as parcelas
+                    </button>
+                  </div>
+                  
+                  <div className={dataTableStyles.modalActions}>
+                    <button
+                      className={dataTableStyles.secondaryButton}
+                      onClick={() => {
+                        setShowDeleteModal(false);
+                        setExpenseToDelete(null);
+                        setDeleteOption(null);
+                      }}
+                    >
+                      <BsX /> Cancelar
+                    </button>
+                  </div>
+                </>
+              ) : deleteOption === 'recurring' ? (
+                // Modal para despesas recorrentes (original)
+                <>
+                  <p>Deseja realmente excluir esta despesa recorrente e todas as suas ocorrências?</p>
+                  <p><strong>{expenseToDelete.description}</strong></p>
+                  
+                  {expenseToDelete.date && (
+                    <p className={dataTableStyles.modalInfo}>
+                      Data de início: {new Date(expenseToDelete.start_date || expenseToDelete.date || expenseToDelete.expense_date).toLocaleDateString('pt-BR', {
+                        day: 'numeric', 
+                        month: 'long', 
+                        year: 'numeric'
+                      })}
+                    </p>
+                  )}
+                  
+                  {expenseToDelete.exceptions && expenseToDelete.exceptions.length > 0 && (
+                    <div className={dataTableStyles.exceptionsInfo}>
+                      <p>Esta despesa recorrente possui {expenseToDelete.exceptions.length} exceções:</p>
+                      <ul>
+                        {expenseToDelete.exceptions.slice(0, 3).map((exception, index) => (
+                          <li key={index}>
+                            {new Date(exception.exception_date).toLocaleDateString('pt-BR', {
+                              day: 'numeric', 
+                              month: 'long', 
+                              year: 'numeric'
+                            })}
+                          </li>
+                        ))}
+                        {expenseToDelete.exceptions.length > 3 && (
+                          <li>...e mais {expenseToDelete.exceptions.length - 3} exceções</li>
+                        )}
+                      </ul>
+                    </div>
+                  )}
+                  
+                  <div className={dataTableStyles.modalActions}>
+                    <button
+                      className={dataTableStyles.secondaryButton}
+                      onClick={() => {
+                        setShowDeleteModal(false);
+                        setExpenseToDelete(null);
+                      }}
+                    >
+                      <BsX /> Cancelar
+                    </button>
+                    <button
+                      className={`${dataTableStyles.primaryButton} ${dataTableStyles.deleteButton}`}
+                      onClick={() => handleConfirmDelete('all')}
+                    >
+                      <FiTrash2 /> Confirmar
                     </button>
                   </div>
                 </>
               ) : (
-                <p>Tem certeza que deseja excluir esta despesa?</p>
+                // Modal para despesas normais (não recorrentes)
+                <>
+                  <p>Deseja realmente excluir esta despesa?</p>
+                  <p><strong>{expenseToDelete.description}</strong></p>
+                  
+                  {expenseToDelete.date && (
+                    <p className={dataTableStyles.modalInfo}>
+                      Data: {new Date(expenseToDelete.date || expenseToDelete.expense_date).toLocaleDateString('pt-BR', {
+                        day: 'numeric', 
+                        month: 'long', 
+                        year: 'numeric'
+                      })}
+                    </p>
+                  )}
+                  
+                  <div className={dataTableStyles.modalActions}>
+                    <button
+                      className={dataTableStyles.secondaryButton}
+                      onClick={() => {
+                        setShowDeleteModal(false);
+                        setExpenseToDelete(null);
+                      }}
+                    >
+                      <BsX /> Cancelar
+                    </button>
+                    <button
+                      className={`${dataTableStyles.primaryButton} ${dataTableStyles.deleteButton}`}
+                      onClick={() => handleConfirmDelete('all')}
+                    >
+                      <FiTrash2 /> Confirmar
+                    </button>
+                  </div>
+                </>
               )}
-            </div>
-            <div className={dataTableStyles.modalFooter}>
-              <button 
-                className={dataTableStyles.cancelButton} 
-                onClick={handleCancelDelete}
-              >
-                Cancelar
-              </button>
-              <button 
-                className={dataTableStyles.confirmButton} 
-                onClick={() => handleConfirmDelete(deleteOption)}
-                disabled={(expenseToDelete?.is_recurring || expenseToDelete?.has_installments) && !deleteOption}
-              >
-                <FiTrash2 /> Excluir
-              </button>
             </div>
           </div>
         </div>
