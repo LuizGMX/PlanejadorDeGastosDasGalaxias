@@ -106,25 +106,42 @@ const ExpensesWrapper = () => {
     try {
       if (!expenseToDelete) return;
 
-      // Se for uma despesa parcelada
-      if (expenseToDelete.has_installments && expenseToDelete.installment_group_id) {
-        const queryParams = option === 'all' ? '?delete_all_installments=true' : '';
-        
-        const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses/${expenseToDelete.id}${queryParams}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${auth.token}`
-          }
-        });
+      // Se for uma ocorrência de despesa recorrente
+      if (expenseToDelete.is_recurring && option === 'single' && expenseToDelete.isRecurringOccurrence) {
+        // Extrair o ID da despesa recorrente original
+        let originalId = expenseToDelete.original_id || expenseToDelete.id;
 
-        if (!response.ok) {
-          throw new Error('Falha ao excluir despesa parcelada');
+        if (!originalId) {
+          throw new Error('Não foi possível identificar a despesa recorrente original');
         }
 
-        const data = await response.json();
-        toast.success(data.message);
+        // Criar uma exceção para esta ocorrência específica
+        const occurrenceDate = new Date(expenseToDelete.expense_date);
+        console.log('Excluindo apenas a ocorrência:', {
+          expenseId: originalId,
+          occurrenceDate: occurrenceDate.toISOString(),
+        });
+
+        const inserirRecurrenceException = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses/${originalId}/exclude-occurrence`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${auth.token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            occurrence_date: occurrenceDate.toISOString(),
+            reason: 'Exclusão manual pelo usuário'
+          })
+        });
+
+        if (!inserirRecurrenceException.ok) {
+          throw new Error(`Falha ao excluir ocorrência da despesa recorrente: ${inserirRecurrenceException.status}`);
+        }
+
+        const responseData = await inserirRecurrenceException.json();
+        toast.success(responseData.message || `Despesa excluída apenas para ${occurrenceDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}`);
       } 
-      // Se for uma despesa recorrente
+      // Se for uma despesa recorrente (não uma ocorrência)
       else if (expenseToDelete.is_recurring) {
         const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses/${expenseToDelete.id}/recurring`, {
           method: 'DELETE',
@@ -142,6 +159,22 @@ const ExpensesWrapper = () => {
         const data = await response.json();
         toast.success(data.message);
       } 
+      // Se for parcelada e quiser excluir todas as parcelas
+      else if (expenseToDelete.has_installments && expenseToDelete.installment_group_id && option === 'all') {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses/${expenseToDelete.id}?delete_all_installments=true`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${auth.token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Falha ao excluir todas as parcelas');
+        }
+
+        const data = await response.json();
+        toast.success(data.message);
+      }
       // Se for uma despesa comum
       else {
         const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses/${expenseToDelete.id}`, {

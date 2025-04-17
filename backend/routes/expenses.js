@@ -1130,6 +1130,8 @@ router.post('/:id/exclude-occurrence', async (req, res) => {
     const { id } = req.params;
     const { occurrence_date, reason } = req.body;
     
+    console.log(`Recebido pedido para excluir ocorrência da despesa ID ${id} na data ${occurrence_date}`);
+    
     // Busca a despesa recorrente
     const expense = await Expense.findOne({
       where: { 
@@ -1144,18 +1146,23 @@ router.post('/:id/exclude-occurrence', async (req, res) => {
     }
 
     // Cria uma exceção para esta ocorrência específica
-    await ExpensesRecurrenceException.create({
+    const exception = await ExpensesRecurrenceException.create({
       user_id: req.user.id,
-      expense_id: expense.id,
+      expense_id: expense.id,    
       exception_date: new Date(occurrence_date),
       exception_type: 'SKIP',
       reason: reason || 'Ocorrência excluída pelo usuário'
     });
 
-    res.status(201).json({ message: 'Ocorrência excluída com sucesso' });
+    console.log(`Exceção criada com sucesso para despesa ID ${id} na data ${occurrence_date}`, exception);
+
+    res.status(201).json({ 
+      message: 'Ocorrência excluída com sucesso',
+      exception
+    });
   } catch (error) {
     console.error('Erro ao excluir ocorrência:', error);
-    res.status(500).json({ message: 'Erro ao excluir ocorrência' });
+    res.status(500).json({ message: 'Erro ao excluir ocorrência', error: error.message });
   }
 });
 
