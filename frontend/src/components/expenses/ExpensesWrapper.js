@@ -368,6 +368,15 @@ const ExpensesWrapper = () => {
         sample: expensesData?.length > 0 ? expensesData[0] : null
       });
       
+      // Verificar detalhes das ocorrências recorrentes
+      if (Array.isArray(expensesData)) {
+        const recurringOccurrences = expensesData.filter(expense => expense.isRecurringOccurrence === true);
+        console.log('Ocorrências recorrentes:', {
+          count: recurringOccurrences.length,
+          samples: recurringOccurrences.slice(0, 2) // Mostrar as primeiras duas ocorrências, se houver
+        });
+      }
+      
       // Extração dos dados de despesas
       let extractedExpenses = [];
       
@@ -382,6 +391,42 @@ const ExpensesWrapper = () => {
         length: extractedExpenses.length,
         sample: extractedExpenses.length > 0 ? extractedExpenses[0] : null
       });
+      
+      // Processar as ocorrências recorrentes especificamente para o mês atual
+      if (extractedExpenses.length > 0) {
+        // Verificar se temos ocorrências recorrentes com mês diferente do atual
+        const currentDate = new Date();
+        const currentMonth = currentDate.getMonth() + 1; // 0-based to 1-based
+        const currentYear = currentDate.getFullYear();
+        
+        // Filtrar as ocorrências recorrentes para o período filtrado
+        if (filterParams.months && filterParams.years) {
+          const monthsArray = Array.isArray(filterParams.months) 
+            ? filterParams.months 
+            : [filterParams.months];
+          
+          const yearsArray = Array.isArray(filterParams.years) 
+            ? filterParams.years 
+            : [filterParams.years];
+          
+          console.log("Filtrando por meses:", monthsArray, "e anos:", yearsArray);
+          
+          // Filtrar para garantir que só temos ocorrências dos meses e anos filtrados
+          extractedExpenses = extractedExpenses.filter(expense => {
+            const expenseDate = new Date(expense.expense_date);
+            const expenseMonth = expenseDate.getMonth() + 1; // 0-based to 1-based
+            const expenseYear = expenseDate.getFullYear();
+            
+            // Verificar se o mês e ano da despesa estão nos filtros
+            const monthMatches = monthsArray.includes(expenseMonth) || monthsArray.map(Number).includes(expenseMonth);
+            const yearMatches = yearsArray.includes(expenseYear) || yearsArray.map(Number).includes(expenseYear);
+            
+            return monthMatches && yearMatches;
+          });
+          
+          console.log(`Após filtrar por mês/ano, restaram ${extractedExpenses.length} despesas`);
+        }
+      }
       
       setOriginalExpenses(extractedExpenses);
       setFilteredExpenses(extractedExpenses);

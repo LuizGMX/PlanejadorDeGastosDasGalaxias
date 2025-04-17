@@ -75,6 +75,31 @@ const API_PREFIX = process.env.NODE_ENV === 'production'
 
 console.log("API_PREFIX " + API_PREFIX);
 
+// Middleware para injetar o parâmetro include_all_recurring nas requisições de despesas e receitas
+app.use(`${API_PREFIX}/expenses`, (req, res, next) => {
+  // Verifica se é uma solicitação GET e se já não tem o parâmetro include_all_recurring
+  if (req.method === 'GET' && !req.query.include_all_recurring) {
+    // Se há filtro de mês ou ano, adicione o parâmetro 
+    if (req.query.months || req.query.years || req.query['months[]'] || req.query['years[]']) {
+      console.log('Adicionando include_all_recurring=true para despesas');
+      req.query.include_all_recurring = 'true';
+    }
+  }
+  next();
+});
+
+app.use(`${API_PREFIX}/incomes`, (req, res, next) => {
+  // Verifica se é uma solicitação GET e se já não tem o parâmetro include_all_recurring
+  if (req.method === 'GET' && !req.query.include_all_recurring) {
+    // Se há filtro de mês ou ano, adicione o parâmetro 
+    if (req.query.months || req.query.years || req.query['months[]'] || req.query['years[]']) {
+      console.log('Adicionando include_all_recurring=true para receitas');
+      req.query.include_all_recurring = 'true';
+    }
+  }
+  next();
+});
+
 // Rotas da API
 app.use(`${API_PREFIX}/auth`, authLimiter, authRoutes);
 app.use(`${API_PREFIX}/categories`, categoryRoutes);
