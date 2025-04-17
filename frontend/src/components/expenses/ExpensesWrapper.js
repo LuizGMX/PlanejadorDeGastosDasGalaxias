@@ -67,49 +67,6 @@ const ExpensesWrapper = () => {
     navigate(`/expenses/edit/${expense.id}`);
   };
 
-  const handleDeleteExpense = async (expense, queryParams = '') => {
-    try {
-      // Verificar se é uma ocorrência de despesa recorrente ou despesa original filtrada por mês
-      if (expense.isRecurringOccurrence || (expense.is_recurring && expense.originalRecurrenceId) || expense.isFilteredOriginalRecurrence) {
-        const occurrenceDate = new Date(expense.date || expense.expense_date);
-        setExpenseToDelete({
-          ...expense,
-          formattedDate: occurrenceDate.toLocaleDateString('pt-BR', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric'
-          })
-        });
-        setDeleteOption('occurrence');
-        setShowDeleteModal(true);
-        return;
-      }
-
-      // Para despesas com parcelamento
-      if (expense.has_installments && expense.installment_group_id) {
-        setExpenseToDelete(expense);
-        setDeleteOption('installment');
-        setShowDeleteModal(true);
-        return;
-      }
-
-      // Despesa recorrente original (não uma ocorrência)
-      if (expense.is_recurring) {
-        setExpenseToDelete(expense);
-        setDeleteOption('recurring');
-        setShowDeleteModal(true);
-      } else {
-        // Para despesas não recorrentes, confirmação padrão
-        setExpenseToDelete(expense);
-        setDeleteOption('normal');
-        setShowDeleteModal(true);
-      }
-
-    } catch (err) {
-      console.error('Erro ao excluir despesa:', err);
-      toast.error('Erro ao excluir despesa: ' + (err.message || 'Erro desconhecido'));
-    }
-  };
 
   const handleBulkDelete = async () => {
     try {
@@ -137,6 +94,43 @@ const ExpensesWrapper = () => {
     } catch (err) {
       console.error('Erro ao excluir despesas em lote:', err);
       toast.error('Erro ao excluir despesas em lote');
+    }
+  };
+
+  const handleDeleteExpense = async (expense, queryParams = '') => {
+    try {
+      // Verificar se é uma ocorrência de despesa recorrente ou despesa original filtrada por mês
+      if (expense.isRecurringOccurrence || (expense.is_recurring && expense.originalRecurrenceId) || expense.isFilteredOriginalRecurrence) {
+        const occurrenceDate = new Date(expense.date);
+        setIncomeToDelete({
+          ...expense,
+          formattedDate: occurrenceDate.toLocaleDateString('pt-BR', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+          })
+        });
+        setDeleteOption('occurrence');
+        setShowDeleteModal(true);
+        return;
+      }
+
+      // Receita normal ou despesa recorrente original (não uma ocorrência)
+      // Para despesas recorrentes, perguntar se quer excluir todas
+      if (expense.is_recurring) {
+        setIncomeToDelete(expense);
+        setDeleteOption('recurring');
+        setShowDeleteModal(true);
+      } else {
+        // Para despesas não recorrentes, confirmação padrão
+        setIncomeToDelete(expense);
+        setDeleteOption('normal');
+        setShowDeleteModal(true);
+      }
+
+    } catch (err) {
+      console.error('Erro ao excluir despesa:', err);
+      toast.error('Erro ao excluir despesa: ' + (err.message || 'Erro desconhecido'));
     }
   };
 
@@ -178,6 +172,7 @@ const ExpensesWrapper = () => {
           console.log('Excluindo despesa recorrente completa:', originalId);
 
           // Excluir a despesa recorrente original (todas as ocorrências)
+          // Usar o endpoint específico para despesas recorrentes
           const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses/${originalId}/recurring${queryParams}`, {
             method: 'DELETE',
             headers: {
@@ -196,10 +191,10 @@ const ExpensesWrapper = () => {
           }
 
           const data = await response.json();
-          toast.success(data.message || 'Despesa recorrente excluída com sucesso (todas as ocorrências)');
+          toast.success(data.message || 'Receita recorrente excluída com sucesso (todas as ocorrências)');
         } else if (option === 'single') {
           // Usuário escolheu excluir APENAS a ocorrência atual
-          const occurrenceDate = new Date(expense.date || expense.expense_date);
+          const occurrenceDate = new Date(expense.date);
           const mes = occurrenceDate.toLocaleString('pt-BR', { month: 'long' });
           const ano = occurrenceDate.getFullYear();
 
@@ -224,43 +219,10 @@ const ExpensesWrapper = () => {
             throw new Error(`Falha ao excluir ocorrência da despesa recorrente: ${inserirRecurrenceException.status}`);
           }
 
-          toast.success(`Despesa excluída apenas para ${mes} de ${ano}`);
-        }
-      } else if (deleteOption === 'installment') {
-        // Tratamento para despesas parceladas
-        if (option === 'all') {
-          // Excluir todas as parcelas
-          const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses/${expense.id}?delete_all_installments=true`, {
-            method: 'DELETE',
-            headers: {
-              'Authorization': `Bearer ${auth.token}`
-            }
-          });
-
-          if (!response.ok) {
-            throw new Error('Falha ao excluir todas as parcelas');
-          }
-
-          const data = await response.json();
-          toast.success(data.message || 'Todas as parcelas excluídas com sucesso');
-        } else if (option === 'single') {
-          // Excluir apenas esta parcela
-          const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses/${expense.id}`, {
-            method: 'DELETE',
-            headers: {
-              'Authorization': `Bearer ${auth.token}`
-            }
-          });
-
-          if (!response.ok) {
-            throw new Error('Falha ao excluir a parcela');
-          }
-
-          const data = await response.json();
-          toast.success(data.message || 'Parcela excluída com sucesso');
+          toast.success(`Receita excluída apenas para ${mes} de ${ano}`);
         }
       } else {
-        // Despesa normal ou despesa recorrente original (não uma ocorrência)
+        // Receita normal ou despesa recorrente original (não uma ocorrência)
         // Verificar se a despesa é recorrente para usar o endpoint adequado
         const endpoint = expense.is_recurring
           ? `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses/${expense.id}/recurring${queryParams}`
@@ -278,7 +240,7 @@ const ExpensesWrapper = () => {
         }
 
         const data = await response.json();
-        toast.success(data.message || 'Despesa excluída com sucesso');
+        toast.success(data.message || 'Receita excluída com sucesso');
       }
 
       // Recarregar os dados após a exclusão ou criação de exceção
@@ -299,15 +261,15 @@ const ExpensesWrapper = () => {
       await fetchData({
         startDate: startDate ? startDate.toISOString() : undefined,
         endDate: endDate ? endDate.toISOString() : undefined,
-        category_id: filters.category !== 'all' ? filters.category : undefined,
-        bank_id: filters.paymentMethod !== 'all' ? filters.paymentMethod : undefined,
+        category_id: filters.category_id !== 'all' ? filters.category_id : undefined,
+        bank_id: filters.bank_id !== 'all' ? filters.bank_id : undefined,
         is_recurring: filters.is_recurring !== '' ? filters.is_recurring : undefined,
         description: filters.description || undefined
       });
 
       // Fechar o modal após a conclusão
       setShowDeleteModal(false);
-      setExpenseToDelete(null);
+      setIncomeToDelete(null);
       setDeleteOption(null);
     } catch (err) {
       console.error('Erro ao excluir despesa:', err);
