@@ -115,6 +115,8 @@ const ExpensesWrapper = () => {
         return;
       }
 
+      console.log('expense seila', expense);
+
       // Para despesas com parcelamento
       if (expense.has_installments && expense.installment_group_id) {
         setExpenseToDelete(expense);
