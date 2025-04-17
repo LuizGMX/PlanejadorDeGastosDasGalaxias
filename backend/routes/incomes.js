@@ -31,7 +31,8 @@ router.get('/', async (req, res) => {
       max_amount,
       is_recurring,
       startDate,
-      endDate 
+      endDate,
+      include_all_recurring 
     } = req.query;
     
     const where = { user_id: req.user.id };
@@ -105,7 +106,7 @@ router.get('/', async (req, res) => {
     }
 
     // Filtro de recorrência
-    if (is_recurring !== undefined) {
+    if (is_recurring !== undefined && include_all_recurring !== 'true') {
       where[Op.and].push({
         is_recurring: is_recurring === 'true'
       });
@@ -127,21 +128,43 @@ router.get('/', async (req, res) => {
 
     // Se está buscando por intervalo de data e precisamos incluir receitas recorrentes
     let expandedRecurringIncomes = [];
-    if (startDate && endDate && is_recurring !== 'false') {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
+    if ((startDate && endDate && is_recurring !== 'false') || include_all_recurring === 'true') {
+      // Define o período para buscar ocorrências recorrentes
+      let start, end;
+      
+      if (startDate && endDate) {
+        start = new Date(startDate);
+        end = new Date(endDate);
+      } else if (months && months.length > 0 && years && years.length > 0) {
+        // Se não temos startDate/endDate, usamos os meses e anos do filtro
+        const monthsArray = Array.isArray(months) ? months.map(Number) : months.split(',').map(Number);
+        const yearsArray = Array.isArray(years) ? years.map(Number) : years.split(',').map(Number);
+        
+        // Pega o primeiro mês e ano como início
+        const minMonth = Math.min(...monthsArray);
+        const minYear = Math.min(...yearsArray);
+        start = new Date(minYear, minMonth - 1, 1); // Primeiro dia do mês
+        
+        // Pega o último mês e ano como fim
+        const maxMonth = Math.max(...monthsArray);
+        const maxYear = Math.max(...yearsArray);
+        // Último dia do mês
+        const lastDay = new Date(maxYear, maxMonth, 0).getDate();
+        end = new Date(maxYear, maxMonth - 1, lastDay, 23, 59, 59);
+      } else {
+        // Se não há filtros específicos, usa o mês atual
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+        
+        start = new Date(currentYear, currentMonth, 1); // Primeiro dia do mês atual
+        end = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59); // Último dia do mês atual
+      }
 
       // Busca receitas recorrentes que podem ter ocorrências no período
       const recurringWhere = {
         user_id: req.user.id,
-        is_recurring: true,
-        start_date: {
-          [Op.lte]: end
-        },
-        [Op.or]: [
-          { end_date: null },
-          { end_date: { [Op.gte]: start } }
-        ]
+        is_recurring: true
       };
 
       // Adicionar filtro de descrição para receitas recorrentes, se fornecido
@@ -182,35 +205,85 @@ router.get('/', async (req, res) => {
         ]
       });
 
+      console.log(`Gerando ocorrências recorrentes para ${recurringIncomes.length} receitas no período de ${start.toISOString()} a ${end.toISOString()}`);
+
       // Para cada receita recorrente, calcular as ocorrências no período
       for (const income of recurringIncomes) {
         const occurrences = await calculateRecurringIncomeOccurrences(income, start, end);
-        expandedRecurringIncomes = [...expandedRecurringIncomes, ...occurrences];
+        
+        // Adiciona marcador para identificar que esta é uma ocorrência gerada
+        const markedOccurrences = occurrences.map(occurrence => ({
+          ...occurrence,
+          isRecurringOccurrence: true,
+          original_id: income.id,
+          // Garantir que informações importantes são preservadas
+          description: occurrence.originalDescription || income.description,
+          amount: occurrence.originalAmount || income.amount,
+          category_id: income.category_id,
+          Category: income.Category,
+          bank_id: income.bank_id,
+          bank: income.bank
+        }));
+        
+        if (markedOccurrences.length > 0) {
+          console.log(`Geradas ${markedOccurrences.length} ocorrências para receita ID ${income.id} - ${income.description}`);
+        }
+        
+        expandedRecurringIncomes = [...expandedRecurringIncomes, ...markedOccurrences];
       }
     }
 
     // Combina receitas normais e recorrentes expandidas
-    const allIncomes = [...incomes, ...expandedRecurringIncomes];
+    let allIncomes = [...incomes, ...expandedRecurringIncomes];
+
+    // Aplicamos filtros de mês e ano nas ocorrências recorrentes expandidas
+    if (months && months.length > 0 && years && years.length > 0) {
+      const monthsArray = Array.isArray(months) ? months.map(Number) : months.split(',').map(Number);
+      const yearsArray = Array.isArray(years) ? years.map(Number) : years.split(',').map(Number);
+      
+      allIncomes = allIncomes.filter(income => {
+        const incomeDate = new Date(income.date);
+        const incomeMonth = incomeDate.getMonth() + 1; // getMonth é base 0
+        const incomeYear = incomeDate.getFullYear();
+        
+        return monthsArray.includes(incomeMonth) && yearsArray.includes(incomeYear);
+      });
+    }
 
     // Remove duplicatas e filtra receitas recorrentes
-    const uniqueIncomes = allIncomes.filter((income, index, self) => {
+    const existingDates = new Set();
+    const uniqueIncomes = allIncomes.filter(income => {
       const incomeId = String(income.id);
       
-      // Se é uma ocorrência recorrente (começa com rec_), mantém
+      // Se é uma ocorrência recorrente (começa com rec_), verificamos se já temos uma ocorrência
+      // real para a mesma data
       if (incomeId.startsWith('rec_')) {
+        const dateStr = new Date(income.date).toISOString().split('T')[0];
+        const key = `${income.original_id}_${dateStr}`;
+        
+        if (existingDates.has(key)) {
+          return false;
+        }
+        
+        existingDates.add(key);
         return true;
       }
       
-      // Se é uma receita normal (não recorrente), mantém
-      if (!income.is_recurring) {
-        return true;
+      // Para receitas reais recorrentes, adicionamos à lista de datas existentes
+      if (income.is_recurring) {
+        const dateStr = new Date(income.date).toISOString().split('T')[0];
+        existingDates.add(`${income.id}_${dateStr}`);
       }
       
-      // Se é uma receita recorrente mas não é uma ocorrência, remove
-      return false;
+      return true;
     });
-
-
+    
+    // Ordena as receitas por data
+    uniqueIncomes.sort((a, b) => {
+      return new Date(b.date) - new Date(a.date);
+    });
+    
+    console.log(`Retornando um total de ${uniqueIncomes.length} receitas, incluindo ocorrências recorrentes`);
     
     res.json(uniqueIncomes);
   } catch (error) {

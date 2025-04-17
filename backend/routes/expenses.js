@@ -166,8 +166,8 @@ router.get('/', async (req, res) => {
       if (months && months.length > 0 && years && years.length > 0) {
         // Remove os filtros de mês e ano para as despesas recorrentes
         recurringWhere[Op.and] = recurringWhere[Op.and].filter(condition => 
-          !condition[Op.and] || 
-          !(condition[0] && condition[0][0] && condition[0][0].val === 'MONTH') // Remove filtro de mês
+          !condition[0] || 
+          !(condition[0] && condition[0].val === 'MONTH') // Remove filtro de mês
         );
       }
       
@@ -175,7 +175,8 @@ router.get('/', async (req, res) => {
         where: recurringWhere,
         include: [
           { model: Category, as: 'Category' },
-          { model: Bank, as: 'bank' }
+          { model: Bank, as: 'bank' },
+          { model: ExpensesRecurrenceException, as: 'exceptions' }
         ],
         order: [['expense_date', 'DESC']]
       });
@@ -202,17 +203,17 @@ router.get('/', async (req, res) => {
         end = new Date(endDate);
       } else if (months && months.length > 0 && years && years.length > 0) {
         // Se não temos startDate/endDate, usamos os meses e anos do filtro
-        const monthsArray = Array.isArray(months) ? months : [months].map(Number);
-        const yearsArray = Array.isArray(years) ? years : [years].map(Number);
+        const monthsArray = Array.isArray(months) ? months.map(Number) : months.split(',').map(Number);
+        const yearsArray = Array.isArray(years) ? years.map(Number) : years.split(',').map(Number);
         
         // Pega o primeiro mês e ano como início
-        const minMonth = Math.min(...monthsArray.map(Number));
-        const minYear = Math.min(...yearsArray.map(Number));
+        const minMonth = Math.min(...monthsArray);
+        const minYear = Math.min(...yearsArray);
         start = new Date(minYear, minMonth - 1, 1); // Primeiro dia do mês
         
         // Pega o último mês e ano como fim
-        const maxMonth = Math.max(...monthsArray.map(Number));
-        const maxYear = Math.max(...yearsArray.map(Number));
+        const maxMonth = Math.max(...monthsArray);
+        const maxYear = Math.max(...yearsArray);
         // Último dia do mês
         const lastDay = new Date(maxYear, maxMonth, 0).getDate();
         end = new Date(maxYear, maxMonth - 1, lastDay, 23, 59, 59);
@@ -223,7 +224,7 @@ router.get('/', async (req, res) => {
         const currentYear = now.getFullYear();
         
         start = new Date(currentYear, currentMonth, 1); // Primeiro dia do mês atual
-        end = new Date(currentYear, currentMonth + 1, 0); // Último dia do mês atual
+        end = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59); // Último dia do mês atual
       }
 
       // Busca despesas recorrentes que podem ter ocorrências no período
@@ -254,6 +255,8 @@ router.get('/', async (req, res) => {
         ]
       });
 
+      console.log(`Gerando ocorrências recorrentes para ${recurringExpenses.length} despesas no período de ${start.toISOString()} a ${end.toISOString()}`);
+
       // Para cada despesa recorrente, calcular as ocorrências no período
       for (const expense of recurringExpenses) {
         const occurrences = await calculateRecurringExpenseOccurrences(expense, start, end);
@@ -262,8 +265,19 @@ router.get('/', async (req, res) => {
         const markedOccurrences = occurrences.map(occurrence => ({
           ...occurrence,
           isRecurringOccurrence: true,
-          original_id: expense.id
+          original_id: expense.id,
+          // Garantir que informações importantes são preservadas
+          description: occurrence.originalDescription || expense.description,
+          amount: occurrence.originalAmount || expense.amount,
+          category_id: expense.category_id,
+          Category: expense.Category,
+          bank_id: expense.bank_id,
+          bank: expense.bank
         }));
+        
+        if (markedOccurrences.length > 0) {
+          console.log(`Geradas ${markedOccurrences.length} ocorrências para despesa ID ${expense.id} - ${expense.description}`);
+        }
         
         expandedRecurringExpenses = [...expandedRecurringExpenses, ...markedOccurrences];
       }
@@ -271,7 +285,7 @@ router.get('/', async (req, res) => {
 
     // Combina despesas comuns/recorrentes existentes com as ocorrências recorrentes geradas
     // Remove duplicatas baseadas na data de ocorrência para despesas recorrentes
-    const allExpensesWithRecurring = [...allExpenses];
+    let allExpensesWithRecurring = [...allExpenses];
     
     // Adiciona apenas ocorrências que não conflitam com despesas reais
     if (expandedRecurringExpenses.length > 0) {
@@ -298,10 +312,26 @@ router.get('/', async (req, res) => {
       }
     }
     
+    // Aplicamos filtros de mês e ano nas ocorrências recorrentes expandidas
+    if (months && months.length > 0 && years && years.length > 0) {
+      const monthsArray = Array.isArray(months) ? months.map(Number) : months.split(',').map(Number);
+      const yearsArray = Array.isArray(years) ? years.map(Number) : years.split(',').map(Number);
+      
+      allExpensesWithRecurring = allExpensesWithRecurring.filter(expense => {
+        const expenseDate = new Date(expense.expense_date);
+        const expenseMonth = expenseDate.getMonth() + 1; // getMonth é base 0
+        const expenseYear = expenseDate.getFullYear();
+        
+        return monthsArray.includes(expenseMonth) && yearsArray.includes(expenseYear);
+      });
+    }
+    
     // Ordena as despesas por data
     allExpensesWithRecurring.sort((a, b) => {
       return new Date(b.expense_date) - new Date(a.expense_date);
     });
+    
+    console.log(`Retornando um total de ${allExpensesWithRecurring.length} despesas, incluindo ocorrências recorrentes`);
     
     res.json(allExpensesWithRecurring);
   } catch (error) {

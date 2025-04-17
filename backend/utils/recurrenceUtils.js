@@ -16,29 +16,54 @@ export const calculateRecurringOccurrences = (recurrentItem, startDate, endDate,
   const itemStartDate = new Date(recurrentItem.start_date || recurrentItem[dateField]);
   const itemEndDate = recurrentItem.end_date ? new Date(recurrentItem.end_date) : new Date('2099-12-31');
   
+  // Normaliza as datas para meia-noite para evitar problemas de comparação
+  const normalizedStartDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+  const normalizedEndDate = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), 23, 59, 59);
+  const normalizedItemStartDate = new Date(itemStartDate.getFullYear(), itemStartDate.getMonth(), itemStartDate.getDate());
+  const normalizedItemEndDate = new Date(itemEndDate.getFullYear(), itemEndDate.getMonth(), itemEndDate.getDate(), 23, 59, 59);
+  
   // Se a data de início da recorrência é posterior ao período ou a data de fim é anterior, retorna vazio
-  if (itemStartDate > endDate || itemEndDate < startDate) {
+  if (normalizedItemStartDate > normalizedEndDate || normalizedItemEndDate < normalizedStartDate) {
     return [];
   }
 
-  let currentDate = new Date(Math.max(itemStartDate, startDate));
+  // Começamos a partir da data original do item recorrente
+  let currentDate = new Date(normalizedItemStartDate);
+  
+  // Avançamos até encontrar a primeira data no ou após o período de início
+  while (currentDate < normalizedStartDate) {
+    currentDate = getNextRecurringDate(currentDate, recurrenceType);
+  }
   
   // Mapeia exceções para verificar datas a serem puladas
   const exceptionDates = new Set((recurrentItem.exceptions || []).map(ex => 
     new Date(ex.exception_date).toISOString().split('T')[0]
   ));
 
-  while (currentDate <= endDate && currentDate <= itemEndDate) {
+  while (currentDate <= normalizedEndDate && currentDate <= normalizedItemEndDate) {
     const dateKey = currentDate.toISOString().split('T')[0];
     
     // Verifica se esta data não é uma exceção
     if (!exceptionDates.has(dateKey)) {
+      // Preservamos a hora da despesa original
+      const originalTime = new Date(recurrentItem[dateField]);
+      const occurrenceDate = new Date(
+        currentDate.getFullYear(), 
+        currentDate.getMonth(), 
+        currentDate.getDate(),
+        originalTime.getHours(),
+        originalTime.getMinutes(),
+        originalTime.getSeconds()
+      );
+      
       occurrences.push({
         ...recurrentItem.toJSON ? recurrentItem.toJSON() : recurrentItem,
         id: `rec_${recurrentItem.id}_${currentDate.getTime()}`,
-        [dateField]: new Date(currentDate),
+        [dateField]: occurrenceDate,
         isRecurringOccurrence: true,
-        originalRecurrenceId: recurrentItem.id
+        originalRecurrenceId: recurrentItem.id,
+        originalDescription: recurrentItem.description, // Preserva a descrição original
+        originalAmount: recurrentItem.amount, // Preserva o valor original
       });
     }
 
