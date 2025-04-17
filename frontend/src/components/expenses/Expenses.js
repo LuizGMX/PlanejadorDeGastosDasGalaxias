@@ -57,6 +57,7 @@ const Expenses = ({
   const [showFilters, setShowFilters] = useState(window.innerWidth >= 768);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [expandedCardDetails, setExpandedCardDetails] = useState({});
+  const [openFilter, setOpenFilter] = useState(null);
 
   const years = Array.from(
     { length: 11 },
@@ -219,6 +220,258 @@ const Expenses = ({
     }));
   };
 
+  // Procurando a estrutura dos filtros e da busca na tela de despesas
+  const filterRowContent = (
+    <div className={dataTableStyles.filterRow}>
+      <div className={dataTableStyles.filterGroup}>
+        <label className={dataTableStyles.filterLabel}>
+          <BsCalendar3 /> Meses
+        </label>
+        <div 
+          className={`${dataTableStyles.modernSelect} ${openFilter === 'months' ? dataTableStyles.active : ''}`}
+          onClick={() => handleFilterClick('months')}
+        >
+          <div className={dataTableStyles.modernSelectHeader}>
+            <span>
+              {filters.months?.length === 0 
+                ? 'Nenhum mês selecionado' 
+                : filters.months?.length === 1 
+                  ? months.find(m => m.value === filters.months[0])?.label 
+                  : filters.months?.length === months.length 
+                    ? 'Todos os meses' 
+                    : `${filters.months?.length} meses selecionados`}
+            </span>
+            <span className={dataTableStyles.arrow}>▼</span>
+          </div>
+          {openFilter === 'months' && (
+            <div className={dataTableStyles.modernSelectDropdown}>
+              <label className={dataTableStyles.modernCheckboxLabel} onClick={handleCheckboxClick}>
+                <div className={dataTableStyles.modernCheckbox}>
+                  <input
+                    type="checkbox"
+                    checked={filters.months?.length === months.length}
+                    onChange={() => handleFilterChange('months', 'all')}
+                    onClick={handleCheckboxClick}
+                    className={dataTableStyles.hiddenCheckbox}
+                  />
+                  <div className={dataTableStyles.customCheckbox}></div>
+                </div>
+                <span>Todos os meses</span>
+              </label>
+              {months.map(month => (
+                <label key={month.value} className={dataTableStyles.modernCheckboxLabel} onClick={handleCheckboxClick}>
+                  <div className={dataTableStyles.modernCheckbox}>
+                    <input
+                      type="checkbox"
+                      checked={filters.months?.includes(month.value)}
+                      onChange={() => handleFilterChange('months', month.value)}
+                      onClick={handleCheckboxClick}
+                      className={dataTableStyles.hiddenCheckbox}
+                    />
+                    <div className={dataTableStyles.customCheckbox}></div>
+                  </div>
+                  <span>{month.label}</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className={dataTableStyles.filterGroup}>
+        <label className={dataTableStyles.filterLabel}>
+          <BsCalendar3 /> Anos
+        </label>
+        <div 
+          className={`${dataTableStyles.modernSelect} ${openFilter === 'years' ? dataTableStyles.active : ''}`}
+          onClick={() => handleFilterClick('years')}
+        >
+          <div className={dataTableStyles.modernSelectHeader}>
+            <span>
+              {filters.years?.length === 0 
+                ? 'Nenhum ano selecionado' 
+                : filters.years?.length === 1 
+                  ? filters.years[0] 
+                  : filters.years?.length === years.length 
+                    ? 'Todos os anos' 
+                    : `${filters.years?.length} anos selecionados`}
+            </span>
+            <span className={dataTableStyles.arrow}>▼</span>
+          </div>
+          {openFilter === 'years' && (
+            <div className={dataTableStyles.modernSelectDropdown}>
+              <label className={dataTableStyles.modernCheckboxLabel} onClick={handleCheckboxClick}>
+                <div className={dataTableStyles.modernCheckbox}>
+                  <input
+                    type="checkbox"
+                    checked={filters.years?.length === years.length}
+                    onChange={() => handleFilterChange('years', 'all')}
+                    onClick={handleCheckboxClick}
+                    className={dataTableStyles.hiddenCheckbox}
+                  />
+                  <div className={dataTableStyles.customCheckbox}></div>
+                </div>
+                <span>Todos os anos</span>
+              </label>
+              {years.map(year => (
+                <label key={year.value} className={dataTableStyles.modernCheckboxLabel} onClick={handleCheckboxClick}>
+                  <div className={dataTableStyles.modernCheckbox}>
+                    <input
+                      type="checkbox"
+                      checked={filters.years?.includes(year.value)}
+                      onChange={() => handleFilterChange('years', year.value)}
+                      onClick={handleCheckboxClick}
+                      className={dataTableStyles.hiddenCheckbox}
+                    />
+                    <div className={dataTableStyles.customCheckbox}></div>
+                  </div>
+                  <span>{year.label}</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className={dataTableStyles.filterGroup}>
+        <label className={dataTableStyles.filterLabel}>
+          <BsFolderSymlink /> Categoria
+        </label>
+        <div 
+          className={`${dataTableStyles.modernSelect} ${openFilter === 'category' ? dataTableStyles.active : ''}`}
+          onClick={() => handleFilterClick('category')}
+        >
+          <div className={dataTableStyles.modernSelectHeader}>
+            <span>
+              {filters.category === 'all' 
+                ? 'Todas as categorias' 
+                : categories.find(c => c.id?.toString() === filters.category)?.category_name || 'Selecione uma categoria'}
+            </span>
+            <span className={dataTableStyles.arrow}>▼</span>
+          </div>
+          {openFilter === 'category' && (
+            <div className={dataTableStyles.modernSelectDropdown}>
+              <label 
+                className={dataTableStyles.modernCheckboxLabel}
+                onClick={(e) => {
+                  e.preventDefault(); // Prevent default to ensure proper handling
+                  handleFilterChange('category', 'all');
+                  setOpenFilter(null); // Close dropdown after selection
+                }}
+              >
+                <div className={dataTableStyles.modernCheckbox}>
+                  <input
+                    type="radio"
+                    checked={filters.category === 'all'}
+                    className={dataTableStyles.hiddenCheckbox}
+                    onChange={() => handleFilterChange('category', 'all')}
+                    name="category"
+                  />
+                  <div className={dataTableStyles.customCheckbox}></div>
+                </div>
+                <span>Todas as categorias</span>
+              </label>
+              {categories.map(category => (
+                <label 
+                  key={category.id} 
+                  className={dataTableStyles.modernCheckboxLabel}
+                  onClick={(e) => {
+                    e.preventDefault(); // Prevent default to ensure proper handling
+                    handleFilterChange('category', category.id.toString());
+                    setOpenFilter(null); // Close dropdown after selection
+                  }}
+                >
+                  <div className={dataTableStyles.modernCheckbox}>
+                    <input
+                      type="radio"
+                      checked={filters.category === category.id.toString()}
+                      className={dataTableStyles.hiddenCheckbox}
+                      onChange={() => handleFilterChange('category', category.id.toString())}
+                      name="category"
+                    />
+                    <div className={dataTableStyles.customCheckbox}></div>
+                  </div>
+                  <span>{category.category_name}</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className={dataTableStyles.filterGroup}>
+        <label className={dataTableStyles.filterLabel}>
+          <BsWallet2 /> Método de Pagamento
+        </label>
+        <div 
+          className={`${dataTableStyles.modernSelect} ${openFilter === 'paymentMethod' ? dataTableStyles.active : ''}`}
+          onClick={() => handleFilterClick('paymentMethod')}
+        >
+          <div className={dataTableStyles.modernSelectHeader}>
+            <span>
+              {paymentMethods.find(m => m.value === filters.paymentMethod)?.label || 'Método de Pagamento'}
+            </span>
+            <span className={dataTableStyles.arrow}>▼</span>
+          </div>
+          {openFilter === 'paymentMethod' && (
+            <div className={dataTableStyles.modernSelectDropdown}>
+              {paymentMethods.map(method => (
+                <label 
+                  key={method.value} 
+                  className={dataTableStyles.modernCheckboxLabel}
+                  onClick={(e) => {
+                    e.preventDefault(); // Prevent default to ensure proper handling
+                    handleFilterChange('paymentMethod', method.value);
+                    setOpenFilter(null); // Close dropdown after selection
+                  }}
+                >
+                  <div className={dataTableStyles.modernCheckbox}>
+                    <input
+                      type="radio"
+                      checked={filters.paymentMethod === method.value}
+                      className={dataTableStyles.hiddenCheckbox}
+                      onChange={() => handleFilterChange('paymentMethod', method.value)}
+                      name="paymentMethod"
+                    />
+                    <div className={dataTableStyles.customCheckbox}></div>
+                  </div>
+                  <span>{method.label}</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+      
+      <div style={{ display: 'flex', gap: '12px', flex: '1' }}>
+        <div className={dataTableStyles.filterGroup} style={{ flex: '1' }}>
+          <label className={dataTableStyles.filterLabel}>
+            <BsSearch /> Descrição
+          </label>
+          <div className={dataTableStyles.searchField}>
+            <BsSearch className={dataTableStyles.searchIcon} />
+            <input 
+              type="text" 
+              placeholder="Buscar por descrição..." 
+              value={filters.description || ''} 
+              onChange={(e) => handleFilterChange('description', e.target.value)} 
+              className={dataTableStyles.searchInput}
+            />
+          </div>
+        </div>
+        
+        <button
+          className={`${dataTableStyles.recurringButton} ${filters.is_recurring === 'true' ? dataTableStyles.active : ''}`}
+          onClick={() => handleFilterChange('is_recurring', filters.is_recurring === 'true' ? '' : 'true')}
+          title="Mostrar apenas despesas fixas"
+          style={{ alignSelf: 'flex-end' }}
+        >
+          <BsRepeat /> Fixos
+        </button>
+      </div>
+    </div>
+  );
+
   if (loading) {
     return (
       <div className={dataTableStyles.container}>
@@ -264,8 +517,7 @@ const Expenses = ({
         )}
 
         <div className={`${dataTableStyles.filtersContainer} ${isMobile && !showFilters ? dataTableStyles.filtersCollapsed : ''} ${isMobile && showFilters ? dataTableStyles.filtersExpanded : ''}`}>
-          {/* Renderização do filtro de período */}
-          {/* ... (código do filtro de período) ... */}
+          {filterRowContent}
         </div>
 
         {selectedExpenses.length > 0 && (
