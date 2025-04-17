@@ -70,8 +70,8 @@ const IncomesWrapper = () => {
 
   const handleDeleteIncome = async (income, queryParams = '') => {
     try {
-      // Verificar se é uma ocorrência de receita recorrente
-      if (income.isRecurringOccurrence) {
+      // Verificar se é uma ocorrência de receita recorrente ou receita original filtrada por mês
+      if (income.isRecurringOccurrence || (income.is_recurring && income.originalRecurrenceId) || income.isFilteredOriginalRecurrence) {
         const occurrenceDate = new Date(income.date);
         setIncomeToDelete({
           ...income,
@@ -112,8 +112,8 @@ const IncomesWrapper = () => {
       const income = incomeToDelete;
       let queryParams = '';
 
-      // Verificar se é uma ocorrência de uma receita recorrente
-      if (income.isRecurringOccurrence || deleteOption === 'occurrence') {
+      // Verificar se é uma ocorrência de uma receita recorrente ou receita original filtrada por mês
+      if (income.isRecurringOccurrence || deleteOption === 'occurrence' || (income.is_recurring && income.originalRecurrenceId) || income.isFilteredOriginalRecurrence) {
         // Extrair o ID da receita recorrente original
         let originalId = income.originalRecurrenceId;
 
@@ -124,6 +124,12 @@ const IncomesWrapper = () => {
             originalId = parts[1];
             console.log('ID original extraído do ID da ocorrência:', originalId);
           }
+        }
+
+        // Se é a receita original filtrada por mês, usar seu próprio ID
+        if (!originalId && income.isFilteredOriginalRecurrence) {
+          originalId = income.id;
+          console.log('Usando ID da própria receita original filtrada:', originalId);
         }
 
         if (!originalId) {
@@ -571,45 +577,66 @@ const IncomesWrapper = () => {
         // Se a receita tem exceções, isso significa que ela não deve aparecer em certos meses
         const hasExceptions = income.exceptions && Array.isArray(income.exceptions) && income.exceptions.length > 0;
         
-        // Se é uma receita recorrente que aparece como ocorrência, verificar se há duplicação
-        if (income.is_recurring && originalRecurringIds.has(incomeId)) {
-          const occurrences = originalRecurringIds.get(incomeId);
-          const incomeDate = new Date(income.date);
-          const incomeDay = incomeDate.getDate();
-          const incomeMonth = incomeDate.getMonth() + 1;
-          const incomeYear = incomeDate.getFullYear();
-          
-          // Verificar se há ocorrências no mesmo mês/ano/dia da receita original
-          const duplicatedOccurrence = occurrences.find(occ => {
-            const occDate = occ.date;
-            return occDate.getDate() === incomeDay && 
-                   occDate.getMonth() + 1 === incomeMonth && 
-                   occDate.getFullYear() === incomeYear;
-          });
-          
-          if (duplicatedOccurrence) {
-            console.log(`Receita recorrente ${incomeId} (${income.description}) duplicada no dia ${incomeDay}/${incomeMonth}/${incomeYear} - excluindo original`);
-            return; // Pular esta receita, pois já temos uma ocorrência para este dia
-          }
-          
-          // Verificar se a data original tem uma exceção
-          if (hasExceptions) {
-            const originalDate = new Date(income.date);
-            const originalDateStr = originalDate.toISOString().slice(0, 10);
+        // Se é uma receita recorrente original (não uma ocorrência gerada)
+        if (income.is_recurring) {
+          // Quando uma receita recorrente original aparece devido a filtro por mês,
+          // marcamos ela com um flag especial para tratamento correto na exclusão
+          if (filters.months && filters.months.length > 0) {
+            const incomeDate = new Date(income.date);
+            const incomeMonth = incomeDate.getMonth() + 1;
             
-            // Se a data original está nas exceções, não mostrar a receita original
-            const isOriginalDateException = income.exceptions.some(ex => 
-              new Date(ex.exception_date).toISOString().slice(0, 10) === originalDateStr
-            );
-            
-            if (isOriginalDateException) {
-              console.log(`Receita original ${incomeId} (${income.description}) tem exceção para a data ${originalDateStr} - ocultando`);
-              return; // Pular esta receita original pois tem exceção para sua data
+            // Se o mês da receita original está nos meses filtrados, tratamos como uma ocorrência para exclusão
+            if (filters.months.includes(incomeMonth)) {
+              income.isFilteredOriginalRecurrence = true;
+              // Garantir que a originalRecurrenceId esteja presente para a lógica de exclusão
+              income.originalRecurrenceId = income.id;
             }
           }
           
-          // Se não houver duplicação, mantenha a receita original
-          console.log(`Receita recorrente ${incomeId} (${income.description}) não está duplicada - mantendo`);
+          // Verificação de duplicação com ocorrências (código existente)
+          if (originalRecurringIds.has(incomeId)) {
+            const occurrences = originalRecurringIds.get(incomeId);
+            const incomeDate = new Date(income.date);
+            const incomeDay = incomeDate.getDate();
+            const incomeMonth = incomeDate.getMonth() + 1;
+            const incomeYear = incomeDate.getFullYear();
+            
+            // Verificar se há ocorrências no mesmo mês/ano/dia da receita original
+            const duplicatedOccurrence = occurrences.find(occ => {
+              const occDate = occ.date;
+              return occDate.getDate() === incomeDay && 
+                     occDate.getMonth() + 1 === incomeMonth && 
+                     occDate.getFullYear() === incomeYear;
+            });
+            
+            if (duplicatedOccurrence) {
+              console.log(`Receita recorrente ${incomeId} (${income.description}) duplicada no dia ${incomeDay}/${incomeMonth}/${incomeYear} - excluindo original`);
+              // Ao invés de excluir completamente, vamos marcar para manter as opções de exclusão
+              income.originalRecurrenceId = incomeId;
+              income.isFilteredOriginalRecurrence = true;
+              dedupedIncomes.push(income);
+              return;
+            }
+          
+            // Verificar se a data original tem uma exceção
+            if (hasExceptions) {
+              const originalDate = new Date(income.date);
+              const originalDateStr = originalDate.toISOString().slice(0, 10);
+              
+              // Se a data original está nas exceções, não mostrar a receita original
+              const isOriginalDateException = income.exceptions.some(ex => 
+                new Date(ex.exception_date).toISOString().slice(0, 10) === originalDateStr
+              );
+              
+              if (isOriginalDateException) {
+                console.log(`Receita original ${incomeId} (${income.description}) tem exceção para a data ${originalDateStr} - ocultando`);
+                return; // Pular esta receita original pois tem exceção para sua data
+              }
+            }
+          
+            // Se não houver duplicação, mantenha a receita original
+            console.log(`Receita recorrente ${incomeId} (${income.description}) não está duplicada - mantendo`);
+          }
         }
         
         // Adicionar a receita à lista final
@@ -658,6 +685,15 @@ const IncomesWrapper = () => {
         
         if (alreadyAddedOriginal) {
           console.log(`Ocorrência ${occurrence.id} duplicada com a receita original no dia ${occurrenceDay}/${occurrenceMonth}/${occurrenceYear} - ignorando`);
+          // Mesmo nesses casos, precisamos garantir que a originalRecurrenceId esteja presente
+          const foundOriginal = dedupedIncomes.find(income => 
+            income.id?.toString() === originalId?.toString() && income.is_recurring
+          );
+          
+          if (foundOriginal) {
+            foundOriginal.originalRecurrenceId = originalId;
+          }
+          
           return; // Pular esta ocorrência pois a original já está no mesmo dia
         }
         
@@ -1022,7 +1058,7 @@ const IncomesWrapper = () => {
               <h3>Confirmar exclusão</h3>
             </div>
             <div className={dataTableStyles.modalBody}>
-              {incomeToDelete.isRecurringOccurrence || deleteOption === 'occurrence' ? (
+              {incomeToDelete.isRecurringOccurrence || deleteOption === 'occurrence' || (incomeToDelete.is_recurring && incomeToDelete.originalRecurrenceId) || incomeToDelete.isFilteredOriginalRecurrence ? (
                 // Modal para ocorrências de receitas recorrentes
                 <>
                   <p>Como deseja excluir esta receita recorrente?</p>
