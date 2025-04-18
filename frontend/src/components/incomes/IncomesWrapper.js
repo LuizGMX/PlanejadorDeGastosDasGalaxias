@@ -723,7 +723,7 @@ const IncomesWrapper = () => {
               ) : deleteOption === 'recurring' ? (
                 // Modal para receitas recorrentes (original)
                 <>
-                  <p>Deseja realmente excluir esta receita recorrente e todas as suas ocorrências?</p>
+                  <p>Como deseja excluir esta receita recorrente?</p>
                   <p><strong>{incomeToDelete.description}</strong></p>
                   
                   {incomeToDelete.date && (
