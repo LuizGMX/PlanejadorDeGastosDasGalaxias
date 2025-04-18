@@ -4,7 +4,7 @@ import { AuthContext } from '../../contexts/AuthContext';
 import Expenses from './Expenses';
 import MobileExpenses from './MobileExpenses';
 import styles from '../../styles/shared.module.css';
-import '../../styles/dataTable.module.css';
+import dataTableStyles from '../../styles/dataTable.module.css';
 import { toast } from 'react-hot-toast';
 import { BsExclamationTriangle, BsX } from 'react-icons/bs';
 import { FiTrash2 } from 'react-icons/fi';
