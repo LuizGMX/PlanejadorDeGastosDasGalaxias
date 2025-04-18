@@ -439,7 +439,7 @@ const IncomesWrapper = () => {
           // Se for recorrente, verificar se começa com rec_
           // Garantindo que income.id seja string antes de usar startsWith
           const incomeId = income.id !== null && income.id !== undefined ? String(income.id) : '';
-          if (!incomeId.startsWith('rec_')) {
+          if (incomeId.startsWith('rec_')) {
             // Ignorar ocorrências que começam com rec_
             recurrenceOccurrences.push(income);
           }
