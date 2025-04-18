@@ -27,7 +27,6 @@ function Income({
   onAdd,
   onFilter,
   onSearch,
-  selectedIncomes,
   onSelectIncome,
   onSelectAll,
   loading,
@@ -394,7 +393,7 @@ function Income({
                 key={income.id} 
                 className={dataTableStyles.mobileCard}
               >
-                {!income.is_recurring && (
+                {/* {!income.is_recurring && (
                   <div className={dataTableStyles.mobileCardSelect}>
                     <label className={dataTableStyles.checkboxContainer}>
                       <input
@@ -406,7 +405,7 @@ function Income({
                       <span className={dataTableStyles.checkmark}></span>
                     </label>
                   </div>
-                )}
+                )} */}
                 
                 <div className={dataTableStyles.mobileCardHeader}>
                   <h3 className={dataTableStyles.mobileCardTitle}>{income.description}</h3>
@@ -737,7 +736,7 @@ function Income({
           </div>
         </div>
 
-        {selectedIncomes.length > 0 && (
+        {/* {selectedIncomes.length > 0 && (
           <div className={dataTableStyles.bulkActions}>
             <button 
               onClick={handleConfirmDelete} 
@@ -746,7 +745,7 @@ function Income({
               <BsTrash /> Excluir {selectedIncomes.length} {selectedIncomes.length === 1 ? 'item' : 'itens'}
             </button>
           </div>
-        )}
+        )} */}
 
         {isMobile ? (
           renderMobileCards()
@@ -772,7 +771,7 @@ function Income({
                 <table className={dataTableStyles.table}>
                   <thead>
                     <tr>
-                      <th>
+                      {/* <th>
                         <div className={dataTableStyles.checkboxContainer}>
                           <input
                             type="checkbox"
@@ -781,7 +780,7 @@ function Income({
                           />
                           <span className={dataTableStyles.checkmark}></span>
                         </div>
-                      </th>
+                      </th> */}
                       <th>Descrição</th>
                       <th>Valor</th>
                       <th>Data</th>
@@ -794,7 +793,7 @@ function Income({
                   <tbody>
                     {safeIncomes.map((income) => (
                       <tr key={income.id}>
-                        <td>
+                        {/* <td>
                           <div className={dataTableStyles.checkboxContainer}>
                             <input
                               type="checkbox"
@@ -803,7 +802,7 @@ function Income({
                             />
                             <span className={dataTableStyles.checkmark}></span>
                           </div>
-                        </td>
+                        </td> */}
                         <td>{income.description}</td>
                         <td>
                           <span className={`${dataTableStyles.incomeAmountBadge} ${dataTableStyles.incomeAmount}`}>
