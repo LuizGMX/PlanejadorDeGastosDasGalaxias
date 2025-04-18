@@ -720,61 +720,64 @@ const IncomesWrapper = () => {
                     </button>
                   </div>
                 </>
-              ) : deleteOption === 'recurring' ? (
-                // Modal para receitas recorrentes (original)
-                <>
-                  <p>Deseja realmente excluir esta receita recorrente e todas as suas ocorrências?</p>
-                  <p><strong>{incomeToDelete.description}</strong></p>
+              ) 
+              // : deleteOption === 'recurring' ? (
+              //   // Modal para receitas recorrentes (original)
+              //   <>
+              //     <p>Deseja realmente excluir esta receita recorrente e todas as suas ocorrências?</p>
+              //     <p><strong>{incomeToDelete.description}</strong></p>
                   
-                  {incomeToDelete.date && (
-                    <p className={dataTableStyles.modalInfo}>
-                      Data de início: {new Date(incomeToDelete.start_date || incomeToDelete.date).toLocaleDateString('pt-BR', {
-                        day: 'numeric', 
-                        month: 'long', 
-                        year: 'numeric'
-                      })}
-                    </p>
-                  )}
+              //     {incomeToDelete.date && (
+              //       <p className={dataTableStyles.modalInfo}>
+              //         Data de início: {new Date(incomeToDelete.start_date || incomeToDelete.date).toLocaleDateString('pt-BR', {
+              //           day: 'numeric', 
+              //           month: 'long', 
+              //           year: 'numeric'
+              //         })}
+              //       </p>
+              //     )}
                   
-                  {incomeToDelete.exceptions && incomeToDelete.exceptions.length > 0 && (
-                    <div className={dataTableStyles.exceptionsInfo}>
-                      <p>Esta receita recorrente possui {incomeToDelete.exceptions.length} exceções:</p>
-                      <ul>
-                        {incomeToDelete.exceptions.slice(0, 3).map((exception, index) => (
-                          <li key={index}>
-                            {new Date(exception.exception_date).toLocaleDateString('pt-BR', {
-                              day: 'numeric', 
-                              month: 'long', 
-                              year: 'numeric'
-                            })}
-                          </li>
-                        ))}
-                        {incomeToDelete.exceptions.length > 3 && (
-                          <li>...e mais {incomeToDelete.exceptions.length - 3} exceções</li>
-                        )}
-                      </ul>
-                    </div>
-                  )}
+              //     {incomeToDelete.exceptions && incomeToDelete.exceptions.length > 0 && (
+              //       <div className={dataTableStyles.exceptionsInfo}>
+              //         <p>Esta receita recorrente possui {incomeToDelete.exceptions.length} exceções:</p>
+              //         <ul>
+              //           {incomeToDelete.exceptions.slice(0, 3).map((exception, index) => (
+              //             <li key={index}>
+              //               {new Date(exception.exception_date).toLocaleDateString('pt-BR', {
+              //                 day: 'numeric', 
+              //                 month: 'long', 
+              //                 year: 'numeric'
+              //               })}
+              //             </li>
+              //           ))}
+              //           {incomeToDelete.exceptions.length > 3 && (
+              //             <li>...e mais {incomeToDelete.exceptions.length - 3} exceções</li>
+              //           )}
+              //         </ul>
+              //       </div>
+              //     )}
                   
-                  <div className={dataTableStyles.modalActions}>
-                    <button
-                      className={dataTableStyles.secondaryButton}
-                      onClick={() => {
-                        setShowDeleteModal(false);
-                        setIncomeToDelete(null);
-                      }}
-                    >
-                      <BsX /> Cancelar
-                    </button>
-                    <button
-                      className={`${dataTableStyles.primaryButton} ${dataTableStyles.deleteButton}`}
-                      onClick={() => handleConfirmDelete('all')}
-                    >
-                      <FiTrash2 /> Confirmar
-                    </button>
-                  </div>
-                </>
-              ) : (
+              //     <div className={dataTableStyles.modalActions}>
+              //       <button
+              //         className={dataTableStyles.secondaryButton}
+              //         onClick={() => {
+              //           setShowDeleteModal(false);
+              //           setIncomeToDelete(null);
+              //         }}
+              //       >
+              //         <BsX /> Cancelar
+              //       </button>
+              //       <button
+              //         className={`${dataTableStyles.primaryButton} ${dataTableStyles.deleteButton}`}
+              //         onClick={() => handleConfirmDelete('all')}
+              //       >
+              //         <FiTrash2 /> Confirmar
+              //       </button>
+              //     </div>
+              //   </>
+              // ) 
+              
+              : (
                 // Modal para receitas normais (não recorrentes)
                 <>
                   <p>Deseja realmente excluir esta receita?</p>
