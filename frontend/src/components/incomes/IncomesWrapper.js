@@ -671,7 +671,7 @@ const IncomesWrapper = () => {
               <h3>Confirmar exclusão</h3>
             </div>
             <div className={dataTableStyles.modalBody}>
-              {incomeToDelete.isRecurringOccurrence || deleteOption === 'occurrence' || (incomeToDelete.is_recurring && incomeToDelete.originalRecurrenceId) || incomeToDelete.isFilteredOriginalRecurrence ? (
+              {incomeToDelete.is_recurring ? (
                 // Modal para ocorrências de receitas recorrentes
                 <>
                   <p>Como deseja excluir esta receita recorrente?</p>
