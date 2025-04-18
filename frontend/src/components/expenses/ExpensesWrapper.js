@@ -46,6 +46,30 @@ const ExpensesWrapper = () => {
   // Estado para controlar se é mobile
   const [isMobile, setIsMobile] = useState(isMobileView());
   
+  // Constantes para meses e anos
+  const months = [
+    { value: 1, label: 'Janeiro' },
+    { value: 2, label: 'Fevereiro' },
+    { value: 3, label: 'Março' },
+    { value: 4, label: 'Abril' },
+    { value: 5, label: 'Maio' },
+    { value: 6, label: 'Junho' },
+    { value: 7, label: 'Julho' },
+    { value: 8, label: 'Agosto' },
+    { value: 9, label: 'Setembro' },
+    { value: 10, label: 'Outubro' },
+    { value: 11, label: 'Novembro' },
+    { value: 12, label: 'Dezembro' }
+  ];
+
+  const years = Array.from(
+    { length: 11 },
+    (_, i) => ({
+      value: new Date().getFullYear() - 5 + i,
+      label: (new Date().getFullYear() - 5 + i).toString()
+    })
+  );
+  
   // Efeito para monitorar mudanças no tamanho da tela
   useEffect(() => {
     const handleResize = () => {
@@ -380,8 +404,43 @@ const ExpensesWrapper = () => {
     setFilters(prevFilters => {
       const newFilters = { ...prevFilters };
       
-      // Atualizar o valor do filtro específico
-      newFilters[type] = value;
+      // Tratamento especial para months e years para garantir que estejam sempre no formato de array
+      if (type === 'months') {
+        if (value === 'all') {
+          // Se valor for 'all', alternar entre selecionar todos ou nenhum
+          newFilters.months = prevFilters.months.length === months.length ? [] : months.map(m => m.value);
+        } else if (Array.isArray(value)) {
+          // Se já for um array, usar diretamente
+          newFilters.months = value;
+        } else {
+          // Para um único valor, alternar entre adicionar ou remover
+          const currentMonths = Array.isArray(prevFilters.months) ? prevFilters.months : [];
+          if (currentMonths.includes(value)) {
+            newFilters.months = currentMonths.filter(month => month !== value);
+          } else {
+            newFilters.months = [...currentMonths, value];
+          }
+        }
+      } else if (type === 'years') {
+        if (value === 'all') {
+          // Se valor for 'all', alternar entre selecionar todos ou nenhum
+          newFilters.years = prevFilters.years.length === years.length ? [] : years.map(y => y.value);
+        } else if (Array.isArray(value)) {
+          // Se já for um array, usar diretamente
+          newFilters.years = value;
+        } else {
+          // Para um único valor, alternar entre adicionar ou remover
+          const currentYears = Array.isArray(prevFilters.years) ? prevFilters.years : [];
+          if (currentYears.includes(value)) {
+            newFilters.years = currentYears.filter(year => year !== value);
+          } else {
+            newFilters.years = [...currentYears, value];
+          }
+        }
+      } else {
+        // Para outros tipos de filtros, comportamento normal
+        newFilters[type] = value;
+      }
       
       console.log('Novos filtros para despesas:', newFilters);
       
@@ -454,13 +513,17 @@ const ExpensesWrapper = () => {
       // Construir os parâmetros da query
       const queryParams = new URLSearchParams();
       
+      // Garantir que months e years sejam arrays
+      const monthsArray = filterParams.months && Array.isArray(filterParams.months) ? filterParams.months : [];
+      const yearsArray = filterParams.years && Array.isArray(filterParams.years) ? filterParams.years : [];
+      
       // Adicionar os parâmetros de filtro à URL
-      if (filterParams.months && filterParams.months.length > 0) {
-        filterParams.months.forEach(month => queryParams.append('months[]', month));
+      if (monthsArray.length > 0) {
+        monthsArray.forEach(month => queryParams.append('months[]', month));
       }
       
-      if (filterParams.years && filterParams.years.length > 0) {
-        filterParams.years.forEach(year => queryParams.append('years[]', year));
+      if (yearsArray.length > 0) {
+        yearsArray.forEach(year => queryParams.append('years[]', year));
       }
       
       if (filterParams.description) {

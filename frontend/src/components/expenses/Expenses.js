@@ -135,11 +135,55 @@ const Expenses = ({
 
   const handleFilterChange = (type, value) => {
     setOpenFilter(null);
-    onFilter(type, value);
+    
+    if (type === 'months') {
+      if (value === 'all') {
+        // Se o valor for 'all', alternar entre todos os meses ou nenhum
+        const allMonths = filtersMonths.length === months.length ? [] : months.map(m => m.value);
+        onFilter(type, allMonths);
+      } else {
+        // Alternar a seleção do mês (adicionar ou remover)
+        const updatedMonths = [...filtersMonths];
+        const index = updatedMonths.indexOf(value);
+        
+        if (index >= 0) {
+          // Se já estiver selecionado, remover
+          updatedMonths.splice(index, 1);
+        } else {
+          // Se não estiver selecionado, adicionar
+          updatedMonths.push(value);
+        }
+        
+        onFilter(type, updatedMonths);
+      }
+    } else if (type === 'years') {
+      if (value === 'all') {
+        // Se o valor for 'all', alternar entre todos os anos ou nenhum
+        const allYears = filtersYears.length === years.length ? [] : years.map(y => y.value);
+        onFilter(type, allYears);
+      } else {
+        // Alternar a seleção do ano (adicionar ou remover)
+        const updatedYears = [...filtersYears];
+        const index = updatedYears.indexOf(value);
+        
+        if (index >= 0) {
+          // Se já estiver selecionado, remover
+          updatedYears.splice(index, 1);
+        } else {
+          // Se não estiver selecionado, adicionar
+          updatedYears.push(value);
+        }
+        
+        onFilter(type, updatedYears);
+      }
+    } else {
+      // Para outros tipos de filtros, comportamento padrão
+      onFilter(type, value);
+    }
   };
 
   // Função auxiliar para verificar se uma despesa é ocorrência de recorrência
-  const isRecurrenceOccurrence = (expense) => {
+      const isRecurrenceOccurrence = (expense) => {
     return expense.isRecurringOccurrence === true || 
            (expense.is_recurring && expense.originalRecurrenceId) || 
            expense.isFilteredOriginalRecurrence;
