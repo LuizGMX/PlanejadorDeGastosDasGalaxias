@@ -33,7 +33,7 @@ const Expenses = ({
   banks, 
   loading, 
   error, 
-  selectedExpenses, 
+  selectedExpenses = [], 
   onSelectExpense, 
   onSelectAll, 
   onDelete, 
@@ -41,7 +41,10 @@ const Expenses = ({
   onAdd, 
   onFilter, 
   onSearch, 
-  filters, 
+  filters = {
+    months: [],
+    years: []
+  }, 
   noExpensesMessage 
 }) => {
   const navigate = useNavigate();
@@ -58,6 +61,10 @@ const Expenses = ({
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [expandedCardDetails, setExpandedCardDetails] = useState({});
   const [openFilter, setOpenFilter] = useState(null);
+
+  // Garantir que filters.months e filters.years sejam arrays
+  const filtersMonths = Array.isArray(filters.months) ? filters.months : [];
+  const filtersYears = Array.isArray(filters.years) ? filters.years : [];
 
   const years = Array.from(
     { length: 11 },
@@ -168,22 +175,22 @@ const Expenses = ({
 
   const formatSelectedPeriod = (filterType) => {
     if (filterType === 'months') {
-      if (!filters.months || filters.months.length === 0) {
+      if (!filtersMonths || filtersMonths.length === 0) {
         return 'Selecionar Mês';
       }
-      if (filters.months.length === 1) {
-        const monthLabel = months.find(m => m.value === filters.months[0])?.label;
+      if (filtersMonths.length === 1) {
+        const monthLabel = months.find(m => m.value === filtersMonths[0])?.label;
         return monthLabel || 'Selecionar Mês';
       }
-      return `${filters.months.length} meses selecionados`;
+      return `${filtersMonths.length} meses selecionados`;
     } else if (filterType === 'years') {
-      if (!filters.years || filters.years.length === 0) {
+      if (!filtersYears || filtersYears.length === 0) {
         return 'Selecionar Ano';
       }
-      if (filters.years.length === 1) {
-        return filters.years[0];
+      if (filtersYears.length === 1) {
+        return filtersYears[0];
       }
-      return `${filters.years.length} anos selecionados`;
+      return `${filtersYears.length} anos selecionados`;
     }
     return '';
   };
@@ -233,13 +240,13 @@ const Expenses = ({
         >
           <div className={dataTableStyles.modernSelectHeader}>
             <span>
-              {filters.months?.length === 0 
+              {filtersMonths.length === 0 
                 ? 'Nenhum mês selecionado' 
-                : filters.months?.length === 1 
-                  ? months.find(m => m.value === filters.months[0])?.label 
-                  : filters.months?.length === months.length 
+                : filtersMonths.length === 1 
+                  ? months.find(m => m.value === filtersMonths[0])?.label 
+                  : filtersMonths.length === months.length 
                     ? 'Todos os meses' 
-                    : `${filters.months?.length} meses selecionados`}
+                    : `${filtersMonths.length} meses selecionados`}
             </span>
             <span className={dataTableStyles.arrow}>▼</span>
           </div>
@@ -249,7 +256,7 @@ const Expenses = ({
                 <div className={dataTableStyles.modernCheckbox}>
                   <input
                     type="checkbox"
-                    checked={filters.months?.length === months.length}
+                    checked={filtersMonths.length === months.length}
                     onChange={() => handleFilterChange('months', 'all')}
                     onClick={handleCheckboxClick}
                     className={dataTableStyles.hiddenCheckbox}
@@ -263,7 +270,7 @@ const Expenses = ({
                   <div className={dataTableStyles.modernCheckbox}>
                     <input
                       type="checkbox"
-                      checked={filters.months?.includes(month.value)}
+                      checked={filtersMonths.includes(month.value)}
                       onChange={() => handleFilterChange('months', month.value)}
                       onClick={handleCheckboxClick}
                       className={dataTableStyles.hiddenCheckbox}
@@ -288,13 +295,13 @@ const Expenses = ({
         >
           <div className={dataTableStyles.modernSelectHeader}>
             <span>
-              {filters.years?.length === 0 
+              {filtersYears.length === 0 
                 ? 'Nenhum ano selecionado' 
-                : filters.years?.length === 1 
-                  ? filters.years[0] 
-                  : filters.years?.length === years.length 
+                : filtersYears.length === 1 
+                  ? filtersYears[0] 
+                  : filtersYears.length === years.length 
                     ? 'Todos os anos' 
-                    : `${filters.years?.length} anos selecionados`}
+                    : `${filtersYears.length} anos selecionados`}
             </span>
             <span className={dataTableStyles.arrow}>▼</span>
           </div>
@@ -304,7 +311,7 @@ const Expenses = ({
                 <div className={dataTableStyles.modernCheckbox}>
                   <input
                     type="checkbox"
-                    checked={filters.years?.length === years.length}
+                    checked={filtersYears.length === years.length}
                     onChange={() => handleFilterChange('years', 'all')}
                     onClick={handleCheckboxClick}
                     className={dataTableStyles.hiddenCheckbox}
@@ -318,7 +325,7 @@ const Expenses = ({
                   <div className={dataTableStyles.modernCheckbox}>
                     <input
                       type="checkbox"
-                      checked={filters.years?.includes(year.value)}
+                      checked={filtersYears.includes(year.value)}
                       onChange={() => handleFilterChange('years', year.value)}
                       onClick={handleCheckboxClick}
                       className={dataTableStyles.hiddenCheckbox}
@@ -574,7 +581,7 @@ const Expenses = ({
                         <td>
                           <input
                             type="checkbox"
-                            checked={selectedExpenses.includes(expense.id)}
+                            checked={Array.isArray(selectedExpenses) && selectedExpenses.includes(expense.id)}
                             onChange={(e) => handleSelectExpense(expense.id, e)}
                           />
                         </td>
