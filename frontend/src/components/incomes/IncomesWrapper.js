@@ -114,9 +114,11 @@ const IncomesWrapper = () => {
         // Extrair o ID da receita recorrente original
         let originalId = income.originalRecurrenceId;
 
-        if (!originalId && income.id && typeof income.id === 'string' && income.id.startsWith('rec_')) {
+        // Garantindo que income.id seja uma string antes de usar startsWith
+        const incomeId = income.id !== null && income.id !== undefined ? String(income.id) : '';
+        if (!originalId && incomeId && incomeId.startsWith('rec_')) {
           // Se não tiver o campo originalRecurrenceId, tentar extrair do ID
-          const parts = income.id.split('_');
+          const parts = incomeId.split('_');
           if (parts.length >= 2) {
             originalId = parts[1];
             console.log('ID original extraído do ID da ocorrência:', originalId);
@@ -428,6 +430,20 @@ const IncomesWrapper = () => {
         : Array.isArray(incomesData) 
           ? incomesData 
           : [];
+          
+      // Log para depuração - verificar se os dados chegaram corretamente
+      console.log('Dados recebidos da API:', {
+        tipo: typeof incomesData,
+        ehArray: Array.isArray(incomesData),
+        tamanho: Array.isArray(incomesData) ? incomesData.length : 'não é array',
+        dados: incomesData,
+        primeiroItem: extractedIncomes.length > 0 ? extractedIncomes[0] : 'nenhum item',
+        ids: extractedIncomes.map(item => ({
+          id: item.id,
+          tipo: typeof item.id,
+          isRecurring: item.is_recurring
+        }))
+      });
 
       // Process incomes
       const normalIncomes = [];
@@ -437,7 +453,9 @@ const IncomesWrapper = () => {
       extractedIncomes.forEach(income => {
         if (income.is_recurring) {
           // Se for recorrente, verificar se começa com rec_
-          if (!income.id?.startsWith('rec_')) {
+          // Garantindo que income.id seja string antes de usar startsWith
+          const incomeId = income.id !== null && income.id !== undefined ? String(income.id) : '';
+          if (!incomeId.startsWith('rec_')) {
             // Ignorar ocorrências que começam com rec_
             recurrenceOccurrences.push(income);
           }
