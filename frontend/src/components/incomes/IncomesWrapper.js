@@ -23,8 +23,6 @@ const IncomesWrapper = () => {
   const [error, setError] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [incomeToDelete, setIncomeToDelete] = useState(null);
-  const [editingIncome, setEditingIncome] = useState(null);
-  const [deleteSuccess, setDeleteSuccess] = useState(null);
   const [deleteOption, setDeleteOption] = useState(null); // 'all' ou 'single'
   const [filters, setFilters] = useState({
     months: [new Date().getMonth() + 1],
@@ -369,7 +367,7 @@ const IncomesWrapper = () => {
     const startDate = moment.tz(timeZone).startOf('month').toDate().toISOString();
     const endDate = moment.tz(timeZone).endOf('month').subtract(3, 'hours').toDate().toISOString();
 
-    const thisMonth = moment.tz(timeZone).month();
+    const thisMonth = moment.tz(timeZone).month() + 1;
     const thisYear = moment.tz(timeZone).year();
     
     // Definir filtros iniciais
