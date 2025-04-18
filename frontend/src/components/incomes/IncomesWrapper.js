@@ -427,21 +427,7 @@ const IncomesWrapper = () => {
         ? incomesData.incomes 
         : Array.isArray(incomesData) 
           ? incomesData 
-          : [];
-          
-      // Log para depuração - verificar se os dados chegaram corretamente
-      console.log('Dados recebidos da API:', {
-        tipo: typeof incomesData,
-        ehArray: Array.isArray(incomesData),
-        tamanho: Array.isArray(incomesData) ? incomesData.length : 'não é array',
-        dados: incomesData,
-        primeiroItem: extractedIncomes.length > 0 ? extractedIncomes[0] : 'nenhum item',
-        ids: extractedIncomes.map(item => ({
-          id: item.id,
-          tipo: typeof item.id,
-          isRecurring: item.is_recurring
-        }))
-      });
+          : [];          
 
       // Process incomes
       const normalIncomes = [];
@@ -464,7 +450,7 @@ const IncomesWrapper = () => {
       });    
 
       // Processar as receitas finais
-      let finalFilteredIncomes = extractedIncomes;
+      const finalFilteredIncomes = normalIncomes.concat(recurrenceOccurrences);
       
       // Definir variável para as receitas finais
       if (finalFilteredIncomes.length === 0) {
