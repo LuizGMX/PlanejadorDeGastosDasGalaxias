@@ -5,8 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Op, Sequelize } from 'sequelize';
 import { authenticate } from '../middleware/auth.js';
 import checkSubscription from '../middleware/subscriptionCheck.js';
-import moment from 'moment';
-import { calculateRecurringOccurrences, getNextRecurringDate } from '../utils/recurrenceUtils.js';
+import { calculateRecurringOccurrences } from '../utils/recurrenceUtils.js';
 
 const router = Router();
 
@@ -310,6 +309,25 @@ router.get('/:id', async (req, res) => {
   } catch (error) {
     console.error('Erro ao buscar receita:', error);
     res.status(500).json({ message: 'Erro ao buscar receita' });
+  }
+});
+
+// Listar categorias de ganho
+router.get('/categories', async (req, res) => {
+  try {
+    console.log('Buscando categorias...');
+    const categories = await Category.findAll({
+      where: { type: 'income' },
+      order: [
+        [literal("category_name = 'Outros' ASC")],
+        ['category_name', 'ASC']
+      ]
+    });
+    console.log('Categorias encontradas:', categories);
+    res.json(categories);
+  } catch (error) {
+    console.error('Erro ao listar categorias:', error);
+    res.status(500).json({ message: 'Erro ao buscar categorias' });
   }
 });
 
@@ -629,23 +647,6 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Listar categorias de ganho
-router.get('/categories', async (req, res) => {
-  try {
-    console.log('Buscando categorias...');
-    const categories = await Category.findAll({
-      where: { type: 'income' },
-      order: [
-        [literal("category_name = 'Outros' ASC")],
-        ['category_name', 'ASC']
-      ]
-    });
-    console.log('Categorias encontradas:', categories);
-    res.json(categories);
-  } catch (error) {
-    console.error('Erro ao listar categorias:', error);
-    res.status(500).json({ message: 'Erro ao buscar categorias' });
-  }
-});
+
 
 export default router; 
