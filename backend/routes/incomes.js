@@ -632,13 +632,15 @@ router.put('/:id', async (req, res) => {
 // Listar categorias de ganho
 router.get('/categories', async (req, res) => {
   try {
+    console.log('Buscando categorias...');
     const categories = await Category.findAll({
       where: { type: 'income' },
       order: [
+        [literal("category_name = 'Outros' ASC")],
         ['category_name', 'ASC']
       ]
     });
-    console.log(categories);
+    console.log('Categorias encontradas:', categories);
     res.json(categories);
   } catch (error) {
     console.error('Erro ao listar categorias:', error);
