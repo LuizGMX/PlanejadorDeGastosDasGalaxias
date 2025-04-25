@@ -299,11 +299,7 @@ router.get('/:id', async (req, res) => {
       where: {
         id: req.params.id,
         user_id: req.user.id
-      },
-      include: [
-        { model: Category, as: 'Category' },
-        { model: Bank, as: 'bank' }
-      ]
+      }
     });
 
     if (!income) {
