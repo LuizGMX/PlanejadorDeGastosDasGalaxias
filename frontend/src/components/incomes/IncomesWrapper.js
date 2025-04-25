@@ -478,7 +478,7 @@ const IncomesWrapper = () => {
       setFilteredIncomes(finalFilteredIncomes);
 
       // Buscar categorias
-      const categoriesResponse = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/categories`, {
+      const categoriesResponse = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/categories`, {
         headers: {
           'Authorization': `Bearer ${auth.token}`
         }

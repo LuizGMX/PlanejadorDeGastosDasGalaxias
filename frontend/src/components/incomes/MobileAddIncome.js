@@ -39,21 +39,9 @@ const MobileAddIncome = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        // Obter um token válido, tentando primeiro o contexto e depois localStorage
-        let token = auth.token;
-        if (!token) {
-          console.log('Token não encontrado no contexto, buscando do localStorage...');
-          token = localStorage.getItem('token');
-          if (!token) {
-            console.error('Nenhum token de autenticação encontrado');
-            navigate('/login');
-            return;
-          }
-        }
-        
         const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/incomes/categories`, {
           headers: {
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${auth.token}`
           }
         });
 
