@@ -602,13 +602,13 @@ const Expenses = ({
                 <table className={dataTableStyles.table}>
                   <thead>
                     <tr>
-                      <th>
+                      {/* <th>
                         <input
                           type="checkbox"
                           checked={selectedExpenses.length === expenses.length}
                           onChange={onSelectAll}
                         />
-                      </th>
+                      </th> */}
                       <th>Descrição</th>
                       <th>Valor</th>
                       <th>Data</th>
@@ -622,13 +622,13 @@ const Expenses = ({
                   <tbody>
                     {expenses.map((expense) => (
                       <tr key={expense.id}>
-                        <td>
+                        {/* <td>
                           <input
                             type="checkbox"
                             checked={Array.isArray(selectedExpenses) && selectedExpenses.includes(expense.id)}
                             onChange={(e) => handleSelectExpense(expense.id, e)}
                           />
-                        </td>
+                        </td> */}
                         <td>{expense.description}</td>
                         <td>
                           <span className={dataTableStyles.expenseAmountBadge}>
