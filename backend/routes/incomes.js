@@ -292,6 +292,31 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Rota para buscar uma única receita
+router.get('/:id', async (req, res) => {
+  try {
+    const income = await Income.findOne({
+      where: {
+        id: req.params.id,
+        user_id: req.user.id
+      },
+      include: [
+        { model: Category, as: 'Category' },
+        { model: Bank, as: 'bank' }
+      ]
+    });
+
+    if (!income) {
+      return res.status(404).json({ message: 'Receita não encontrada' });
+    }
+
+    res.json(income);
+  } catch (error) {
+    console.error('Erro ao buscar receita:', error);
+    res.status(500).json({ message: 'Erro ao buscar receita' });
+  }
+});
+
 // Adicionar nova receita
 router.post('/', async (req, res) => {
   const t = await Income.sequelize.transaction();
