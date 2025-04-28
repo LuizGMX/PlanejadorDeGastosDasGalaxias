@@ -14,6 +14,15 @@ export default (sequelize) => {
     code: {
       type: DataTypes.STRING,
       allowNull: false
+    },
+    balance: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      defaultValue: 0,
+      get() {
+        const value = this.getDataValue('balance');
+        return value === null ? 0 : Number(value);
+      }
     }
   }, {
     timestamps: true,

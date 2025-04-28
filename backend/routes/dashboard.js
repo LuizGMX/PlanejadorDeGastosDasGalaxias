@@ -364,7 +364,7 @@ router.get('/', async (req, res) => {
       }),
       Bank.findAll({
         where: { user_id: req.user.id },
-        attributes: ['id', 'name', 'balance']
+        attributes: ['id', 'name']
       })
     ]);
 
