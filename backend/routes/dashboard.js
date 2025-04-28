@@ -405,41 +405,45 @@ router.get('/', async (req, res) => {
     ]);
 
     // Busca a meta financeira do usuário
-    const financialGoal = await FinancialGoal.findOne({
-      where: { user_id: req.user.id }
+    const userFinancialGoal = await User.findByPk(req.user.id, {
+      attributes: [
+        'financial_goal_name',
+        'financial_goal_amount',
+        'financial_goal_period_type',
+        'financial_goal_period_value',
+        'financial_goal_start_date',
+        'financial_goal_end_date'
+      ]
     });
 
-    // Calcula os campos adicionais necessários para o gráfico
+    // Prepara os dados da meta financeira
     let financialGoalData = null;
-    if (financialGoal) {
+    if (userFinancialGoal && userFinancialGoal.financial_goal_name) {
       const currentDate = new Date();
-      const endDate = new Date(financialGoal.end_date);
+      const endDate = new Date(userFinancialGoal.financial_goal_end_date);
       const monthsRemaining = (endDate.getFullYear() - currentDate.getFullYear()) * 12 + 
-                            (endDate.getMonth() - currentDate.getMonth());
+                             (endDate.getMonth() - currentDate.getMonth());
       
-      // Se current_amount não existir, usa 0 como valor padrão
-      const currentAmount = financialGoal.current_amount || 0;
-      
-      const monthlyNeeded = (financialGoal.amount - currentAmount) / Math.max(1, monthsRemaining);
+      const monthlyNeeded = (userFinancialGoal.financial_goal_amount) / Math.max(1, monthsRemaining);
       const monthlyBalance = totalIncomes - totalExpenses;
       const monthsNeededWithCurrentSavings = monthlyBalance > 0 
-        ? Math.ceil((financialGoal.amount - currentAmount) / monthlyBalance)
+        ? Math.ceil(userFinancialGoal.financial_goal_amount / monthlyBalance)
         : Infinity;
 
       financialGoalData = {
-        id: financialGoal.id,
-        name: financialGoal.name,
-        amount: financialGoal.amount,
-        period_type: financialGoal.period_type,
-        period_value: financialGoal.period_value,
-        current_amount: currentAmount,
+        id: 1, // ID temporário já que está na tabela de usuários
+        name: userFinancialGoal.financial_goal_name,
+        amount: userFinancialGoal.financial_goal_amount,
+        period_type: userFinancialGoal.financial_goal_period_type,
+        period_value: userFinancialGoal.financial_goal_period_value,
+        current_amount: 0, // Por enquanto fixo em 0
         is_achievable: monthlyBalance >= monthlyNeeded,
-        total_saved: currentAmount,
+        total_saved: 0, // Por enquanto fixo em 0
         monthly_balance: monthlyBalance,
         monthly_needed: monthlyNeeded,
         months_remaining: monthsRemaining,
         months_needed_with_current_savings: monthsNeededWithCurrentSavings,
-        end_date: financialGoal.end_date,
+        end_date: userFinancialGoal.financial_goal_end_date,
         current_month_balance: monthlyBalance
       };
     }
