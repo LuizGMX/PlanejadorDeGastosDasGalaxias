@@ -2,7 +2,7 @@
 @import './variables.css';
 
 select option {
-  background-color: var(--background-color) !important;
+  background-color: var(--card-background) !important;
 }
 
 .title {
