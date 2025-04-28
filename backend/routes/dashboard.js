@@ -513,4 +513,37 @@ router.get('/summary', async (req, res) => {
   }
 });
 
+// Rota para buscar todas as transações
+router.get('/all-transactions', async (req, res) => {
+  try {
+    // Busca despesas e receitas em paralelo
+    const [expenses, incomes] = await Promise.all([
+      Expense.findAll({
+        where: { user_id: req.user.id },
+        include: [
+          { model: Category, as: 'Category', attributes: ['id', 'category_name'] },
+          { model: Bank, as: 'bank', attributes: ['id', 'name'] }
+        ],
+        order: [['expense_date', 'DESC']]
+      }),
+      Income.findAll({
+        where: { user_id: req.user.id },
+        include: [
+          { model: Category, as: 'Category', attributes: ['id', 'category_name'] },
+          { model: Bank, as: 'bank', attributes: ['id', 'name'] }
+        ],
+        order: [['date', 'DESC']]
+      })
+    ]);
+
+    res.json({
+      expenses,
+      incomes
+    });
+  } catch (error) {
+    console.error('Erro ao buscar todas as transações:', error);
+    res.status(500).json({ message: 'Erro ao buscar transações', error: error.message });
+  }
+});
+
 export default router;
