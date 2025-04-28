@@ -2,7 +2,7 @@ import express from 'express';
 import { Router } from 'express';
 import { Income, Category, Bank, IncomesRecurrenceException } from '../models/index.js';
 import { v4 as uuidv4 } from 'uuid';
-import { Op, Sequelize } from 'sequelize';
+import { Op, Sequelize, literal } from 'sequelize';
 import { authenticate } from '../middleware/auth.js';
 import checkSubscription from '../middleware/subscriptionCheck.js';
 import { calculateRecurringOccurrences } from '../utils/recurrenceUtils.js';
@@ -17,6 +17,25 @@ router.use(checkSubscription);
 const calculateRecurringIncomeOccurrences = async (income, startDate, endDate) => {
   return calculateRecurringOccurrences(income, startDate, endDate, 'date');
 };
+
+// Listar categorias de ganho
+router.get('/categories', async (req, res) => {
+  try {
+    console.log('Buscando categorias...');
+    const categories = await Category.findAll({
+      where: { type: 'income' },
+      order: [
+        [literal("category_name = 'Outros' ASC")],
+        ['category_name', 'ASC']
+      ]
+    });
+    console.log('Categorias encontradas:', categories);
+    res.json(categories);
+  } catch (error) {
+    console.error('Erro ao listar categorias:', error);
+    res.status(500).json({ message: 'Erro ao buscar categorias' });
+  }
+});
 
 // Listar todas as receitas do usuário
 router.get('/', async (req, res) => {
@@ -309,25 +328,6 @@ router.get('/:id', async (req, res) => {
   } catch (error) {
     console.error('Erro ao buscar receita:', error);
     res.status(500).json({ message: 'Erro ao buscar receita' });
-  }
-});
-
-// Listar categorias de ganho
-router.get('/categories', async (req, res) => {
-  try {
-    console.log('Buscando categorias...');
-    const categories = await Category.findAll({
-      where: { type: 'income' },
-      order: [
-        [literal("category_name = 'Outros' ASC")],
-        ['category_name', 'ASC']
-      ]
-    });
-    console.log('Categorias encontradas:', categories);
-    res.json(categories);
-  } catch (error) {
-    console.error('Erro ao listar categorias:', error);
-    res.status(500).json({ message: 'Erro ao buscar categorias' });
   }
 });
 

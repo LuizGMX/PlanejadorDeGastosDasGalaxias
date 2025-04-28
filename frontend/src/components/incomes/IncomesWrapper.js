@@ -485,10 +485,17 @@ const IncomesWrapper = () => {
       });
 
       if (!categoriesResponse.ok) {
-        throw new Error('Erro ao carregar categorias');
+        const errorData = await categoriesResponse.json().catch(() => ({}));
+        console.error('Erro ao carregar categorias:', {
+          status: categoriesResponse.status,
+          statusText: categoriesResponse.statusText,
+          data: errorData
+        });
+        throw new Error(`Erro ao carregar categorias: ${categoriesResponse.status} ${categoriesResponse.statusText}`);
       }
 
       const categoriesData = await categoriesResponse.json();
+      console.log('Dados de categorias recebidos:', categoriesData);
     
       // Extrair os dados de categorias do objeto retornado
       let extractedCategories = [];
