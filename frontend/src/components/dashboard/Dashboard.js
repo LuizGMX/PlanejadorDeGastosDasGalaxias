@@ -2972,6 +2972,9 @@ const Dashboard = () => {
       );
     }
 
+    // Detect if we're on mobile
+    const isMobile = isMobileView();
+
     // Determine bank colors with institution-specific colors when possible
     const getBankColor = (bankName) => {
       const bankColors = {
@@ -3024,7 +3027,7 @@ const Dashboard = () => {
 
       return {
         name: bank.bank_name,
-        value: formatCurrency(bank.total),
+        value: bank.total,
         color: customColor || COLORS[index % COLORS.length],
         percent: bank.total / totalExpensesByBank,
       };
@@ -3064,8 +3067,9 @@ const Dashboard = () => {
                 paddingAngle={2}
                 fill="#8884d8"
                 dataKey="value"
-                nameKey="category"
+                nameKey="name"
                 label={getCustomizedPieLabel}
+                filter="url(#shadow)"
                 animationDuration={800}
                 animationBegin={200}
                 animationEasing="ease-out"
@@ -3080,7 +3084,10 @@ const Dashboard = () => {
                   />
                 ))}
               </Pie>
-              <Tooltip content={<CustomPieTooltip />} />
+              <Tooltip 
+                content={<CustomPieTooltip />}
+                formatter={(value) => formatCurrency(value)}
+              />
               <Legend
                 layout="horizontal"
                 align="center"
@@ -3111,13 +3118,13 @@ const Dashboard = () => {
           </ResponsiveContainer>
         </div>
 
-        <div className={styles.categoriesInsights}>
+        <div className={styles.bankInsights}>
           <h4>Banco principal: {primaryBank.name || 'Nenhum'}</h4>
           <p>
-            {primaryBank.name} é seu banco mais utilizado. {(primaryBank.percent * 100).toFixed(1)}% das despesas estão neste banco.
+            Representa {primaryBank.percent ? (primaryBank.percent * 100).toFixed(1) : 0}% dos seus gastos.
           </p>
           <div className={styles.infoItem}>
-            <span>Total gasto via bancos:</span>
+            <span>Total de Despesas:</span>
             <strong>{formatCurrency(totalExpensesByBank)}</strong>
           </div>
         </div>
