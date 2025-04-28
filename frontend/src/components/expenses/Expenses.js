@@ -23,7 +23,8 @@ import {
   BsFolderSymlink,
   BsChevronDown,
   BsChevronUp,
-  BsArrowClockwise
+  BsArrowClockwise,
+  BsQrCode
 } from 'react-icons/bs';
 import { FiEdit2, FiTrash2 } from 'react-icons/fi';
 
@@ -638,10 +639,10 @@ const Expenses = ({
                         <td>{formatDate(expense.expense_date)}</td>
                         <td>{expense.Category?.category_name}</td>
                         <td>
-                          {expense.payment_method === 'credit_card' && <><BsCreditCard2Front size={14} /> Cartão de Crédito</>}
-                          {expense.payment_method === 'debit_card' && <><BsCreditCard2Front size={14} /> Cartão de Débito</>}
-                          {expense.payment_method === 'pix' && <><BsWallet2 size={14} /> PIX</>}
-                          {expense.payment_method === 'money' && <><BsCashCoin size={14} /> Dinheiro</>}
+                          {expense.payment_method === 'credit_card' && <BsCreditCard2Front size={16} title="Cartão de Crédito" />}
+                          {expense.payment_method === 'debit_card' && <BsCreditCard2Front size={16} title="Cartão de Débito" />}
+                          {expense.payment_method === 'pix' && <BsQrCode size={16} title="PIX" />}
+                          {expense.payment_method === 'money' && <BsCashCoin size={16} title="Dinheiro" />}
                           {!expense.payment_method && '-'}
                         </td>
                         <td>
