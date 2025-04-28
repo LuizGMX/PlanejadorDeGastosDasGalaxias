@@ -1354,6 +1354,35 @@ const Dashboard = () => {
         ? "Incalculável com economia insuficiente"
         : new Date(completionDate).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 
+    // Função para atualizar o valor atual da meta
+    const handleUpdateCurrentAmount = async () => {
+      try {
+        const newAmount = prompt('Digite o valor atual economizado:', goal.current_amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 }));
+        if (newAmount === null) return; // Usuário cancelou
+
+        const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/users/financial-goal/current-amount`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${auth.token}`
+          },
+          body: JSON.stringify({
+            current_amount: newAmount
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Erro ao atualizar valor');
+        }
+
+        // Recarrega os dados do dashboard
+        fetchData();
+      } catch (error) {
+        console.error('Erro ao atualizar valor:', error);
+        alert('Erro ao atualizar valor. Tente novamente.');
+      }
+    };
+
     return (
       <div className={`${styles.chartContainer} ${styles.goalCard}`}>
         <div className={styles.goalCardHeader}>
@@ -1396,7 +1425,16 @@ const Dashboard = () => {
               <div className={styles.statLabel}>
                 <span className={styles.statIcon}>💰</span> Economizado
               </div>
-              <div className={`${styles.statValue} ${styles.savedValue}`}>{formatCurrency(goal.total_saved)}</div>
+              <div className={`${styles.statValue} ${styles.savedValue}`}>
+                {formatCurrency(goal.total_saved)}
+                <button
+                  onClick={handleUpdateCurrentAmount}
+                  className={styles.updateAmountButton}
+                  title="Atualizar valor economizado"
+                >
+                  ✏️
+                </button>
+              </div>
             </div>
             <div className={styles.statCard}>
               <div className={styles.statLabel}>

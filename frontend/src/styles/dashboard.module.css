@@ -3579,3 +3579,23 @@ input:checked + .toggleSlider:before {
 .normalValue {
   display: none;
 }
+
+.savedValue {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.updateAmountButton {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  font-size: 1em;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.updateAmountButton:hover {
+  opacity: 1;
+}

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { User, Bank, VerificationCode, UserBank } from '../models/index.js';
+import { User, Bank, VerificationCode, UserBank, FinancialGoal } from '../models/index.js';
 import { authenticate } from '../middleware/auth.js';
 import sgMail from '@sendgrid/mail';
 import dotenv from 'dotenv';
@@ -205,6 +205,41 @@ router.put('/financial-goal', authenticate, async (req, res) => {
   } catch (error) {
     console.error('Erro ao atualizar objetivo financeiro:', error);
     res.status(500).json({ message: 'Erro ao atualizar objetivo financeiro' });
+  }
+});
+
+// Rota para atualizar o valor atual da meta financeira
+router.put('/financial-goal/current-amount', authenticate, async (req, res) => {
+  try {
+    const { current_amount } = req.body;
+    
+    // Busca a meta financeira do usuário
+    const financialGoal = await FinancialGoal.findOne({
+      where: { user_id: req.user.id }
+    });
+
+    if (!financialGoal) {
+      return res.status(404).json({ message: 'Meta financeira não encontrada' });
+    }
+
+    // Converte o valor para o formato correto
+    const parsedAmount = parseFloat(current_amount.toString().replace(/\./g, '').replace(',', '.'));
+    if (isNaN(parsedAmount)) {
+      return res.status(400).json({ message: 'Valor inválido' });
+    }
+
+    // Atualiza o valor atual
+    await financialGoal.update({
+      current_amount: parsedAmount
+    });
+
+    res.json({
+      message: 'Valor atual da meta atualizado com sucesso',
+      current_amount: parsedAmount
+    });
+  } catch (error) {
+    console.error('Erro ao atualizar valor atual da meta:', error);
+    res.status(500).json({ message: 'Erro ao atualizar valor atual da meta' });
   }
 });
 
