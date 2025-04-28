@@ -213,8 +213,8 @@ router.get('/', async (req, res) => {
 
     // Busca despesas recorrentes
     const recurringExpenses = await Expense.findAll({
-          where: {
-            user_id: req.user.id,
+      where: {
+        user_id: req.user.id,
         is_recurring: true,
         start_date: {
           [Op.lte]: endDate
@@ -236,7 +236,11 @@ router.get('/', async (req, res) => {
       },
       include: [
         { model: Category, as: 'Category' },
-        { model: Bank, as: 'bank' },
+        { 
+          model: Bank, 
+          as: 'bank',
+          attributes: ['id', 'name', 'code']
+        },
         { model: ExpensesRecurrenceException, as: 'exceptions' }
       ]
     });
