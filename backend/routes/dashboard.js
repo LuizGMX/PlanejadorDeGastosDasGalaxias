@@ -367,11 +367,10 @@ router.get('/', async (req, res) => {
     // Prepara as categorias e bancos para o filtro
     const [categories, banks] = await Promise.all([
       Category.findAll({
-      where: { user_id: req.user.id },
+        where: { user_id: req.user.id },
         attributes: ['id', 'category_name', 'type']
       }),
       Bank.findAll({
-        where: { user_id: req.user.id },
         attributes: ['id', 'name']
       })
     ]);
