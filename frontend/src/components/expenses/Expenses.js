@@ -27,6 +27,8 @@ import {
   BsQrCode
 } from 'react-icons/bs';
 import { FiEdit2, FiTrash2 } from 'react-icons/fi';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPix } from '@fortawesome/free-brands-svg-icons';
 
 const Expenses = ({ 
   expenses, 
@@ -641,7 +643,7 @@ const Expenses = ({
                         <td>
                           {expense.payment_method === 'credit_card' && <BsCreditCard2Front size={16} title="Cartão de Crédito" />}
                           {expense.payment_method === 'debit_card' && <BsCreditCard2Front size={16} title="Cartão de Débito" />}
-                          {expense.payment_method === 'pix' && <BsQrCode size={16} title="PIX" />}
+                          {expense.payment_method === 'pix' && <FontAwesomeIcon icon={faPix} size="lg" title="PIX" />}
                           {expense.payment_method === 'money' && <BsCashCoin size={16} title="Dinheiro" />}
                           {!expense.payment_method && '-'}
                         </td>

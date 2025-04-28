@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FiEdit2, FiTrash2, FiFilter, FiSearch, FiPlus } from 'react-icons/fi';
 import { BsRepeat, BsCreditCard2Front, BsCurrencyDollar, BsExclamationTriangle, BsX, BsWallet2, BsCashCoin, BsQrCode } from 'react-icons/bs';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPix } from '@fortawesome/free-brands-svg-icons';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import styles from '../../styles/mobile/dataTable.mobile.module.css';
 
@@ -299,7 +301,7 @@ const MobileExpenses = ({
                 <span className={styles.detailValue}>
                   {expense.payment_method === 'credit_card' && <BsCreditCard2Front size={16} title="Cartão de Crédito" />}
                   {expense.payment_method === 'debit_card' && <BsCreditCard2Front size={16} title="Cartão de Débito" />}
-                  {expense.payment_method === 'pix' && <BsQrCode size={16} title="PIX" />}
+                  {expense.payment_method === 'pix' && <FontAwesomeIcon icon={faPix} size="lg" title="PIX" />}
                   {expense.payment_method === 'money' && <BsCashCoin size={16} title="Dinheiro" />}
                   {!expense.payment_method && '-'}
                 </span>
