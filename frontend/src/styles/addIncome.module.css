@@ -1,6 +1,10 @@
 /* addIncome.module.css */
 @import './variables.css';
 
+select option {
+  background-color: var(--background-color) !important;
+}
+
 .title {
   color: var(--primary-color) !important;
   margin-bottom: 4rem !important;

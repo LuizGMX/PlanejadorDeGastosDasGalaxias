@@ -6,6 +6,9 @@
   -webkit-tap-highlight-color: rgba(0,0,0,0);
 }
 
+select option {
+  background-color: var(--background-color) !important;
+}
 
   .title {
   color: var(--primary-color) !important;

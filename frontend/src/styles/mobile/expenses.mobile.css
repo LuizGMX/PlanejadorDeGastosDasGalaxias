@@ -8,6 +8,10 @@
   gap: 16px;
 }
 
+select option {
+  background-color: var(--background-color) !important;
+}
+
 .mobileExpensesHeader {
   display: flex;
   flex-direction: column;

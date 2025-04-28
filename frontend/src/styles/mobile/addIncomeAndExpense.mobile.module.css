@@ -1,6 +1,11 @@
 /* addIncome.module.css */
 @import '../variables.css';
 
+
+select option {
+  background-color: var(--background-color) !important;
+}
+
 .container {
   display: flex;
   flex-direction: column;
