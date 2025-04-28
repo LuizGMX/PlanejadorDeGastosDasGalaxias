@@ -21,6 +21,11 @@ const defineFinancialGoalModel = (sequelize) => {
       type: sequelize.Sequelize.DECIMAL(10, 2),
       allowNull: false
     },
+    current_amount: {
+      type: sequelize.Sequelize.DECIMAL(10, 2),
+      allowNull: false,
+      defaultValue: 0
+    },
     period_type: {
       type: sequelize.Sequelize.ENUM('days', 'months', 'years'),
       allowNull: false

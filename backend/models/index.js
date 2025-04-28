@@ -254,9 +254,9 @@ IncomesRecurrenceException.belongsTo(User, {
 });
 
 // User-FinancialGoal
-User.hasMany(FinancialGoal, {
+User.hasOne(FinancialGoal, {
   foreignKey: 'user_id',
-  as: 'financialGoals'
+  as: 'financial_goal'
 });
 FinancialGoal.belongsTo(User, {
   foreignKey: 'user_id',

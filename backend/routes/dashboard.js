@@ -417,10 +417,13 @@ router.get('/', async (req, res) => {
       const monthsRemaining = (endDate.getFullYear() - currentDate.getFullYear()) * 12 + 
                             (endDate.getMonth() - currentDate.getMonth());
       
-      const monthlyNeeded = (financialGoal.amount - financialGoal.current_amount) / Math.max(1, monthsRemaining);
+      // Se current_amount não existir, usa 0 como valor padrão
+      const currentAmount = financialGoal.current_amount || 0;
+      
+      const monthlyNeeded = (financialGoal.amount - currentAmount) / Math.max(1, monthsRemaining);
       const monthlyBalance = totalIncomes - totalExpenses;
       const monthsNeededWithCurrentSavings = monthlyBalance > 0 
-        ? Math.ceil((financialGoal.amount - financialGoal.current_amount) / monthlyBalance)
+        ? Math.ceil((financialGoal.amount - currentAmount) / monthlyBalance)
         : Infinity;
 
       financialGoalData = {
@@ -429,9 +432,9 @@ router.get('/', async (req, res) => {
         amount: financialGoal.amount,
         period_type: financialGoal.period_type,
         period_value: financialGoal.period_value,
-        current_amount: financialGoal.current_amount,
+        current_amount: currentAmount,
         is_achievable: monthlyBalance >= monthlyNeeded,
-        total_saved: financialGoal.current_amount,
+        total_saved: currentAmount,
         monthly_balance: monthlyBalance,
         monthly_needed: monthlyNeeded,
         months_remaining: monthsRemaining,
