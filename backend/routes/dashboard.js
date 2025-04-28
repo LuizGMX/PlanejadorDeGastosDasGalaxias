@@ -369,6 +369,29 @@ router.get('/', async (req, res) => {
       bank.percentage = totalExpenses > 0 ? (bank.amount / totalExpenses * 100).toFixed(2) : 0;
     });
 
+    // Calcula informações por banco para receitas
+    const incomesByBank = allIncomes.reduce((acc, income) => {
+      const bankId = income.bank_id;
+      const bankName = income.bank ? income.bank.name : 'Sem banco';
+      
+      if (!acc[bankId]) {
+        acc[bankId] = {
+          id: bankId,
+          name: bankName,
+          amount: 0,
+          percentage: 0
+        };
+      }
+      
+      acc[bankId].amount += parseFloat(income.amount);
+      return acc;
+    }, {});
+
+    // Calcula percentuais para receitas por banco
+    Object.values(incomesByBank).forEach(bank => {
+      bank.percentage = totalIncomes > 0 ? (bank.amount / totalIncomes * 100).toFixed(2) : 0;
+    });
+
     // Prepara as categorias e bancos para o filtro
     const [categories, banks] = await Promise.all([
       Category.findAll({
