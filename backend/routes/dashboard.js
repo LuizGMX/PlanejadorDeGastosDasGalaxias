@@ -172,7 +172,11 @@ router.get('/', async (req, res) => {
         },
         include: [
           { model: Category, as: 'Category' },
-          { model: Bank, as: 'bank' }
+          { 
+            model: Bank, 
+            as: 'bank',
+            attributes: ['id', 'name', 'code']
+          }
         ]
       }),
       Income.findAll({
