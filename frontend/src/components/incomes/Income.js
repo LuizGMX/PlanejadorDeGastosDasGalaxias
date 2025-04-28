@@ -432,7 +432,7 @@ function Income({
                     <span className={dataTableStyles.mobileCardLabel}>Banco</span>
                     <span className={dataTableStyles.mobileCardValue}>
                       <BsBank2 style={{color: 'var(--primary-color)'}} />
-                      {income.Bank?.name || '-'}
+                      {income.bank?.name || '-'}
                     </span>
                   </div>
                   
@@ -811,7 +811,7 @@ function Income({
                         </td>
                         <td>{formatDate(income.date)}</td>
                         <td>{income.Category?.category_name || '-'}</td>
-                        <td>{income.Bank?.name || '-'}</td>
+                        <td>{income.bank?.name || '-'}</td>
                         <td>
                           <span className={`${dataTableStyles.typeStatus} ${income.is_recurring ? dataTableStyles.fixedType : dataTableStyles.oneTimeType}`}>
                             {income.is_recurring ? (
