@@ -298,7 +298,16 @@ router.get('/', async (req, res) => {
     const totalIncomes = allIncomes.reduce((sum, income) => sum + parseFloat(income.amount), 0);
     const balance = totalIncomes - totalExpenses;
 
-    // Calcula informações por categoria
+    // Busca orçamentos do mês atual
+    const budget = await Budget.findOne({
+      where: {
+        user_id: req.user.id,
+        year: year,
+        month: month
+      }
+    });
+
+    // Calcula informações por categoria com percentual
     const expensesByCategory = allExpenses.reduce((acc, expense) => {
       const categoryId = expense.category_id;
       const categoryName = expense.Category ? expense.Category.category_name : 'Sem categoria';
@@ -307,13 +316,19 @@ router.get('/', async (req, res) => {
         acc[categoryId] = {
           id: categoryId,
           name: categoryName,
-          amount: 0
+          amount: 0,
+          percentage: 0
         };
       }
       
       acc[categoryId].amount += parseFloat(expense.amount);
       return acc;
     }, {});
+
+    // Calcula percentuais após ter o total
+    Object.values(expensesByCategory).forEach(category => {
+      category.percentage = totalExpenses > 0 ? (category.amount / totalExpenses * 100).toFixed(2) : 0;
+    });
 
     const incomesByCategory = allIncomes.reduce((acc, income) => {
       const categoryId = income.category_id;
@@ -331,7 +346,7 @@ router.get('/', async (req, res) => {
       return acc;
     }, {});
 
-    // Calcula informações por banco
+    // Calcula informações por banco com percentual
     const expensesByBank = allExpenses.reduce((acc, expense) => {
       const bankId = expense.bank_id;
       const bankName = expense.bank ? expense.bank.name : 'Sem banco';
@@ -340,7 +355,8 @@ router.get('/', async (req, res) => {
         acc[bankId] = {
           id: bankId,
           name: bankName,
-          amount: 0
+          amount: 0,
+          percentage: 0
         };
       }
       
@@ -348,21 +364,10 @@ router.get('/', async (req, res) => {
       return acc;
     }, {});
 
-    const incomesByBank = allIncomes.reduce((acc, income) => {
-      const bankId = income.bank_id;
-      const bankName = income.bank ? income.bank.name : 'Sem banco';
-      
-      if (!acc[bankId]) {
-        acc[bankId] = {
-          id: bankId,
-          name: bankName,
-          amount: 0
-        };
-      }
-      
-      acc[bankId].amount += parseFloat(income.amount);
-      return acc;
-    }, {});
+    // Calcula percentuais após ter o total
+    Object.values(expensesByBank).forEach(bank => {
+      bank.percentage = totalExpenses > 0 ? (bank.amount / totalExpenses * 100).toFixed(2) : 0;
+    });
 
     // Prepara as categorias e bancos para o filtro
     const [categories, banks] = await Promise.all([
@@ -385,6 +390,13 @@ router.get('/', async (req, res) => {
       incomesByCategory: Object.values(incomesByCategory),
       expensesByBank: Object.values(expensesByBank),
       incomesByBank: Object.values(incomesByBank),
+      budget: budget ? {
+        id: budget.id,
+        amount: budget.amount,
+        spent: totalExpenses,
+        remaining: budget.amount - totalExpenses,
+        percentage: (totalExpenses / budget.amount * 100).toFixed(2)
+      } : null,
       filters: {
         categories,
         banks
