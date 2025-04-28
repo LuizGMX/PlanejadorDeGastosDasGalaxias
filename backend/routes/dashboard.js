@@ -315,19 +315,19 @@ router.get('/', async (req, res) => {
       if (!acc[categoryId]) {
         acc[categoryId] = {
           id: categoryId,
-          name: categoryName,
-          amount: 0,
+          category_name: categoryName,
+          total: 0,
           percentage: 0
         };
       }
       
-      acc[categoryId].amount += parseFloat(expense.amount);
+      acc[categoryId].total += parseFloat(expense.amount);
       return acc;
     }, {});
 
     // Calcula percentuais após ter o total
     Object.values(expensesByCategory).forEach(category => {
-      category.percentage = totalExpenses > 0 ? (category.amount / totalExpenses * 100).toFixed(2) : 0;
+      category.percentage = totalExpenses > 0 ? (category.total / totalExpenses * 100).toFixed(2) : 0;
     });
 
     const incomesByCategory = allIncomes.reduce((acc, income) => {
@@ -337,12 +337,12 @@ router.get('/', async (req, res) => {
       if (!acc[categoryId]) {
         acc[categoryId] = {
           id: categoryId,
-          name: categoryName,
-          amount: 0
+          category_name: categoryName,
+          total: 0
         };
       }
       
-      acc[categoryId].amount += parseFloat(income.amount);
+      acc[categoryId].total += parseFloat(income.amount);
       return acc;
     }, {});
 
@@ -354,19 +354,19 @@ router.get('/', async (req, res) => {
       if (!acc[bankId]) {
         acc[bankId] = {
           id: bankId,
-          name: bankName,
-          amount: 0,
+          bank_name: bankName,
+          total: 0,
           percentage: 0
         };
       }
       
-      acc[bankId].amount += parseFloat(expense.amount);
+      acc[bankId].total += parseFloat(expense.amount);
       return acc;
     }, {});
 
     // Calcula percentuais após ter o total
     Object.values(expensesByBank).forEach(bank => {
-      bank.percentage = totalExpenses > 0 ? (bank.amount / totalExpenses * 100).toFixed(2) : 0;
+      bank.percentage = totalExpenses > 0 ? (bank.total / totalExpenses * 100).toFixed(2) : 0;
     });
 
     // Calcula informações por banco para receitas
@@ -377,19 +377,19 @@ router.get('/', async (req, res) => {
       if (!acc[bankId]) {
         acc[bankId] = {
           id: bankId,
-          name: bankName,
-          amount: 0,
+          bank_name: bankName,
+          total: 0,
           percentage: 0
         };
       }
       
-      acc[bankId].amount += parseFloat(income.amount);
+      acc[bankId].total += parseFloat(income.amount);
       return acc;
     }, {});
 
     // Calcula percentuais para receitas por banco
     Object.values(incomesByBank).forEach(bank => {
-      bank.percentage = totalIncomes > 0 ? (bank.amount / totalIncomes * 100).toFixed(2) : 0;
+      bank.percentage = totalIncomes > 0 ? (bank.total / totalIncomes * 100).toFixed(2) : 0;
     });
 
     // Prepara as categorias e bancos para o filtro
@@ -409,14 +409,14 @@ router.get('/', async (req, res) => {
       totalExpenses,
       totalIncomes,
       balance,
-      expensesByCategory: Object.values(expensesByCategory),
-      incomesByCategory: Object.values(incomesByCategory),
-      expensesByBank: Object.values(expensesByBank),
-      incomesByBank: Object.values(incomesByBank),
-      budget: budget ? {
+      expenses_by_category: Object.values(expensesByCategory),
+      incomes_by_category: Object.values(incomesByCategory),
+      expenses_by_bank: Object.values(expensesByBank),
+      incomes_by_bank: Object.values(incomesByBank),
+      budget_info: budget ? {
         id: budget.id,
         amount: budget.amount,
-        spent: totalExpenses,
+        total_spent: totalExpenses,
         remaining: budget.amount - totalExpenses,
         percentage: (totalExpenses / budget.amount * 100).toFixed(2)
       } : null,

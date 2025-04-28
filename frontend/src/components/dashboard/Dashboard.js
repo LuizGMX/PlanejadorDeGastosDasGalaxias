@@ -1819,7 +1819,7 @@ const Dashboard = () => {
     const categoriesData = processedCategories.map((category, index) => ({
       id: index,
       name: category.category_name,
-      value: category.total,
+      value: formatCurrency(category.total),
       color: category.category_name === "Outros"
         ? "#999999"
         : COLORS[index % COLORS.length],
@@ -1827,9 +1827,9 @@ const Dashboard = () => {
     }));
 
     // Calcular total de despesas e percentages
-    const totalExpenses = categoriesData.reduce((sum, cat) => sum + cat.value, 0);
+    const totalExpenses = categoriesData.reduce((sum, cat) => sum + parseFloat(cat.value.replace(/[^\d.-]/g, '')), 0);
     categoriesData.forEach(cat => {
-      cat.percent = cat.value / totalExpenses;
+      cat.percent = parseFloat(cat.value.replace(/[^\d.-]/g, '')) / totalExpenses;
     });
 
     return (
@@ -3024,7 +3024,7 @@ const Dashboard = () => {
 
       return {
         name: bank.bank_name,
-        value: bank.total,
+        value: formatCurrency(bank.total),
         color: customColor || COLORS[index % COLORS.length],
         percent: bank.total / totalExpensesByBank,
       };
