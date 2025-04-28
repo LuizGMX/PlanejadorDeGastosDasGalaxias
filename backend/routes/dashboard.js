@@ -409,6 +409,38 @@ router.get('/', async (req, res) => {
       where: { user_id: req.user.id }
     });
 
+    // Calcula os campos adicionais necessários para o gráfico
+    let financialGoalData = null;
+    if (financialGoal) {
+      const currentDate = new Date();
+      const endDate = new Date(financialGoal.end_date);
+      const monthsRemaining = (endDate.getFullYear() - currentDate.getFullYear()) * 12 + 
+                            (endDate.getMonth() - currentDate.getMonth());
+      
+      const monthlyNeeded = (financialGoal.amount - financialGoal.current_amount) / Math.max(1, monthsRemaining);
+      const monthlyBalance = totalIncomes - totalExpenses;
+      const monthsNeededWithCurrentSavings = monthlyBalance > 0 
+        ? Math.ceil((financialGoal.amount - financialGoal.current_amount) / monthlyBalance)
+        : Infinity;
+
+      financialGoalData = {
+        id: financialGoal.id,
+        name: financialGoal.name,
+        amount: financialGoal.amount,
+        period_type: financialGoal.period_type,
+        period_value: financialGoal.period_value,
+        current_amount: financialGoal.current_amount,
+        is_achievable: monthlyBalance >= monthlyNeeded,
+        total_saved: financialGoal.current_amount,
+        monthly_balance: monthlyBalance,
+        monthly_needed: monthlyNeeded,
+        months_remaining: monthsRemaining,
+        months_needed_with_current_savings: monthsNeededWithCurrentSavings,
+        end_date: financialGoal.end_date,
+        current_month_balance: monthlyBalance
+      };
+    }
+
     res.json({
       expenses: allExpenses,
       incomes: allIncomes,
@@ -426,15 +458,7 @@ router.get('/', async (req, res) => {
         remaining: budget.amount - totalExpenses,
         percentage: (totalExpenses / budget.amount * 100).toFixed(2)
       } : null,
-      financial_goal: financialGoal ? {
-        id: financialGoal.id,
-        name: financialGoal.name,
-        amount: financialGoal.amount,
-        period_type: financialGoal.period_type,
-        period_value: financialGoal.period_value,
-        current_amount: financialGoal.current_amount,
-        is_achievable: financialGoal.is_achievable
-      } : null,
+      financial_goal: financialGoalData,
       filters: {
         categories,
         banks
