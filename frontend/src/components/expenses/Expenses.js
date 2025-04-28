@@ -637,7 +637,13 @@ const Expenses = ({
                         </td>
                         <td>{formatDate(expense.expense_date)}</td>
                         <td>{expense.Category?.category_name}</td>
-                        <td>{expense.payment_method}</td>
+                        <td>
+                          {expense.payment_method === 'credit_card' && <><BsCreditCard2Front size={14} /> Cartão de Crédito</>}
+                          {expense.payment_method === 'debit_card' && <><BsCreditCard2Front size={14} /> Cartão de Débito</>}
+                          {expense.payment_method === 'pix' && <><BsWallet2 size={14} /> PIX</>}
+                          {expense.payment_method === 'money' && <><BsCashCoin size={14} /> Dinheiro</>}
+                          {!expense.payment_method && '-'}
+                        </td>
                         <td>
                           {expense.is_recurring ? (
                             <span className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
