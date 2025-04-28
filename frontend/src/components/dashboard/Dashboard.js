@@ -1792,7 +1792,7 @@ const Dashboard = () => {
     }
 
     // Detect if we're on mobile
-    const isMobileView = window.innerWidth <= 768;
+    const isMobile = isMobileView();
 
     // Limit the number of categories shown for mobile view
     const maxCategoriesToShow = isMobile ? 5 : data.expenses_by_category.length;
@@ -1819,7 +1819,7 @@ const Dashboard = () => {
     const categoriesData = processedCategories.map((category, index) => ({
       id: index,
       name: category.category_name,
-      value: formatCurrency(category.total),
+      value: category.total,
       color: category.category_name === "Outros"
         ? "#999999"
         : COLORS[index % COLORS.length],
@@ -1827,9 +1827,9 @@ const Dashboard = () => {
     }));
 
     // Calcular total de despesas e percentages
-    const totalExpenses = categoriesData.reduce((sum, cat) => sum + parseFloat(cat.value.replace(/[^\d.-]/g, '')), 0);
+    const totalExpenses = categoriesData.reduce((sum, cat) => sum + cat.value, 0);
     categoriesData.forEach(cat => {
-      cat.percent = parseFloat(cat.value.replace(/[^\d.-]/g, '')) / totalExpenses;
+      cat.percent = cat.value / totalExpenses;
     });
 
     return (
