@@ -8,7 +8,8 @@ import {
   Budget, 
   User,
   ExpensesRecurrenceException,
-  IncomesRecurrenceException
+  IncomesRecurrenceException,
+  FinancialGoal
 } from '../models/index.js';
 import { Op } from 'sequelize';
 import { authenticate } from '../middleware/auth.js';
@@ -403,6 +404,11 @@ router.get('/', async (req, res) => {
       })
     ]);
 
+    // Busca a meta financeira do usuário
+    const financialGoal = await FinancialGoal.findOne({
+      where: { user_id: req.user.id }
+    });
+
     res.json({
       expenses: allExpenses,
       incomes: allIncomes,
@@ -419,6 +425,15 @@ router.get('/', async (req, res) => {
         total_spent: totalExpenses,
         remaining: budget.amount - totalExpenses,
         percentage: (totalExpenses / budget.amount * 100).toFixed(2)
+      } : null,
+      financial_goal: financialGoal ? {
+        id: financialGoal.id,
+        name: financialGoal.name,
+        amount: financialGoal.amount,
+        period_type: financialGoal.period_type,
+        period_value: financialGoal.period_value,
+        current_amount: financialGoal.current_amount,
+        is_achievable: financialGoal.is_achievable
       } : null,
       filters: {
         categories,
