@@ -371,31 +371,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Rota para buscar uma única despesa
-router.get('/:id', async (req, res) => {
-  try {
-    const expense = await Expense.findOne({
-      where: {
-        id: req.params.id,
-        user_id: req.user.id
-      },
-      include: [
-        { model: Category, as: 'Category' },
-        { model: Bank, as: 'bank' }
-      ]
-    });
-
-    if (!expense) {
-      return res.status(404).json({ message: 'Despesa não encontrada' });
-    }
-
-    res.json(expense);
-  } catch (error) {
-    console.error('Erro ao buscar despesa:', error);
-    res.status(500).json({ message: 'Erro ao buscar despesa' });
-  }
-});
-
+// Rota para buscar categorias (movida para ficar antes da rota /:id)
 router.get('/categories', async (req, res) => {
   try {
     console.log('Buscando categorias...');
@@ -414,7 +390,7 @@ router.get('/categories', async (req, res) => {
   }
 });
 
-// Rota para estatísticas dos gráficos
+// Rota para estatísticas dos gráficos (movida para ficar antes da rota /:id)
 router.get('/stats', async (req, res) => {
   try {
     const { month, year, category, bank, paymentMethod } = req.query;
@@ -554,6 +530,31 @@ router.get('/stats', async (req, res) => {
   } catch (error) {
     console.error('Erro ao buscar estatísticas:', error);
     res.status(500).json({ message: 'Erro ao buscar estatísticas' });
+  }
+});
+
+// Rota para buscar uma única despesa
+router.get('/:id', async (req, res) => {
+  try {
+    const expense = await Expense.findOne({
+      where: {
+        id: req.params.id,
+        user_id: req.user.id
+      },
+      include: [
+        { model: Category, as: 'Category' },
+        { model: Bank, as: 'bank' }
+      ]
+    });
+
+    if (!expense) {
+      return res.status(404).json({ message: 'Despesa não encontrada' });
+    }
+
+    res.json(expense);
+  } catch (error) {
+    console.error('Erro ao buscar despesa:', error);
+    res.status(500).json({ message: 'Erro ao buscar despesa' });
   }
 });
 
