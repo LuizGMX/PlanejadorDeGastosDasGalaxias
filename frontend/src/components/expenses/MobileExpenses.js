@@ -1,11 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FiEdit2, FiTrash2, FiFilter, FiSearch, FiPlus } from 'react-icons/fi';
-import { BsRepeat, BsCreditCard2Front, BsCurrencyDollar, BsExclamationTriangle, BsX, BsWallet2, BsCashCoin, BsQrCode } from 'react-icons/bs';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPix } from '@fortawesome/free-brands-svg-icons';
+import { BsRepeat, BsCreditCard2Front, BsCurrencyDollar, BsExclamationTriangle, BsX, BsWallet2, BsCashCoin } from 'react-icons/bs';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import styles from '../../styles/mobile/dataTable.mobile.module.css';
-
 
 const MobileExpenses = ({ 
   expenses, 
@@ -14,9 +11,6 @@ const MobileExpenses = ({
   onAdd,
   onFilter,
   onSearch,
-  selectedExpenses,
-  onSelectExpense,
-  onSelectAll,
   loading,
   error,
   categories = [],
@@ -28,42 +22,6 @@ const MobileExpenses = ({
   const [searchTerm, setSearchTerm] = useState('');
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
-  const initialFilterApplied = useRef(false);
-
-  // Inicializa os filtros com o mês atual se ainda não estiver definido
-  useEffect(() => {
-    console.log('MobileExpenses - Verificando inicialização de filtros', {
-      initialFilterApplied: initialFilterApplied.current,
-      filters
-    });
-    
-    if (initialFilterApplied.current) {
-      console.log('Filtros já inicializados, pulando');
-      return;
-    }
-    
-    console.log('Inicializando filtros no mobile para despesas');
-    
-    // Forçar a aplicação do filtro com valores iniciais
-    const today = new Date();
-    const thisMonth = today.getMonth() + 1;
-    const thisYear = today.getFullYear();
-    
-    console.log(`Aplicando filtro inicial no mobile para despesas: mês=${thisMonth}, ano=${thisYear}`);
-    
-    // Primeiro definimos a flag como true para evitar chamadas repetidas
-    initialFilterApplied.current = true;
-    
-    // Aplicar o filtro inicial para carregar dados do backend com o mês e ano atual
-    console.log('Chamando onFilter para months:', [thisMonth]);
-    onFilter('months', [thisMonth]);
-    
-    // Importante: o timeout é necessário para garantir que a segunda chamada aconteça após a primeira ser processada
-    setTimeout(() => {
-      console.log('Chamando onFilter para years:', [thisYear]);
-      onFilter('years', [thisYear]);
-    }, 300);
-  }, []);
 
   const handleSearch = (e) => {
     const value = e.target.value;
@@ -158,8 +116,8 @@ const MobileExpenses = ({
               <label className={styles.filterLabel}>Categorias</label>
               <select 
                 className={styles.filterSelect}
-                onChange={(e) => onFilter('category', e.target.value)}
-                value={filters.category || 'all'}
+                onChange={(e) => onFilter('category_id', e.target.value)}
+                value={filters.category_id || 'all'}
               >
                 <option value="all">Todas as categorias</option>
                 {categories.map((category) => (
@@ -169,13 +127,13 @@ const MobileExpenses = ({
             </div>
             
             <div className={styles.filterGroup}>
-              <label className={styles.filterLabel}>Método de Pagamento</label>
+              <label className={styles.filterLabel}>Banco</label>
               <select 
                 className={styles.filterSelect}
-                onChange={(e) => onFilter('paymentMethod', e.target.value)}
-                value={filters.paymentMethod || 'all'}
+                onChange={(e) => onFilter('bank_id', e.target.value)}
+                value={filters.bank_id || 'all'}
               >
-                <option value="all">Todos os métodos</option>
+                <option value="all">Todos os bancos</option>
                 {banks.map((bank) => (
                   <option key={bank.id} value={bank.id}>{bank.name}</option>
                 ))}
@@ -216,7 +174,7 @@ const MobileExpenses = ({
     );
   }
 
-  if (!expenses || expenses.length === 0) {
+  if (expenses.length === 0) {
     return (
       <div className={styles.container}>
         <div className={styles.header}>
@@ -225,9 +183,26 @@ const MobileExpenses = ({
             <FiPlus /> Adicionar
           </button>
         </div>
-        {renderFilters()}
-        <div className={styles.noDataContainer}>
-          <p className={styles.noDataText}>{noExpensesMessage || 'Nenhuma despesa encontrada.'}</p>
+
+        <div className={styles.dataContainer}>
+          {renderFilters()}
+
+          <div className={styles.noDataContainer}>
+            <div className={styles.noDataIcon}>💸</div>
+            <h3 className={styles.noDataMessage}>
+              {noExpensesMessage?.message || 
+                (searchTerm ? "Nenhuma despesa encontrada para os filtros selecionados." : "Nenhuma despesa encontrada")}
+            </h3>
+            <p className={styles.noDataSuggestion}>
+              {noExpensesMessage?.suggestion || 
+                (searchTerm ? "Tente ajustar os filtros ou " : "Comece ") + "adicionando sua primeira despesa"}
+            </p>
+            <div className={styles.noDataActions}>
+              <button className={styles.primaryButton} onClick={onAdd}>
+                <FiPlus /> Adicionar Despesa
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -242,88 +217,76 @@ const MobileExpenses = ({
         </button>
       </div>
 
-      {renderFilters()}
+      <div className={styles.dataContainer}>
+        {renderFilters()}
 
-      {selectedExpenses.length > 0 && (
-        <div className={styles.bulkActions}>
-          <button 
-            onClick={() => {
-              if (window.confirm(`Tem certeza que deseja excluir ${selectedExpenses.length} ${selectedExpenses.length === 1 ? 'item' : 'itens'}?`)) {
-                onDelete({ ids: selectedExpenses });
-              }
-            }} 
-            className={styles.deleteButton}
-          >
-            <FiTrash2 /> Excluir {selectedExpenses.length} {selectedExpenses.length === 1 ? 'item' : 'itens'}
-          </button>
-        </div>
-      )}
-
-      <div className={styles.expenseList}>
-        {expenses.map((expense) => (
-          <div 
-            key={expense.id} 
-            className={styles.expenseCard}
-          >
-            <div className={styles.expenseCardHeader}>
-              <div className={styles.expenseDescription}>
-                <h3>{expense.description}</h3>
-                {expense.is_recurring ? (
-                  <span className={styles.recurringBadge}>
-                    <BsRepeat /> Fixa
-                  </span>
-                ) : expense.has_installments ? (
-                  <span className={styles.installmentBadge}>
-                    <BsCreditCard2Front /> {expense.current_installment}/{expense.total_installments}
-                  </span>
-                ) : (
-                  <span className={styles.oneTimeBadge}>
-                    <BsCurrencyDollar /> Única
-                  </span>
-                )}
-              </div>
-              <div className={styles.expenseAmount}>
-                {formatCurrency(expense.amount)}
-              </div>
-            </div>
-
-            <div className={styles.expenseDetails}>
-              <div className={styles.expenseDate}>
-                <span className={styles.detailLabel}>Data:</span>
-                <span className={styles.detailValue}>{formatDate(expense.expense_date)}</span>
-              </div>
-              <div className={styles.expenseCategory}>
-                <span className={styles.detailLabel}>Categoria:</span>
-                <span className={styles.detailValue}>{expense.Category?.category_name || '-'}</span>
-              </div>
-              <div className={styles.expensePayment}>
-                <span className={styles.detailLabel}>Método:</span>
-                <span className={styles.detailValue}>
-                  {expense.payment_method === 'credit_card' && <BsCreditCard2Front size={16} title="Cartão de Crédito" />}
-                  {expense.payment_method === 'debit_card' && <BsCreditCard2Front size={16} title="Cartão de Débito" />}
-                  {expense.payment_method === 'pix' && <FontAwesomeIcon icon={faPix} size="lg" title="PIX" />}
-                  {expense.payment_method === 'money' && <BsCashCoin size={16} title="Dinheiro" />}
-                  {!expense.payment_method && '-'}
+        <div className={styles.cardsContainer}>
+          {expenses.map((expense) => (
+            <div key={expense.id} className={styles.card} style={{ borderLeftColor: '#ff4444' }}>
+              <div className={styles.cardHeader}>
+                <h3 className={styles.cardTitle}>{expense.description}</h3>
+                <span className={`${styles.amountBadge} ${styles.expenseAmount}`}>
+                  {formatCurrency(expense.amount)}
                 </span>
               </div>
-            </div>
 
-            <div className={styles.expenseActions}>
-              <button
-                className={styles.editButton}
-                onClick={() => onEdit(expense)}
-              >
-                <FiEdit2 />
-              </button>
-              <button
-                className={styles.deleteButton}
-                onClick={() => handleDelete(expense)}
-              >
-                <FiTrash2 />
-              </button>
+              <div className={styles.cardDetails}>
+                <div className={styles.cardDetail}>
+                  <span className={styles.cardLabel}>Data</span>
+                  <span className={styles.cardValue}>{formatDate(expense.expense_date)}</span>
+                </div>
+
+                <div className={styles.cardDetail}>
+                  <span className={styles.cardLabel}>Categoria</span>
+                  <span className={styles.cardValue}>
+                    {expense.Category ? expense.Category.category_name : '-'}
+                  </span>
+                </div>
+
+                <div className={styles.cardDetail}>
+                  <span className={styles.cardLabel}>Banco</span>
+                  <span className={styles.cardValue}>
+                    {expense.Bank 
+                      ? expense.Bank.name 
+                      : (expense.bank 
+                        ? expense.bank.name 
+                        : '-')}
+                  </span>
+                </div>
+
+                <div className={styles.cardDetail}>
+                  <span className={styles.cardLabel}>Tipo</span>
+                  <span className={`${styles.typeStatus} ${expense.is_recurring ? styles.fixedType : styles.oneTimeType}`}>
+                    {expense.is_recurring ? (
+                      <><BsRepeat size={14} /> Fixa</>
+                    ) : expense.has_installments ? (
+                      <><BsCreditCard2Front size={14} /> Parcelada</>
+                    ) : (
+                      <><BsCurrencyDollar size={14} /> Única</>
+                    )}
+                  </span>
+                </div>
+              </div>
+
+              <div className={styles.cardActions}>
+                <button
+                  className={styles.editButton}
+                  onClick={() => onEdit(expense)}
+                  aria-label="Editar despesa"
+                >
+                  <FiEdit2 />
+                </button>
+                <button
+                  className={styles.deleteButton}
+                  onClick={() => handleDelete(expense)}
+                  aria-label="Excluir despesa"
+                >
+                  <FiTrash2 />
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );
