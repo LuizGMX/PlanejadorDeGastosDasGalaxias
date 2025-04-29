@@ -540,8 +540,9 @@ const Expenses = ({
         <select
           value={filters.bank_id || 'all'}
           onChange={(e) => {
-            console.log('Mudança no filtro de banco:', e.target.value);
-            handleFilterChange('bank_id', e.target.value);
+            const selectedValue = e.target.value;
+            console.log('Mudança no filtro de banco:', selectedValue);
+            handleFilterChange('bank_id', selectedValue === 'all' ? 'all' : parseInt(selectedValue));
           }}
           className="bg-white border border-gray-300 rounded-md px-3 py-2 text-sm"
         >

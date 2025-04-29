@@ -542,8 +542,8 @@ const ExpensesWrapper = () => {
       }
       
       if (filterParams.bank_id && filterParams.bank_id !== 'all') {
-        queryParams.append('bank_id', filterParams.bank_id);
         console.log('Adicionando filtro de banco:', filterParams.bank_id);
+        queryParams.append('bank_id', filterParams.bank_id.toString());
       }
       
       if (filterParams.payment_method && filterParams.payment_method !== 'all') {
@@ -567,7 +567,7 @@ const ExpensesWrapper = () => {
       const queryString = queryParams.toString();
       const url = `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses${queryString ? `?${queryString}` : ''}`;
       
-      console.log('URL da requisição:', url);
+      console.log('URL completa da requisição:', url);
       
       // Buscar despesas com os filtros
       const expensesResponse = await fetch(url, {
