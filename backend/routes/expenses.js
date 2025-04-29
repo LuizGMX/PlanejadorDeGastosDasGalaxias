@@ -581,7 +581,7 @@ router.post('/', async (req, res) => {
     }
 
     // Validação de parcelas
-    if (has_installments && (!installments || installments <= 1)) {
+    if (has_installments && (!installments && !req.body.total_installments || (installments && installments <= 1) || (req.body.total_installments && req.body.total_installments <= 1))) {
       await t.rollback();
       return res.status(400).json({ message: 'Número de parcelas deve ser maior que 1' });
     }
@@ -630,17 +630,20 @@ router.post('/', async (req, res) => {
       
       // Determinar a parcela inicial
       const currentInstallment = parseInt(req.body.current_installment) || 1;
-      if (currentInstallment < 1 || currentInstallment > installments) {
+      // Usar total_installments se installments não estiver definido
+      const totalInstallments = installments || parseInt(req.body.total_installments) || 2;
+      
+      if (currentInstallment < 1 || currentInstallment > totalInstallments) {
         await t.rollback();
         return res.status(400).json({ message: 'Número da parcela atual inválido' });
       }
       
       // Calcular o valor de cada parcela
-      const installmentAmount = Number((parsedAmount / installments).toFixed(2));
-      const remainder = parsedAmount - (installmentAmount * installments);
+      const installmentAmount = Number((parsedAmount / totalInstallments).toFixed(2));
+      const remainder = parsedAmount - (installmentAmount * totalInstallments);
       
       // Criar apenas as parcelas a partir da parcela atual
-      for (let i = currentInstallment; i <= installments; i++) {
+      for (let i = currentInstallment; i <= totalInstallments; i++) {
         // Ajustar a data para a parcela atual
         const installmentDate = new Date(baseDate);
         installmentDate.setMonth(baseDate.getMonth() + (i - currentInstallment));
@@ -650,7 +653,7 @@ router.post('/', async (req, res) => {
         
         expenses.push({
           user_id: req.user.id,
-          description: `${description} (${i}/${installments})`,
+          description: `${description} (${i}/${totalInstallments})`,
           amount: finalAmount,
           category_id,
           bank_id,
@@ -658,7 +661,7 @@ router.post('/', async (req, res) => {
           payment_method,
           has_installments: true,
           current_installment: i,
-          total_installments: installments,
+          total_installments: totalInstallments,
           installment_group_id: installmentGroupId,
           is_recurring: false
         });

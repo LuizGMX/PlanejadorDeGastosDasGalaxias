@@ -294,6 +294,7 @@ const AddExpense = ({ installment = false }) => {
       if (expenseData.has_installments) {
         expenseData.total_installments = Number(formData.total_installments) || 1;
         expenseData.current_installment = Number(formData.current_installment) || 1;
+        expenseData.installments = Number(formData.total_installments) || 1;
         
         if (expenseData.current_installment > expenseData.total_installments) {
           toast.error('A parcela atual não pode ser maior que o total de parcelas');
