@@ -660,7 +660,7 @@ const Expenses = ({
                         </div>
                         <div className={dataTableStyles.mobileCardRow}>
                           <span className={dataTableStyles.mobileCardLabel}>Banco:</span>
-                          <span>{expense.Bank?.name}</span>
+                          <span>{expense.bank?.name}</span>
                         </div>
                         <div className={dataTableStyles.mobileCardRow}>
                           <span className={dataTableStyles.mobileCardLabel}>Pagamento:</span>
@@ -739,7 +739,7 @@ const Expenses = ({
                         </td>
                         <td>{formatDate(expense.expense_date)}</td>
                         <td>{expense.Category?.category_name}</td>
-                        <td>{expense.Bank?.name}</td>
+                        <td>{expense.bank?.name}</td>
                         <td>
                           {expense.payment_method === 'credit_card' && <BsCreditCard2Front size={16} title="Cartão de Crédito" />}
                           {expense.payment_method === 'debit_card' && <BsCreditCard2Front size={16} title="Cartão de Débito" />}
