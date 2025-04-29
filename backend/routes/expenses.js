@@ -34,7 +34,8 @@ router.get('/', async (req, res) => {
       is_recurring,
       startDate,
       endDate,
-      include_all_recurring
+      include_all_recurring,
+      bank_id
     } = req.query;
     
     const where = { user_id: req.user.id };
@@ -118,6 +119,12 @@ router.get('/', async (req, res) => {
     if (is_recurring !== undefined && include_all_recurring !== 'true') {
       where[Op.and].push({
         is_recurring: is_recurring === 'true'
+      });
+    }
+
+    if (bank_id) {
+      where[Op.and].push({
+        bank_id: bank_id
       });
     }
 
@@ -340,6 +347,192 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Rota para buscar uma única despesa
+router.get('/:id', async (req, res) => {
+  try {
+    const expense = await Expense.findOne({
+      where: {
+        id: req.params.id,
+        user_id: req.user.id
+      },
+      include: [
+        { model: Category, as: 'Category' },
+        { model: Bank, as: 'bank' }
+      ]
+    });
+
+    if (!expense) {
+      return res.status(404).json({ message: 'Despesa não encontrada' });
+    }
+
+    res.json(expense);
+  } catch (error) {
+    console.error('Erro ao buscar despesa:', error);
+    res.status(500).json({ message: 'Erro ao buscar despesa' });
+  }
+});
+
+router.get('/categories', async (req, res) => {
+  try {
+    console.log('Buscando categorias...');
+    const categories = await Category.findAll({
+      where: { type: 'expense' },
+      order: [
+        [literal("category_name = 'Outros' ASC")],
+        ['category_name', 'ASC']
+      ]
+    });
+    console.log('Categorias encontradas:', categories);
+    res.json(categories);
+  } catch (error) {
+    console.error('Erro ao listar categorias:', error);
+    res.status(500).json({ message: 'Erro ao buscar categorias' });
+  }
+});
+
+// Rota para estatísticas dos gráficos
+router.get('/stats', async (req, res) => {
+  try {
+    const { month, year, category, bank, paymentMethod } = req.query;
+    const where = { user_id: req.user.id };
+
+    // Filtros
+    if (month) {
+      where[Op.and] = [
+        Sequelize.where(Sequelize.fn('MONTH', Sequelize.col('expense_date')), month)
+      ];
+    }
+    if (year) {
+      where[Op.and] = [
+        ...(where[Op.and] || []),
+        Sequelize.where(Sequelize.fn('YEAR', Sequelize.col('expense_date')), year)
+      ];
+    }
+    if (category) {
+      where.category_id = category;
+    }
+    if (bank) {
+      where.bank_id = bank;
+    }
+    if (paymentMethod) {
+      where.payment_method = paymentMethod;
+    }
+
+    // Buscar todas as despesas com os filtros aplicados
+    const expenses = await Expense.findAll({
+      where,
+      include: [
+        { model: Category, as: 'Category' },
+        { model: Bank, as: 'bank' }
+      ],
+      order: [['expense_date', 'ASC']]
+    });
+
+    // Dados para o gráfico de linha (evolução de despesas)
+    const expensesByDate = expenses.reduce((acc, expense) => {
+      const date = expense.expense_date.toISOString().split('T')[0];
+      if (!acc[date]) {
+        acc[date] = 0;
+      }
+      acc[date] += Number(expense.amount);
+      return acc;
+    }, {});
+
+    // Dados para o gráfico de pizza (despesas por categoria)
+    const expensesByCategory = expenses.reduce((acc, expense) => {
+      const categoryName = expense.Category.category_name;
+      if (!acc[categoryName]) {
+        acc[categoryName] = 0;
+      }
+      acc[categoryName] += Number(expense.amount);
+      return acc;
+    }, {});
+
+    // Dados para o gráfico de barras (despesas por banco)
+    const expensesByBank = expenses.reduce((acc, expense) => {
+      const bankName = expense.bank.name;
+      if (!acc[bankName]) {
+        acc[bankName] = 0;
+      }
+      acc[bankName] += Number(expense.amount);
+      return acc;
+    }, {});
+
+    // Dados para o gráfico de barras empilhadas (despesas por tipo de pagamento)
+    const expensesByPaymentMethod = expenses.reduce((acc, expense) => {
+      const method = expense.payment_method;
+      const categoryName = expense.Category.category_name;
+      
+      if (!acc[method]) {
+        acc[method] = {};
+      }
+      if (!acc[method][categoryName]) {
+        acc[method][categoryName] = 0;
+      }
+      acc[method][categoryName] += Number(expense.amount);
+      return acc;
+    }, {});
+
+    // Dados para o gráfico de dispersão
+    const scatterData = {
+      pix: expenses
+        .filter(e => e.payment_method === 'pix')
+        .map(e => ({
+          bank: e.bank.name,
+          amount: Number(e.amount)
+        })),
+      card: expenses
+        .filter(e => e.payment_method === 'card')
+        .map(e => ({
+          bank: e.bank.name,
+          amount: Number(e.amount)
+        }))
+    };
+
+    // Formatar dados para o frontend
+    const formattedData = {
+      expenses: Object.entries(expensesByDate).map(([date, amount]) => ({
+        date,
+        amount
+      })),
+      categories: Object.entries(expensesByCategory).map(([name, amount]) => ({
+        name,
+        amount
+      })),
+      banks: Object.entries(expensesByBank).map(([name, amount]) => ({
+        name,
+        amount
+      })),
+      paymentMethods: Object.entries(expensesByPaymentMethod).map(([method, categories]) => ({
+        method,
+        ...categories
+      })),
+      scatterData
+    };
+
+    // Buscar todas as categorias e bancos para os filtros
+    const [categories, banks] = await Promise.all([
+      Category.findAll({ order: [['category_name', 'ASC']] }),
+      Bank.findAll({ order: [['name', 'ASC']] })
+    ]);
+
+    res.json({
+      ...formattedData,
+      categories: categories.map(c => ({
+        id: c.id,
+        name: c.category_name
+      })),
+      banks: banks.map(b => ({
+        id: b.id,
+        name: b.name
+      }))
+    });
+  } catch (error) {
+    console.error('Erro ao buscar estatísticas:', error);
+    res.status(500).json({ message: 'Erro ao buscar estatísticas' });
+  }
+});
+
 router.post('/', async (req, res) => {
   const t = await Expense.sequelize.transaction();
   try {
@@ -481,21 +674,99 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.get('/categories', async (req, res) => {
+// Rota para criar despesa
+router.post('/', async (req, res) => {
   try {
-    console.log('Buscando categorias...');
-    const categories = await Category.findAll({
-      where: { type: 'expense' },
-      order: [
-        [literal("category_name = 'Outros' ASC")],
-        ['category_name', 'ASC']
-      ]
-    });
-    console.log('Categorias encontradas:', categories);
-    res.json(categories);
+    const expenseData = {
+      ...req.body,
+      user_id: req.user.id
+    };
+
+    if (expenseData.is_recurring) {
+      expenseData.recurring_group_id = uuidv4();
+      expenseData.start_date = expenseData.expense_date;
+      expenseData.end_date = '2099-12-31';
+    }
+
+    const expense = await Expense.create(expenseData);
+    res.status(201).json(expense);
   } catch (error) {
-    console.error('Erro ao listar categorias:', error);
-    res.status(500).json({ message: 'Erro ao buscar categorias' });
+    console.error('Erro ao criar despesa:', error);
+    res.status(500).json({ message: 'Erro ao criar despesa' });
+  }
+});
+
+// Rota para excluir despesa fixa (uma ocorrência específica)
+router.post('/:id/exclude-occurrence', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { occurrence_date, reason } = req.body;
+    
+    console.log(`Recebido pedido para excluir ocorrência da despesa ID ${id} na data ${occurrence_date}`);
+    
+    // Busca a despesa recorrente
+    const expense = await Expense.findOne({
+      where: { 
+        id, 
+        user_id: req.user.id,
+        is_recurring: true
+      }
+    });
+
+    if (!expense) {
+      return res.status(404).json({ message: 'Despesa recorrente não encontrada' });
+    }
+
+    // Cria uma exceção para esta ocorrência específica
+    const exception = await ExpensesRecurrenceException.create({
+      user_id: req.user.id,
+      expense_id: expense.id,    
+      exception_date: new Date(occurrence_date),
+      exception_type: 'SKIP',
+      reason: reason || 'Ocorrência excluída pelo usuário'
+    });
+
+    console.log(`Exceção criada com sucesso para despesa ID ${id} na data ${occurrence_date}`, exception);
+
+    res.status(201).json({ 
+      message: 'Ocorrência excluída com sucesso',
+      exception
+    });
+  } catch (error) {
+    console.error('Erro ao excluir ocorrência:', error);
+    res.status(500).json({ message: 'Erro ao excluir ocorrência', error: error.message });
+  }
+});
+
+// Rota para atualizar despesa
+router.put('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const expense = await Expense.findByPk(id);
+
+    if (!expense) {
+      return res.status(404).json({ message: 'Despesa não encontrada' });
+    }
+
+    if (expense.user_id !== req.user.id) {
+      return res.status(403).json({ message: 'Não autorizado' });
+    }
+
+    const expenseData = {
+      ...req.body
+    };
+
+    if (expenseData.is_recurring && !expense.is_recurring) {
+      expenseData.recurring_group_id = uuidv4();
+      expenseData.start_date = expenseData.expense_date;
+      expenseData.end_date = '2099-12-31';
+    }
+
+    await expense.update(expenseData);
+    res.json(expense);
+  } catch (error) {
+    console.error('Erro ao atualizar despesa:', error);
+    res.status(500).json({ message: 'Erro ao atualizar despesa' });
   }
 });
 
@@ -617,6 +888,235 @@ router.put('/:id', async (req, res) => {
     await transaction.rollback();
     console.error('Erro ao atualizar despesa:', error);
     res.status(500).json({ message: 'Erro ao atualizar despesa.' });
+  }
+});
+
+// Rota para atualizar despesa
+router.put('/:id', async (req, res) => {
+  const transaction = await Expense.sequelize.transaction();
+
+  try {
+    const { 
+      description, 
+      amount: rawAmount, 
+      expense_date, 
+      category_id, 
+      bank_id, 
+      payment_method,
+      is_recurring,
+      start_date,
+      end_date,
+      recurrence_type
+    } = req.body;
+    
+    const expense = await Expense.findByPk(req.params.id);
+    
+    if (!expense) {
+      await transaction.rollback();
+      return res.status(404).json({ message: 'Despesa não encontrada' });
+    }
+    
+    if (expense.user_id !== req.user.id) {
+      await transaction.rollback();
+      return res.status(403).json({ message: 'Não autorizado' });
+    }
+
+    const parsedAmount = Number(rawAmount);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      await transaction.rollback();
+      return res.status(400).json({ message: 'O valor deve ser um número positivo' });
+    }
+
+    // Se a despesa for recorrente
+    if (expense.is_recurring) {
+      // Atualiza a despesa principal
+      await expense.update(
+        {
+          description,
+          amount: parsedAmount,
+          category_id,
+          bank_id,
+          payment_method,
+          is_recurring,
+          start_date: start_date ? new Date(start_date) : expense.start_date,
+          end_date: end_date ? new Date(end_date) : expense.end_date,
+          recurrence_type: recurrence_type || expense.recurrence_type
+        },
+        { transaction }
+      );
+    }
+    // Se a despesa for parcelada
+    else if (expense.has_installments && expense.installment_group_id) {
+      // Atualiza todas as parcelas futuras
+      const currentDate = new Date(expense.expense_date);
+      await Expense.update(
+        {
+          description,
+          category_id,
+          bank_id,
+          payment_method
+        },
+        {
+          where: {
+            installment_group_id: expense.installment_group_id,
+            expense_date: {
+              [Op.gte]: currentDate
+            },
+            user_id: req.user.id
+          },
+          transaction
+        }
+      );
+
+      // Atualiza separadamente o valor apenas desta parcela
+      await expense.update(
+        {
+          amount: parsedAmount
+        },
+        { transaction }
+      );
+    }
+    // Se for uma despesa única
+    else {
+      await expense.update(
+        {
+          description,
+          amount: parsedAmount,
+          expense_date: new Date(expense_date),
+          category_id,
+          bank_id,
+          payment_method
+        },
+        { transaction }
+      );
+    }
+
+    await transaction.commit();
+
+    // Busca a despesa atualizada
+    const updatedExpense = await Expense.findByPk(req.params.id);
+    res.json(updatedExpense);
+  } catch (error) {
+    await transaction.rollback();
+    console.error('Erro ao atualizar despesa:', error);
+    res.status(500).json({ message: 'Erro ao atualizar despesa' });
+  }
+});
+
+// Rota para excluir todas as ocorrências futuras de uma despesa recorrente
+router.delete('/:id/future-occurrences', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { from_date } = req.body;
+    
+    // Busca a despesa recorrente
+    const expense = await Expense.findOne({
+      where: { 
+        id, 
+        user_id: req.user.id,
+        is_recurring: true
+      }
+    });
+
+    if (!expense) {
+      return res.status(404).json({ message: 'Despesa recorrente não encontrada' });
+    }
+
+    // Atualiza a data de término para a data anterior à data especificada
+    const newEndDate = new Date(from_date);
+    newEndDate.setDate(newEndDate.getDate() - 1);
+
+    await expense.update({
+      end_date: newEndDate
+    });
+
+    res.json({ message: 'Ocorrências futuras excluídas com sucesso' });
+  } catch (error) {
+    console.error('Erro ao excluir ocorrências futuras:', error);
+    res.status(500).json({ message: 'Erro ao excluir ocorrências futuras' });
+  }
+});
+
+// Rota para excluir completamente uma despesa recorrente
+router.delete('/:id/recurring', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Busca a despesa recorrente
+    const expense = await Expense.findOne({
+      where: { 
+        id, 
+        user_id: req.user.id,
+        is_recurring: true
+      }
+    });
+
+    if (!expense) {
+      return res.status(404).json({ message: 'Despesa recorrente não encontrada' });
+    }
+
+    // Exclui todas as exceções associadas
+    await ExpensesRecurrenceException.destroy({
+      where: {
+        expense_id: expense.id,
+        user_id: req.user.id
+      }
+    });
+
+    // Exclui a despesa recorrente
+    await expense.destroy();
+
+    res.json({ message: 'Despesa recorrente excluída com sucesso' });
+  } catch (error) {
+    console.error('Erro ao excluir despesa recorrente:', error);
+    res.status(500).json({ message: 'Erro ao excluir despesa recorrente' });
+  }
+});
+
+// Rota para excluir despesa (não recorrente)
+router.delete('/:id', async (req, res) => {
+  try {
+    const expense = await Expense.findByPk(req.params.id);
+    
+    if (!expense) {
+      return res.status(404).json({ message: 'Despesa não encontrada' });
+    }
+    
+    if (expense.user_id !== req.user.id) {
+      return res.status(403).json({ message: 'Não autorizado' });
+    }
+
+    // Se for despesa recorrente, redireciona para a rota específica
+    if (expense.is_recurring) {
+      return res.status(400).json({ 
+        message: 'Para excluir despesa recorrente, use o endpoint específico',
+        redirectTo: '/expenses/:id/recurring'
+      });
+    }
+
+    // Se for despesa parcelada, verifica se deve excluir todas as parcelas
+    if (expense.has_installments && expense.installment_group_id) {
+      const { delete_all_installments } = req.query;
+      
+      if (delete_all_installments === 'true') {
+        // Exclui todas as parcelas
+        await Expense.destroy({
+          where: {
+            installment_group_id: expense.installment_group_id,
+            user_id: req.user.id
+          }
+        });
+        
+        return res.json({ message: 'Todas as parcelas foram excluídas com sucesso' });
+      }
+    }
+    
+    // Se não for parcelada ou não for para excluir todas, exclui apenas esta
+    await expense.destroy();
+    res.json({ message: 'Despesa excluída com sucesso' });
+  } catch (error) {
+    console.error('Erro ao excluir despesa:', error);
+    res.status(500).json({ message: 'Erro ao excluir despesa' });
   }
 });
 
@@ -742,31 +1242,6 @@ router.delete('/bulk', async (req, res) => {
       message: 'Erro ao deletar despesas',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
-  }
-});
-
-// Rota para buscar uma única despesa
-router.get('/:id', async (req, res) => {
-  try {
-    const expense = await Expense.findOne({
-      where: {
-        id: req.params.id,
-        user_id: req.user.id
-      },
-      include: [
-        { model: Category, as: 'Category' },
-        { model: Bank, as: 'bank' }
-      ]
-    });
-
-    if (!expense) {
-      return res.status(404).json({ message: 'Despesa não encontrada' });
-    }
-
-    res.json(expense);
-  } catch (error) {
-    console.error('Erro ao buscar despesa:', error);
-    res.status(500).json({ message: 'Erro ao buscar despesa' });
   }
 });
 
@@ -924,474 +1399,6 @@ router.delete('/:id/recurring', async (req, res) => {
   } catch (error) {
     console.error('Erro ao excluir despesa fixa:', error);
     res.status(500).json({ message: 'Erro ao excluir despesa fixa' });
-  }
-});
-
-// Rota para criar despesa
-router.post('/', async (req, res) => {
-  try {
-    const expenseData = {
-      ...req.body,
-      user_id: req.user.id
-    };
-
-    if (expenseData.is_recurring) {
-      expenseData.recurring_group_id = uuidv4();
-      expenseData.start_date = expenseData.expense_date;
-      expenseData.end_date = '2099-12-31';
-    }
-
-    const expense = await Expense.create(expenseData);
-    res.status(201).json(expense);
-  } catch (error) {
-    console.error('Erro ao criar despesa:', error);
-    res.status(500).json({ message: 'Erro ao criar despesa' });
-  }
-});
-
-// Rota para atualizar despesa
-router.put('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const expense = await Expense.findByPk(id);
-
-    if (!expense) {
-      return res.status(404).json({ message: 'Despesa não encontrada' });
-    }
-
-    if (expense.user_id !== req.user.id) {
-      return res.status(403).json({ message: 'Não autorizado' });
-    }
-
-    const expenseData = {
-      ...req.body
-    };
-
-    if (expenseData.is_recurring && !expense.is_recurring) {
-      expenseData.recurring_group_id = uuidv4();
-      expenseData.start_date = expenseData.expense_date;
-      expenseData.end_date = '2099-12-31';
-    }
-
-    await expense.update(expenseData);
-    res.json(expense);
-  } catch (error) {
-    console.error('Erro ao atualizar despesa:', error);
-    res.status(500).json({ message: 'Erro ao atualizar despesa' });
-  }
-});
-
-// Rota para estatísticas dos gráficos
-router.get('/stats', async (req, res) => {
-  try {
-    const { month, year, category, bank, paymentMethod } = req.query;
-    const where = { user_id: req.user.id };
-
-    // Filtros
-    if (month) {
-      where[Op.and] = [
-        Sequelize.where(Sequelize.fn('MONTH', Sequelize.col('expense_date')), month)
-      ];
-    }
-    if (year) {
-      where[Op.and] = [
-        ...(where[Op.and] || []),
-        Sequelize.where(Sequelize.fn('YEAR', Sequelize.col('expense_date')), year)
-      ];
-    }
-    if (category) {
-      where.category_id = category;
-    }
-    if (bank) {
-      where.bank_id = bank;
-    }
-    if (paymentMethod) {
-      where.payment_method = paymentMethod;
-    }
-
-    // Buscar todas as despesas com os filtros aplicados
-    const expenses = await Expense.findAll({
-      where,
-      include: [
-        { model: Category, as: 'Category' },
-        { model: Bank, as: 'bank' }
-      ],
-      order: [['expense_date', 'ASC']]
-    });
-
-    // Dados para o gráfico de linha (evolução de despesas)
-    const expensesByDate = expenses.reduce((acc, expense) => {
-      const date = expense.expense_date.toISOString().split('T')[0];
-      if (!acc[date]) {
-        acc[date] = 0;
-      }
-      acc[date] += Number(expense.amount);
-      return acc;
-    }, {});
-
-    // Dados para o gráfico de pizza (despesas por categoria)
-    const expensesByCategory = expenses.reduce((acc, expense) => {
-      const categoryName = expense.Category.category_name;
-      if (!acc[categoryName]) {
-        acc[categoryName] = 0;
-      }
-      acc[categoryName] += Number(expense.amount);
-      return acc;
-    }, {});
-
-    // Dados para o gráfico de barras (despesas por banco)
-    const expensesByBank = expenses.reduce((acc, expense) => {
-      const bankName = expense.bank.name;
-      if (!acc[bankName]) {
-        acc[bankName] = 0;
-      }
-      acc[bankName] += Number(expense.amount);
-      return acc;
-    }, {});
-
-    // Dados para o gráfico de barras empilhadas (despesas por tipo de pagamento)
-    const expensesByPaymentMethod = expenses.reduce((acc, expense) => {
-      const method = expense.payment_method;
-      const categoryName = expense.Category.category_name;
-      
-      if (!acc[method]) {
-        acc[method] = {};
-      }
-      if (!acc[method][categoryName]) {
-        acc[method][categoryName] = 0;
-      }
-      acc[method][categoryName] += Number(expense.amount);
-      return acc;
-    }, {});
-
-    // Dados para o gráfico de dispersão
-    const scatterData = {
-      pix: expenses
-        .filter(e => e.payment_method === 'pix')
-        .map(e => ({
-          bank: e.bank.name,
-          amount: Number(e.amount)
-        })),
-      card: expenses
-        .filter(e => e.payment_method === 'card')
-        .map(e => ({
-          bank: e.bank.name,
-          amount: Number(e.amount)
-        }))
-    };
-
-    // Formatar dados para o frontend
-    const formattedData = {
-      expenses: Object.entries(expensesByDate).map(([date, amount]) => ({
-        date,
-        amount
-      })),
-      categories: Object.entries(expensesByCategory).map(([name, amount]) => ({
-        name,
-        amount
-      })),
-      banks: Object.entries(expensesByBank).map(([name, amount]) => ({
-        name,
-        amount
-      })),
-      paymentMethods: Object.entries(expensesByPaymentMethod).map(([method, categories]) => ({
-        method,
-        ...categories
-      })),
-      scatterData
-    };
-
-    // Buscar todas as categorias e bancos para os filtros
-    const [categories, banks] = await Promise.all([
-      Category.findAll({ order: [['category_name', 'ASC']] }),
-      Bank.findAll({ order: [['name', 'ASC']] })
-    ]);
-
-    res.json({
-      ...formattedData,
-      categories: categories.map(c => ({
-        id: c.id,
-        name: c.category_name
-      })),
-      banks: banks.map(b => ({
-        id: b.id,
-        name: b.name
-      }))
-    });
-  } catch (error) {
-    console.error('Erro ao buscar estatísticas:', error);
-    res.status(500).json({ message: 'Erro ao buscar estatísticas' });
-  }
-});
-
-// Rota para excluir despesa fixa (uma ocorrência específica)
-router.post('/:id/exclude-occurrence', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { occurrence_date, reason } = req.body;
-    
-    console.log(`Recebido pedido para excluir ocorrência da despesa ID ${id} na data ${occurrence_date}`);
-    
-    // Busca a despesa recorrente
-    const expense = await Expense.findOne({
-      where: { 
-        id, 
-        user_id: req.user.id,
-        is_recurring: true
-      }
-    });
-
-    if (!expense) {
-      return res.status(404).json({ message: 'Despesa recorrente não encontrada' });
-    }
-
-    // Cria uma exceção para esta ocorrência específica
-    const exception = await ExpensesRecurrenceException.create({
-      user_id: req.user.id,
-      expense_id: expense.id,    
-      exception_date: new Date(occurrence_date),
-      exception_type: 'SKIP',
-      reason: reason || 'Ocorrência excluída pelo usuário'
-    });
-
-    console.log(`Exceção criada com sucesso para despesa ID ${id} na data ${occurrence_date}`, exception);
-
-    res.status(201).json({ 
-      message: 'Ocorrência excluída com sucesso',
-      exception
-    });
-  } catch (error) {
-    console.error('Erro ao excluir ocorrência:', error);
-    res.status(500).json({ message: 'Erro ao excluir ocorrência', error: error.message });
-  }
-});
-
-// Rota para excluir todas as ocorrências futuras de uma despesa recorrente
-router.delete('/:id/future-occurrences', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { from_date } = req.body;
-    
-    // Busca a despesa recorrente
-    const expense = await Expense.findOne({
-      where: { 
-        id, 
-        user_id: req.user.id,
-        is_recurring: true
-      }
-    });
-
-    if (!expense) {
-      return res.status(404).json({ message: 'Despesa recorrente não encontrada' });
-    }
-
-    // Atualiza a data de término para a data anterior à data especificada
-    const newEndDate = new Date(from_date);
-    newEndDate.setDate(newEndDate.getDate() - 1);
-
-    await expense.update({
-      end_date: newEndDate
-    });
-
-    res.json({ message: 'Ocorrências futuras excluídas com sucesso' });
-  } catch (error) {
-    console.error('Erro ao excluir ocorrências futuras:', error);
-    res.status(500).json({ message: 'Erro ao excluir ocorrências futuras' });
-  }
-});
-
-// Rota para excluir completamente uma despesa recorrente
-router.delete('/:id/recurring', async (req, res) => {
-  try {
-    const { id } = req.params;
-    
-    // Busca a despesa recorrente
-    const expense = await Expense.findOne({
-      where: { 
-        id, 
-        user_id: req.user.id,
-        is_recurring: true
-      }
-    });
-
-    if (!expense) {
-      return res.status(404).json({ message: 'Despesa recorrente não encontrada' });
-    }
-
-    // Exclui todas as exceções associadas
-    await ExpensesRecurrenceException.destroy({
-      where: {
-        expense_id: expense.id,
-        user_id: req.user.id
-      }
-    });
-
-    // Exclui a despesa recorrente
-    await expense.destroy();
-
-    res.json({ message: 'Despesa recorrente excluída com sucesso' });
-  } catch (error) {
-    console.error('Erro ao excluir despesa recorrente:', error);
-    res.status(500).json({ message: 'Erro ao excluir despesa recorrente' });
-  }
-});
-
-// Rota para excluir despesa (não recorrente)
-router.delete('/:id', async (req, res) => {
-  try {
-    const expense = await Expense.findByPk(req.params.id);
-    
-    if (!expense) {
-      return res.status(404).json({ message: 'Despesa não encontrada' });
-    }
-    
-    if (expense.user_id !== req.user.id) {
-      return res.status(403).json({ message: 'Não autorizado' });
-    }
-
-    // Se for despesa recorrente, redireciona para a rota específica
-    if (expense.is_recurring) {
-      return res.status(400).json({ 
-        message: 'Para excluir despesa recorrente, use o endpoint específico',
-        redirectTo: '/expenses/:id/recurring'
-      });
-    }
-
-    // Se for despesa parcelada, verifica se deve excluir todas as parcelas
-    if (expense.has_installments && expense.installment_group_id) {
-      const { delete_all_installments } = req.query;
-      
-      if (delete_all_installments === 'true') {
-        // Exclui todas as parcelas
-        await Expense.destroy({
-          where: {
-            installment_group_id: expense.installment_group_id,
-            user_id: req.user.id
-          }
-        });
-        
-        return res.json({ message: 'Todas as parcelas foram excluídas com sucesso' });
-      }
-    }
-    
-    // Se não for parcelada ou não for para excluir todas, exclui apenas esta
-    await expense.destroy();
-    res.json({ message: 'Despesa excluída com sucesso' });
-  } catch (error) {
-    console.error('Erro ao excluir despesa:', error);
-    res.status(500).json({ message: 'Erro ao excluir despesa' });
-  }
-});
-
-// Rota para atualizar despesa
-router.put('/:id', async (req, res) => {
-  const transaction = await Expense.sequelize.transaction();
-
-  try {
-    const { 
-      description, 
-      amount: rawAmount, 
-      expense_date, 
-      category_id, 
-      bank_id, 
-      payment_method,
-      is_recurring,
-      start_date,
-      end_date,
-      recurrence_type
-    } = req.body;
-    
-    const expense = await Expense.findByPk(req.params.id);
-    
-    if (!expense) {
-      await transaction.rollback();
-      return res.status(404).json({ message: 'Despesa não encontrada' });
-    }
-    
-    if (expense.user_id !== req.user.id) {
-      await transaction.rollback();
-      return res.status(403).json({ message: 'Não autorizado' });
-    }
-
-    const parsedAmount = Number(rawAmount);
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      await transaction.rollback();
-      return res.status(400).json({ message: 'O valor deve ser um número positivo' });
-    }
-
-    // Se a despesa for recorrente
-    if (expense.is_recurring) {
-      // Atualiza a despesa principal
-      await expense.update(
-        {
-          description,
-          amount: parsedAmount,
-          category_id,
-          bank_id,
-          payment_method,
-          is_recurring,
-          start_date: start_date ? new Date(start_date) : expense.start_date,
-          end_date: end_date ? new Date(end_date) : expense.end_date,
-          recurrence_type: recurrence_type || expense.recurrence_type
-        },
-        { transaction }
-      );
-    }
-    // Se a despesa for parcelada
-    else if (expense.has_installments && expense.installment_group_id) {
-      // Atualiza todas as parcelas futuras
-      const currentDate = new Date(expense.expense_date);
-      await Expense.update(
-        {
-          description,
-          category_id,
-          bank_id,
-          payment_method
-        },
-        {
-          where: {
-            installment_group_id: expense.installment_group_id,
-            expense_date: {
-              [Op.gte]: currentDate
-            },
-            user_id: req.user.id
-          },
-          transaction
-        }
-      );
-
-      // Atualiza separadamente o valor apenas desta parcela
-      await expense.update(
-        {
-          amount: parsedAmount
-        },
-        { transaction }
-      );
-    }
-    // Se for uma despesa única
-    else {
-      await expense.update(
-        {
-          description,
-          amount: parsedAmount,
-          expense_date: new Date(expense_date),
-          category_id,
-          bank_id,
-          payment_method
-        },
-        { transaction }
-      );
-    }
-
-    await transaction.commit();
-
-    // Busca a despesa atualizada
-    const updatedExpense = await Expense.findByPk(req.params.id);
-    res.json(updatedExpense);
-  } catch (error) {
-    await transaction.rollback();
-    console.error('Erro ao atualizar despesa:', error);
-    res.status(500).json({ message: 'Erro ao atualizar despesa' });
   }
 });
 
