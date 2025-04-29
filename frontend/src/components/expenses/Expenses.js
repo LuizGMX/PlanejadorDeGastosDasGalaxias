@@ -616,6 +616,7 @@ const Expenses = ({
                       <th>Valor</th>
                       <th>Data</th>
                       <th>Categoria</th>
+                      <th>Banco</th>
                       <th>Pagamento</th>
                       <th>Tipo</th>
                       <th>Parcelas</th>
@@ -640,6 +641,7 @@ const Expenses = ({
                         </td>
                         <td>{formatDate(expense.expense_date)}</td>
                         <td>{expense.Category?.category_name}</td>
+                        <td>{expense.Bank?.name}</td>
                         <td>
                           {expense.payment_method === 'credit_card' && <BsCreditCard2Front size={16} title="Cartão de Crédito" />}
                           {expense.payment_method === 'debit_card' && <BsCreditCard2Front size={16} title="Cartão de Débito" />}
