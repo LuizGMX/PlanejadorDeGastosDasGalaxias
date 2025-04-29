@@ -126,7 +126,7 @@ router.get('/', async (req, res) => {
 
     if (bank_id) {
       where[Op.and].push({
-        bank_id: bank_id
+        bank_id: parseInt(bank_id)
       });
     }
 
