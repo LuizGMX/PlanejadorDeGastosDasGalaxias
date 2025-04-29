@@ -596,8 +596,64 @@ const Expenses = ({
             {/* Renderização condicional baseada no dispositivo */}
             {isMobile ? (
               <>
-                {/* Visualização em cards para mobile */}
-                {/* ... (código para renderização de cards mobile) ... */}
+                <div className={dataTableStyles.mobileCards}>
+                  {expenses.map((expense) => (
+                    <div key={expense.id} className={dataTableStyles.mobileCard}>
+                      <div className={dataTableStyles.mobileCardHeader}>
+                        <div className={dataTableStyles.mobileCardTitle}>
+                          {expense.description}
+                        </div>
+                        <div className={`${dataTableStyles.mobileCardAmount} ${dataTableStyles.expenseAmountBadge}`}>
+                          {formatCurrency(expense.amount)}
+                        </div>
+                      </div>
+                      <div className={dataTableStyles.mobileCardBody}>
+                        <div className={dataTableStyles.mobileCardRow}>
+                          <span className={dataTableStyles.mobileCardLabel}>Data:</span>
+                          <span>{formatDate(expense.expense_date)}</span>
+                        </div>
+                        <div className={dataTableStyles.mobileCardRow}>
+                          <span className={dataTableStyles.mobileCardLabel}>Categoria:</span>
+                          <span>{expense.Category?.category_name}</span>
+                        </div>
+                        <div className={dataTableStyles.mobileCardRow}>
+                          <span className={dataTableStyles.mobileCardLabel}>Banco:</span>
+                          <span>{expense.Bank?.name}</span>
+                        </div>
+                        <div className={dataTableStyles.mobileCardRow}>
+                          <span className={dataTableStyles.mobileCardLabel}>Pagamento:</span>
+                          <span>
+                            {expense.payment_method === 'credit_card' && <BsCreditCard2Front size={16} title="Cartão de Crédito" />}
+                            {expense.payment_method === 'debit_card' && <BsCreditCard2Front size={16} title="Cartão de Débito" />}
+                            {expense.payment_method === 'pix' && <FontAwesomeIcon icon={faPix} size="lg" title="PIX" />}
+                            {expense.payment_method === 'money' && <BsCashCoin size={16} title="Dinheiro" />}
+                            {!expense.payment_method && '-'}
+                          </span>
+                        </div>
+                        {expense.installments > 1 && (
+                          <div className={dataTableStyles.mobileCardRow}>
+                            <span className={dataTableStyles.mobileCardLabel}>Parcelas:</span>
+                            <span>{expense.installments}x</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className={dataTableStyles.mobileCardActions}>
+                        <button
+                          onClick={() => navigate(`/edit-expense/${expense.id}`)}
+                          className={dataTableStyles.editButton}
+                        >
+                          <BsPencil size={16} />
+                        </button>
+                        <button
+                          onClick={() => onDelete({ id: expense.id })}
+                          className={dataTableStyles.deleteButton}
+                        >
+                          <BsTrash size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </>
             ) : (
               /* Visualização desktop */
