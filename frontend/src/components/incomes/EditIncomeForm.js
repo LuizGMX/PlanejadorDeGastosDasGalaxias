@@ -56,7 +56,7 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
 
     const fetchBanks = async () => {
       try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/banks`, {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/banks/favorites`, {
           headers: {
             'Authorization': `Bearer ${auth.token}`
           }

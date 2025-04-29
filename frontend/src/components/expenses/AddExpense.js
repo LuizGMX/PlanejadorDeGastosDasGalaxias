@@ -125,7 +125,7 @@ const AddExpense = ({ installment = false }) => {
           }
         }
         
-        const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/banks/users`, {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/banks/favorites`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
