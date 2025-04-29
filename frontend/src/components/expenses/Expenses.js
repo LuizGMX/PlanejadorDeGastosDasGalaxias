@@ -506,14 +506,6 @@ const Expenses = ({
           </div>
         </div>
         
-        <button
-          className={`${dataTableStyles.recurringButton} ${filters.is_recurring === 'true' ? dataTableStyles.active : ''}`}
-          onClick={() => handleFilterChange('is_recurring', filters.is_recurring === 'true' ? '' : 'true')}
-          title="Mostrar apenas despesas fixas"
-          style={{ alignSelf: 'flex-end' }}
-        >
-          <BsRepeat /> Fixos
-        </button>
       </div>
 
       <div className={dataTableStyles.filterGroup}>
@@ -523,7 +515,7 @@ const Expenses = ({
         <select
           value={filters.has_installments || 'all'}
           onChange={(e) => handleFilterChange('has_installments', e.target.value)}
-          className="bg-white border border-gray-300 rounded-md px-3 py-2 text-sm"
+          className={`${dataTableStyles.modernSelect} ${openFilter === 'installments' ? dataTableStyles.active : ''}`}
         >
           {installmentOptions.map(option => (
             <option key={option.value} value={option.value}>
@@ -538,13 +530,13 @@ const Expenses = ({
           <BsFolderSymlink /> Banco
         </label>
         <select
+          className={`${dataTableStyles.modernSelect} ${openFilter === 'bank' ? dataTableStyles.active : ''}`}
           value={filters.bank_id || 'all'}
           onChange={(e) => {
             const selectedValue = e.target.value;
             console.log('Mudança no filtro de banco:', selectedValue);
             handleFilterChange('bank_id', selectedValue === 'all' ? 'all' : parseInt(selectedValue));
-          }}
-          className="bg-white border border-gray-300 rounded-md px-3 py-2 text-sm"
+          }}          
         >
           {bankOptions.map(option => (
             <option key={option.value} value={option.value}>
@@ -553,6 +545,20 @@ const Expenses = ({
           ))}
         </select>
       </div>
+
+      <div className={dataTableStyles.filterGroup}>
+      
+      <button
+          className={`${dataTableStyles.recurringButton} ${filters.is_recurring === 'true' ? dataTableStyles.active : ''}`}
+          onClick={() => handleFilterChange('is_recurring', filters.is_recurring === 'true' ? '' : 'true')}
+          title="Mostrar apenas despesas fixas"
+          style={{ alignSelf: 'flex-end' }}
+        >
+          <BsRepeat /> Fixos
+        </button>
+        
+      </div>
+
     </div>
   );
 
