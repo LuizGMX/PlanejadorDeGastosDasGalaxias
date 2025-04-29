@@ -128,6 +128,7 @@ router.get('/', async (req, res) => {
       where[Op.and].push({
         bank_id: parseInt(bank_id)
       });
+      console.log('Aplicando filtro de banco:', parseInt(bank_id));
     }
 
     // Remove a condição AND se estiver vazia
@@ -255,6 +256,10 @@ router.get('/', async (req, res) => {
         whereRecurring.description = { [Op.like]: `%${description}%` };
       }
 
+      if (bank_id) {
+        whereRecurring.bank_id = parseInt(bank_id);
+      }
+
       const recurringExpenses = await Expense.findAll({
         where: whereRecurring,
         include: [
@@ -315,6 +320,10 @@ router.get('/', async (req, res) => {
         const key = `${occurrence.original_id}_${dateStr}`;
         
         if (!existingDates.has(key)) {
+          // Aplica o filtro de banco aqui também
+          if (bank_id && parseInt(bank_id) !== occurrence.bank_id) {
+            continue;
+          }
           allExpensesWithRecurring.push(occurrence);
           existingDates.add(key);
         }
@@ -331,8 +340,18 @@ router.get('/', async (req, res) => {
         const expenseMonth = expenseDate.getMonth() + 1; // getMonth é base 0
         const expenseYear = expenseDate.getFullYear();
         
+        // Verifica se corresponde ao filtro de banco, se existir
+        if (bank_id && parseInt(bank_id) !== expense.bank_id) {
+          return false;
+        }
+        
         return monthsArray.includes(expenseMonth) && yearsArray.includes(expenseYear);
       });
+    } else if (bank_id) {
+      // Se não estamos filtrando por mês/ano, mas temos filtro de banco
+      allExpensesWithRecurring = allExpensesWithRecurring.filter(expense => 
+        parseInt(bank_id) === expense.bank_id
+      );
     }
     
     // Ordena as despesas por data
@@ -341,6 +360,9 @@ router.get('/', async (req, res) => {
     });
     
     console.log(`Retornando um total de ${allExpensesWithRecurring.length} despesas, incluindo ocorrências recorrentes`);
+    if (bank_id) {
+      console.log(`Filtrando por banco ID: ${bank_id} - Total após filtro: ${allExpensesWithRecurring.filter(e => e.bank_id === parseInt(bank_id)).length}`);
+    }
     
     res.json(allExpensesWithRecurring);
   } catch (error) {
