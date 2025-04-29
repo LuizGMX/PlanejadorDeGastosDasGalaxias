@@ -25,37 +25,32 @@ router.get('/favorites', authenticate, checkSubscription, async (req, res) => {
   try {
     console.log(`Buscando bancos favoritos para o usuário ${req.user.id}`);
     
-    // Buscar todos os bancos existentes
-    const allBanks = await Bank.findAll({
-      attributes: ['id', 'name', 'code'],
-      order: [['name', 'ASC']]
-    });
-
-    // Buscar as relações de UserBank para o usuário atual
+    // Buscar apenas os bancos que o usuário tem relação
     const userBanks = await UserBank.findAll({
       where: { 
         user_id: req.user.id
       },
+      include: [{
+        model: Bank,
+        attributes: ['id', 'name', 'code']
+      }],
       attributes: ['bank_id', 'is_active']
     });
 
     console.log('UserBanks encontrados:', userBanks.map(ub => ({bank_id: ub.bank_id, is_active: ub.is_active})));
 
-    // Mapear os IDs dos bancos ativos
-    const userBankMap = {};
-    userBanks.forEach(ub => {
-      userBankMap[ub.bank_id] = ub.is_active;
-    });
-
-    // Adicionar a informação de ativo/inativo a todos os bancos
-    const banksWithStatus = allBanks.map(bank => ({
-      id: bank.id,
-      name: bank.name,
-      code: bank.code,
-      is_active: userBankMap[bank.id] !== undefined ? userBankMap[bank.id] : false
+    // Formatar os bancos com suas informações e status
+    const banksWithStatus = userBanks.map(userBank => ({
+      id: userBank.Bank.id,
+      name: userBank.Bank.name,
+      code: userBank.Bank.code,
+      is_active: userBank.is_active
     }));
 
-    console.log(`Retornando ${banksWithStatus.length} bancos com status para o usuário ${req.user.id}`);
+    // Ordenar por nome
+    banksWithStatus.sort((a, b) => a.name.localeCompare(b.name));
+
+    console.log(`Retornando ${banksWithStatus.length} bancos favoritos para o usuário ${req.user.id}`);
 
     // Se apenas os ativos foram solicitados, filtrar
     if (req.query.onlyActive === 'true') {
