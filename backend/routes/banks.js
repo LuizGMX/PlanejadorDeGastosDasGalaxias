@@ -32,6 +32,7 @@ router.get('/favorites', authenticate, checkSubscription, async (req, res) => {
       },
       include: [{
         model: Bank,
+        as: 'bank',
         attributes: ['id', 'name', 'code']
       }],
       attributes: ['bank_id', 'is_active']
@@ -41,9 +42,9 @@ router.get('/favorites', authenticate, checkSubscription, async (req, res) => {
 
     // Formatar os bancos com suas informações e status
     const banksWithStatus = userBanks.map(userBank => ({
-      id: userBank.Bank.id,
-      name: userBank.Bank.name,
-      code: userBank.Bank.code,
+      id: userBank.bank.id,
+      name: userBank.bank.name,
+      code: userBank.bank.code,
       is_active: userBank.is_active
     }));
 
