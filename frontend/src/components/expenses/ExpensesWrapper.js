@@ -20,8 +20,6 @@ const ExpensesWrapper = () => {
   const [selectedExpenses, setSelectedExpenses] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState(null);
-  const [editingExpense, setEditingExpense] = useState(null);
-  const [deleteSuccess, setDeleteSuccess] = useState(null);
   const [deleteOption, setDeleteOption] = useState(null); // 'all', 'future', 'past', 'single'
   
   const [filters, setFilters] = useState({
@@ -446,6 +444,7 @@ const ExpensesWrapper = () => {
       } else {
         // Para outros tipos de filtros, comportamento normal
         newFilters[type] = value;
+        console.log(`Atualizando filtro ${type} para:`, value);
       }
       
       console.log('Novos filtros para despesas:', newFilters);
@@ -544,6 +543,7 @@ const ExpensesWrapper = () => {
       
       if (filterParams.bank_id && filterParams.bank_id !== 'all') {
         queryParams.append('bank_id', filterParams.bank_id);
+        console.log('Adicionando filtro de banco:', filterParams.bank_id);
       }
       
       if (filterParams.payment_method && filterParams.payment_method !== 'all') {

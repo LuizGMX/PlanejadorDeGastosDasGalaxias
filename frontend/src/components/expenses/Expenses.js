@@ -1,10 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { AuthContext } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import dataTableStyles from '../../styles/dataTable.module.css';
-import sharedStyles from '../../styles/shared.module.css';
 import EditExpenseForm from './EditExpenseForm';
-import { toast } from 'react-hot-toast';
 import { 
   BsPlusLg, 
   BsCash, 
@@ -22,9 +19,7 @@ import {
   BsWallet2,
   BsFolderSymlink,
   BsChevronDown,
-  BsChevronUp,
-  BsArrowClockwise,
-  BsQrCode
+  BsChevronUp
 } from 'react-icons/bs';
 import { FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -43,7 +38,6 @@ const Expenses = ({
   onEdit, 
   onAdd, 
   onFilter, 
-  onSearch, 
   filters = {
     months: [],
     years: []
@@ -51,8 +45,6 @@ const Expenses = ({
   noExpensesMessage 
 }) => {
   const navigate = useNavigate();
-  const { id } = useParams();
-  const { auth } = useContext(AuthContext);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState(null);
   const [editingExpense, setEditingExpense] = useState(null);
@@ -62,7 +54,6 @@ const Expenses = ({
   const [deleteOption, setDeleteOption] = useState(null);
   const [showFilters, setShowFilters] = useState(window.innerWidth >= 768);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [expandedCardDetails, setExpandedCardDetails] = useState({});
   const [openFilter, setOpenFilter] = useState(null);
 
   // Garantir que filters.months e filters.years sejam arrays
@@ -274,13 +265,6 @@ const Expenses = ({
       window.removeEventListener('resize', handleResize);
     };
   }, []);
-
-  const toggleCardDetails = (id) => {
-    setExpandedCardDetails(prev => ({
-      ...prev,
-      [id]: !prev[id]
-    }));
-  };
 
   // Procurando a estrutura dos filtros e da busca na tela de despesas
   const filterRowContent = (
@@ -555,7 +539,10 @@ const Expenses = ({
         </label>
         <select
           value={filters.bank_id || 'all'}
-          onChange={(e) => handleFilterChange('bank_id', e.target.value)}
+          onChange={(e) => {
+            console.log('Mudança no filtro de banco:', e.target.value);
+            handleFilterChange('bank_id', e.target.value);
+          }}
           className="bg-white border border-gray-300 rounded-md px-3 py-2 text-sm"
         >
           {bankOptions.map(option => (
