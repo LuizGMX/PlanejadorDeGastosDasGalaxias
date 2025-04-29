@@ -38,7 +38,7 @@ router.get('/', async (req, res) => {
       bank_id
     } = req.query;
 
-    console.log('bank_id ->>>>>  ', req.bank_id);
+    console.log('bank_id ->>>>>  ', bank_id);
     
     const where = { user_id: req.user.id };
     
