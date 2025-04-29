@@ -28,7 +28,8 @@ router.get('/favorites', authenticate, checkSubscription, async (req, res) => {
     // Buscar apenas os bancos que o usuário tem relação
     const userBanks = await UserBank.findAll({
       where: { 
-        user_id: req.user.id
+        user_id: req.user.id,
+        is_active: true
       },
       include: [{
         model: Bank,
