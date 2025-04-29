@@ -537,7 +537,7 @@ const Expenses = ({
           <BsFolderSymlink /> Parcelas
         </label>
         <select
-          value={filters.has_installments}
+          value={filters.has_installments || 'all'}
           onChange={(e) => handleFilterChange('has_installments', e.target.value)}
           className="bg-white border border-gray-300 rounded-md px-3 py-2 text-sm"
         >
@@ -554,7 +554,7 @@ const Expenses = ({
           <BsFolderSymlink /> Banco
         </label>
         <select
-          value={filters.bank_id}
+          value={filters.bank_id || 'all'}
           onChange={(e) => handleFilterChange('bank_id', e.target.value)}
           className="bg-white border border-gray-300 rounded-md px-3 py-2 text-sm"
         >

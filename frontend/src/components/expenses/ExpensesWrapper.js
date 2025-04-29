@@ -551,7 +551,7 @@ const ExpensesWrapper = () => {
       }
       
       if (filterParams.has_installments && filterParams.has_installments !== 'all') {
-        queryParams.append('has_installments', filterParams.has_installments === 'yes');
+        queryParams.append('has_installments', filterParams.has_installments === 'yes' ? 'true' : 'false');
       }
       
       if (filterParams.is_recurring !== undefined && filterParams.is_recurring !== '') {
