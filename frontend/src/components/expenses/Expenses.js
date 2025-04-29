@@ -24,7 +24,8 @@ import {
   BsChevronDown,
   BsChevronUp,
   BsArrowClockwise,
-  BsQrCode
+  BsQrCode,
+  BsBank2
 } from 'react-icons/bs';
 import { FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -104,6 +105,14 @@ const Expenses = ({
     { value: 'all', label: 'Todas as Despesas' },
     { value: 'yes', label: 'Apenas Parceladas' },
     { value: 'no', label: 'Apenas Não Parceladas' }
+  ];
+
+  const bankOptions = [
+    { value: 'all', label: 'Todos os Bancos' },
+    ...(banks || []).map(bank => ({
+      value: bank.id,
+      label: bank.name
+    }))
   ];
 
   useEffect(() => {
@@ -571,7 +580,105 @@ const Expenses = ({
         )}
 
         <div className={`${dataTableStyles.filtersContainer} ${isMobile && !showFilters ? dataTableStyles.filtersCollapsed : ''} ${isMobile && showFilters ? dataTableStyles.filtersExpanded : ''}`}>
-          {filterRowContent}
+          <div className={dataTableStyles.filterButtons}>
+            <button 
+              className={`${dataTableStyles.filterButton} ${openFilter === 'months' ? dataTableStyles.active : ''}`}
+              onClick={() => handleFilterClick('months')}
+            >
+              <BsCalendar3 className={dataTableStyles.filterIcon} />
+              <span className={dataTableStyles.filterText}>
+                {formatSelectedPeriod('months')}
+              </span>
+              {openFilter === 'months' ? <BsChevronUp /> : <BsChevronDown />}
+            </button>
+
+            <button 
+              className={`${dataTableStyles.filterButton} ${openFilter === 'years' ? dataTableStyles.active : ''}`}
+              onClick={() => handleFilterClick('years')}
+            >
+              <BsCalendar3 className={dataTableStyles.filterIcon} />
+              <span className={dataTableStyles.filterText}>
+                {formatSelectedPeriod('years')}
+              </span>
+              {openFilter === 'years' ? <BsChevronUp /> : <BsChevronDown />}
+            </button>
+
+            <button 
+              className={`${dataTableStyles.filterButton} ${openFilter === 'category' ? dataTableStyles.active : ''}`}
+              onClick={() => handleFilterClick('category')}
+            >
+              <BsFolderSymlink className={dataTableStyles.filterIcon} />
+              <span className={dataTableStyles.filterText}>
+                {filters.category_id === 'all' ? 'Todas as Categorias' : categories.find(c => c.id === filters.category_id)?.name || 'Categoria'}
+              </span>
+              {openFilter === 'category' ? <BsChevronUp /> : <BsChevronDown />}
+            </button>
+
+            <button 
+              className={`${dataTableStyles.filterButton} ${openFilter === 'bank' ? dataTableStyles.active : ''}`}
+              onClick={() => handleFilterClick('bank')}
+            >
+              <BsBank2 className={dataTableStyles.filterIcon} />
+              <span className={dataTableStyles.filterText}>
+                {filters.bank_id === 'all' ? 'Todos os Bancos' : banks.find(b => b.id === filters.bank_id)?.name || 'Banco'}
+              </span>
+              {openFilter === 'bank' ? <BsChevronUp /> : <BsChevronDown />}
+            </button>
+
+            <button 
+              className={`${dataTableStyles.filterButton} ${openFilter === 'installment' ? dataTableStyles.active : ''}`}
+              onClick={() => handleFilterClick('installment')}
+            >
+              <BsRepeat className={dataTableStyles.filterIcon} />
+              <span className={dataTableStyles.filterText}>
+                {filters.has_installments === 'all' ? 'Todas as Despesas' : 
+                 filters.has_installments === 'yes' ? 'Apenas Parceladas' : 'Apenas Não Parceladas'}
+              </span>
+              {openFilter === 'installment' ? <BsChevronUp /> : <BsChevronDown />}
+            </button>
+          </div>
+
+          {openFilter === 'category' && (
+            <div className={dataTableStyles.filterOptions}>
+              {bankOptions.map(option => (
+                <button
+                  key={option.value}
+                  className={`${dataTableStyles.filterOption} ${filters.bank_id === option.value ? dataTableStyles.selected : ''}`}
+                  onClick={() => handleFilterChange('bank_id', option.value)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {openFilter === 'bank' && (
+            <div className={dataTableStyles.filterOptions}>
+              {bankOptions.map(option => (
+                <button
+                  key={option.value}
+                  className={`${dataTableStyles.filterOption} ${filters.bank_id === option.value ? dataTableStyles.selected : ''}`}
+                  onClick={() => handleFilterChange('bank_id', option.value)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {openFilter === 'installment' && (
+            <div className={dataTableStyles.filterOptions}>
+              {installmentOptions.map(option => (
+                <button
+                  key={option.value}
+                  className={`${dataTableStyles.filterOption} ${filters.has_installments === option.value ? dataTableStyles.selected : ''}`}
+                  onClick={() => handleFilterChange('has_installments', option.value)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {selectedExpenses.length > 0 && (
@@ -645,7 +752,7 @@ const Expenses = ({
                           <BsPencil size={16} />
                         </button>
                         <button
-                          onClick={() => onDelete({ id: expense.id })}
+                          onClick={() => onDelete(expense)}
                           className={dataTableStyles.deleteButton}
                         >
                           <BsTrash size={16} />
