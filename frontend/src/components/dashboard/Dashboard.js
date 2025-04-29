@@ -1690,32 +1690,58 @@ const Dashboard = () => {
 
   // Improved renderIncomeVsExpensesChart with mobile optimization
   const renderIncomeVsExpensesChart = () => {
-    if (!data || !data.budget_info) {
-      return (
-        <div className={styles.chartContainer}>
-          <div className={styles.chartHeader}>
-            <h3>Receitas vs Despesas</h3>
-            <div className={styles.chartSubtitle}>
-              <span className={styles.dateFilterBadge}>
-                <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
-              </span>
-            </div>
-          </div>
-          <div className={styles.emptyChartContent}>
-            <span className={styles.emptyChartIcon}>📊</span>
-            <p>Não há dados de orçamento disponíveis para este período.</p>
-          </div>
-        </div>
-      );
+    // Verificar se temos dados válidos para usar
+    let available = 0;
+    let totalSpent = 0;
+    let total = 0;
+    
+    if (data?.budget_info) {
+      // Usar dados do budget_info se disponíveis
+      available = Math.max(0, data.budget_info.total_budget - data.budget_info.total_spent);
+      totalSpent = data.budget_info.total_spent;
+      total = available + totalSpent;
+    } else if (data?.expenses && data?.incomes) {
+      // Se não tiver budget_info, mas tiver expenses e incomes, calcular manualmente
+      const totalIncomes = Array.isArray(data.incomes) 
+        ? data.incomes.reduce((sum, income) => sum + parseFloat(income.amount || 0), 0)
+        : 0;
+      
+      totalSpent = Array.isArray(data.expenses)
+        ? data.expenses.reduce((sum, expense) => sum + parseFloat(expense.amount || 0), 0)
+        : 0;
+        
+      available = Math.max(0, totalIncomes - totalSpent);
+      total = totalIncomes;
+    } else if (allIncomes.length > 0 || allExpenses.length > 0) {
+      // Se não houver dados no objeto data, tentar usar allIncomes e allExpenses
+      // Aplicar filtros de data se necessário
+      let filteredIncomes = allIncomes;
+      let filteredExpenses = allExpenses;
+      
+      if (selectedPeriod === 'custom' && customDateRange) {
+        const startDate = new Date(customDateRange.start);
+        const endDate = new Date(customDateRange.end);
+        
+        filteredIncomes = allIncomes.filter(income => {
+          const incomeDate = new Date(income.date);
+          return incomeDate >= startDate && incomeDate <= endDate;
+        });
+        
+        filteredExpenses = allExpenses.filter(expense => {
+          const expenseDate = new Date(expense.date);
+          return expenseDate >= startDate && expenseDate <= endDate;
+        });
+      }
+      
+      const totalIncomes = filteredIncomes.reduce((sum, income) => sum + parseFloat(income.amount || 0), 0);
+      totalSpent = filteredExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount || 0), 0);
+      
+      available = Math.max(0, totalIncomes - totalSpent);
+      total = totalIncomes;
     }
 
-    // Se chegou aqui, data.budget_info existe
-    const available = Math.max(0, data.budget_info.total_budget - data.budget_info.total_spent);
-    const totalSpent = data.budget_info.total_spent;
-    const total = available + totalSpent;
-
     // Se não houver valores, mostrar mensagem de dados vazios
-    if (total === 0) {
+    if (total === 0 && totalSpent === 0) {
       return (
         <div className={styles.chartContainer}>
           <div className={styles.chartHeader}>
@@ -1738,13 +1764,13 @@ const Dashboard = () => {
       {
         name: 'Disponível',
         value: available,
-        percent: available / total,
+        percent: total > 0 ? available / total : 0,
         color: 'var(--primary-color)'
       },
       {
         name: 'Total Despesa',
         value: totalSpent,
-        percent: totalSpent / total,
+        percent: total > 0 ? totalSpent / total : 1,
         color: 'var(--error-color)'
       }
     ];
