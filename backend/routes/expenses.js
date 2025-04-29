@@ -37,6 +37,8 @@ router.get('/', async (req, res) => {
       include_all_recurring,
       bank_id
     } = req.query;
+
+    console.log('bank_id ->>>>>  ', req.bank_id);
     
     const where = { user_id: req.user.id };
     
