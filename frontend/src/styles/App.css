@@ -18,7 +18,7 @@
 
 /* Quando o sidebar está visível, adicionar margem à esquerda */
 .app.with-sidebar .mainContent:not(.mobile) {
-  margin-left: 250px;
+  margin-left: 280px;
 }
 
 /* Estilos para dispositivos móveis */
