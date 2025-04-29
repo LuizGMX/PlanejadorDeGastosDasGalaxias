@@ -16,7 +16,10 @@
   min-height: calc(100vh - 80px); /* Altura ajustada para considerar a navbar */
   overflow-y: auto; /* Permitir rolagem dentro do conteúdo */
   width: 100%;
-  margin-left: 280px;
+  margin-left: 0;
+  .layout[data-page="dashboard"] & {
+    margin-left: 280px;
+  }
 }
 
 /* Responsividade */
