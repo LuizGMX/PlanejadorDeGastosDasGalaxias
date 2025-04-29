@@ -27,9 +27,10 @@ const ExpensesWrapper = () => {
   const [filters, setFilters] = useState({
     months: [new Date().getMonth() + 1],
     years: [new Date().getFullYear()],
-    category: 'all',
-    paymentMethod: 'all',
-    hasInstallments: 'all',
+    category_id: 'all',
+    bank_id: 'all',
+    payment_method: 'all',
+    has_installments: 'all',
     description: '',
     is_recurring: ''
   });
@@ -333,8 +334,10 @@ const ExpensesWrapper = () => {
       await fetchData({
         startDate: startDate ? startDate.toISOString() : undefined,
         endDate: endDate ? endDate.toISOString() : undefined,
-        category_id: filters.category !== 'all' ? filters.category : undefined,
-        bank_id: filters.paymentMethod !== 'all' ? filters.paymentMethod : undefined,
+        category_id: filters.category_id !== 'all' ? filters.category_id : undefined,
+        bank_id: filters.bank_id !== 'all' ? filters.bank_id : undefined,
+        payment_method: filters.payment_method !== 'all' ? filters.payment_method : undefined,
+        has_installments: filters.has_installments !== 'all' ? filters.has_installments : undefined,
         is_recurring: filters.is_recurring !== '' ? filters.is_recurring : undefined,
         description: filters.description || undefined
       });
@@ -365,8 +368,10 @@ const ExpensesWrapper = () => {
       const backendFilters = {
         month: filters.months !== 'all' ? filters.months : undefined,
         year: filters.years !== 'all' ? filters.years : undefined,
-        category_id: filters.category !== 'all' ? filters.category : undefined,
-        bank_id: filters.paymentMethod !== 'all' ? filters.paymentMethod : undefined,
+        category_id: filters.category_id !== 'all' ? filters.category_id : undefined,
+        bank_id: filters.bank_id !== 'all' ? filters.bank_id : undefined,
+        payment_method: filters.payment_method !== 'all' ? filters.payment_method : undefined,
+        has_installments: filters.has_installments !== 'all' ? filters.has_installments : undefined,
         is_recurring: filters.is_recurring !== '' ? filters.is_recurring : undefined,
         description: term || undefined
       };
@@ -386,9 +391,10 @@ const ExpensesWrapper = () => {
       const resetFilters = {
         months: [],
         years: [],
-        category: 'all',
-        paymentMethod: 'all',
-        hasInstallments: 'all',
+        category_id: 'all',
+        bank_id: 'all',
+        payment_method: 'all',
+        has_installments: 'all',
         description: '',
         is_recurring: ''
       };
@@ -451,9 +457,10 @@ const ExpensesWrapper = () => {
           months: newFilters.months,
           years: newFilters.years,
           description: newFilters.description || undefined,
-          category: newFilters.category !== 'all' ? newFilters.category : undefined,
-          paymentMethod: newFilters.paymentMethod !== 'all' ? newFilters.paymentMethod : undefined,
-          hasInstallments: newFilters.hasInstallments !== 'all' ? newFilters.hasInstallments : undefined,
+          category_id: newFilters.category_id !== 'all' ? newFilters.category_id : undefined,
+          bank_id: newFilters.bank_id !== 'all' ? newFilters.bank_id : undefined,
+          payment_method: newFilters.payment_method !== 'all' ? newFilters.payment_method : undefined,
+          has_installments: newFilters.has_installments !== 'all' ? newFilters.has_installments : undefined,
           is_recurring: newFilters.is_recurring !== '' ? newFilters.is_recurring : undefined
         };
         
@@ -494,9 +501,10 @@ const ExpensesWrapper = () => {
     setFilters({
       months: [thisMonth],
       years: [thisYear],
-      category: 'all',
-      paymentMethod: 'all',
-      hasInstallments: 'all',
+      category_id: 'all',
+      bank_id: 'all',
+      payment_method: 'all',
+      has_installments: 'all',
       description: '',
       is_recurring: ''
     });
@@ -530,20 +538,20 @@ const ExpensesWrapper = () => {
         queryParams.append('description', filterParams.description);
       }
       
-      if (filterParams.category && filterParams.category !== 'all') {
-        queryParams.append('category_id', filterParams.category);
+      if (filterParams.category_id && filterParams.category_id !== 'all') {
+        queryParams.append('category_id', filterParams.category_id);
       }
       
-      if (filterParams.bank && filterParams.bank !== 'all') {
-        queryParams.append('bank_id', filterParams.bank);
+      if (filterParams.bank_id && filterParams.bank_id !== 'all') {
+        queryParams.append('bank_id', filterParams.bank_id);
       }
       
-      if (filterParams.hasInstallments && filterParams.hasInstallments !== 'all') {
-        queryParams.append('has_installments', filterParams.hasInstallments === 'yes');
+      if (filterParams.payment_method && filterParams.payment_method !== 'all') {
+        queryParams.append('payment_method', filterParams.payment_method);
       }
       
-      if (filterParams.paymentMethod && filterParams.paymentMethod !== 'all') {
-        queryParams.append('payment_method', filterParams.paymentMethod);
+      if (filterParams.has_installments && filterParams.has_installments !== 'all') {
+        queryParams.append('has_installments', filterParams.has_installments === 'yes');
       }
       
       if (filterParams.is_recurring !== undefined && filterParams.is_recurring !== '') {
@@ -782,8 +790,10 @@ const ExpensesWrapper = () => {
     const backendFilters = {
       month: filters.months !== 'all' ? filters.months : undefined,
       year: filters.years !== 'all' ? filters.years : undefined,
-      category_id: filters.category !== 'all' ? filters.category : undefined,
-      bank_id: filters.paymentMethod !== 'all' ? filters.paymentMethod : undefined,
+      category_id: filters.category_id !== 'all' ? filters.category_id : undefined,
+      bank_id: filters.bank_id !== 'all' ? filters.bank_id : undefined,
+      payment_method: filters.payment_method !== 'all' ? filters.payment_method : undefined,
+      has_installments: filters.has_installments !== 'all' ? filters.has_installments : undefined,
       is_recurring: filters.is_recurring !== '' ? filters.is_recurring : undefined,
       description: searchTerm || undefined
     };
