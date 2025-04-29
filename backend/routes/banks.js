@@ -213,13 +213,14 @@ router.post('/favorites', authenticate, checkSubscription, async (req, res) => {
       where: { user_id, bank_id },
       include: [{
         model: Bank,
+        as: 'bank',
         attributes: ['id', 'name', 'code']
       }]
     });
 
     res.json({
       message: 'Banco favorito atualizado com sucesso',
-      bank: updatedUserBank.Bank,
+      bank: updatedUserBank.bank,
       is_active: updatedUserBank.is_active
     });
   } catch (error) {
@@ -269,13 +270,14 @@ router.put('/favorites', authenticate, checkSubscription, async (req, res) => {
       where: { user_id, bank_id },
       include: [{
         model: Bank,
+        as: 'bank',
         attributes: ['id', 'name', 'code']
       }]
     });
 
     res.json({
       message: 'Banco favorito atualizado com sucesso',
-      bank: updatedUserBank.Bank,
+      bank: updatedUserBank.bank,
       is_active: updatedUserBank.is_active
     });
   } catch (error) {
