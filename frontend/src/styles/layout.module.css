@@ -17,7 +17,7 @@
   overflow-y: auto; /* Permitir rolagem dentro do conteúdo */
   width: 100%;
   margin-left: 0;
-  .layout[data-page="dashboard"] & {
+  &[data-page="dashboard"] {
     margin-left: 280px;
   }
 }
