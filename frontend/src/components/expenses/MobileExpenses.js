@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FiEdit2, FiTrash2, FiFilter, FiSearch, FiPlus } from 'react-icons/fi';
-import { BsRepeat, BsCreditCard2Front, BsCurrencyDollar, BsExclamationTriangle, BsX, BsWallet2, BsCashCoin } from 'react-icons/bs';
+import { BsRepeat, BsCurrencyDollar, BsExclamationTriangle, BsX, BsCreditCard2Front } from 'react-icons/bs';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import styles from '../../styles/mobile/dataTable.mobile.module.css';
 
@@ -221,7 +221,9 @@ const MobileExpenses = ({
         {renderFilters()}
 
         <div className={styles.cardsContainer}>
-          {expenses.map((expense) => (
+          {expenses.map((expense) => {
+            console.log('Renderizando expense:', expense);
+            return (
             <div key={expense.id} className={styles.card} style={{ borderLeftColor: '#ff4444' }}>
               <div className={styles.cardHeader}>
                 <h3 className={styles.cardTitle}>{expense.description}</h3>
@@ -285,7 +287,7 @@ const MobileExpenses = ({
                 </button>
               </div>
             </div>
-          ))}
+          )})}
         </div>
       </div>
     </div>
