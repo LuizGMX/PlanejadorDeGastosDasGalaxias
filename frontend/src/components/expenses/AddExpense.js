@@ -19,26 +19,25 @@ import {
   BsListCheck
 } from 'react-icons/bs';
 import { format } from 'date-fns';
+import { toast } from 'react-hot-toast';
 
 
 const AddExpense = ({ installment = false }) => {
   const navigate = useNavigate();
   const { auth } = useContext(AuthContext);
-  const initialFormData = {
+  const [formData, setFormData] = useState({
     description: '',
     amount: '',
-    date: format(new Date(), 'yyyy-MM-dd'),
-    categoryId: '',
-    is_recurring: false,
-    frequency: 'monthly',
-    recurrence_end_date: '',
-    has_installments: installment,
-    total_installments: installment ? 2 : 1,
-    current_installment: installment ? 1 : 1,
+    category_id: '',
+    expense_date: new Date().toISOString().split('T')[0],
+    bank_id: '',
     payment_method: 'credit_card',
-    bankId: '',
-  };
-  const [formData, setFormData] = useState(initialFormData);
+    has_installments: !!installment,
+    is_recurring: false,
+    recurrence_type: 'monthly',
+    current_installment: 1,
+    total_installments: 12
+  });
   const [categories, setCategories] = useState([]);
   const [banks, setBanks] = useState([]);
   const [error, setError] = useState('');
@@ -281,183 +280,58 @@ const AddExpense = ({ installment = false }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
-    setLoading(true);
-
+    
     try {
-      // Verificar se os campos obrigatórios estão preenchidos
-      if (!formData.description || !formData.amount || !formData.categoryId || !formData.bankId) {
-        throw new Error('Preencha todos os campos obrigatórios: descrição, valor, categoria e banco');
-      }
-
-      if (!formData.payment_method) {
-        throw new Error('Selecione uma forma de pagamento (Crédito, Débito, Dinheiro ou Pix)');
-      }
-
-      // Validação da data para pagamento à vista
-      if (!formData.is_recurring && !formData.has_installments) {
-        const expenseDate = new Date(formData.expense_date);
-        if (isNaN(expenseDate.getTime())) {
-          throw new Error('A data da despesa é obrigatória para pagamento único');
-        }
-      }
-
-       // Informe o usuário que o valor inserido é o valor da parcela e não o total
-       let amount = formData.amount;
-
-      // Validações específicas para pagamento parcelado
-      if (formData.has_installments) {
-        // Validação do número de parcelas
-        if (!formData.total_installments) {
-          throw new Error('O número total de parcelas é obrigatório');
-        }
-        if (formData.total_installments < 2) {
-          throw new Error('O número total de parcelas deve ser no mínimo 2');
-        }
-        if (formData.total_installments > 100) {
-          throw new Error('O número total de parcelas não pode ser maior que 100');
-        }
-
-        // Validação da parcela atual
-        if (!formData.current_installment) {
-          throw new Error('O número da parcela atual é obrigatório');
-        }
-        if (formData.current_installment < 1) {
-          throw new Error('O número da parcela atual deve ser no mínimo 1');
-        }
-        if (formData.current_installment > formData.total_installments) {
-          throw new Error('O número da parcela atual não pode ser maior que o total de parcelas');
-        }
-
-        // Validação da data para pagamento parcelado
-        const expenseDate = new Date(formData.expense_date);
-        if (isNaN(expenseDate.getTime())) {
-          throw new Error('A data da parcela atual é obrigatória');
-        }
+      setLoading(true);
+      const expenseData = { ...formData };
+      
+      // Formatações e validações
+      expenseData.amount = Number(formData.amount.replace(/[^0-9.,]/g, '').replace(',', '.'));
+      expenseData.category_id = Number(formData.category_id);
+      expenseData.bank_id = Number(formData.bank_id);
+      
+      // Se for parcelada, garantir que os campos de parcela estejam corretos 
+      if (expenseData.has_installments) {
+        expenseData.total_installments = Number(formData.total_installments) || 1;
+        expenseData.current_installment = Number(formData.current_installment) || 1;
         
-       
-        
-        // Verifica se o amount é uma string e converte para número se necessário
-        if (typeof amount === 'string' && amount) {
-          // Remove caracteres não numéricos exceto pontos e vírgulas
-          amount = amount.replace(/[^\d,.]/g, '');
-          // Substitui vírgula por ponto para conversão correta
-          amount = amount.replace(',', '.');
-          // Converte para número
-          amount = parseFloat(amount);
-        }
-        
-        // Se após a conversão o valor não for um número válido, usa 0
-        if (isNaN(amount)) {
-          amount = 0;
-        }
-      }
-
-      // Validação para despesas recorrentes
-      if (formData.is_recurring) {
-        const startDate = new Date(formData.start_date || formData.expense_date);
-        
-        if (isNaN(startDate.getTime())) {
-          throw new Error('A data inicial da recorrência é inválida');
-        }
-      }
-
-      // Não calculamos mais o valor da parcela - usamos diretamente o valor informado
-      // Para parcelas, o amount já é o valor de cada parcela
-
-      // Não precisamos mais calcular a data da primeira parcela, pois só registramos
-      // as parcelas a partir da atual
-
-      const dataToSend = {
-        description: formData.description,
-        amount: amount,
-        category_id: parseInt(formData.categoryId),
-        bank_id: parseInt(formData.bankId),
-        expense_date: formData.expense_date || formData.date || new Date().toISOString().split('T')[0],
-        payment_method: formData.payment_method || 'credit_card',
-        has_installments: Boolean(formData.has_installments),
-        is_recurring: Boolean(formData.is_recurring),
-        is_in_cash: !formData.is_recurring && !formData.has_installments,
-        current_installment: formData.has_installments ? parseInt(formData.current_installment) : null,
-        total_installments: formData.has_installments ? parseInt(formData.total_installments) : null,
-        installments: formData.has_installments ? parseInt(formData.total_installments) : null,
-        user_id: auth.user?.id // Garante que o ID do usuário está incluído
-      };
-
-      // Adicionando informações específicas de recorrência quando é despesa recorrente
-      if (formData.is_recurring) {
-        dataToSend.recurrence_rule = {
-          frequency: formData.frequency || 'monthly',
-          start_date: formData.expense_date || formData.date || new Date().toISOString().split('T')[0]
-        };
-        dataToSend.recurrence_type = formData.frequency || 'monthly';
-      }
-
-      console.log('Enviando dados:', JSON.stringify(dataToSend, null, 2));
-
-      // Obter um token válido, tentando primeiro o contexto e depois localStorage
-      let token = auth.token;
-      if (!token) {
-        console.log('Token não encontrado no contexto, buscando do localStorage para handleSubmit...');
-        token = localStorage.getItem('token');
-        if (!token) {
-          console.error('Nenhum token de autenticação encontrado para handleSubmit');
-          navigate('/login');
+        if (expenseData.current_installment > expenseData.total_installments) {
+          toast.error('A parcela atual não pode ser maior que o total de parcelas');
+          setLoading(false);
           return;
         }
       }
-
+      
+      // Se não for parcelada nem recorrente, remover campos desnecessários
+      if (!expenseData.has_installments) {
+        delete expenseData.current_installment;
+        delete expenseData.total_installments;
+      }
+      
+      if (!expenseData.is_recurring) {
+        delete expenseData.recurrence_type;
+      }
+      
+      // Enviar para a API
       const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/expenses`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${auth.token}`
         },
-        body: JSON.stringify(dataToSend)
+        body: JSON.stringify(expenseData)
       });
-
-      // Verificar se a resposta parece ser HTML (possível página de erro 502)
-      const contentType = response.headers.get('content-type');
-      const responseText = await response.text();
       
-      // Se parece ser HTML ou contém <!doctype, é provavelmente uma página de erro
-      if (contentType?.includes('text/html') || responseText.toLowerCase().includes('<!doctype')) {
-        console.error('Resposta da API contém HTML ao invés de JSON. Possível erro 502 Bad Gateway.');
-        console.log('Conteúdo da resposta (primeiros 100 caracteres):', responseText.substring(0, 100));
-        throw new Error('Servidor temporariamente indisponível. Por favor, tente novamente em alguns instantes.');
-      }
-
       if (!response.ok) {
-        // Parsear o JSON manualmente já que usamos text() acima
-        try {
-          const errorData = JSON.parse(responseText);
-          console.error('Erro da API:', errorData);
-          throw new Error(errorData.message || 'Falha ao adicionar despesa');
-        } catch (jsonError) {
-          console.error('Erro ao parsear JSON da resposta de erro:', jsonError);
-          throw new Error('Erro ao processar resposta do servidor');
-        }
-      }
-
-      // Parsear o JSON manualmente já que usamos text() acima
-      let result;
-      try {
-        result = JSON.parse(responseText);
-      } catch (jsonError) {
-        console.error('Erro ao parsear JSON da resposta:', jsonError);
-        throw new Error('Erro ao processar resposta do servidor');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao cadastrar despesa');
       }
       
-      console.log('Resposta do servidor:', result);
-
-      setSuccess('Despesa adicionada com sucesso!');
-      setTimeout(() => {
-        navigate('/expenses');
-      }, 2000);
-    } catch (err) {
-      console.error('Erro completo:', err);
-      setError(err.message || 'Erro ao adicionar despesa. Por favor, tente novamente.');
+      toast.success('Despesa cadastrada com sucesso!');
+      navigate('/expenses');
+    } catch (error) {
+      console.error('Erro:', error);
+      toast.error(error.message || 'Erro ao cadastrar despesa');
     } finally {
       setLoading(false);
     }
@@ -693,8 +567,8 @@ const AddExpense = ({ installment = false }) => {
                 <BsFolderSymlink size={16} /> Categoria
               </label>
               <select
-                name="categoryId"
-                value={formData.categoryId}
+                name="category_id"
+                value={formData.category_id}
                 onChange={handleChange}
                 className={dataTableStyles.formInput}
                 required
@@ -714,8 +588,8 @@ const AddExpense = ({ installment = false }) => {
               </label>
               {banks.length > 0 ? (
                 <select
-                  name="bankId"
-                  value={formData.bankId}
+                  name="bank_id"
+                  value={formData.bank_id}
                   onChange={handleChange}
                   className={dataTableStyles.formInput}
                   required

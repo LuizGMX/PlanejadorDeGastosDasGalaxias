@@ -627,26 +627,37 @@ router.post('/', async (req, res) => {
     if (has_installments) {
       // Criar múltiplas parcelas
       const baseDate = adjustDate(expense_date);
+      
+      // Determinar a parcela inicial
+      const currentInstallment = parseInt(req.body.current_installment) || 1;
+      if (currentInstallment < 1 || currentInstallment > installments) {
+        await t.rollback();
+        return res.status(400).json({ message: 'Número da parcela atual inválido' });
+      }
+      
+      // Calcular o valor de cada parcela
       const installmentAmount = Number((parsedAmount / installments).toFixed(2));
       const remainder = parsedAmount - (installmentAmount * installments);
-
-      for (let i = 0; i < installments; i++) {
+      
+      // Criar apenas as parcelas a partir da parcela atual
+      for (let i = currentInstallment; i <= installments; i++) {
+        // Ajustar a data para a parcela atual
         const installmentDate = new Date(baseDate);
-        installmentDate.setMonth(baseDate.getMonth() + i);
+        installmentDate.setMonth(baseDate.getMonth() + (i - currentInstallment));
         
-        // Adicionar o resto na primeira parcela
-        const finalAmount = i === 0 ? installmentAmount + remainder : installmentAmount;
+        // Adicionar o resto na primeira parcela (somente se começar da parcela 1)
+        const finalAmount = (i === 1) ? installmentAmount + remainder : installmentAmount;
         
         expenses.push({
           user_id: req.user.id,
-          description: `${description} (${i + 1}/${installments})`,
+          description: `${description} (${i}/${installments})`,
           amount: finalAmount,
           category_id,
           bank_id,
           expense_date: installmentDate,
           payment_method,
           has_installments: true,
-          installment_number: i + 1,
+          current_installment: i,
           total_installments: installments,
           installment_group_id: installmentGroupId,
           is_recurring: false
@@ -765,37 +776,6 @@ router.post('/:id/exclude-occurrence', async (req, res) => {
 
 // Rota para atualizar despesa
 router.put('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const expense = await Expense.findByPk(id);
-
-    if (!expense) {
-      return res.status(404).json({ message: 'Despesa não encontrada' });
-    }
-
-    if (expense.user_id !== req.user.id) {
-      return res.status(403).json({ message: 'Não autorizado' });
-    }
-
-    const expenseData = {
-      ...req.body
-    };
-
-    if (expenseData.is_recurring && !expense.is_recurring) {
-      expenseData.recurring_group_id = uuidv4();
-      expenseData.start_date = expenseData.expense_date;
-      expenseData.end_date = '2099-12-31';
-    }
-
-    await expense.update(expenseData);
-    res.json(expense);
-  } catch (error) {
-    console.error('Erro ao atualizar despesa:', error);
-    res.status(500).json({ message: 'Erro ao atualizar despesa' });
-  }
-});
-
-router.put('/:id', async (req, res) => {
   const transaction = await Expense.sequelize.transaction();
 
   try {
@@ -872,7 +852,6 @@ router.put('/:id', async (req, res) => {
       await Expense.update(
         {
           description,
-          amount: parsedAmount,
           category_id,
           bank_id,
           payment_method
@@ -888,6 +867,26 @@ router.put('/:id', async (req, res) => {
           transaction
         }
       );
+
+      // Atualiza separadamente o valor apenas desta parcela
+      await expense.update(
+        {
+          amount: parsedAmount
+        },
+        { transaction }
+      );
+      
+      // Certifica-se de que os campos de parcelas continuam corretamente definidos
+      if (!expense.current_installment || !expense.total_installments) {
+        await expense.update({
+          current_installment: expense.current_installment || 
+                               parseInt(req.body.current_installment) || 
+                               1,
+          total_installments: expense.total_installments || 
+                              parseInt(req.body.total_installments) || 
+                              1
+        }, { transaction });
+      }
     }
     // Se for uma despesa única
     else {
@@ -913,118 +912,6 @@ router.put('/:id', async (req, res) => {
     await transaction.rollback();
     console.error('Erro ao atualizar despesa:', error);
     res.status(500).json({ message: 'Erro ao atualizar despesa.' });
-  }
-});
-
-// Rota para atualizar despesa
-router.put('/:id', async (req, res) => {
-  const transaction = await Expense.sequelize.transaction();
-
-  try {
-    const { 
-      description, 
-      amount: rawAmount, 
-      expense_date, 
-      category_id, 
-      bank_id, 
-      payment_method,
-      is_recurring,
-      start_date,
-      end_date,
-      recurrence_type
-    } = req.body;
-    
-    const expense = await Expense.findByPk(req.params.id);
-    
-    if (!expense) {
-      await transaction.rollback();
-      return res.status(404).json({ message: 'Despesa não encontrada' });
-    }
-    
-    if (expense.user_id !== req.user.id) {
-      await transaction.rollback();
-      return res.status(403).json({ message: 'Não autorizado' });
-    }
-
-    const parsedAmount = Number(rawAmount);
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      await transaction.rollback();
-      return res.status(400).json({ message: 'O valor deve ser um número positivo' });
-    }
-
-    // Se a despesa for recorrente
-    if (expense.is_recurring) {
-      // Atualiza a despesa principal
-      await expense.update(
-        {
-          description,
-          amount: parsedAmount,
-          category_id,
-          bank_id,
-          payment_method,
-          is_recurring,
-          start_date: start_date ? new Date(start_date) : expense.start_date,
-          end_date: end_date ? new Date(end_date) : expense.end_date,
-          recurrence_type: recurrence_type || expense.recurrence_type
-        },
-        { transaction }
-      );
-    }
-    // Se a despesa for parcelada
-    else if (expense.has_installments && expense.installment_group_id) {
-      // Atualiza todas as parcelas futuras
-      const currentDate = new Date(expense.expense_date);
-      await Expense.update(
-        {
-          description,
-          category_id,
-          bank_id,
-          payment_method
-        },
-        {
-          where: {
-            installment_group_id: expense.installment_group_id,
-            expense_date: {
-              [Op.gte]: currentDate
-            },
-            user_id: req.user.id
-          },
-          transaction
-        }
-      );
-
-      // Atualiza separadamente o valor apenas desta parcela
-      await expense.update(
-        {
-          amount: parsedAmount
-        },
-        { transaction }
-      );
-    }
-    // Se for uma despesa única
-    else {
-      await expense.update(
-        {
-          description,
-          amount: parsedAmount,
-          expense_date: new Date(expense_date),
-          category_id,
-          bank_id,
-          payment_method
-        },
-        { transaction }
-      );
-    }
-
-    await transaction.commit();
-
-    // Busca a despesa atualizada
-    const updatedExpense = await Expense.findByPk(req.params.id);
-    res.json(updatedExpense);
-  } catch (error) {
-    await transaction.rollback();
-    console.error('Erro ao atualizar despesa:', error);
-    res.status(500).json({ message: 'Erro ao atualizar despesa' });
   }
 });
 

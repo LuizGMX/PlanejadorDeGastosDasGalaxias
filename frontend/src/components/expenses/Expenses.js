@@ -756,7 +756,7 @@ const Expenses = ({
                             </span>
                           )}
                         </td>
-                        <td>{expense.has_installments ? `${expense.current_installment}/${expense.total_installments}` : '-'}</td>
+                        <td>{expense.has_installments ? `${expense.current_installment || expense.installment_number || '?'}/${expense.total_installments || '?'}` : '-'}</td>
                         <td>
                           <div className={dataTableStyles.actionButtons}>
                             <button
