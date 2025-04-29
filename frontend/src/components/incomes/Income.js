@@ -555,7 +555,7 @@ function Income({
               <label className={dataTableStyles.filterLabel}>
                 <BsSearch /> Buscar
               </label>
-              <div className={dataTableStyles.searchField}>
+              <div className={dataTableStyles.modernSelect}>
                 <input
                   type="text"
                   className={dataTableStyles.searchInput}
