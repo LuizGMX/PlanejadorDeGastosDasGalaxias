@@ -1690,11 +1690,49 @@ const Dashboard = () => {
 
   // Improved renderIncomeVsExpensesChart with mobile optimization
   const renderIncomeVsExpensesChart = () => {
-    if (!data?.budget_info) return null;
+    if (!data || !data.budget_info) {
+      return (
+        <div className={styles.chartContainer}>
+          <div className={styles.chartHeader}>
+            <h3>Receitas vs Despesas</h3>
+            <div className={styles.chartSubtitle}>
+              <span className={styles.dateFilterBadge}>
+                <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
+              </span>
+            </div>
+          </div>
+          <div className={styles.emptyChartContent}>
+            <span className={styles.emptyChartIcon}>📊</span>
+            <p>Não há dados de orçamento disponíveis para este período.</p>
+          </div>
+        </div>
+      );
+    }
 
+    // Se chegou aqui, data.budget_info existe
     const available = Math.max(0, data.budget_info.total_budget - data.budget_info.total_spent);
     const totalSpent = data.budget_info.total_spent;
     const total = available + totalSpent;
+
+    // Se não houver valores, mostrar mensagem de dados vazios
+    if (total === 0) {
+      return (
+        <div className={styles.chartContainer}>
+          <div className={styles.chartHeader}>
+            <h3>Receitas vs Despesas</h3>
+            <div className={styles.chartSubtitle}>
+              <span className={styles.dateFilterBadge}>
+                <i className="far fa-calendar-alt"></i> {formatCurrentDateFilter()}
+              </span>
+            </div>
+          </div>
+          <div className={styles.emptyChartContent}>
+            <span className={styles.emptyChartIcon}>📊</span>
+            <p>Não há receitas ou despesas no período selecionado.</p>
+          </div>
+        </div>
+      );
+    }
 
     const chartData = [
       {
