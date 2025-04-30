@@ -1,7 +1,9 @@
 @import './variables.css';
 
-.dashboard {
-  margin-left: 280px;
+@media (min-width: 1024px) {
+  .dashboard {
+    margin-left: 280px;
+  }
 }
 
 .container {
