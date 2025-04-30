@@ -1,5 +1,8 @@
 @import './variables.css';
 
+.dashboard {
+  margin-left: 280px;
+}
 
 .container {
   width: 100%;

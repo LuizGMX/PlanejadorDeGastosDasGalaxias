@@ -15,11 +15,7 @@
   padding: 2rem;
   min-height: calc(100vh - 80px); /* Altura ajustada para considerar a navbar */
   overflow-y: auto; /* Permitir rolagem dentro do conteúdo */
-  width: 100%;
-  margin-left: 0;
-  &[data-page="dashboard"] {
-    margin-left: 280px;
-  }
+  width: 100%;  
 }
 
 /* Responsividade */
