@@ -2981,3 +2981,143 @@ select option {
   margin: 0 auto;
   padding: 20px;
 }
+
+/* Adaptações para tela de perfil - Mobile */
+@media (max-width: 768px) {
+  .profileContainer {
+    max-width: 100%;
+    padding: 10px;
+  }
+  
+  .dashboardCard {
+    margin-bottom: 16px;
+  }
+  
+  .periodContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .buttonGroup {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .button, .submitButton {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .profileContainer {
+    padding: 8px;
+  }
+  
+  .dashboardTitle h2 {
+    font-size: 18px;
+  }
+  
+  .cardBody {
+    padding: 12px;
+  }
+  
+  .formGroup {
+    margin-bottom: 12px;
+  }
+  
+  .input, 
+  select, 
+  .react-currency-input-field {
+    font-size: 14px;
+    padding: 10px;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Ajustes específicos para componentes do perfil */
+  .telegramSection {
+    padding: 15px;
+  }
+  
+  .telegramActionButtons {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .telegramButtonGroup {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .verificationCode {
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  .telegramButton, .verifiedButton {
+    width: 100%;
+    padding: 12px;
+    font-size: 14px;
+  }
+  
+  .telegramFeatures {
+    padding-left: 20px;
+  }
+  
+  .telegramFeatures li {
+    margin-bottom: 10px;
+  }
+  
+  .banksList {
+    max-height: none;
+    overflow-y: visible;
+  }
+  
+  .searchInput {
+    width: 100%;
+    padding: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .telegramIntro h3 {
+    font-size: 16px;
+  }
+  
+  .telegramIntro p {
+    font-size: 14px;
+  }
+  
+  .instructionStep {
+    padding: 10px;
+    margin-bottom: 10px;
+  }
+  
+  .stepNumber {
+    width: 25px;
+    height: 25px;
+    font-size: 12px;
+  }
+  
+  .stepText {
+    font-size: 14px;
+  }
+  
+  .code {
+    font-size: 20px;
+    letter-spacing: 2px;
+  }
+  
+  .banksGrid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
+  
+  .bankCard {
+    padding: 8px;
+  }
+  
+  .bankName {
+    font-size: 12px;
+  }
+}
