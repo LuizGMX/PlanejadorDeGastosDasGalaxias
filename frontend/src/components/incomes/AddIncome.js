@@ -170,7 +170,7 @@ const AddIncome = () => {
           console.log('Recurring income added');
         } else {
           setTimeout(() => {
-            navigate('/incomes');
+            navigate('/income');
           }, 2000);
         }
       }
@@ -195,7 +195,7 @@ const AddIncome = () => {
       <div className={`${dataTableStyles.modalContent} ${dataTableStyles.formModal}`}>
         <div className={dataTableStyles.modalHeader}>
           <BsPlusCircle size={20} style={{ color: 'var(--primary-color)' }} />
-          <h3>Adicionar Ganho</h3>
+          <h3>Adicionar Receita</h3>
         </div>
 
         {error && (
@@ -221,10 +221,10 @@ const AddIncome = () => {
         )}
 
         <form onSubmit={handleSubmit} className={dataTableStyles.formGrid}>
-          {/* Tipo de Ganho */}
+          {/* Tipo de Receita */}
           <div className={dataTableStyles.formGroup}>
             <label className={dataTableStyles.formLabel}>
-              Tipo de Ganho
+              Tipo de Receita
             </label>
             <div className={dataTableStyles.toggleGroup}>
               <button
@@ -283,68 +283,6 @@ const AddIncome = () => {
             </div>
           </div>
 
-          {/* Data para Ganho Único */}
-          {!formData.is_recurring && (
-            <div className={dataTableStyles.formGroup}>
-              <label className={dataTableStyles.formLabel}>
-                Data
-              </label>
-              <div className={dataTableStyles.inputWithIcon}>
-                <BsCalendar3 className={dataTableStyles.inputIcon} />
-                <input
-                  type="date"
-                  name="date"
-                  value={formData.date}
-                  onChange={handleChange}
-                  className={dataTableStyles.formInput}
-                  required
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Configurações de Ganho Fixo */}
-          {formData.is_recurring && (
-            <div className={dataTableStyles.formGroup}>
-              <label className={dataTableStyles.formLabel}>
-                <div className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
-                  <BsRepeat /> Ganho Fixo
-                </div>
-              </label>
-              <div className={dataTableStyles.inlineFieldsContainer}>
-                <div className={dataTableStyles.formGroupHalf}>
-                  <label className={dataTableStyles.formLabel}>Data de Início</label>
-                  <input
-                    type="date"
-                    name="date"
-                    value={formData.date}
-                    onChange={handleChange}
-                    className={dataTableStyles.formInput}
-                    required
-                  />
-                </div>
-                
-                <div className={dataTableStyles.formGroupHalf}>
-                  <label className={dataTableStyles.formLabel}>Tipo de Recorrência</label>
-                  <select
-                    name="recurrence_type"
-                    value={formData.recurrence_type || 'monthly'}
-                    onChange={handleChange}
-                    className={dataTableStyles.formInput}
-                    required
-                  >
-                    <option value="daily">Diária</option>
-                    <option value="weekly">Semanal</option>
-                    <option value="monthly">Mensal</option>
-                    <option value="quarterly">Trimestral</option>
-                    <option value="semiannual">Semestral</option>
-                    <option value="annual">Anual</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Categoria e Banco/Carteira em duas colunas */}
           <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px'}}>
             <div className={dataTableStyles.formGroup}>
@@ -394,11 +332,73 @@ const AddIncome = () => {
             </div>
           </div>
 
+          {/* Data para Receita Único */}
+          {!formData.is_recurring && (
+            <div className={dataTableStyles.formGroup}>
+              <label className={dataTableStyles.formLabel}>
+                Data
+              </label>
+              <div className={dataTableStyles.inputWithIcon}>
+                <BsCalendar3 className={dataTableStyles.inputIcon} />
+                <input
+                  type="date"
+                  name="date"
+                  value={formData.date}
+                  onChange={handleChange}
+                  className={dataTableStyles.formInput}
+                  required
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Configurações de Receita Fixo */}
+          {formData.is_recurring && (
+            <div className={dataTableStyles.formGroup}>
+              <label className={dataTableStyles.formLabel}>
+                <div className={`${dataTableStyles.typeStatus} ${dataTableStyles.fixedType}`}>
+                  <BsRepeat /> Receita Fixo
+                </div>
+              </label>
+              <div className={dataTableStyles.inlineFieldsContainer}>
+                <div className={dataTableStyles.formGroupHalf}>
+                  <label className={dataTableStyles.formLabel}>Data de Início</label>
+                  <input
+                    type="date"
+                    name="date"
+                    value={formData.date}
+                    onChange={handleChange}
+                    className={dataTableStyles.formInput}
+                    required
+                  />
+                </div>
+                
+                <div className={dataTableStyles.formGroupHalf}>
+                  <label className={dataTableStyles.formLabel}>Tipo de Recorrência</label>
+                  <select
+                    name="recurrence_type"
+                    value={formData.recurrence_type || 'monthly'}
+                    onChange={handleChange}
+                    className={dataTableStyles.formInput}
+                    required
+                  >
+                    <option value="daily">Diária</option>
+                    <option value="weekly">Semanal</option>
+                    <option value="monthly">Mensal</option>
+                    <option value="quarterly">Trimestral</option>
+                    <option value="semiannual">Semestral</option>
+                    <option value="annual">Anual</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Botões de Ação */}
           <div className={dataTableStyles.modalActions}>
             <button 
               type="button" 
-              onClick={() => navigate('/incomes')} 
+              onClick={() => navigate('/income')} 
               className={`${dataTableStyles.formButton} ${dataTableStyles.formCancel}`}
             >
               <BsXLg /> Cancelar
@@ -408,7 +408,7 @@ const AddIncome = () => {
               className={`${dataTableStyles.formButton} ${dataTableStyles.formSubmit}`}
               disabled={loading}
             >
-              <BsCheck2 /> {loading ? 'Salvando...' : 'Salvar Ganho'}
+              <BsCheck2 /> {loading ? 'Salvando...' : 'Salvar Receita'}
             </button>
           </div>
         </form>

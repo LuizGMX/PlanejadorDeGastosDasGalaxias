@@ -69,7 +69,7 @@ const EditRecurringIncomes = () => {
         return acc;
       }, {});
 
-      // Para cada grupo, pega o ganho com a menor data
+      // Para cada grupo, pega o receita com a menor data
       const uniqueIncomes = Object.values(groupedIncomes)
         .filter(group => group.length > 0)
         .map(group => {
@@ -226,12 +226,12 @@ const EditRecurringIncomes = () => {
         </div>
       ) : incomes.length === 0 ? (
         <div className={dataTableStyles.emptyContainer}>
-          <p>Nenhum ganho fixo encontrado.</p>
+          <p>Nenhum receita fixo encontrado.</p>
           <button
             onClick={() => navigate('/add-income')}
             className={dataTableStyles.primaryButton}
           >
-            <BsPlus /> Adicionar Ganho Fixo
+            <BsPlus /> Adicionar Receita Fixo
           </button>
         </div>
       ) : (
@@ -327,7 +327,7 @@ const EditRecurringIncomes = () => {
             
             <div className={dataTableStyles.modalBody}>
               <div className={dataTableStyles.confirmMessage}>
-                <p>Você está prestes a excluir o ganho fixo:</p>
+                <p>Você está prestes a excluir o receita fixo:</p>
                 <p><strong>{selectedIncome?.description}</strong> - {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(selectedIncome?.amount)}</p>
                 <p className={dataTableStyles.warningText}>Esta ação excluirá todas as ocorrências e não pode ser desfeita.</p>
               </div>
@@ -364,8 +364,8 @@ const EditRecurringIncomes = () => {
             
             <div className={dataTableStyles.modalBody}>
               <div className={dataTableStyles.confirmMessage}>
-                <p>Você está prestes a aplicar alterações a um ganho fixo.</p>
-                <p className={dataTableStyles.warningText}>Todas as ocorrências futuras deste ganho serão atualizadas.</p>
+                <p>Você está prestes a aplicar alterações a um receita fixo.</p>
+                <p className={dataTableStyles.warningText}>Todas as ocorrências futuras deste receita serão atualizadas.</p>
               </div>
               
               <div className={dataTableStyles.optionsContainer}>

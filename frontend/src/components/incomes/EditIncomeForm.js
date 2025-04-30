@@ -196,6 +196,49 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
             </div>
           </div>
 
+          {/* Categoria e Banco/Carteira */}
+          <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px'}}>
+            <div className={dataTableStyles.formGroup}>
+              <label className={dataTableStyles.formLabel}>
+                <BsFolderSymlink /> Categoria
+              </label>
+              <select
+                name="category_id"
+                value={formData.category_id}
+                onChange={handleChange}
+                className={dataTableStyles.formInput}
+                required
+              >
+                <option value="">Selecione uma categoria</option>
+                {categories.map(category => (
+                  <option key={category.id} value={category.id}>
+                    {category.category_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className={dataTableStyles.formGroup}>
+              <label className={dataTableStyles.formLabel}>
+                <BsBank2 /> Banco/Carteira
+              </label>
+              <select
+                name="bank_id"
+                value={formData.bank_id}
+                onChange={handleChange}
+                className={dataTableStyles.formInput}
+                required
+              >
+                <option value="">Selecione um banco</option>
+                {banks.map(bank => (
+                  <option key={bank.id} value={bank.id}>
+                    {bank.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           <div className={dataTableStyles.formGroup}>
             <label className={dataTableStyles.formLabel}>
               Data
@@ -211,46 +254,6 @@ const EditIncomeForm = ({ income, onSave, onCancel }) => {
                 required
               />
             </div>
-          </div>
-
-          <div className={dataTableStyles.formGroup}>
-            <label className={dataTableStyles.formLabel}>
-              <BsFolderSymlink /> Categoria
-            </label>
-            <select
-              name="category_id"
-              value={formData.category_id}
-              onChange={handleChange}
-              className={dataTableStyles.formInput}
-              required
-            >
-              <option value="">Selecione uma categoria</option>
-              {categories.map(category => (
-                <option key={category.id} value={category.id}>
-                  {category.category_name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className={dataTableStyles.formGroup}>
-            <label className={dataTableStyles.formLabel}>
-              <BsBank2 /> Banco/Carteira
-            </label>
-            <select
-              name="bank_id"
-              value={formData.bank_id}
-              onChange={handleChange}
-              className={dataTableStyles.formInput}
-              required
-            >
-              <option value="">Selecione um banco</option>
-              {banks.map(bank => (
-                <option key={bank.id} value={bank.id}>
-                  {bank.name}
-                </option>
-              ))}
-            </select>
           </div>
 
           <div className={dataTableStyles.modalActions}>

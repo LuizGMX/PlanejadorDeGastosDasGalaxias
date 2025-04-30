@@ -274,7 +274,7 @@ const MobileAddIncome = () => {
         // Atualizar a UI após a criação bem-sucedida
         setSuccess('Receita adicionada com sucesso!');
         setTimeout(() => {
-          navigate('/incomes');
+          navigate('/income');
         }, 2000);
       }
     } catch (error) {
@@ -349,6 +349,7 @@ const MobileAddIncome = () => {
               </div>
             </div>
 
+            {/* Descrição e Valor */}
             <div className={addIncomeStyles.inlineFieldsContainer}>
               <div className={addIncomeStyles.formGroup}>
                 <label className={addIncomeStyles.formLabel}>
@@ -383,6 +384,55 @@ const MobileAddIncome = () => {
                   className={addIncomeStyles.formInput}
                   required
                 />
+              </div>
+            </div>
+
+            {/* Categoria e Banco */}
+            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px'}}>
+              <div className={addIncomeStyles.formGroup}>
+                <label className={addIncomeStyles.formLabel}>
+                  <BsFolderSymlink size={16} /> Categoria
+                </label>
+                <select
+                  name="category_id"
+                  value={formData.category_id}
+                  onChange={handleChange}
+                  className={addIncomeStyles.formInput}
+                  required
+                >
+                  <option value="">Selecione uma categoria</option>
+                  {categories.map(category => (
+                    <option key={category.id} value={category.id}>
+                      {category.category_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={addIncomeStyles.formGroup}>
+                <label className={addIncomeStyles.formLabel}>
+                  <BsBank2 size={16} /> Banco
+                </label>
+                {banks.length > 0 ? (
+                  <select
+                    name="bank_id"
+                    value={formData.bank_id}
+                    onChange={handleChange}
+                    className={addIncomeStyles.formInput}
+                    required
+                  >
+                    <option value="">Selecione um banco</option>
+                    {banks.map(bank => (
+                      <option key={bank.id} value={bank.id}>
+                        {bank.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className={addIncomeStyles.emptySelectError}>
+                    Erro ao carregar bancos. Por favor, tente novamente.
+                  </div>
+                )}
               </div>
             </div>
 
@@ -448,61 +498,12 @@ const MobileAddIncome = () => {
               </div>
             )}
 
-            {/* Categoria e Banco em duas colunas */}
-            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px'}}>
-              <div className={addIncomeStyles.formGroup}>
-                <label className={addIncomeStyles.formLabel}>
-                  <BsFolderSymlink size={16} /> Categoria
-                </label>
-                <select
-                  name="category_id"
-                  value={formData.category_id}
-                  onChange={handleChange}
-                  className={addIncomeStyles.formInput}
-                  required
-                >
-                  <option value="">Selecione uma categoria</option>
-                  {categories.map(category => (
-                    <option key={category.id} value={category.id}>
-                      {category.category_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className={addIncomeStyles.formGroup}>
-                <label className={addIncomeStyles.formLabel}>
-                  <BsBank2 size={16} /> Banco
-                </label>
-                {banks.length > 0 ? (
-                  <select
-                    name="bank_id"
-                    value={formData.bank_id}
-                    onChange={handleChange}
-                    className={addIncomeStyles.formInput}
-                    required
-                  >
-                    <option value="">Selecione um banco</option>
-                    {banks.map(bank => (
-                      <option key={bank.id} value={bank.id}>
-                        {bank.name}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <div className={addIncomeStyles.emptySelectError}>
-                    Erro ao carregar bancos. Por favor, tente novamente.
-                  </div>
-                )}
-              </div>
-            </div>
-
             {/* Botões de Ação */}
             <div className={addIncomeStyles.modalActions}>
               <button 
                 type="button" 
                 className={`${addIncomeStyles.formButton} ${addIncomeStyles.formCancel}`}
-                onClick={() => navigate('/incomes')}
+                onClick={() => navigate('/income')}
               >
                 <BsXLg /> Cancelar
               </button>

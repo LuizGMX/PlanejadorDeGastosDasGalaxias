@@ -18,7 +18,7 @@ const calculateRecurringIncomeOccurrences = async (income, startDate, endDate) =
   return calculateRecurringOccurrences(income, startDate, endDate, 'date');
 };
 
-// Listar categorias de ganho
+// Listar categorias de receita
 router.get('/categories', async (req, res) => {
   try {
     console.log('Buscando categorias...');
@@ -539,7 +539,7 @@ router.delete('/:id/recurring', async (req, res) => {
   }
 });
 
-// Excluir ganho
+// Excluir receita
 router.delete('/:id', async (req, res) => {
   const t = await Income.sequelize.transaction();
 

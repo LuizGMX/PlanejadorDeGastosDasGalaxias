@@ -3754,15 +3754,6 @@ const Dashboard = () => {
       </div>
 
       <div className={styles.chartsGrid}>
-        {/* Main Charts */}
-        <div className={styles.chartContainer}>
-          {renderExpensesTrend()}
-        </div>
-
-        <div className={styles.chartContainer}>
-          {renderIncomeTrend()}
-        </div>
-
         {/* Categories Charts */}
         <div className={styles.chartContainer}>
           {/* Use renderExpensesByCategoryChart() for the overview section instead of renderCategoriesChart() */}
@@ -3780,6 +3771,15 @@ const Dashboard = () => {
 
         <div className={styles.chartContainer}>
           {renderIncomeVsExpensesChart()}
+        </div>
+        
+        {/* Trend Charts - Despesas e Receitas ao longo do tempo */}
+        <div className={styles.chartContainer}>
+          {renderExpensesTrend()}
+        </div>
+
+        <div className={styles.chartContainer}>
+          {renderIncomeTrend()}
         </div>
       </div>
     </>
