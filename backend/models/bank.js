@@ -1,4 +1,5 @@
 import { DataTypes } from 'sequelize';
+import { encrypt, decrypt } from '../utils/encryption';
 
 export default (sequelize) => {
   const Bank = sequelize.define('Bank', {
@@ -9,11 +10,25 @@ export default (sequelize) => {
     },
     name: {
       type: DataTypes.STRING,
-      allowNull: false
+      allowNull: false,
+      get() {
+        const value = this.getDataValue('name');
+        return value ? decrypt(value) : null;
+      },
+      set(value) {
+        this.setDataValue('name', encrypt(value));
+      }
     },
     code: {
       type: DataTypes.STRING,
-      allowNull: false
+      allowNull: false,
+      get() {
+        const value = this.getDataValue('code');
+        return value ? decrypt(value) : null;
+      },
+      set(value) {
+        this.setDataValue('code', encrypt(value));
+      }
     },
     balance: {
       type: DataTypes.DECIMAL(10, 2),

@@ -1,4 +1,5 @@
 import { DataTypes } from 'sequelize';
+import { encrypt, decrypt } from '../utils/encryption';
 
 export default (sequelize) => {
   const User = sequelize.define('User', {
@@ -13,6 +14,13 @@ export default (sequelize) => {
       validate: {
         notEmpty: true,
         len: [2, 100]
+      },
+      get() {
+        const value = this.getDataValue('name');
+        return value ? decrypt(value) : null;
+      },
+      set(value) {
+        this.setDataValue('name', encrypt(value));
       }
     },
     email: {
@@ -20,15 +28,36 @@ export default (sequelize) => {
       allowNull: false,
       validate: {
         isEmail: true
+      },
+      get() {
+        const value = this.getDataValue('email');
+        return value ? decrypt(value) : null;
+      },
+      set(value) {
+        this.setDataValue('email', encrypt(value));
       }
     },
     telegram_chat_id: {
       type: DataTypes.STRING,
-      allowNull: true
+      allowNull: true,
+      get() {
+        const value = this.getDataValue('telegram_chat_id');
+        return value ? decrypt(value) : null;
+      },
+      set(value) {
+        this.setDataValue('telegram_chat_id', encrypt(value));
+      }
     },
     telegram_username: {
       type: DataTypes.STRING,
-      allowNull: true
+      allowNull: true,
+      get() {
+        const value = this.getDataValue('telegram_username');
+        return value ? decrypt(value) : null;
+      },
+      set(value) {
+        this.setDataValue('telegram_username', encrypt(value));
+      }
     },
     telegram_verified: {
       type: DataTypes.BOOLEAN,

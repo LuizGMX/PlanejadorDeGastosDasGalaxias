@@ -17,9 +17,14 @@ import spreadsheetRoutes from './routes/spreadsheetRoutes.js';
 import userRoutes from './routes/users.js';
 import telegramRoutes from './routes/telegramRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
-import { sequelize, User, Category, Bank, Expense, Income, Budget, VerificationCode, UserBank, RecurrenceRule, ExpensesRecurrenceException, IncomesRecurrenceException, Payment, FinancialGoal } from './models/index.js';
+import userDataRoutes from './routes/userData.js';
+import { sequelize, User, Category, Bank, Expense, Income, Budget, VerificationCode, UserBank, RecurrenceRule, ExpensesRecurrenceException, IncomesRecurrenceException, Payment, FinancialGoal, AuditLog } from './models/index.js';
 import seedDatabase from './database/seeds/index.js';
 import { telegramService } from './services/telegramService.js';
+import { maskSensitiveData } from './middleware/dataMasking.js';
+import { auditLogMiddleware } from './middleware/auditLog.js';
+import { verifyToken, verifyOwnership } from './middleware/authMiddleware.js';
+import { injectModelContext } from './middleware/modelContextMiddleware.js';
 
 import healthRoutes from './routes/healthRoutes.js';
 import { configureRateLimit, authLimiter } from './middleware/rateLimit.js';
@@ -68,6 +73,18 @@ app.use(express.urlencoded({ extended: true }));
 // Aplicar rate limiting global
 app.use(configureRateLimit());
 
+// Middleware para autenticação
+app.use(verifyToken);
+
+// Middleware para injetar contexto nos models
+app.use(injectModelContext);
+
+// Middleware para mascarar dados sensíveis
+app.use(maskSensitiveData);
+
+// Middleware para logs de auditoria
+app.use(auditLogMiddleware);
+
 // Define API_PREFIX from environment variable with "api" as default
 const API_PREFIX = process.env.NODE_ENV === 'production' 
   ? (process.env.API_PREFIX && process.env.API_PREFIX.trim() !== '' ? `/${process.env.API_PREFIX}` : '')
@@ -114,7 +131,7 @@ app.use(`${API_PREFIX}/users`, userRoutes);
 app.use(`${API_PREFIX}/telegram`, telegramRoutes);
 app.use(`${API_PREFIX}/health`, healthRoutes);
 app.use(`${API_PREFIX}/payments`, paymentRoutes);
-
+app.use(`${API_PREFIX}/user-data`, userDataRoutes);
 
 let server;
 
@@ -203,6 +220,7 @@ const startServer = async () => {
     await IncomesRecurrenceException.sync({ force: false });
     await Payment.sync({ force: false });
     await FinancialGoal.sync({ force: false });
+    await AuditLog.sync({ force: false });
 
     // Verificar se a porta está em uso
     const checkPort = () => {

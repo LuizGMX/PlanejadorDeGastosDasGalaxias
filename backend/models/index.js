@@ -14,6 +14,7 @@ import defineExpensesRecurrenceExceptionModel from './expensesRecurrenceExceptio
 import defineIncomesRecurrenceExceptionModel from './incomesRecurrenceException.js';
 import definePaymentModel from './payment.js';
 import defineFinancialGoalModel from './financialGoal.js';
+import AuditLog from './auditLog.js';
 
 // Configurações do banco de dados
 dotenv.config();
@@ -263,14 +264,12 @@ FinancialGoal.belongsTo(User, {
   as: 'user'
 });
 
-// Exporta os modelos e a instância do Sequelize
-export {
-  sequelize,
+const models = {
   User,
   Category,
+  Bank,
   Expense,
   Income,
-  Bank,
   Budget,
   VerificationCode,
   UserBank,
@@ -278,5 +277,12 @@ export {
   ExpensesRecurrenceException,
   IncomesRecurrenceException,
   Payment,
-  FinancialGoal
+  FinancialGoal,
+  AuditLog
+};
+
+// Exporta os modelos e a instância do Sequelize
+export {
+  sequelize,
+  models
 };
