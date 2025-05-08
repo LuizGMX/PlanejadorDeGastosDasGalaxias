@@ -26,28 +26,84 @@ const sequelize = new Sequelize(
   {
     host: process.env.DB_HOST || 'localhost',
     dialect: 'mysql',
-    logging: console.log,
+    logging: process.env.NODE_ENV === 'production' ? false : console.log,
     define: {
       charset: 'utf8mb4',
       collate: 'utf8mb4_unicode_ci',
       timestamps: true
     },
     pool: {
-      max: 10,
-      min: 0,
-      acquire: 60000,
-      idle: 20000
+      max: 20,              // Aumentado para 20 conexões máximas
+      min: 5,               // Mínimo de 5 conexões mantidas
+      acquire: 60000,       // 60 segundos para adquirir conexão
+      idle: 10000,          // 10 segundos antes de liberar conexão ociosa
+      evict: 30000,         // Verifica conexões a cada 30 segundos
+      handleDisconnects: true // Lidar com desconexões automaticamente
     },
     dialectOptions: {
-      connectTimeout: 120000,
-      statement_timeout: 120000,
-      idle_in_transaction_session_timeout: 120000
+      connectTimeout: 60000,  // 60 segundos para timeout de conexão
+      options: {
+        requestTimeout: 60000 // 60 segundos para timeout de requisição
+      },
+      // Configurações adicionais de resiliência
+      maxReconnects: 5,
+      reconnectInterval: 2000, // 2 segundos entre tentativas
+      keepDefaultTimezone: true,
+      decimalNumbers: true,
+      supportBigNumbers: true
     },
     retry: {
-      max: 3
+      max: 5,              // Tentar reconectar até 5 vezes
+      match: [            // Tipos de erros que devem acionar reconexão
+        /ETIMEDOUT/,
+        /ECONNRESET/,
+        /ECONNREFUSED/,
+        /ESOCKETTIMEDOUT/,
+        /EHOSTUNREACH/,
+        /EPIPE/,
+        /EAI_AGAIN/,
+        /SequelizeConnectionError/,
+        /SequelizeConnectionRefusedError/,
+        /SequelizeHostNotFoundError/,
+        /SequelizeAccessDeniedError/,
+        /Connection acquired/,
+        /socket hang up/,
+        /PROTOCOL_CONNECTION_LOST/
+      ],
+      backoffBase: 1000,   // Espera inicial de 1 segundo
+      backoffExponent: 1.5 // Aumenta o tempo de espera exponencialmente
     }
   }
 );
+
+// Adicionar listeners para monitorar a conexão
+sequelize
+  .authenticate()
+  .then(() => {
+    console.log('👍 Conexão com o banco de dados estabelecida com sucesso.');
+  })
+  .catch(err => {
+    console.error('❌ Erro ao conectar com o banco de dados:', err);
+  });
+
+// Monitorar eventos de conexão
+sequelize.connectionManager.on('disconnect', () => {
+  console.warn('🔌 Conexão com o banco de dados perdida. Tentando reconectar...');
+});
+
+sequelize.connectionManager.on('reconnect', () => {
+  console.log('🔄 Reconectado ao banco de dados com sucesso.');
+});
+
+// Configurar ping periódico para manter a conexão ativa
+setInterval(async () => {
+  try {
+    await sequelize.query('SELECT 1+1 AS result');
+    // console.log('💓 Ping ao banco de dados bem-sucedido');
+  } catch (error) {
+    console.error('❌ Erro no ping ao banco de dados:', error.message);
+  }
+}, 60000); // A cada 1 minuto
 
 // Função para sincronizar o banco de dados
 export const syncDatabase = async () => {

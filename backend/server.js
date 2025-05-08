@@ -312,10 +312,72 @@ app.use(`${API_PREFIX}/telegram`, telegramRoutes);
 app.use(`${API_PREFIX}/payments`, paymentRoutes);
 app.use(`${API_PREFIX}/user-data`, userDataRoutes);
 
+// Middleware para lidar com rotas não encontradas
+app.use((req, res, next) => {
+  // Ignorar rotas de saúde e estáticas
+  if (req.path.includes('/health') || req.path.startsWith('/static')) {
+    return next();
+  }
+  
+  console.warn(`🔍 Rota não encontrada: ${req.method} ${req.originalUrl}`);
+  res.status(404).json({
+    error: 'Rota não encontrada',
+    message: 'O endpoint solicitado não existe neste servidor.',
+    path: req.originalUrl
+  });
+});
+
+// Middleware global para tratamento de erros
+app.use((err, req, res, next) => {
+  // Registrar o erro com detalhes
+  console.error('🚨 ERRO GLOBAL CAPTURADO:');
+  console.error(`  Método: ${req.method}`);
+  console.error(`  URL: ${req.originalUrl}`);
+  console.error(`  Mensagem: ${err.message}`);
+  console.error(`  Stack: ${err.stack}`);
+
+  // Verificar se a resposta já foi enviada
+  if (res.headersSent) {
+    console.error('  As headers já foram enviadas, não é possível enviar resposta de erro.');
+    return next(err);
+  }
+
+  // Tratar erros de timeout específico do banco de dados
+  if (err.name === 'SequelizeConnectionError' || 
+      err.name === 'SequelizeConnectionRefusedError' ||
+      err.name === 'SequelizeHostNotFoundError' ||
+      err.name === 'SequelizeAccessDeniedError' ||
+      err.message.includes('timeout')) {
+    console.error('  Erro de conexão com o banco de dados detectado');
+    return res.status(503).json({
+      error: 'Serviço temporariamente indisponível',
+      message: 'Erro na conexão com o banco de dados. Por favor, tente novamente mais tarde.'
+    });
+  }
+
+  // Tratar erros de validação
+  if (err.name === 'SequelizeValidationError' || 
+      err.name === 'ValidationError') {
+    return res.status(400).json({
+      error: 'Erro de validação',
+      message: 'Os dados enviados são inválidos',
+      details: err.errors
+    });
+  }
+
+  // Resposta genérica para outros tipos de erro
+  res.status(500).json({
+    error: 'Erro interno do servidor',
+    message: process.env.NODE_ENV === 'production' 
+      ? 'Ocorreu um erro inesperado. Por favor, tente novamente.'
+      : err.message
+  });
+});
+
 let server;
 
+// Adicionar configuração para servir arquivos estáticos em produção
 if (process.env.NODE_ENV === 'production') {
-
   const staticPath = '/var/www/PlanejadorDeGastosDasGalaxias/frontend/build';
   app.use(express.static(staticPath));
 
@@ -325,33 +387,7 @@ if (process.env.NODE_ENV === 'production') {
       res.sendFile('index.html', { root: staticPath });
     }
   });
-
-  const privateKey = readFileSync(
-    '/etc/letsencrypt/live/planejadordasgalaxias.com.br/privkey.pem',
-    'utf8'
-  );
-  const certificate = readFileSync(
-    '/etc/letsencrypt/live/planejadordasgalaxias.com.br/cert.pem',
-    'utf8'
-  );
-  const ca = readFileSync(
-    '/etc/letsencrypt/live/planejadordasgalaxias.com.br/chain.pem',
-    'utf8'
-  );
-
-  const credentials = { key: privateKey, cert: certificate, ca: ca };
-
-  server = https.createServer(credentials, app);
-  server.listen(5000, '0.0.0.0', () => {
-    console.log('🚀 Servidor HTTPS rodando na porta 5000 em modo produção');
-  });
-} else {
-  server = http.createServer(app);
-  server.listen(5000, () => {
-    console.log('🚀 Servidor HTTP rodando na porta 5000 em modo desenvolvimento');
-  });
 }
-
 
 if (process.env.SENDGRID_API_KEY) {
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -380,6 +416,49 @@ const gracefulShutdown = (server) => {
   }, 10000);
 };
 
+// Constante para a porta principal e alternativas
+const DEFAULT_PORT = 5000;
+const ALTERNATIVE_PORTS = [5001, 5002, 5003, 5005, 5010];
+
+const checkPortAvailability = async (port) => {
+  return new Promise((resolve) => {
+    const tester = net.createServer()
+      .once('error', (err) => {
+        if (err.code === 'EADDRINUSE') {
+          console.log(`⚠️ Porta ${port} já está em uso, tentando outra...`);
+          resolve(false);
+        } else {
+          console.error(`❌ Erro ao verificar porta ${port}:`, err.message);
+          resolve(false);
+        }
+      })
+      .once('listening', () => {
+        tester.close();
+        resolve(true);
+      })
+      .listen(port);
+  });
+};
+
+const findAvailablePort = async (defaultPort, alternativePorts) => {
+  // Primeiro, tentamos a porta padrão
+  if (await checkPortAvailability(defaultPort)) {
+    return defaultPort;
+  }
+  
+  // Se a porta padrão não estiver disponível, tentamos as alternativas
+  for (const port of alternativePorts) {
+    if (await checkPortAvailability(port)) {
+      console.log(`🔄 Usando porta alternativa: ${port}`);
+      return port;
+    }
+  }
+  
+  // Se nenhuma porta estiver disponível, registramos um erro
+  console.error('❌ Todas as portas alternativas estão em uso. Não foi possível iniciar o servidor.');
+  return null;
+};
+
 const startServer = async () => {
   try {
     // Sincronizar banco de dados na ordem correta
@@ -401,28 +480,15 @@ const startServer = async () => {
     await models.FinancialGoal.sync({ force: false });
     await models.AuditLog.sync({ force: false });
 
-    // Verificar se a porta está em uso
-    const checkPort = () => {
-      return new Promise((resolve, reject) => {
-        const tester = net.createServer()
-          .once('error', (err) => {
-            if (err.code === 'EADDRINUSE') {
-              console.error('⚠️ A porta 5000 já está em uso. Por favor, verifique se há outro processo rodando.');
-              process.exit(1);
-            }
-            reject(err);
-          })
-          .once('listening', () => {
-            tester.once('close', () => resolve())
-              .close();
-          })
-          .listen(5000);
-      });
-    };
+    // Encontrar uma porta disponível
+    const port = await findAvailablePort(DEFAULT_PORT, ALTERNATIVE_PORTS);
+    
+    if (!port) {
+      console.error('❌ Não foi possível encontrar uma porta disponível. Encerrando aplicação.');
+      process.exit(1);
+    }
 
-    await checkPort();
-
-    // Inicializar o servidor apenas uma vez
+    // Inicializar o servidor
     if (process.env.NODE_ENV === 'production') {
       const privateKey = readFileSync(
         '/etc/letsencrypt/live/planejadordasgalaxias.com.br/privkey.pem',
@@ -443,8 +509,16 @@ const startServer = async () => {
       server = http.createServer(app);
     }
 
-    server.listen(5000, process.env.NODE_ENV === 'production' ? '0.0.0.0' : undefined, () => {
-      console.log(`🚀 Servidor ${process.env.NODE_ENV === 'production' ? 'HTTPS' : 'HTTP'} rodando na porta 5000 em modo ${process.env.NODE_ENV || 'desenvolvimento'}`);
+    server.listen(port, process.env.NODE_ENV === 'production' ? '0.0.0.0' : undefined, () => {
+      console.log(`🚀 Servidor ${process.env.NODE_ENV === 'production' ? 'HTTPS' : 'HTTP'} rodando na porta ${port} em modo ${process.env.NODE_ENV || 'desenvolvimento'}`);
+      
+      // Escrever a porta em uso em um arquivo para referência
+      try {
+        writeFileSync('./server-port.txt', port.toString());
+        console.log(`✅ Porta do servidor (${port}) salva em server-port.txt`);
+      } catch (err) {
+        console.error('❌ Não foi possível salvar a porta do servidor em arquivo:', err.message);
+      }
     });
 
   } catch (error) {

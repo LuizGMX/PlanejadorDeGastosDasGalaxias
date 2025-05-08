@@ -1,127 +1,233 @@
 import express from 'express';
+import sequelize from '../config/db.js';
 import os from 'os';
-import { sequelize } from '../models/index.js';
-import seedDatabase from '../database/seeds/index.js';
 
 const router = express.Router();
 
-// Endpoint simples para verificar se a API está funcionando
-// Este endpoint não deve fazer nenhuma operação de banco de dados
+// Status do sistema
+const systemStatus = {
+  startTime: new Date(),
+  lastDatabaseCheck: null,
+  lastSuccessfulDatabaseCheck: null,
+  databaseConnected: false,
+  lastError: null,
+  requestsServed: 0,
+  slowRequests: 0,
+  errors: 0
+};
+
+// Contadores para métricas
+let requestCounter = 0;
+
+// Rota de verificação rápida - resposta imediata
 router.get('/', (req, res) => {
-  // Responder imediatamente sem tentar conectar ao banco de dados
-  res.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    env: process.env.NODE_ENV,
-    server: 'API Planejador de Gastos das Galáxias',
-    message: 'Servidor está respondendo corretamente'
+  systemStatus.requestsServed++;
+  res.status(200).json({
+    status: 'up',
+    timestamp: new Date(),
+    message: 'Servidor está respondendo'
   });
 });
 
-// Endpoint para verificar informações mais detalhadas de sistema
-// Este endpoint também não faz operações de banco de dados
-router.get('/details', (req, res) => {
-  const details = {
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    env: process.env.NODE_ENV,
-    memory: process.memoryUsage(),
-    uptime: process.uptime(),
-    hostname: os.hostname(),
-    node_version: process.version,
-    db_host: process.env.DB_HOST || 'localhost',
-    db_name: process.env.DB_NAME || 'planejador',
-    db_user: process.env.DB_USER || 'root',
-    api_prefix: process.env.API_PREFIX || '',
-    cors_origin: process.env.FRONTEND_URL || 'http://localhost:3000'
-  };
-  
-  res.json(details);
-});
-
-// Rota específica para verificar o banco de dados - usar apenas quando necessário
-router.get('/db', async (req, res) => {
+// Rota detalhada de saúde do sistema - verifica componentes
+router.get('/check', async (req, res) => {
+  systemStatus.requestsServed++;
   const startTime = Date.now();
   
   try {
-    // Definir um timeout menor para não bloquear por muito tempo
-    await sequelize.authenticate({ timeout: 10000 }); // 10 segundos de timeout
+    // Verificar conexão com banco de dados
+    systemStatus.lastDatabaseCheck = new Date();
+    await sequelize.authenticate({ timeout: 5000 });
+    systemStatus.databaseConnected = true;
+    systemStatus.lastSuccessfulDatabaseCheck = new Date();
     
-    const endTime = Date.now();
-    const responseTime = endTime - startTime;
+    // Coletar métricas do sistema
+    const uptime = process.uptime();
+    const memoryUsage = process.memoryUsage();
+    const freeMemory = os.freemem();
+    const totalMemory = os.totalmem();
+    const loadAvg = os.loadavg();
     
-    res.json({
-      status: 'ok',
-      message: 'Conexão com o banco de dados estabelecida com sucesso',
-      timestamp: new Date().toISOString(),
-      responseTime: `${responseTime}ms`,
-      dbConfig: {
-        host: process.env.DB_HOST || 'localhost',
-        database: process.env.DB_NAME || 'planejador',
-        user: process.env.DB_USER || 'root',
-        dialectOptions: sequelize.options.dialectOptions
+    const elapsedTime = Date.now() - startTime;
+    
+    // Verificar se a resposta foi lenta
+    if (elapsedTime > 1000) {
+      systemStatus.slowRequests++;
+    }
+    
+    res.status(200).json({
+      status: 'healthy',
+      server: {
+        uptime: uptime,
+        uptimeFormatted: formatUptime(uptime),
+        timestamp: new Date(),
+        responseTime: `${elapsedTime}ms`,
+        startTime: systemStatus.startTime,
+        environment: process.env.NODE_ENV || 'development',
+        host: os.hostname()
+      },
+      system: {
+        platform: process.platform,
+        arch: os.arch(),
+        cpus: os.cpus().length,
+        loadAverage: loadAvg,
+        freeMemory: formatBytes(freeMemory),
+        totalMemory: formatBytes(totalMemory),
+        memoryUsagePercent: ((totalMemory - freeMemory) / totalMemory * 100).toFixed(2) + '%',
+        processMemory: {
+          rss: formatBytes(memoryUsage.rss),
+          heapTotal: formatBytes(memoryUsage.heapTotal),
+          heapUsed: formatBytes(memoryUsage.heapUsed),
+          external: formatBytes(memoryUsage.external)
+        }
+      },
+      database: {
+        connected: systemStatus.databaseConnected,
+        lastCheck: systemStatus.lastDatabaseCheck,
+        lastSuccessfulCheck: systemStatus.lastSuccessfulDatabaseCheck
+      },
+      metrics: {
+        totalRequests: systemStatus.requestsServed,
+        slowRequests: systemStatus.slowRequests,
+        errors: systemStatus.errors
       }
     });
   } catch (error) {
-    const endTime = Date.now();
-    const responseTime = endTime - startTime;
+    systemStatus.databaseConnected = false;
+    systemStatus.lastError = {
+      time: new Date(),
+      message: error.message,
+      stack: error.stack
+    };
+    systemStatus.errors++;
     
-    console.error('Erro detalhado na conexão com o banco de dados:', error);
-    
-    let errorDetail = error.message;
-    if (error.original) {
-      errorDetail = `${error.name}: ${error.original.code} - ${error.original.message}`;
-    }
-    
-    res.status(500).json({
-      status: 'error',
-      message: 'Erro ao conectar com o banco de dados',
-      error: errorDetail,
-      errorCode: error.original ? error.original.code : 'unknown',
-      timestamp: new Date().toISOString(),
-      responseTime: `${responseTime}ms`,
-      dbConfig: {
-        host: process.env.DB_HOST || 'localhost',
-        database: process.env.DB_NAME || 'planejador',
-        user: process.env.DB_USER || 'root'
+    // Responder com erro, mas ainda fornecer informações úteis
+    res.status(503).json({
+      status: 'degraded',
+      timestamp: new Date(),
+      message: 'Problemas detectados na verificação de saúde',
+      error: error.message,
+      databaseConnected: false,
+      server: {
+        uptime: process.uptime(),
+        environment: process.env.NODE_ENV || 'development'
       }
     });
   }
 });
 
-// Nova rota para inicializar o banco de dados manualmente
-router.post('/init-db', async (req, res) => {
+// Rota para verificação detalhada do banco de dados
+router.get('/database', async (req, res) => {
   try {
-    // Sincroniza os modelos sem usar alter
-    await sequelize.sync({ force: false, alter: false });
+    // Verificar conexão básica
+    const startTime = Date.now();
+    await sequelize.authenticate({ timeout: 3000 });
     
-    // Executa os seeders se solicitado
-    if (req.query.seed === 'true') {
-      await seedDatabase();
-    }
+    // Fazer uma consulta simples para testar a funcionalidade
+    const [result] = await sequelize.query('SELECT 1+1 AS result');
+    const queryTime = Date.now() - startTime;
     
-    res.json({
+    // Verificar se o pool de conexões está saudável
+    const poolInfo = {
+      size: sequelize.connectionManager.pool.size,
+      idle: sequelize.connectionManager.pool.idle,
+      used: sequelize.connectionManager.pool.used
+    };
+    
+    res.status(200).json({
       status: 'ok',
-      message: 'Banco de dados inicializado com sucesso',
-      seedExecuted: req.query.seed === 'true',
-      timestamp: new Date().toISOString()
+      timestamp: new Date(),
+      message: 'Conexão com banco de dados funcionando corretamente',
+      responseTime: `${queryTime}ms`,
+      queryResult: result,
+      pool: poolInfo,
+      databaseInfo: {
+        dialect: sequelize.options.dialect,
+        host: sequelize.options.host,
+        port: sequelize.options.port,
+        database: sequelize.options.database,
+        username: sequelize.options.username
+      }
     });
   } catch (error) {
-    console.error('Erro detalhado ao inicializar o banco de dados:', error);
-    
-    let errorDetail = error.message;
-    if (error.original) {
-      errorDetail = `${error.name}: ${error.original.code} - ${error.original.message}`;
-    }
-    
-    res.status(500).json({
+    systemStatus.errors++;
+    res.status(503).json({
       status: 'error',
-      message: 'Erro ao inicializar o banco de dados',
-      error: errorDetail,
-      errorCode: error.original ? error.original.code : 'unknown',
-      timestamp: new Date().toISOString()
+      timestamp: new Date(),
+      message: 'Erro na conexão com banco de dados',
+      error: error.message
     });
   }
 });
+
+// Rota para limpar cache e reiniciar contadores - apenas em desenvolvimento
+router.post('/reset', (req, res) => {
+  if (process.env.NODE_ENV !== 'production') {
+    // Zerar contadores
+    systemStatus.requestsServed = 0;
+    systemStatus.slowRequests = 0;
+    systemStatus.errors = 0;
+    
+    res.status(200).json({
+      status: 'ok',
+      timestamp: new Date(),
+      message: 'Contadores de saúde reiniciados'
+    });
+  } else {
+    res.status(403).json({
+      status: 'forbidden',
+      message: 'Esta operação só é permitida em ambiente de desenvolvimento'
+    });
+  }
+});
+
+// Função para formatar bytes
+function formatBytes(bytes, decimals = 2) {
+  if (bytes === 0) return '0 Bytes';
+  
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+// Função para formatar tempo de atividade
+function formatUptime(uptime) {
+  const days = Math.floor(uptime / (24 * 60 * 60));
+  const hours = Math.floor((uptime % (24 * 60 * 60)) / (60 * 60));
+  const minutes = Math.floor((uptime % (60 * 60)) / 60);
+  const seconds = Math.floor(uptime % 60);
+  
+  let result = '';
+  if (days > 0) result += `${days}d `;
+  if (hours > 0) result += `${hours}h `;
+  if (minutes > 0) result += `${minutes}m `;
+  result += `${seconds}s`;
+  
+  return result;
+}
+
+// Configurar verificação periódica automatizada
+const healthCheckInterval = 5 * 60 * 1000; // 5 minutos
+setInterval(async () => {
+  try {
+    await sequelize.authenticate({ timeout: 3000 });
+    systemStatus.lastDatabaseCheck = new Date();
+    systemStatus.lastSuccessfulDatabaseCheck = new Date();
+    systemStatus.databaseConnected = true;
+    // console.log('✅ Verificação de saúde automática: OK');
+  } catch (error) {
+    systemStatus.databaseConnected = false;
+    systemStatus.lastError = {
+      time: new Date(),
+      message: error.message
+    };
+    systemStatus.errors++;
+    console.error('❌ Verificação de saúde automática falhou:', error.message);
+  }
+}, healthCheckInterval);
 
 export default router; 
