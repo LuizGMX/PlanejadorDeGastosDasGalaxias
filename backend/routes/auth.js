@@ -4,9 +4,6 @@ import jwt from 'jsonwebtoken';
 import { models } from '../models/index.js';
 import { sendVerificationEmail } from '../services/emailService.js';
 import { generateVerificationCode } from '../utils/verificationCode.js';
-import { sendTelegramMessage } from '../utils/telegramService.js';
-import { auditLogMiddleware } from '../middleware/auditLog.js';
-import { maskSensitiveData } from '../middleware/dataMasking.js';
 import { Op } from 'sequelize';
 import sequelize from '../config/db.js';
 
