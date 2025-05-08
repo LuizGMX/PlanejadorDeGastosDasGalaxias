@@ -51,6 +51,10 @@ export const authenticate = async (req, res, next) => {
 
 // Função auxiliar para verificar se a rota é pública
 function isPublicRoute(url) {
+  // Remove o prefixo da API se existir
+  const cleanUrl = url.replace(/^\/api/, '');
+  
+  // Lista de rotas públicas
   const publicRoutes = [
     '/auth/login',
     '/auth/register',
@@ -59,17 +63,16 @@ function isPublicRoute(url) {
     '/auth/check-email',
     '/auth/forgot-password',
     '/auth/reset-password',
+    '/auth/send-access-code',
     '/health',
     '/banks'
   ];
-  
-  // Remove o prefixo da API se existir
-  const cleanUrl = url.replace(/^\/api/, '');
   
   // Verifica se a URL contém /banks e não contém /favorites ou /users
   if (cleanUrl.includes('/banks') && !cleanUrl.includes('/banks/favorites') && !cleanUrl.includes('/banks/users')) {
     return true;
   }
   
-  return publicRoutes.some(route => cleanUrl.endsWith(route));
+  // Verifica se a URL corresponde a alguma rota pública
+  return publicRoutes.some(route => cleanUrl === route || cleanUrl.endsWith(route));
 } 
