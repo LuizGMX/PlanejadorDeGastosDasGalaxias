@@ -13,7 +13,7 @@ const PaymentResult = () => {
     status: '',
     message: '',
     details: '',
-    paymentData: null,
+    paymentData: null
   });
 
   useEffect(() => {
@@ -31,13 +31,21 @@ const PaymentResult = () => {
         const preferenceId = queryParams.get('preference_id');
         const externalReference = queryParams.get('external_reference');
 
+        console.log('Parâmetros de retorno do MercadoPago:', {
+          status,
+          paymentId,
+          merchantOrderId,
+          preferenceId,
+          externalReference
+        });
+
         const internalStatus = status || window.location.pathname.split('/').pop() || 'unknown';
 
         let resultData = {
           status: internalStatus,
           message: getMessageForStatus(internalStatus),
           details: `ID do pagamento: ${paymentId || 'N/A'}\nPedido: ${merchantOrderId || 'N/A'}`,
-          paymentData: null,
+          paymentData: null
         };
 
         displayToastForStatus(internalStatus);
@@ -51,15 +59,16 @@ const PaymentResult = () => {
                 status: paymentDetails.status,
                 message: paymentDetails.message,
                 details: `ID do pagamento: ${paymentId}\nMétodo: ${paymentDetails.paymentMethod || 'N/A'}`,
-                paymentData: paymentDetails,
+                paymentData: paymentDetails
               };
-              displayToastForStatus(paymentDetails.status);
+
+              setResult(resultData);
             }
           } catch (error) {
             console.error('Erro ao verificar status no backend:', error);
             resultData.status = 'error';
             resultData.message = 'Erro ao verificar status do pagamento';
-            toast('Erro ao verificar status do pagamento');
+            toast.error('Erro ao verificar status do pagamento');
           }
         }
 
@@ -70,15 +79,16 @@ const PaymentResult = () => {
         } catch (error) {
           console.error('Erro ao atualizar status da assinatura:', error);
         }
+
       } catch (error) {
         console.error('Erro ao processar resultado do pagamento:', error);
         setResult({
           status: 'error',
           message: 'Erro ao processar resultado do pagamento',
           details: error.message,
-          paymentData: null,
+          paymentData: null
         });
-        toast('Erro ao processar resultado do pagamento');
+        toast.error('Erro ao processar resultado do pagamento');
       } finally {
         setLoading(false);
         setTimeout(() => {
@@ -108,19 +118,19 @@ const PaymentResult = () => {
   const displayToastForStatus = (status) => {
     switch (status) {
       case 'success':
-        toast('Pagamento concluído com sucesso!');
+        toast.success('Pagamento concluído com sucesso!');
         break;
       case 'pending':
-        toast('Seu pagamento está sendo processado. Você receberá uma notificação quando for aprovado.');
+        toast.info('Seu pagamento está sendo processado. Você receberá uma notificação quando for aprovado.');
         break;
       case 'failure':
-        toast('Houve um problema com seu pagamento. Por favor, tente novamente.');
+        toast.error('Houve um problema com seu pagamento. Por favor, tente novamente.');
         break;
       case 'error':
-        toast('Ocorreu um erro no processamento do pagamento.');
+        toast.error('Ocorreu um erro no processamento do pagamento.');
         break;
       default:
-        toast('Status do pagamento desconhecido. Entre em contato com o suporte se precisar de ajuda.');
+        toast.info('Status do pagamento desconhecido. Entre em contato com o suporte se precisar de ajuda.');
     }
   };
 
@@ -171,8 +181,8 @@ const PaymentResult = () => {
         <div className={`payment-result ${result.status}`}>
           <h1>
             {result.status === 'success' ? '✅ ' :
-             result.status === 'pending' ? '⏱️ ' :
-             result.status === 'failure' ? '❌ ' : '❓ '}
+              result.status === 'pending' ? '⏱️ ' :
+              result.status === 'failure' ? '❌ ' : '❓ '}
             {result.message}
           </h1>
 
