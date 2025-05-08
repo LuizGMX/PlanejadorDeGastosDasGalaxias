@@ -33,6 +33,7 @@ import { configureRateLimit, authLimiter } from './middleware/rateLimit.js';
 import { checkSubscription } from './middleware/subscriptionCheck.js';
 
 import net from 'net';
+import { configureTimeouts } from './middleware/timeout.js';
 
 dotenv.config();
 
@@ -83,8 +84,11 @@ app.use(
     maxAge: 86400 // Cache da preflight por 24 horas
   })
 );
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Aplicar o middleware de timeout para controlar o tempo máximo de resposta
+app.use(configureTimeouts());
 
 // Aplicar rate limiting global
 app.use(configureRateLimit());
@@ -97,6 +101,23 @@ app.use(maskSensitiveData);
 
 // Middleware para logs de auditoria
 app.use(auditLogMiddleware);
+
+// Adicionar middleware para verificar a saúde da conexão antes de processar requisições críticas
+app.use(async (req, res, next) => {
+  // Apenas verificar em rotas que não são healthcheck para evitar ciclos
+  if (!req.path.includes('/health')) {
+    try {
+      // A cada 100 requisições, verificar a conexão para prevenir problemas
+      if (Math.random() < 0.01) {
+        await sequelize.authenticate({ timeout: 5000 });
+      }
+    } catch (error) {
+      console.error('❌ Erro de conexão com o banco de dados detectado durante requisição:', error);
+      // Não bloquear a requisição, apenas registrar o erro
+    }
+  }
+  next();
+});
 
 // Define API_PREFIX from environment variable with "api" as default
 const API_PREFIX = process.env.NODE_ENV === 'production' 

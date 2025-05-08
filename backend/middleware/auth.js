@@ -4,6 +4,10 @@ import { Op } from 'sequelize';
 
 const { User } = models;
 
+// Cache de tokens para reduzir consultas ao banco
+const tokenCache = new Map();
+const TOKEN_CACHE_TTL = 15 * 60 * 1000; // 15 minutos
+
 export const authenticate = async (req, res, next) => {
   try {
     // Se for uma rota pública, permite o acesso imediatamente
@@ -22,16 +26,38 @@ export const authenticate = async (req, res, next) => {
     }
 
     try {
+      // Verificar se o token está em cache
+      const cachedUser = tokenCache.get(token);
+      const currentTime = Date.now();
+      
+      if (cachedUser && cachedUser.expiresAt > currentTime) {
+        // Se estiver em cache e válido, use-o
+        req.user = cachedUser.user;
+        return next();
+      }
+      
+      // Se não estiver em cache ou expirou, verificar o token
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default-secret-key');
       
       // Busca o usuário sem transação para melhor performance
+      // Limitando atributos para melhor desempenho
       const user = await User.findByPk(decoded.userId, {
         attributes: ['id', 'name', 'email', 'telegram_verified'],
-        raw: true
+        raw: true,
+        timeout: 5000 // Timeout de 5 segundos para esta consulta
       });
       
       if (!user) {
         return res.status(401).json({ message: 'Usuário não encontrado' });
+      }
+
+      // Armazenar em cache para uso futuro
+      const expiresAt = currentTime + TOKEN_CACHE_TTL;
+      tokenCache.set(token, { user, expiresAt });
+      
+      // Limpar cache antigas periodicamente
+      if (Math.random() < 0.01) { // 1% de chance de limpar o cache em cada requisição
+        cleanExpiredCache();
       }
 
       req.user = user;
@@ -47,6 +73,16 @@ export const authenticate = async (req, res, next) => {
     res.status(500).json({ message: 'Erro ao autenticar usuário' });
   }
 };
+
+// Função para limpar tokens expirados do cache
+function cleanExpiredCache() {
+  const currentTime = Date.now();
+  for (const [token, data] of tokenCache.entries()) {
+    if (data.expiresAt <= currentTime) {
+      tokenCache.delete(token);
+    }
+  }
+}
 
 // Função auxiliar para verificar se a rota é pública
 function isPublicRoute(url) {
