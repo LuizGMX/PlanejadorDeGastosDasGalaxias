@@ -50,10 +50,19 @@ router.get('/', async (req, res) => {
 
 // Rota protegida - Requer autenticação - Bancos favoritos do usuário
 router.get('/favorites', authenticate, checkSubscription, async (req, res) => {
+  // Adicionar timeout para evitar que a requisição fique pendente por muito tempo
+  const timeout = setTimeout(() => {
+    console.error(`Timeout ao buscar bancos favoritos para o usuário ${req.user.id}`);
+    return res.status(503).json({ 
+      message: 'Tempo limite excedido ao buscar bancos favoritos',
+      timeout: true
+    });
+  }, 10000); // 10 segundos de timeout
+
   try {
     console.log(`Buscando bancos favoritos para o usuário ${req.user.id}`);
     
-    // Buscar apenas os bancos que o usuário tem relação
+    // Otimizar a consulta para melhorar performance
     const userBanks = await UserBank.findAll({
       where: { 
         user_id: req.user.id,
@@ -62,14 +71,19 @@ router.get('/favorites', authenticate, checkSubscription, async (req, res) => {
       include: [{
         model: Bank,
         as: 'bank',
-        attributes: ['id', 'name', 'code']
+        attributes: ['id', 'name', 'code'] // Limitar atributos retornados
       }],
-      attributes: ['bank_id', 'is_active']
+      attributes: ['bank_id', 'is_active'],
+      raw: true, // Retornar objetos simples em vez de instâncias
+      nest: true // Aninhar o resultado para facilitar acesso
     });
 
-    console.log('UserBanks encontrados:', userBanks.map(ub => ({bank_id: ub.bank_id, is_active: ub.is_active})));
+    // Cancelar timeout pois requisição foi bem-sucedida
+    clearTimeout(timeout);
 
-    // Formatar os bancos com suas informações e status
+    console.log('UserBanks encontrados:', userBanks.length);
+
+    // Formatar os bancos com suas informações e status - simplificar o código
     const banksWithStatus = userBanks.map(userBank => ({
       id: userBank.bank.id,
       name: userBank.bank.name,
@@ -91,8 +105,14 @@ router.get('/favorites', authenticate, checkSubscription, async (req, res) => {
 
     res.json(banksWithStatus);
   } catch (error) {
+    // Cancelar timeout em caso de erro
+    clearTimeout(timeout);
+    
     console.error('Erro ao listar bancos favoritos:', error);
-    res.status(500).json({ message: 'Erro ao listar bancos favoritos' });
+    res.status(500).json({ 
+      message: 'Erro ao listar bancos favoritos',
+      error: process.env.NODE_ENV === 'production' ? null : error.message
+    });
   }
 });
 
