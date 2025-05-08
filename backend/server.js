@@ -421,6 +421,7 @@ const DEFAULT_PORT = 5000;
 const ALTERNATIVE_PORTS = [5001, 5002, 5003, 5005, 5010];
 
 const checkPortAvailability = async (port) => {
+  console.log(`🔍 Verificando disponibilidade da porta ${port}...`);
   return new Promise((resolve) => {
     const tester = net.createServer()
       .once('error', (err) => {
@@ -429,29 +430,56 @@ const checkPortAvailability = async (port) => {
           resolve(false);
         } else {
           console.error(`❌ Erro ao verificar porta ${port}:`, err.message);
+          // Em caso de erro, vamos considerar a porta como não disponível
           resolve(false);
         }
       })
       .once('listening', () => {
+        console.log(`✅ Porta ${port} está disponível`);
         tester.close();
         resolve(true);
       })
       .listen(port);
+      
+    // Adicionar um timeout para evitar que fique preso
+    setTimeout(() => {
+      try {
+        tester.close();
+        console.log(`⏱️ Timeout ao verificar porta ${port}`);
+        resolve(false);
+      } catch (err) {
+        // Ignorar erros ao fechar
+      }
+    }, 3000);
   });
 };
 
 const findAvailablePort = async (defaultPort, alternativePorts) => {
-  // Primeiro, tentamos a porta padrão
-  if (await checkPortAvailability(defaultPort)) {
-    return defaultPort;
-  }
+  console.log(`🔍 Tentando iniciar servidor na porta padrão: ${defaultPort}`);
   
-  // Se a porta padrão não estiver disponível, tentamos as alternativas
-  for (const port of alternativePorts) {
-    if (await checkPortAvailability(port)) {
-      console.log(`🔄 Usando porta alternativa: ${port}`);
-      return port;
+  try {
+    // Forçar uso da porta 5000 em produção
+    if (process.env.NODE_ENV === 'production' && defaultPort === 5000) {
+      console.log('🚀 Modo de produção detectado: forçando uso da porta 5000');
+      return defaultPort;
     }
+    
+    // Primeiro, tentamos a porta padrão
+    if (await checkPortAvailability(defaultPort)) {
+      return defaultPort;
+    }
+    
+    console.log(`⚠️ Porta ${defaultPort} não está disponível`);
+    
+    // Se a porta padrão não estiver disponível, tentamos as alternativas
+    for (const port of alternativePorts) {
+      if (await checkPortAvailability(port)) {
+        console.log(`🔄 Usando porta alternativa: ${port}`);
+        return port;
+      }
+    }
+  } catch (error) {
+    console.error('❌ Erro ao verificar disponibilidade de portas:', error);
   }
   
   // Se nenhuma porta estiver disponível, registramos um erro
@@ -461,54 +489,92 @@ const findAvailablePort = async (defaultPort, alternativePorts) => {
 
 const startServer = async () => {
   try {
+    console.log('📋 Iniciando servidor...');
+    
     // Sincronizar banco de dados na ordem correta
-    await sequelize.sync({ force: false });
+    console.log('🔄 Sincronizando banco de dados...');
+    try {
+      await sequelize.sync({ force: false });
+      console.log('✅ Banco de dados sincronizado com sucesso');
+    } catch (dbError) {
+      console.error('❌ Erro ao sincronizar banco de dados:', dbError);
+      throw new Error(`Falha ao sincronizar banco de dados: ${dbError.message}`);
+    }
     
     // Criar tabelas na ordem correta
-    await models.User.sync({ force: false });
-    await models.Category.sync({ force: false });
-    await models.Bank.sync({ force: false });
-    await models.Expense.sync({ force: false });
-    await models.Income.sync({ force: false });
-    await models.Budget.sync({ force: false });
-    await models.VerificationCode.sync({ force: false });
-    await models.UserBank.sync({ force: false });
-    await models.RecurrenceRule.sync({ force: false });
-    await models.ExpensesRecurrenceException.sync({ force: false });
-    await models.IncomesRecurrenceException.sync({ force: false });
-    await models.Payment.sync({ force: false });
-    await models.FinancialGoal.sync({ force: false });
-    await models.AuditLog.sync({ force: false });
+    console.log('📊 Criando tabelas...');
+    try {
+      await models.User.sync({ force: false });
+      await models.Category.sync({ force: false });
+      await models.Bank.sync({ force: false });
+      await models.Expense.sync({ force: false });
+      await models.Income.sync({ force: false });
+      await models.Budget.sync({ force: false });
+      await models.VerificationCode.sync({ force: false });
+      await models.UserBank.sync({ force: false });
+      await models.RecurrenceRule.sync({ force: false });
+      await models.ExpensesRecurrenceException.sync({ force: false });
+      await models.IncomesRecurrenceException.sync({ force: false });
+      await models.Payment.sync({ force: false });
+      await models.FinancialGoal.sync({ force: false });
+      await models.AuditLog.sync({ force: false });
+      console.log('✅ Tabelas criadas com sucesso');
+    } catch (tableError) {
+      console.error('❌ Erro ao criar tabelas:', tableError);
+      throw new Error(`Falha ao criar tabelas: ${tableError.message}`);
+    }
 
     // Encontrar uma porta disponível
+    console.log('🔍 Procurando porta disponível...');
     const port = await findAvailablePort(DEFAULT_PORT, ALTERNATIVE_PORTS);
     
     if (!port) {
       console.error('❌ Não foi possível encontrar uma porta disponível. Encerrando aplicação.');
       process.exit(1);
     }
+    
+    console.log(`🎯 Porta escolhida: ${port}`);
 
     // Inicializar o servidor
+    console.log('🚀 Inicializando servidor HTTP/HTTPS...');
+    
     if (process.env.NODE_ENV === 'production') {
-      const privateKey = readFileSync(
-        '/etc/letsencrypt/live/planejadordasgalaxias.com.br/privkey.pem',
-        'utf8'
-      );
-      const certificate = readFileSync(
-        '/etc/letsencrypt/live/planejadordasgalaxias.com.br/cert.pem',
-        'utf8'
-      );
-      const ca = readFileSync(
-        '/etc/letsencrypt/live/planejadordasgalaxias.com.br/chain.pem',
-        'utf8'
-      );
+      try {
+        const privateKey = readFileSync(
+          '/etc/letsencrypt/live/planejadordasgalaxias.com.br/privkey.pem',
+          'utf8'
+        );
+        const certificate = readFileSync(
+          '/etc/letsencrypt/live/planejadordasgalaxias.com.br/cert.pem',
+          'utf8'
+        );
+        const ca = readFileSync(
+          '/etc/letsencrypt/live/planejadordasgalaxias.com.br/chain.pem',
+          'utf8'
+        );
 
-      const credentials = { key: privateKey, cert: certificate, ca: ca };
-      server = https.createServer(credentials, app);
+        const credentials = { key: privateKey, cert: certificate, ca: ca };
+        server = https.createServer(credentials, app);
+        console.log('✅ Servidor HTTPS criado com sucesso');
+      } catch (sslError) {
+        console.error('❌ Erro ao configurar SSL:', sslError);
+        console.log('⚠️ Tentando iniciar como servidor HTTP em vez de HTTPS...');
+        server = http.createServer(app);
+      }
     } else {
       server = http.createServer(app);
+      console.log('✅ Servidor HTTP criado com sucesso');
     }
 
+    // Adicionar tratamento de erro para o servidor
+    server.on('error', (err) => {
+      console.error('❌ Erro ao iniciar servidor:', err);
+      if (err.code === 'EADDRINUSE') {
+        console.error(`Porta ${port} já está em uso. Tente reiniciar o servidor.`);
+      }
+    });
+
+    console.log(`🔌 Tentando escutar na porta ${port}...`);
     server.listen(port, process.env.NODE_ENV === 'production' ? '0.0.0.0' : undefined, () => {
       console.log(`🚀 Servidor ${process.env.NODE_ENV === 'production' ? 'HTTPS' : 'HTTP'} rodando na porta ${port} em modo ${process.env.NODE_ENV || 'desenvolvimento'}`);
       
@@ -522,7 +588,7 @@ const startServer = async () => {
     });
 
   } catch (error) {
-    console.error('Erro ao iniciar o servidor:', error);
+    console.error('❌ Erro fatal ao iniciar o servidor:', error);
     process.exit(1);
   }
 };
