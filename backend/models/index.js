@@ -275,19 +275,3 @@ Object.keys(models).forEach(modelName => {
 
 // Exporta os modelos e a instância do Sequelize
 export { sequelize, models };
-export const {
-  User,
-  Category,
-  Bank,
-  Expense,
-  Income,
-  Budget,
-  VerificationCode,
-  UserBank,
-  RecurrenceRule,
-  ExpensesRecurrenceException,
-  IncomesRecurrenceException,
-  Payment,
-  FinancialGoal,
-  AuditLog
-} = models;
