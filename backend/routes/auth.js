@@ -787,7 +787,12 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Email e senha são obrigatórios' });
     }
 
-    const user = await User.findOne({ where: { email } });
+    const user = await User.findOne({ 
+      where: { email },
+      attributes: ['id', 'name', 'email', 'password'],
+      raw: true
+    });
+
     if (!user) {
       return res.status(401).json({ message: 'Usuário não encontrado' });
     }
@@ -798,13 +803,13 @@ router.post('/login', async (req, res) => {
     }
 
     const token = generateJWT(user.id, user.email);
+    
+    // Remove a senha do objeto antes de enviar
+    const { password: _, ...userWithoutPassword } = user;
+    
     res.json({
       token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email
-      }
+      user: userWithoutPassword
     });
   } catch (error) {
     console.error('Erro no login:', error);
