@@ -273,5 +273,5 @@ Object.keys(models).forEach(modelName => {
   }
 });
 
-// Exporta os modelos e a instância do Sequelize
-export { sequelize, models };
+// Export models and sequelize instance
+export { models, sequelize };
