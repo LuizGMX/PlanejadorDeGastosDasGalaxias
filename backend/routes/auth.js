@@ -23,11 +23,6 @@ const generateJWT = (userId, email) => {
   );
 };
 
-const sendVerificationEmail = async (email, name, code) => {
-  // Chama o serviço centralizado
-  return await sendVerificationEmail(email, code);
-};
-
 // Middleware de autenticação
 export const authenticate = async (req, res, next) => {
   console.log(`INICIANDO ${process.env.API_PREFIX}/auth/authenticate middleware`);

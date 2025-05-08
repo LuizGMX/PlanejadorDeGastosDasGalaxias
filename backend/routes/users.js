@@ -12,11 +12,6 @@ const generateVerificationCode = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-const sendVerificationEmail = async (email, name, code) => {
-  // Chama o serviço centralizado
-  return await sendVerificationEmail(email, code);
-};
-
 // Rota para listar todos os usuários
 router.get('/', authenticate, async (req, res) => {
   try {
@@ -253,7 +248,7 @@ router.post('/change-email/request', authenticate, async (req, res) => {
     });
 
     // Envia o código para o novo email
-    await sendVerificationEmail(new_email, user.name, code);
+    await sendVerificationEmail(new_email, code);
 
     res.json({ message: 'Código de verificação enviado para o novo email' });
   } catch (error) {
