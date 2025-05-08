@@ -14,10 +14,6 @@ const router = express.Router();
 const { User, VerificationCode, UserBank, Bank, Payment, FinancialGoal } = models;
 
 // Utility Functions
-const generateVerificationCode = () => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-};
-
 const generateJWT = (userId, email) => {
   return jwt.sign(
     { userId, email },
