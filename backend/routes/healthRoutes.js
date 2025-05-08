@@ -24,7 +24,12 @@ router.get('/details', (req, res) => {
     memory: process.memoryUsage(),
     uptime: process.uptime(),
     hostname: os.hostname(),
-    node_version: process.version
+    node_version: process.version,
+    db_host: process.env.DB_HOST || 'localhost',
+    db_name: process.env.DB_NAME || 'planejador',
+    db_user: process.env.DB_USER || 'root',
+    api_prefix: process.env.API_PREFIX || '',
+    cors_origin: process.env.FRONTEND_URL || 'http://localhost:3000'
   };
   
   res.json(details);
@@ -32,19 +37,49 @@ router.get('/details', (req, res) => {
 
 // Rota para verificar conexão com o banco de dados
 router.get('/db', async (req, res) => {
+  const startTime = Date.now();
+  
   try {
-    await sequelize.authenticate();
+    await sequelize.authenticate({ timeout: 30000 }); // 30 segundos de timeout
+    
+    const endTime = Date.now();
+    const responseTime = endTime - startTime;
+    
     res.json({
       status: 'ok',
       message: 'Conexão com o banco de dados estabelecida com sucesso',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      responseTime: `${responseTime}ms`,
+      dbConfig: {
+        host: process.env.DB_HOST || 'localhost',
+        database: process.env.DB_NAME || 'planejador',
+        user: process.env.DB_USER || 'root',
+        dialectOptions: sequelize.options.dialectOptions
+      }
     });
   } catch (error) {
+    const endTime = Date.now();
+    const responseTime = endTime - startTime;
+    
+    console.error('Erro detalhado na conexão com o banco de dados:', error);
+    
+    let errorDetail = error.message;
+    if (error.original) {
+      errorDetail = `${error.name}: ${error.original.code} - ${error.original.message}`;
+    }
+    
     res.status(500).json({
       status: 'error',
       message: 'Erro ao conectar com o banco de dados',
-      error: error.message,
-      timestamp: new Date().toISOString()
+      error: errorDetail,
+      errorCode: error.original ? error.original.code : 'unknown',
+      timestamp: new Date().toISOString(),
+      responseTime: `${responseTime}ms`,
+      dbConfig: {
+        host: process.env.DB_HOST || 'localhost',
+        database: process.env.DB_NAME || 'planejador',
+        user: process.env.DB_USER || 'root'
+      }
     });
   }
 });
@@ -67,10 +102,18 @@ router.post('/init-db', async (req, res) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
+    console.error('Erro detalhado ao inicializar o banco de dados:', error);
+    
+    let errorDetail = error.message;
+    if (error.original) {
+      errorDetail = `${error.name}: ${error.original.code} - ${error.original.message}`;
+    }
+    
     res.status(500).json({
       status: 'error',
       message: 'Erro ao inicializar o banco de dados',
-      error: error.message,
+      error: errorDetail,
+      errorCode: error.original ? error.original.code : 'unknown',
       timestamp: new Date().toISOString()
     });
   }

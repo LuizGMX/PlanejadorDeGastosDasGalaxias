@@ -26,22 +26,25 @@ const sequelize = new Sequelize(
   {
     host: process.env.DB_HOST || 'localhost',
     dialect: 'mysql',
-    logging: false,
+    logging: console.log,
     define: {
       charset: 'utf8mb4',
       collate: 'utf8mb4_unicode_ci',
       timestamps: true
     },
     pool: {
-      max: 5,
+      max: 10,
       min: 0,
-      acquire: 30000,
-      idle: 10000
+      acquire: 60000,
+      idle: 20000
     },
     dialectOptions: {
-      connectTimeout: 60000,
-      statement_timeout: 60000,
-      idle_in_transaction_session_timeout: 60000
+      connectTimeout: 120000,
+      statement_timeout: 120000,
+      idle_in_transaction_session_timeout: 120000
+    },
+    retry: {
+      max: 3
     }
   }
 );
@@ -70,6 +73,8 @@ export const syncDatabase = async () => {
     console.log('✅ Banco de dados sincronizado com sucesso!');
   } catch (error) {
     console.error('❌ Erro ao sincronizar o banco de dados:', error);
+    console.error('Detalhes do erro:', error.original || error);
+    console.error('Conexão com host:', process.env.DB_HOST || 'localhost');
     throw error;
   }
 };
@@ -81,6 +86,10 @@ export const testConnection = async () => {
     console.log('✅ Conexão com o banco de dados estabelecida com sucesso!');
   } catch (error) {
     console.error('❌ Erro ao conectar com o banco de dados:', error);
+    console.error('Detalhes do erro:', error.original || error);
+    console.error('Conexão com host:', process.env.DB_HOST || 'localhost');
+    console.error('Nome do banco:', process.env.DB_NAME || 'planejador');
+    console.error('Usuário:', process.env.DB_USER || 'root');
     throw error;
   }
 };

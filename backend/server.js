@@ -61,10 +61,26 @@ app.use(helmet({
 app.use(
   cors({
     // origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-    origin:  'http://localhost:3000',
+    origin: function(origin, callback) {
+      const allowedOrigins = [
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+        'https://planejadordasgalaxias.com.br',
+        process.env.FRONTEND_URL
+      ].filter(Boolean); // Remove valores undefined ou vazios
+      
+      // Permitir requisições sem origem (como de aplicações mobile ou curl)
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.log(`Origem bloqueada pelo CORS: ${origin}`);
+        callback(null, false);
+      }
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Accept'],
-    credentials: true
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Accept', 'X-Requested-With'],
+    credentials: true,
+    maxAge: 86400 // Cache da preflight por 24 horas
   })
 );
 app.use(express.json());
