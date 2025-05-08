@@ -2,7 +2,7 @@ import xlsx from 'xlsx';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { models } from '../models/index.js';
 import { Op } from 'sequelize';
-import { encryptData, decryptData } from '../utils/encryption.js';
+import { encrypt, decrypt } from '../utils/encryption.js';
 
 const { Expense, Category, Bank } = models;
 
