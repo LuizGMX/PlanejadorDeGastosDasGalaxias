@@ -5,8 +5,19 @@
 
 export const timeoutMiddleware = (timeoutMs = 120000) => {
   return (req, res, next) => {
-    // Ignorar completamente rotas de health e check-email
-    if (req.path.includes('/health') || req.path.includes('/check-email')) {
+    // Lista de rotas que devem ser ignoradas pelo timeout
+    const priorityRoutes = [
+      '/health',
+      '/auth/check-email',
+      '/auth/verify-code',
+      '/auth/login',
+      '/auth/register',
+      '/auth/send-code',
+      '/auth/me'
+    ];
+    
+    // Verificar se alguma das rotas prioritárias está incluída no caminho
+    if (priorityRoutes.some(route => req.path.includes(route))) {
       return next();
     }
     
@@ -56,8 +67,19 @@ export const timeoutMiddleware = (timeoutMs = 120000) => {
 // Timeouts diferentes por tipo de rota
 export const configureTimeouts = () => {
   return (req, res, next) => {
-    // Ignorar rotas de health e check-email completamente
-    if (req.path.includes('/health') || req.path.includes('/check-email')) {
+    // Lista de rotas que devem ser ignoradas pelo timeout
+    const priorityRoutes = [
+      '/health',
+      '/auth/check-email',
+      '/auth/verify-code',
+      '/auth/login',
+      '/auth/register',
+      '/auth/send-code',
+      '/auth/me'
+    ];
+    
+    // Verificar se alguma das rotas prioritárias está incluída no caminho
+    if (priorityRoutes.some(route => req.path.includes(route))) {
       return next();
     }
     

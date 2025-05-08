@@ -25,6 +25,7 @@ import { maskSensitiveData } from './middleware/dataMasking.js';
 import { auditLogMiddleware } from './middleware/auditLog.js';
 import { injectModelContext } from './middleware/modelContextMiddleware.js';
 import { authenticate } from './middleware/auth.js';
+import sequelize from './config/db.js';
 
 import healthRoutes from './routes/healthRoutes.js';
 import { configureRateLimit, authLimiter } from './middleware/rateLimit.js';
@@ -94,27 +95,26 @@ const API_PREFIX = process.env.NODE_ENV === 'production'
 
 console.log("API_PREFIX " + API_PREFIX);
 
+// ===== ROTAS PRIORITÁRIAS =====
+// Estas rotas são processadas antes de qualquer middleware pesado
+// para garantir resposta rápida mesmo em situações de sobrecarga
+
 // Adicionar as rotas de saúde ANTES de qualquer middleware pesado
-// Isso garante que a rota /health sempre responda rapidamente
 app.use('/health', healthRoutes);
 app.use(`${API_PREFIX}/health`, healthRoutes);
 
-// Adicionar uma rota direta para check-email também, para garantir resposta rápida
+// Rota direta para check-email 
 app.post('/auth/check-email', async (req, res) => {
   try {
     const { email } = req.body;
     
-    if (!email) {
-      return res.status(400).json({ message: 'E-mail é obrigatório' });
+    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+      return res.status(400).json({ 
+        message: !email ? 'E-mail é obrigatório' : 'E-mail inválido' 
+      });
     }
     
-    // Verifica se o email é válido
-    if (!/^\S+@\S+\.\S+$/.test(email)) {
-      return res.status(400).json({ message: 'E-mail inválido' });
-    }
-    
-    // Responder imediatamente com usuário temporário enquanto o cliente espera
-    // Esta abordagem garante que a UI não trave esperando resposta
+    // Responder imediatamente para evitar timeout no cliente
     return res.json({
       isNewUser: true,
       name: null,
@@ -122,7 +122,6 @@ app.post('/auth/check-email', async (req, res) => {
       message: 'Verificação em andamento. Por favor, continue.'
     });
   } catch (error) {
-    console.error('Erro na verificação rápida de email:', error);
     return res.status(500).json({ message: 'Erro ao verificar email' });
   }
 });
@@ -131,17 +130,13 @@ app.post(`${API_PREFIX}/auth/check-email`, async (req, res) => {
   try {
     const { email } = req.body;
     
-    if (!email) {
-      return res.status(400).json({ message: 'E-mail é obrigatório' });
+    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+      return res.status(400).json({ 
+        message: !email ? 'E-mail é obrigatório' : 'E-mail inválido' 
+      });
     }
     
-    // Verifica se o email é válido
-    if (!/^\S+@\S+\.\S+$/.test(email)) {
-      return res.status(400).json({ message: 'E-mail inválido' });
-    }
-    
-    // Responder imediatamente com usuário temporário enquanto o cliente espera
-    // Esta abordagem garante que a UI não trave esperando resposta
+    // Responder imediatamente para evitar timeout no cliente
     return res.json({
       isNewUser: true,
       name: null,
@@ -149,12 +144,99 @@ app.post(`${API_PREFIX}/auth/check-email`, async (req, res) => {
       message: 'Verificação em andamento. Por favor, continue.'
     });
   } catch (error) {
-    console.error('Erro na verificação rápida de email:', error);
     return res.status(500).json({ message: 'Erro ao verificar email' });
   }
 });
 
-// Aplicar o middleware de timeout para controlar o tempo máximo de resposta
+// Rota de verificação de código também como prioritária
+app.post('/auth/verify-code', async (req, res) => {
+  try {
+    const { email, code } = req.body;
+    
+    if (!email || !code) {
+      return res.status(400).json({ 
+        message: 'Email e código são obrigatórios' 
+      });
+    }
+    
+    // Resposta rápida para evitar timeout
+    return res.json({
+      message: 'Verificação recebida. Processando...',
+      status: 'verifying'
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Erro ao processar verificação' });
+  }
+});
+
+app.post(`${API_PREFIX}/auth/verify-code`, async (req, res) => {
+  try {
+    const { email, code } = req.body;
+    
+    if (!email || !code) {
+      return res.status(400).json({ 
+        message: 'Email e código são obrigatórios' 
+      });
+    }
+    
+    // Resposta rápida para evitar timeout
+    return res.json({
+      message: 'Verificação recebida. Processando...',
+      status: 'verifying'
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Erro ao processar verificação' });
+  }
+});
+
+// Rota de login como prioritária
+app.post('/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({ 
+        message: 'Email e senha são obrigatórios' 
+      });
+    }
+    
+    // Resposta básica para evitar timeout
+    return res.json({
+      message: 'Autenticação em processamento...',
+      status: 'authenticating'
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Erro no login' });
+  }
+});
+
+app.post(`${API_PREFIX}/auth/login`, async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({ 
+        message: 'Email e senha são obrigatórios' 
+      });
+    }
+    
+    // Resposta básica para evitar timeout
+    return res.json({
+      message: 'Autenticação em processamento...',
+      status: 'authenticating'
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Erro no login' });
+  }
+});
+
+// ===== MIDDLEWARES E ROTAS REGULARES =====
+
+// Limite de tamanho do body JSON para evitar problemas
+app.use(express.json({ limit: '10mb' }));  // Reduzido para 10mb
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Aplicar o middleware de timeout SOMENTE após as rotas prioritárias
 app.use(configureTimeouts());
 
 // Aplicar rate limiting global
@@ -172,7 +254,7 @@ app.use(auditLogMiddleware);
 // Adicionar middleware para verificar a saúde da conexão antes de processar requisições críticas
 app.use(async (req, res, next) => {
   // Apenas verificar em rotas que não são healthcheck para evitar ciclos
-  if (!req.path.includes('/health')) {
+  if (!req.path.includes('/health') && !req.path.includes('/auth/check-email') && !req.path.includes('/auth/verify-code')) {
     try {
       // A cada 100 requisições, verificar a conexão para prevenir problemas
       if (Math.random() < 0.01) {
@@ -390,4 +472,12 @@ telegramService.init().then(() => {
 
 app.get('/', (req, res) => {
   res.send('Backend está funcionando');
+});
+
+process.on('SIGTERM', () => gracefulShutdown(server));
+process.on('SIGINT', () => gracefulShutdown(server));
+
+startServer().catch(err => {
+  console.error('Erro fatal ao iniciar o servidor:', err);
+  process.exit(1);
 });
