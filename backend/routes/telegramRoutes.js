@@ -1,11 +1,12 @@
-import { Router } from 'express';
-import { User, VerificationCode } from '../models/index.js';
+import express from 'express';
+import { models } from '../models/index.js';
 import { telegramService } from '../services/telegramService.js';
 import { sendVerificationEmail } from '../services/emailService.js';
-import { authenticate } from './auth.js';
+import { authenticate } from '../middleware/auth.js';
 import { Op } from 'sequelize';
 
-const router = Router();
+const router = express.Router();
+const { User, VerificationCode } = models;
 
 // Função para gerar código de verificação
 const generateVerificationCode = () => {

@@ -1,6 +1,6 @@
-import { Router } from 'express';
+import express from 'express';
 import dotenv from 'dotenv';
-import { User, Payment } from '../models/index.js';
+import { models } from '../models/index.js';
 import { authenticate } from '../middleware/auth.js';
 import { Op } from 'sequelize';
 import sequelize from '../config/db.js';
@@ -75,7 +75,8 @@ initMercadoPago().then(success => {
 });
 
 dotenv.config();
-const router = Router();
+const router = express.Router();
+const { User, Payment } = models;
 
 // Constante com o preço da assinatura
 const SUBSCRIPTION_PRICE = 59.90;
