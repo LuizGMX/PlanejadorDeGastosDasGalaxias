@@ -9,6 +9,11 @@ const transporter = nodemailer.createTransport({
 });
 
 export const sendVerificationEmail = async (email, code) => {
+  // Validação: só permite códigos numéricos de 6 dígitos
+  if (!/^[0-9]{6}$/.test(code)) {
+    console.error('Código de verificação inválido:', code);
+    throw new Error('Código de verificação inválido. Deve ser um número de 6 dígitos.');
+  }
   console.log('Preparando para enviar email de verificação...');
   console.log('Email:', email);
   console.log('Código:', code);

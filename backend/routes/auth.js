@@ -137,7 +137,7 @@ router.post('/check-email', async (req, res) => {
 
         console.log('Enviando email...');
         try {
-          await sendVerificationEmail(email, user.name, code);
+          await sendVerificationEmail(email, code);
           console.log('Email enviado com sucesso');
         } catch (emailError) {
           console.error('ERRO ao enviar email:', emailError);
@@ -239,7 +239,7 @@ router.post('/send-code', async (req, res) => {
 
     // Envia o email
     try {
-      await sendVerificationEmail(email, name, code);
+      await sendVerificationEmail(email, code);
       console.log('Email enviado com sucesso');
     } catch (emailError) {
       console.error('Erro ao enviar email:', emailError);
@@ -451,7 +451,7 @@ router.post('/send-access-code', async (req, res) => {
     });
 
     // Envia o email
-    await sendVerificationEmail(email, user.name, code);
+    await sendVerificationEmail(email, code);
 
     // Log para debug
     console.log('=================================');
@@ -679,7 +679,7 @@ router.post('/change-email/request', authenticate, async (req, res) => {
     console.log('=================================');
 
     // Envia o email com o código
-    await sendVerificationEmail(new_email, user.name, code);
+    await sendVerificationEmail(new_email, code);
     
     console.log('=================================');
     console.log('=== EMAIL ENVIADO COM SUCESSO ===');
