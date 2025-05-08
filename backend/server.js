@@ -25,6 +25,7 @@ import { maskSensitiveData } from './middleware/dataMasking.js';
 import { auditLogMiddleware } from './middleware/auditLog.js';
 import { verifyToken, verifyOwnership } from './middleware/authMiddleware.js';
 import { injectModelContext } from './middleware/modelContextMiddleware.js';
+import { authenticate } from './middleware/auth.js';
 
 import healthRoutes from './routes/healthRoutes.js';
 import { configureRateLimit, authLimiter } from './middleware/rateLimit.js';
@@ -119,17 +120,21 @@ app.use(`${API_PREFIX}/incomes`, (req, res, next) => {
 
 // Rotas da API
 app.use(`${API_PREFIX}/auth`, authLimiter, authRoutes);
+app.use(`${API_PREFIX}/health`, healthRoutes);
+app.use(`${API_PREFIX}/banks`, bankRoutes);
+
+// Middleware de autenticação para rotas protegidas
+app.use(authenticate);
+
+// Rotas protegidas
+app.use(`${API_PREFIX}/dashboard`, dashboardRoutes);
 app.use(`${API_PREFIX}/categories`, categoryRoutes);
-// Rotas protegidas que exigem assinatura ativa
 app.use(`${API_PREFIX}/expenses`, expenseRoutes);
 app.use(`${API_PREFIX}/incomes`, incomeRoutes);
-app.use(`${API_PREFIX}/dashboard`, dashboardRoutes);
-app.use(`${API_PREFIX}/banks`, bankRoutes);
 app.use(`${API_PREFIX}/budgets`, budgetRoutes);
 app.use(`${API_PREFIX}/spreadsheet`, spreadsheetRoutes);
 app.use(`${API_PREFIX}/users`, userRoutes);
 app.use(`${API_PREFIX}/telegram`, telegramRoutes);
-app.use(`${API_PREFIX}/health`, healthRoutes);
 app.use(`${API_PREFIX}/payments`, paymentRoutes);
 app.use(`${API_PREFIX}/user-data`, userDataRoutes);
 
