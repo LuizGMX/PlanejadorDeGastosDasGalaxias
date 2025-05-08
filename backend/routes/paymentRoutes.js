@@ -380,7 +380,8 @@ router.post('/create-payment', authenticate, async (req, res) => {
             { id: 'ticket' } // Excluir pagamento por boleto
           ],
           installments: 12, // Parcelas
-          default_installments: 1
+          default_installments: 1,
+          installments_without_interest: 12 // Permite 12 parcelas sem juros
         },
         // URLs de retorno
         back_urls: {
@@ -394,9 +395,6 @@ router.post('/create-payment', authenticate, async (req, res) => {
         metadata: {
           user_id: userId
         },
-        differential_pricing: {
-          id: 0
-        }
       }
     });
     
