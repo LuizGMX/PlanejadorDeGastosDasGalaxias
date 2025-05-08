@@ -1,14 +1,17 @@
-import { Router } from 'express';
-import dotenv from 'dotenv';
+import express from 'express';
+import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { User, VerificationCode, UserBank, Bank, Payment, FinancialGoal } from '../models/index.js';
+import { models } from '../models/index.js';
+import { sendVerificationEmail } from '../utils/emailService.js';
+import { generateVerificationCode } from '../utils/verificationCode.js';
+import { sendTelegramMessage } from '../utils/telegramService.js';
+import { auditLogMiddleware } from '../middleware/auditLog.js';
+import { maskSensitiveData } from '../middleware/dataMasking.js';
 import { Op } from 'sequelize';
 import sequelize from '../config/db.js';
-import { sendVerificationEmail } from '../services/emailService.js';
 
-dotenv.config();
-
-const router = Router();
+const router = express.Router();
+const { User, VerificationCode, UserBank, Bank, Payment, FinancialGoal } = models;
 
 // Utility Functions
 const generateVerificationCode = () => {
