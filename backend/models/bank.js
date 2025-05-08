@@ -1,8 +1,8 @@
 import { DataTypes } from 'sequelize';
 import { encrypt, decrypt } from '../utils/encryption.js';
 
-export default (sequelize) => {
-  const Bank = sequelize.define('Bank', {
+const Bank = (sequelize) => {
+  const BankModel = sequelize.define('Bank', {
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
@@ -44,5 +44,7 @@ export default (sequelize) => {
     tableName: 'banks'
   });
 
-  return Bank;
+  return BankModel;
 };
+
+export default Bank;
