@@ -86,24 +86,32 @@ sequelize
     console.error('❌ Erro ao conectar com o banco de dados:', err);
   });
 
-// Monitorar eventos de conexão
-sequelize.connectionManager.on('disconnect', () => {
-  console.warn('🔌 Conexão com o banco de dados perdida. Tentando reconectar...');
-});
+// Remover os eventos incompatíveis com a versão atual do Sequelize
+// Implementar monitoramento de conexão de forma alternativa
+const monitorDatabaseConnection = () => {
+  let lastConnectionStatus = true;
+  
+  // Configurar ping periódico para manter a conexão ativa e monitorar status
+  setInterval(async () => {
+    try {
+      await sequelize.query('SELECT 1+1 AS result');
+      // Se estava desconectado e agora está conectado
+      if (!lastConnectionStatus) {
+        console.log('🔄 Reconectado ao banco de dados com sucesso.');
+        lastConnectionStatus = true;
+      }
+    } catch (error) {
+      // Se estava conectado e agora está desconectado
+      if (lastConnectionStatus) {
+        console.error('🔌 Conexão com o banco de dados perdida:', error.message);
+        lastConnectionStatus = false;
+      }
+    }
+  }, 30000); // A cada 30 segundos
+};
 
-sequelize.connectionManager.on('reconnect', () => {
-  console.log('🔄 Reconectado ao banco de dados com sucesso.');
-});
-
-// Configurar ping periódico para manter a conexão ativa
-setInterval(async () => {
-  try {
-    await sequelize.query('SELECT 1+1 AS result');
-    // console.log('💓 Ping ao banco de dados bem-sucedido');
-  } catch (error) {
-    console.error('❌ Erro no ping ao banco de dados:', error.message);
-  }
-}, 60000); // A cada 1 minuto
+// Iniciar monitoramento de conexão
+monitorDatabaseConnection();
 
 // Função para sincronizar o banco de dados
 export const syncDatabase = async () => {
