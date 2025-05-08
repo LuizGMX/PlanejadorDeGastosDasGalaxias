@@ -393,6 +393,9 @@ router.post('/create-payment', authenticate, async (req, res) => {
         notification_url: `${process.env.BACKEND_URL || process.env.FRONTEND_URL?.replace('3000', '5000') || 'https://planejadordasgalaxias.com.br'}/payments/webhook`,
         metadata: {
           user_id: userId
+        },
+        differential_pricing: {
+          id: 0
         }
       }
     });

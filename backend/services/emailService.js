@@ -26,8 +26,7 @@ export const sendVerificationEmail = async (email, code) => {
     text: `Seu código de verificação é: ${code}\n\nUse o comando /verificar ${code} no bot do Telegram para vincular sua conta.\n\nEste código expira em 10 minutos.`,
     html: `
       <h2>Código de Verificação</h2>
-      <p>Seu código de verificação é: <strong>${code}</strong></p>
-      <p>Use o comando <code>/verificar ${code}</code> no bot do Telegram para vincular sua conta.</p>
+      <p>Seu código de verificação é: <strong>${code}</strong></p>      
       <p>Este código expira em 10 minutos.</p>
     `
   };
