@@ -1,11 +1,10 @@
 import { Router } from 'express';
 import { User, Bank, VerificationCode, UserBank, FinancialGoal } from '../models/index.js';
 import { authenticate } from '../middleware/auth.js';
-import sgMail from '@sendgrid/mail';
+import { sendVerificationEmail } from '../services/emailService.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 const router = Router();
 
@@ -14,31 +13,8 @@ const generateVerificationCode = () => {
 };
 
 const sendVerificationEmail = async (email, name, code) => {
-  const msg = {
-    to: email,
-    from: process.env.SENDGRID_FROM_EMAIL,
-    subject: 'Código de Verificação - Planejador Das Galáxias',
-    text: `Seu código de verificação é: ${code}`,
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #333;">Código de Verificação</h2>
-        <p>Olá ${name || 'Usuário'},</p>
-        <p>Seu código de verificação é:</p>
-        <div style="background-color: #f4f4f4; padding: 20px; text-align: center; font-size: 24px; font-weight: bold; margin: 20px 0;">
-          ${code}
-        </div>
-        <p>Este código expira em 10 minutos.</p>
-        <p>Se você não solicitou este código, ignore este email.</p>
-      </div>
-    `,
-  };
-  try {
-    await sgMail.send(msg);
-    console.log(`Email enviado com sucesso para: ${email}`);
-  } catch (error) {
-    console.error(`Erro ao enviar email para ${email}:`, error);
-    throw new Error('Falha ao enviar email de verificação');
-  }
+  // Chama o serviço centralizado
+  return await sendVerificationEmail(email, code);
 };
 
 // Rota para listar todos os usuários

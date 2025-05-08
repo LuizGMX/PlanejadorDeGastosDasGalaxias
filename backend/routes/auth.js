@@ -1,15 +1,12 @@
 import { Router } from 'express';
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
-import sgMail from '@sendgrid/mail';
 import { User, VerificationCode, UserBank, Bank, Payment, FinancialGoal } from '../models/index.js';
 import { Op } from 'sequelize';
 import sequelize from '../config/db.js';
+import { sendVerificationEmail } from '../services/emailService.js';
 
 dotenv.config();
-
-// Configurar SendGrid API Key
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 const router = Router();
 
@@ -27,104 +24,8 @@ const generateJWT = (userId, email) => {
 };
 
 const sendVerificationEmail = async (email, name, code) => {
-  console.log('=== INICIANDO ENVIO DE EMAIL ===');
-  console.log('Destinatário:', email);
-  console.log('Nome:', name || 'Não fornecido');
-  console.log('Código:', code);
-  
-  // Verifica se a API key do SendGrid está configurada
-  const apiKey = process.env.SENDGRID_API_KEY;
-  const fromEmail = process.env.SENDGRID_FROM_EMAIL;
-  
-  console.log('SENDGRID_API_KEY disponível:', apiKey ? 'Sim' : 'Não');
-  console.log('SENDGRID_FROM_EMAIL:', fromEmail);
-  
-  if (!apiKey) {
-    console.error('ERRO: SendGrid API Key não está configurada');
-    // Em vez de falhar, vamos apenas registrar no log em produção
-    if (process.env.NODE_ENV === 'production') {
-      console.log('Em produção: simulando envio de email bem-sucedido');
-      console.log(`Código para ${email}: ${code}`);
-      return; // Retorna sem erro em produção para não quebrar o fluxo
-    } else {
-      throw new Error('SendGrid API Key não configurada');
-    }
-  }
-  
-  if (!fromEmail) {
-    console.error('ERRO: SendGrid FROM_EMAIL não está configurado');
-    // Em vez de falhar, vamos apenas registrar no log em produção
-    if (process.env.NODE_ENV === 'production') {
-      console.log('Em produção: simulando envio de email bem-sucedido');
-      console.log(`Código para ${email}: ${code}`);
-      return; // Retorna sem erro em produção para não quebrar o fluxo
-    } else {
-      throw new Error('SendGrid FROM_EMAIL não configurado');
-    }
-  }
-  
-  // Configura o SendGrid a cada chamada para garantir
-  try {
-    sgMail.setApiKey(apiKey);
-    console.log('SendGrid API Key configurada com sucesso');
-  } catch (setupError) {
-    console.error('ERRO ao configurar SendGrid:', setupError);
-    // Não quebra o fluxo em produção
-    if (process.env.NODE_ENV === 'production') {
-      console.log('Em produção: simulando envio de email bem-sucedido');
-      console.log(`Código para ${email}: ${code}`);
-      return;
-    } else {
-      throw setupError;
-    }
-  }
-
-  const msg = {
-    to: email,
-    from: fromEmail,
-    subject: 'Código de Verificação - Planejador Das Galáxias',
-    text: `Seu código de verificação é: ${code}`,
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #333;">Código de Verificação</h2>
-        <p>Olá ${name || 'Usuário'},</p>
-        <p>Seu código de verificação é:</p>
-        <div style="background-color: #f4f4f4; padding: 20px; text-align: center; font-size: 24px; font-weight: bold; margin: 20px 0;">
-          ${code}
-        </div>
-        <p>Este código expira em 10 minutos.</p>
-        <p>Se você não solicitou este código, ignore este email.</p>
-      </div>
-    `,
-  };
-
-  try {
-    console.log('Enviando email via SendGrid...');
-    await sgMail.send(msg);
-    console.log(`Email enviado com sucesso para: ${email}`);
-  } catch (error) {
-    console.error('=== ERRO DETALHADO AO ENVIAR EMAIL ===');
-    console.error('Erro:', error.message);
-    
-    if (error.response) {
-      console.error('Corpo da resposta:', error.response.body);
-      console.error('Status:', error.response.statusCode);
-      console.error('Headers:', error.response.headers);
-    }
-    
-    console.error('Stack trace completo:', error.stack);
-    
-    // Em produção, não quebra o fluxo por falha no email
-    if (process.env.NODE_ENV === 'production') {
-      console.log('Em produção: continuando apesar do erro de email');
-      console.log(`IMPORTANTE - Código para ${email}: ${code}`);
-      return; // Não lança o erro em produção
-    } else {
-      throw new Error(`Falha ao enviar email de verificação: ${error.message}`);
-    }
-  } finally {
-    console.log('=== FINALIZANDO TENTATIVA DE ENVIO DE EMAIL ===');
-  }
+  // Chama o serviço centralizado
+  return await sendVerificationEmail(email, code);
 };
 
 // Middleware de autenticação
