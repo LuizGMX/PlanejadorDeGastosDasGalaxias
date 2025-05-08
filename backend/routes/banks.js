@@ -9,15 +9,42 @@ const { Bank, UserBank } = models;
 // Rota pública - Listar todos os bancos (sem autenticação)
 // Usada durante o cadastro de novos usuários
 router.get('/', async (req, res) => {
+  // Adicionar timeout para evitar que a requisição fique pendente por muito tempo
+  const timeout = setTimeout(() => {
+    console.error('Timeout ao listar bancos');
+    return res.status(503).json({ 
+      message: 'Tempo limite excedido ao listar bancos',
+      timeout: true
+    });
+  }, 8000); // 8 segundos de timeout
+
   try {
     console.log('Listando todos os bancos (rota pública)');
+    
+    // Otimizar a consulta para limitar campos retornados
     const banks = await Bank.findAll({
-      order: [['name', 'ASC']]
+      attributes: ['id', 'name', 'code'],
+      order: [['name', 'ASC']],
+      // Adicionar opções para melhorar a performance
+      raw: true,
+      nest: true,
+      limit: 500 // Limitar número de registros para evitar sobrecarga
     });
+    
+    // Cancelar o timeout pois a requisição foi bem-sucedida
+    clearTimeout(timeout);
+    
+    console.log(`Retornando ${banks.length} bancos`);
     res.json(banks);
   } catch (error) {
+    // Cancelar o timeout em caso de erro
+    clearTimeout(timeout);
+    
     console.error('Erro ao listar bancos:', error);
-    res.status(500).json({ message: 'Erro ao listar bancos' });
+    res.status(500).json({ 
+      message: 'Erro ao listar bancos',
+      error: process.env.NODE_ENV === 'production' ? null : error.message 
+    });
   }
 });
 
