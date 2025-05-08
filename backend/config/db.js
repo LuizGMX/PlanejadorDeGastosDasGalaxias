@@ -31,6 +31,17 @@ const sequelize = new Sequelize(
       charset: 'utf8mb4',
       collate: 'utf8mb4_unicode_ci',
       timestamps: true
+    },
+    pool: {
+      max: 5,
+      min: 0,
+      acquire: 30000,
+      idle: 10000
+    },
+    dialectOptions: {
+      connectTimeout: 60000,
+      statement_timeout: 60000,
+      idle_in_transaction_session_timeout: 60000
     }
   }
 );

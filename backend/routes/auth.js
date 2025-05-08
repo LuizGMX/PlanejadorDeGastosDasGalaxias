@@ -780,13 +780,17 @@ router.post('/change-email/verify', authenticate, async (req, res) => {
 
 // Rota de login
 router.post('/login', async (req, res) => {
+  console.log('Iniciando processo de login');
   try {
     const { email, password } = req.body;
+    console.log('Dados recebidos:', { email });
 
     if (!email || !password) {
+      console.log('Email ou senha não fornecidos');
       return res.status(400).json({ message: 'Email e senha são obrigatórios' });
     }
 
+    console.log('Buscando usuário no banco de dados');
     const user = await User.findOne({ 
       where: { email },
       attributes: ['id', 'name', 'email', 'password'],
@@ -794,19 +798,24 @@ router.post('/login', async (req, res) => {
     });
 
     if (!user) {
+      console.log('Usuário não encontrado');
       return res.status(401).json({ message: 'Usuário não encontrado' });
     }
 
+    console.log('Verificando senha');
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
+      console.log('Senha inválida');
       return res.status(401).json({ message: 'Senha inválida' });
     }
 
+    console.log('Gerando token JWT');
     const token = generateJWT(user.id, user.email);
     
     // Remove a senha do objeto antes de enviar
     const { password: _, ...userWithoutPassword } = user;
     
+    console.log('Login realizado com sucesso');
     res.json({
       token,
       user: userWithoutPassword
