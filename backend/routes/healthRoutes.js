@@ -6,16 +6,20 @@ import seedDatabase from '../database/seeds/index.js';
 const router = express.Router();
 
 // Endpoint simples para verificar se a API está funcionando
+// Este endpoint não deve fazer nenhuma operação de banco de dados
 router.get('/', (req, res) => {
+  // Responder imediatamente sem tentar conectar ao banco de dados
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
     env: process.env.NODE_ENV,
-    server: 'API Planejador de Gastos das Galáxias'
+    server: 'API Planejador de Gastos das Galáxias',
+    message: 'Servidor está respondendo corretamente'
   });
 });
 
 // Endpoint para verificar informações mais detalhadas de sistema
+// Este endpoint também não faz operações de banco de dados
 router.get('/details', (req, res) => {
   const details = {
     status: 'ok',
@@ -35,12 +39,13 @@ router.get('/details', (req, res) => {
   res.json(details);
 });
 
-// Rota para verificar conexão com o banco de dados
+// Rota específica para verificar o banco de dados - usar apenas quando necessário
 router.get('/db', async (req, res) => {
   const startTime = Date.now();
   
   try {
-    await sequelize.authenticate({ timeout: 30000 }); // 30 segundos de timeout
+    // Definir um timeout menor para não bloquear por muito tempo
+    await sequelize.authenticate({ timeout: 10000 }); // 10 segundos de timeout
     
     const endTime = Date.now();
     const responseTime = endTime - startTime;

@@ -5,6 +5,11 @@
 
 export const timeoutMiddleware = (timeoutMs = 120000) => {
   return (req, res, next) => {
+    // Ignorar completamente rotas de health
+    if (req.path.includes('/health')) {
+      return next();
+    }
+    
     // Criar um timeout para a requisição
     const timeoutId = setTimeout(() => {
       if (!res.headersSent) {
@@ -51,6 +56,11 @@ export const timeoutMiddleware = (timeoutMs = 120000) => {
 // Timeouts diferentes por tipo de rota
 export const configureTimeouts = () => {
   return (req, res, next) => {
+    // Ignorar rotas de health completamente
+    if (req.path.includes('/health')) {
+      return next();
+    }
+    
     let timeoutValue = 120000; // 120 segundos como padrão
     
     // Rotas específicas que podem levar mais tempo
@@ -60,9 +70,8 @@ export const configureTimeouts = () => {
       timeoutValue = 180000; // 3 minutos para operações mais pesadas
     }
     
-    // Rotas rápidas
-    if (req.path.includes('/health') || 
-        req.method === 'OPTIONS' || 
+    // Rotas rápidas (exceto health que foi ignorado acima)
+    if (req.method === 'OPTIONS' || 
         req.path.includes('/auth/me')) {
       timeoutValue = 30000; // 30 segundos para operações leves
     }

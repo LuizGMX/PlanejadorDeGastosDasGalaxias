@@ -87,6 +87,11 @@ app.use(
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+// Adicionar as rotas de saúde ANTES de qualquer middleware pesado
+// Isso garante que a rota /health sempre responda rapidamente
+app.use('/health', healthRoutes);
+app.use(`${API_PREFIX}/health`, healthRoutes);
+
 // Aplicar o middleware de timeout para controlar o tempo máximo de resposta
 app.use(configureTimeouts());
 
@@ -153,7 +158,6 @@ app.use(`${API_PREFIX}/incomes`, (req, res, next) => {
 
 // Rotas públicas
 app.use(`${API_PREFIX}/auth`, authLimiter, authRoutes);
-app.use(`${API_PREFIX}/health`, healthRoutes);
 app.use(`${API_PREFIX}/banks`, bankRoutes);
 
 // Middleware de autenticação para rotas protegidas
