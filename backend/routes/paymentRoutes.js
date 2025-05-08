@@ -367,7 +367,8 @@ router.post('/create-payment', authenticate, async (req, res) => {
             title: 'Assinatura Anual - Planejador de Gastos das Galáxias',
             quantity: 1,
             currency_id: 'BRL',
-            unit_price: SUBSCRIPTION_PRICE,
+            unit_price: 1,
+            // unit_price: SUBSCRIPTION_PRICE,
             description: 'Acesso premium por 12 meses ao Planejador de Gastos das Galáxias'
           }
         ],
