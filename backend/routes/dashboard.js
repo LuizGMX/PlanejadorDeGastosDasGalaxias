@@ -1,6 +1,12 @@
 import { Sequelize } from 'sequelize';
 import express from 'express';
-import { 
+import { models } from '../models/index.js';
+import { Op } from 'sequelize';
+import { authenticate } from '../middleware/auth.js';
+import checkSubscription from '../middleware/subscriptionCheck.js';
+
+const router = express.Router();
+const { 
   Expense, 
   Income, 
   Category, 
@@ -10,12 +16,7 @@ import {
   ExpensesRecurrenceException,
   IncomesRecurrenceException,
   FinancialGoal
-} from '../models/index.js';
-import { Op } from 'sequelize';
-import { authenticate } from '../middleware/auth.js';
-import checkSubscription from '../middleware/subscriptionCheck.js';
-
-const router = express.Router();
+} = models;
 
 // Todas as rotas usam o middleware de autenticação seguido do middleware de verificação de assinatura
 router.use(authenticate);
