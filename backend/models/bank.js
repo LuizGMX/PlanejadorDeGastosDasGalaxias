@@ -1,5 +1,5 @@
 import { DataTypes } from 'sequelize';
-import { encrypt, decrypt } from '../utils/encryption';
+import { encrypt, decrypt } from '../utils/encryption.js';
 
 export default (sequelize) => {
   const Bank = sequelize.define('Bank', {
