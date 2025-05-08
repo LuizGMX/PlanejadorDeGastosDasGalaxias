@@ -23,7 +23,6 @@ import seedDatabase from './database/seeds/index.js';
 import { telegramService } from './services/telegramService.js';
 import { maskSensitiveData } from './middleware/dataMasking.js';
 import { auditLogMiddleware } from './middleware/auditLog.js';
-import { verifyToken, verifyOwnership } from './middleware/authMiddleware.js';
 import { injectModelContext } from './middleware/modelContextMiddleware.js';
 import { authenticate } from './middleware/auth.js';
 
@@ -74,9 +73,6 @@ app.use(express.urlencoded({ extended: true }));
 // Aplicar rate limiting global
 app.use(configureRateLimit());
 
-// Middleware para autenticação
-app.use(verifyToken);
-
 // Middleware para injetar contexto nos models
 app.use(injectModelContext);
 
@@ -118,7 +114,7 @@ app.use(`${API_PREFIX}/incomes`, (req, res, next) => {
   next();
 });
 
-// Rotas da API
+// Rotas públicas
 app.use(`${API_PREFIX}/auth`, authLimiter, authRoutes);
 app.use(`${API_PREFIX}/health`, healthRoutes);
 app.use(`${API_PREFIX}/banks`, bankRoutes);
