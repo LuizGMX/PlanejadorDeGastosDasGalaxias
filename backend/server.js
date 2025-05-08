@@ -87,6 +87,13 @@ app.use(
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+// Define API_PREFIX from environment variable with "api" as default
+const API_PREFIX = process.env.NODE_ENV === 'production' 
+  ? (process.env.API_PREFIX && process.env.API_PREFIX.trim() !== '' ? `/${process.env.API_PREFIX}` : '')
+  : '/api';
+
+console.log("API_PREFIX " + API_PREFIX);
+
 // Adicionar as rotas de saúde ANTES de qualquer middleware pesado
 // Isso garante que a rota /health sempre responda rapidamente
 app.use('/health', healthRoutes);
@@ -123,13 +130,6 @@ app.use(async (req, res, next) => {
   }
   next();
 });
-
-// Define API_PREFIX from environment variable with "api" as default
-const API_PREFIX = process.env.NODE_ENV === 'production' 
-  ? (process.env.API_PREFIX && process.env.API_PREFIX.trim() !== '' ? `/${process.env.API_PREFIX}` : '')
-  : '/api';
-
-console.log("API_PREFIX " + API_PREFIX);
 
 // Middleware para injetar o parâmetro include_all_recurring nas requisições de despesas e receitas
 app.use(`${API_PREFIX}/expenses`, (req, res, next) => {
