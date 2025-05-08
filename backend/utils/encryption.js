@@ -1,39 +1,23 @@
 import CryptoJS from 'crypto-js';
 
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'default-encryption-key-change-in-production';
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'default-key-for-development';
 
 export const encrypt = (value) => {
-  if (value === null || value === undefined) {
-    return null;
-  }
-  
-  // Converte o valor para string se não for
+  if (value === null || value === undefined) return null;
   const stringValue = String(value);
-  
-  // Criptografa o valor
-  const encrypted = CryptoJS.AES.encrypt(stringValue, ENCRYPTION_KEY).toString();
-  
-  return encrypted;
+  return CryptoJS.AES.encrypt(stringValue, ENCRYPTION_KEY).toString();
 };
 
 export const decrypt = (value) => {
-  if (value === null || value === undefined) {
-    return null;
-  }
-  
+  if (!value) return null;
   try {
-    // Descriptografa o valor
-    const decrypted = CryptoJS.AES.decrypt(value, ENCRYPTION_KEY).toString(CryptoJS.enc.Utf8);
-    
+    const bytes = CryptoJS.AES.decrypt(value, ENCRYPTION_KEY);
+    const decrypted = bytes.toString(CryptoJS.enc.Utf8);
     // Tenta converter para número se for um número
-    const numValue = Number(decrypted);
-    if (!isNaN(numValue) && decrypted !== '') {
-      return numValue;
-    }
-    
-    return decrypted;
+    const num = Number(decrypted);
+    return isNaN(num) ? decrypted : num;
   } catch (error) {
-    console.error('Erro ao descriptografar valor:', error);
+    console.error('Erro ao descriptografar:', error);
     return null;
   }
 };

@@ -2,7 +2,7 @@ import express from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { models } from '../models/index.js';
-import { sendVerificationEmail } from '../utils/emailService.js';
+import { sendVerificationEmail } from '../services/emailService.js';
 import { generateVerificationCode } from '../utils/verificationCode.js';
 import { sendTelegramMessage } from '../utils/telegramService.js';
 import { auditLogMiddleware } from '../middleware/auditLog.js';
