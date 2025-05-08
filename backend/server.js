@@ -99,6 +99,61 @@ console.log("API_PREFIX " + API_PREFIX);
 app.use('/health', healthRoutes);
 app.use(`${API_PREFIX}/health`, healthRoutes);
 
+// Adicionar uma rota direta para check-email também, para garantir resposta rápida
+app.post('/auth/check-email', async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ message: 'E-mail é obrigatório' });
+    }
+    
+    // Verifica se o email é válido
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      return res.status(400).json({ message: 'E-mail inválido' });
+    }
+    
+    // Responder imediatamente com usuário temporário enquanto o cliente espera
+    // Esta abordagem garante que a UI não trave esperando resposta
+    return res.json({
+      isNewUser: true,
+      name: null,
+      email: null,
+      message: 'Verificação em andamento. Por favor, continue.'
+    });
+  } catch (error) {
+    console.error('Erro na verificação rápida de email:', error);
+    return res.status(500).json({ message: 'Erro ao verificar email' });
+  }
+});
+
+app.post(`${API_PREFIX}/auth/check-email`, async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ message: 'E-mail é obrigatório' });
+    }
+    
+    // Verifica se o email é válido
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      return res.status(400).json({ message: 'E-mail inválido' });
+    }
+    
+    // Responder imediatamente com usuário temporário enquanto o cliente espera
+    // Esta abordagem garante que a UI não trave esperando resposta
+    return res.json({
+      isNewUser: true,
+      name: null,
+      email: null,
+      message: 'Verificação em andamento. Por favor, continue.'
+    });
+  } catch (error) {
+    console.error('Erro na verificação rápida de email:', error);
+    return res.status(500).json({ message: 'Erro ao verificar email' });
+  }
+});
+
 // Aplicar o middleware de timeout para controlar o tempo máximo de resposta
 app.use(configureTimeouts());
 

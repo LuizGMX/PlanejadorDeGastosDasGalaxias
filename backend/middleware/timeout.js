@@ -5,8 +5,8 @@
 
 export const timeoutMiddleware = (timeoutMs = 120000) => {
   return (req, res, next) => {
-    // Ignorar completamente rotas de health
-    if (req.path.includes('/health')) {
+    // Ignorar completamente rotas de health e check-email
+    if (req.path.includes('/health') || req.path.includes('/check-email')) {
       return next();
     }
     
@@ -56,8 +56,8 @@ export const timeoutMiddleware = (timeoutMs = 120000) => {
 // Timeouts diferentes por tipo de rota
 export const configureTimeouts = () => {
   return (req, res, next) => {
-    // Ignorar rotas de health completamente
-    if (req.path.includes('/health')) {
+    // Ignorar rotas de health e check-email completamente
+    if (req.path.includes('/health') || req.path.includes('/check-email')) {
       return next();
     }
     
@@ -70,10 +70,10 @@ export const configureTimeouts = () => {
       timeoutValue = 180000; // 3 minutos para operações mais pesadas
     }
     
-    // Rotas rápidas (exceto health que foi ignorado acima)
-    if (req.method === 'OPTIONS' || 
-        req.path.includes('/auth/me')) {
-      timeoutValue = 30000; // 30 segundos para operações leves
+    // Rotas relacionadas à autenticação
+    if (req.path.includes('/auth/') || 
+        req.method === 'OPTIONS') {
+      timeoutValue = 30000; // 30 segundos para operações de autenticação
     }
     
     // Aplicar o middleware com o timeout configurado

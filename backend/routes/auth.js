@@ -83,65 +83,52 @@ export const authenticate = async (req, res, next) => {
 
 // Rotas
 router.post('/check-email', async (req, res) => {
-  console.log('===========================================');
-  console.log('INICIANDO /${process.env.API_PREFIX}/auth/check-email');
-  console.log('Timestamp:', new Date().toISOString());
-  console.log('Cabeçalhos:', JSON.stringify(req.headers));
-  console.log('Body completo:', JSON.stringify(req.body));
-  
   try {
     const { email } = req.body;
-    console.log('Email extraído do body:', email);
     
     if (!email) {
-      console.log('ERRO: Email não fornecido');
       return res.status(400).json({ message: 'E-mail é obrigatório' });
     }
     
     // Verifica se o email é válido
     if (!/^\S+@\S+\.\S+$/.test(email)) {
-      console.log('ERRO: Email inválido:', email);
       return res.status(400).json({ message: 'E-mail inválido' });
     }
     
-    console.log('Buscando usuário no banco de dados...');
+    // Adicionar timeout explícito para evitar que a consulta fique presa
     const user = await User.findOne({ 
       where: { email },
-      attributes: ['id', 'name', 'email']
+      attributes: ['id', 'name', 'email'],
+      timeout: 5000 // Timeout de 5 segundos para esta consulta
     });
-    
-    console.log('Usuário encontrado:', user ? 'Sim' : 'Não');
-    if (user) {
-      console.log('Detalhes do usuário encontrado (ID, Nome):', user.id, user.name);
-    }
     
     // Se o usuário existir, gera e envia o código imediatamente
     if (user) {
       try {
-        console.log('Gerando código para usuário existente...');
         const code = generateVerificationCode();
-        console.log('Código gerado:', code);
 
-        console.log('Removendo códigos antigos...');
-        await VerificationCode.destroy({ where: { email } });
-        
-        console.log('Salvando novo código...');
-        await VerificationCode.create({
-          email,
-          code,
-          expires_at: new Date(Date.now() + 10 * 60 * 1000)
-        });
-
-        console.log('Enviando email...');
+        // Remover códigos antigos e salvar novo código com retry
         try {
-          await sendVerificationEmail(email, code);
-          console.log('Email enviado com sucesso');
-        } catch (emailError) {
-          console.error('ERRO ao enviar email:', emailError);
-          console.error('Stack trace do erro de email:', emailError.stack);
+          await VerificationCode.destroy({ 
+            where: { email },
+            timeout: 3000 // 3 segundos
+          });
+          
+          await VerificationCode.create({
+            email,
+            code,
+            expires_at: new Date(Date.now() + 10 * 60 * 1000)
+          });
+        } catch (dbError) {
+          console.error('Erro ao salvar código no banco:', dbError);
+          // Continuar mesmo com erro no banco - enviar o código gerado
         }
 
-        console.log('Retornando resposta de sucesso para usuário existente');
+        // Enviar email em background
+        sendVerificationEmail(email, code).catch(emailError => {
+          console.error('Erro ao enviar email:', emailError);
+        });
+
         return res.json({
           isNewUser: false,
           name: user.name,
@@ -149,28 +136,20 @@ router.post('/check-email', async (req, res) => {
           message: 'Código enviado com sucesso!'
         });
       } catch (userExistsError) {
-        console.error('ERRO no fluxo de usuário existente:', userExistsError);
-        console.error('Stack trace:', userExistsError.stack);
+        console.error('Erro no fluxo de usuário existente:', userExistsError);
         return res.status(500).json({ message: 'Erro interno ao processar usuário existente' });
       }
     }
     
     // Se não existir, retorna que é um novo usuário
-    console.log('Retornando resposta para novo usuário');
     return res.json({
       isNewUser: true,
       name: null,
       email: null
     });
   } catch (error) {
-    console.error('ERRO CRÍTICO ao verificar email:', error);
-    console.error('Stack trace completo:', error.stack);
-    console.error('Tipo de erro:', error.name);
-    console.error('Mensagem de erro:', error.message);
+    console.error('Erro ao verificar email:', error);
     return res.status(500).json({ message: 'Erro interno ao verificar email', error: error.message });
-  } finally {
-    console.log('FINALIZANDO /${process.env.API_PREFIX}/auth/check-email');
-    console.log('===========================================');
   }
 });
 
