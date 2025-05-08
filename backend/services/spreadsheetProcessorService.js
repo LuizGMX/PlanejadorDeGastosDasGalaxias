@@ -1,6 +1,10 @@
 import xlsx from 'xlsx';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { Expense, Category, Bank } from '../models/index.js';
+import { models } from '../models/index.js';
+import { Op } from 'sequelize';
+import { encryptData, decryptData } from '../utils/encryption.js';
+
+const { Expense, Category, Bank } = models;
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 
