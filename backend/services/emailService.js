@@ -1,12 +1,32 @@
 import nodemailer from 'nodemailer';
 
+// Configuração mais robusta do transporter com tratamento melhor de erros
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: process.env.GMAIL_USER || 'planejadordegastosdasgalaxias@gmail.com',
-    pass: process.env.GMAIL_PASS // Defina esta variável de ambiente com a senha do app ou OAuth
-  }
+    pass: process.env.GMAIL_PASS // Senha de app do Gmail
+  },
+  tls: {
+    rejectUnauthorized: false // Ajuda a evitar problemas de SSL/TLS em ambientes de desenvolvimento
+  },
+  debug: process.env.NODE_ENV !== 'production' // Ativa logs de debug quando não estiver em produção
 });
+
+// Função para verificar se o transporter está operacional
+const verifyTransporter = async () => {
+  try {
+    await transporter.verify();
+    console.log('✅ Conexão com o servidor de email estabelecida com sucesso!');
+    return true;
+  } catch (error) {
+    console.error('❌ Erro na configuração do servidor de email:', error);
+    return false;
+  }
+};
+
+// Verifica a conexão com o servidor de email ao inicializar
+verifyTransporter();
 
 export const sendVerificationEmail = async (email, code) => {
   // Validação: só permite códigos numéricos de 6 dígitos
@@ -33,9 +53,10 @@ export const sendVerificationEmail = async (email, code) => {
 
   try {
     console.log('Tentando enviar email...');
-    await transporter.sendMail(mailOptions);
+    const info = await transporter.sendMail(mailOptions);
     console.log('Email de verificação enviado com sucesso para:', email);
     console.log('Código enviado:', code);
+    console.log('ID da mensagem:', info.messageId);
     return true;
   } catch (error) {
     console.error('Erro ao enviar email de verificação:', error);

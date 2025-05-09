@@ -52,7 +52,6 @@ app.use(helmet({
   },
 }));
 
-// Configuração CORS mais permissiva
 app.use(
   cors({
     // Permitir qualquer origem
@@ -62,17 +61,27 @@ app.use(
     credentials: true
   })
 );
+
+// Configuração mais robusta do parser JSON
 app.use(express.json({
   limit: '50mb',
   verify: (req, res, buf, encoding) => {
-    try {
-      JSON.parse(buf);
-    } catch (e) {
-      res.status(400).json({ message: 'Erro ao analisar JSON inválido' });
-      throw new Error('JSON inválido');
+    if (buf.length) {
+      try {
+        JSON.parse(buf);
+      } catch (e) {
+        console.error('JSON inválido recebido:', e.message);
+        res.status(400).json({ 
+          error: true,
+          message: 'Erro ao analisar JSON inválido',
+          details: process.env.NODE_ENV !== 'production' ? e.message : undefined
+        });
+        throw new Error('JSON inválido recebido');
+      }
     }
   }
 }));
+
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Aplicar rate limiting global
@@ -261,6 +270,69 @@ const startServer = async () => {
   }
 };
 
+// Middleware de tratamento de erros (deve ser o último middleware)
+app.use((err, req, res, next) => {
+  console.error('Erro não tratado na aplicação:', err);
+  
+  // Registrar o erro
+  const errorDate = new Date().toISOString();
+  try {
+    const fs = require('fs');
+    fs.appendFileSync(
+      './error.log', 
+      `\n[${errorDate}] API ERROR: ${err.message || 'Erro desconhecido'}\n${err.stack || ''}\n`
+    );
+  } catch (logError) {
+    console.error('Erro ao registrar log:', logError);
+  }
+  
+  res.status(500).json({ 
+    message: 'Erro interno do servidor. Por favor, tente novamente mais tarde.',
+    timestamp: errorDate
+  });
+});
+
+// Tratamento mais robusto de exceções não capturadas
+process.on('uncaughtException', (error) => {
+  console.error('Erro não capturado:', error);
+  
+  // Registrar o erro
+  const errorDate = new Date().toISOString();
+  try {
+    const fs = require('fs');
+    fs.appendFileSync(
+      './uncaught-error.log', 
+      `\n[${errorDate}] UNCAUGHT EXCEPTION: ${error.message}\n${error.stack}\n`
+    );
+  } catch (logError) {
+    console.error('Erro ao registrar log:', logError);
+  }
+  
+  // Não finalizamos o processo para manter o servidor rodando em produção
+  if (process.env.NODE_ENV !== 'production') {
+    // Em ambiente de desenvolvimento, é melhor encerrar para o desenvolvedor ver o erro
+    process.exit(1);
+  }
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Promessa rejeitada não tratada:', reason);
+  
+  // Registrar o erro
+  const errorDate = new Date().toISOString();
+  try {
+    const fs = require('fs');
+    fs.appendFileSync(
+      './unhandled-rejection.log', 
+      `\n[${errorDate}] UNHANDLED REJECTION: ${reason}\n`
+    );
+  } catch (logError) {
+    console.error('Erro ao registrar log:', logError);
+  }
+  
+  // Não finalizamos o processo para manter o servidor rodando
+});
+
 // Inicializar o bot do Telegram
 telegramService.init().then(() => {
   console.log('🤖 Verificação de inicialização do bot do Telegram concluída');
@@ -268,26 +340,6 @@ telegramService.init().then(() => {
   console.error('❌ Erro durante a inicialização do bot do Telegram:', error);
 });
 
-// Rota básica para verificação de saúde do servidor
 app.get('/', (req, res) => {
   res.send('Backend está funcionando');
-});
-
-// Middleware de tratamento de erros (deve ser o último middleware)
-app.use((err, req, res, next) => {
-  console.error('Erro não tratado na aplicação:', err);
-  res.status(500).json({ message: 'Erro interno do servidor. Por favor, tente novamente mais tarde.' });
-});
-
-// Tratamento mais robusto de exceções não capturadas
-process.on('uncaughtException', (error) => {
-  console.error('Erro não capturado:', error);
-  // Não finalizamos o processo para manter o servidor rodando
-  // Apenas registramos o erro
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Promessa rejeitada não tratada:', reason);
-  // Não finalizamos o processo para manter o servidor rodando
-  // Apenas registramos o erro
 });
