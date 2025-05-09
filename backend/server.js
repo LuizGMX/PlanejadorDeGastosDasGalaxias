@@ -62,7 +62,7 @@ app.use(
   })
 );
 
-// Configuração mais robusta do parser JSON
+// Configuração robusta do parser JSON
 app.use(express.json({
   limit: '50mb',
   verify: (req, res, buf, encoding) => {
@@ -89,7 +89,7 @@ app.use(configureRateLimit());
 
 // Define API_PREFIX from environment variable with "api" as default
 const API_PREFIX = process.env.NODE_ENV === 'production' 
-  ? (process.env.API_PREFIX && process.env.API_PREFIX.trim() !== '' ? `/${process.env.API_PREFIX}` : '')
+  ? (process.env.API_PREFIX && process.env.API_PREFIX.trim() !== '' ? `/${process.env.API_PREFIX}` : '/api')
   : '/api';
 
 console.log("API_PREFIX " + API_PREFIX);
@@ -134,19 +134,29 @@ app.use(`${API_PREFIX}/telegram`, telegramRoutes);
 app.use(`${API_PREFIX}/health`, healthRoutes);
 app.use(`${API_PREFIX}/payments`, paymentRoutes);
 
+// Rota de health independente do prefixo para verificações diretas
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    env: process.env.NODE_ENV,
+    server: 'API Planejador de Gastos das Galáxias'
+  });
+});
 
 let server;
 
 if (process.env.NODE_ENV === 'production') {
-
   const staticPath = '/var/www/pgg/frontend/build';
   app.use(express.static(staticPath));
 
-  // Rota fallback para SPA, apenas para rotas não iniciadas com o prefixo da API
-  app.get('*', (req, res) => {
-    if (!req.path.startsWith(API_PREFIX)) {
-      res.sendFile('index.html', { root: staticPath });
+  // Rota fallback para SPA, apenas para rotas não iniciadas com o prefixo da API e excluindo /health
+  app.get('*', (req, res, next) => {
+    // Não aplicar fallback para rotas de saúde e API
+    if (req.path === '/health' || req.path.startsWith(API_PREFIX)) {
+      return next(); // Passa para o próximo handler (que pode ser um 404)
     }
+    res.sendFile('index.html', { root: staticPath });
   });
 
   const privateKey = readFileSync(
@@ -342,4 +352,13 @@ telegramService.init().then(() => {
 
 app.get('/', (req, res) => {
   res.send('Backend está funcionando');
+});
+
+// Handler 404 para rotas de API que não foram encontradas
+app.use(`${API_PREFIX}/*`, (req, res) => {
+  res.status(404).json({
+    error: true,
+    message: 'Rota da API não encontrada',
+    path: req.originalUrl
+  });
 });
