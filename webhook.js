@@ -22,10 +22,10 @@ app.post("/github-webhook", (req, res) => {
     if (req.headers['x-github-event'] === 'push') {
         console.log("Evento push recebido!");
 
-        console.log(`executando comando: cd /var/www/PlanejadorDeGastosDasGalaxias/frontend && pnpm i && export $(grep -v '^#' .env | xargs) && pnpm build`)
+        console.log(`executando comando: cd /var/www/pgg/frontend && pnpm i && export $(grep -v '^#' .env | xargs) && pnpm build`)
 
         exec(
-            `git pull && cd /var/www/PlanejadorDeGastosDasGalaxias/frontend && pnpm i && export $(grep -v '^#' .env | xargs) && pnpm build`,
+            `git pull && cd /var/www/pgg/frontend && pnpm i && export $(grep -v '^#' .env | xargs) && pnpm build`,
             (err, stdout, stderr) => {
                 if (err) {
                     console.error(`Erro no frontend: ${stderr}`);
@@ -33,10 +33,10 @@ app.post("/github-webhook", (req, res) => {
                 }
                 console.log(`Frontend: ${stdout}`);
 
-                console.log(`executando comando: cd /var/www/PlanejadorDeGastosDasGalaxias/backend && pnpm i && pm2 restart backend-planejador`)
+                console.log(`executando comando: cd /var/www/pgg/backend && pnpm i && pm2 restart backend-planejador`)
 
                 exec(
-                    `cd /var/www/PlanejadorDeGastosDasGalaxias/backend && pnpm i && export $(grep -v '^#' .env | xargs) && pm2 restart backend-planejador`,
+                    `cd /var/www/pgg/backend && pnpm i && export $(grep -v '^#' .env | xargs) && pm2 restart backend-planejador`,
                     (err, stdout, stderr) => {
                         if (err) {
                             console.error(`Erro no backend: ${stderr}`);

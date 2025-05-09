@@ -3,7 +3,6 @@ import cors from 'cors';
 import { readFileSync, writeFileSync } from 'fs';
 import http from 'http';
 import https from 'https';
-import sgMail from '@sendgrid/mail';
 import dotenv from 'dotenv';
 import helmet from 'helmet';
 import authRoutes from './routes/auth.js';
@@ -120,7 +119,7 @@ let server;
 
 if (process.env.NODE_ENV === 'production') {
 
-  const staticPath = '/var/www/PlanejadorDeGastosDasGalaxias/frontend/build';
+  const staticPath = '/var/www/pgg/frontend/build';
   app.use(express.static(staticPath));
 
   // Rota fallback para SPA, apenas para rotas não iniciadas com o prefixo da API
@@ -154,11 +153,6 @@ if (process.env.NODE_ENV === 'production') {
   server.listen(5000, () => {
     console.log('🚀 Servidor HTTP rodando na porta 5000 em modo desenvolvimento');
   });
-}
-
-
-if (process.env.SENDGRID_API_KEY) {
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 }
 
 writeFileSync('./pid.log', process.pid.toString());
