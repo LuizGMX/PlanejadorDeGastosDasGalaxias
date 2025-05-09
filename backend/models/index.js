@@ -15,235 +15,251 @@ import PaymentModel from './payment.js';
 import FinancialGoalModel from './financialGoal.js';
 import AuditLogModel from './auditLog.js';
 
-// Definição dos modelos
+// Inicializar os modelos com o Sequelize
+const User = UserModel(sequelize);
+const Category = CategoryModel(sequelize);
+const Bank = BankModel(sequelize);
+const Expense = ExpenseModel(sequelize);
+const Income = IncomeModel(sequelize);
+const Budget = BudgetModel(sequelize);
+const VerificationCode = VerificationCodeModel(sequelize);
+const UserBank = UserBankModel(sequelize);
+const RecurrenceRule = RecurrenceRuleModel(sequelize);
+const ExpensesRecurrenceException = ExpensesRecurrenceExceptionModel(sequelize);
+const IncomesRecurrenceException = IncomesRecurrenceExceptionModel(sequelize);
+const Payment = PaymentModel(sequelize);
+const FinancialGoal = FinancialGoalModel(sequelize);
+const AuditLog = AuditLogModel(sequelize);
+
+// Definição dos modelos em um objeto para facilitar associações
 const models = {
-  User: UserModel(sequelize),
-  Category: CategoryModel(sequelize),
-  Bank: BankModel(sequelize),
-  Expense: ExpenseModel(sequelize),
-  Income: IncomeModel(sequelize),
-  Budget: BudgetModel(sequelize),
-  VerificationCode: VerificationCodeModel(sequelize),
-  UserBank: UserBankModel(sequelize),
-  RecurrenceRule: RecurrenceRuleModel(sequelize),
-  ExpensesRecurrenceException: ExpensesRecurrenceExceptionModel(sequelize),
-  IncomesRecurrenceException: IncomesRecurrenceExceptionModel(sequelize),
-  Payment: PaymentModel(sequelize),
-  FinancialGoal: FinancialGoalModel(sequelize),
-  AuditLog: AuditLogModel(sequelize)
+  User,
+  Category,
+  Bank,
+  Expense,
+  Income,
+  Budget,
+  VerificationCode,
+  UserBank,
+  RecurrenceRule,
+  ExpensesRecurrenceException,
+  IncomesRecurrenceException,
+  Payment,
+  FinancialGoal,
+  AuditLog
 };
 
 // Associações entre modelos
 // User-Expense
-models.User.hasMany(models.Expense, {
+User.hasMany(Expense, {
   foreignKey: 'user_id',
   as: 'expenses'
 });
-models.Expense.belongsTo(models.User, {
+Expense.belongsTo(User, {
   foreignKey: 'user_id',
   as: 'user'
 });
 
 // User-Income
-models.User.hasMany(models.Income, {
+User.hasMany(Income, {
   foreignKey: 'user_id',
   as: 'incomes'
 });
-models.Income.belongsTo(models.User, {
+Income.belongsTo(User, {
   foreignKey: 'user_id',
   as: 'user'
 });
 
 // User-Category
-models.User.hasMany(models.Category, {
+User.hasMany(Category, {
   foreignKey: 'user_id',
   as: 'categories'
 });
-models.Category.belongsTo(models.User, {
+Category.belongsTo(User, {
   foreignKey: 'user_id',
   as: 'user'
 });
 
 // User-Budget
-models.User.hasMany(models.Budget, {
+User.hasMany(Budget, {
   foreignKey: 'user_id',
   as: 'budgets'
 });
-models.Budget.belongsTo(models.User, {
+Budget.belongsTo(User, {
   foreignKey: 'user_id',
   as: 'user'
 });
 
 // User-VerificationCode
-models.User.hasMany(models.VerificationCode, {
+User.hasMany(VerificationCode, {
   foreignKey: 'user_id',
   as: 'verificationCodes'
 });
-models.VerificationCode.belongsTo(models.User, {
+VerificationCode.belongsTo(User, {
   foreignKey: 'user_id',
   as: 'user'
 });
 
 // Category-Expense
-models.Category.hasMany(models.Expense, {
+Category.hasMany(Expense, {
   foreignKey: 'category_id',
   as: 'expenses'
 });
-models.Expense.belongsTo(models.Category, {
+Expense.belongsTo(Category, {
   foreignKey: 'category_id',
   as: 'Category'
 });
 
 // Category-Income
-models.Category.hasMany(models.Income, {
+Category.hasMany(Income, {
   foreignKey: 'category_id',
   as: 'incomes'
 });
-models.Income.belongsTo(models.Category, {
+Income.belongsTo(Category, {
   foreignKey: 'category_id',
   as: 'Category'
 });
 
 // Category-Budget
-models.Category.hasMany(models.Budget, {
+Category.hasMany(Budget, {
   foreignKey: 'category_id',
   as: 'budgets'
 });
-models.Budget.belongsTo(models.Category, {
+Budget.belongsTo(Category, {
   foreignKey: 'category_id',
   as: 'category'
 });
 
 // Bank-Expense
-models.Bank.hasMany(models.Expense, {
+Bank.hasMany(Expense, {
   foreignKey: 'bank_id',
   as: 'expenses'
 });
-models.Expense.belongsTo(models.Bank, {
+Expense.belongsTo(Bank, {
   foreignKey: 'bank_id',
   as: 'bank'
 });
 
 // Bank-Income
-models.Bank.hasMany(models.Income, {
+Bank.hasMany(Income, {
   foreignKey: 'bank_id',
   as: 'incomes'
 });
-models.Income.belongsTo(models.Bank, {
+Income.belongsTo(Bank, {
   foreignKey: 'bank_id',
   as: 'bank'
 });
 
 // User-Bank (Many-to-Many)
-models.User.belongsToMany(models.Bank, {
-  through: models.UserBank,
+User.belongsToMany(Bank, {
+  through: UserBank,
   foreignKey: 'user_id',
   otherKey: 'bank_id',
   as: 'banks'
 });
-models.Bank.belongsToMany(models.User, {
-  through: models.UserBank,
+Bank.belongsToMany(User, {
+  through: UserBank,
   foreignKey: 'bank_id',
   otherKey: 'user_id',
   as: 'users'
 });
 
 // Associações adicionais para UserBank
-models.UserBank.belongsTo(models.Bank, {
+UserBank.belongsTo(Bank, {
   foreignKey: 'bank_id',
   as: 'bank'
 });
-models.UserBank.belongsTo(models.User, {
+UserBank.belongsTo(User, {
   foreignKey: 'user_id',
   as: 'user'
 });
 
 // User-RecurrenceRule
-models.User.hasMany(models.RecurrenceRule, {
+User.hasMany(RecurrenceRule, {
   foreignKey: 'user_id',
   as: 'recurrenceRules'
 });
-models.RecurrenceRule.belongsTo(models.User, {
+RecurrenceRule.belongsTo(User, {
   foreignKey: 'user_id',
   as: 'user'
 });
 
 // RecurrenceRule-Category
-models.Category.hasMany(models.RecurrenceRule, {
+Category.hasMany(RecurrenceRule, {
   foreignKey: 'category_id',
   as: 'recurrenceRules'
 });
-models.RecurrenceRule.belongsTo(models.Category, {
+RecurrenceRule.belongsTo(Category, {
   foreignKey: 'category_id',
   as: 'Category'
 });
 
 // RecurrenceRule-Bank
-models.Bank.hasMany(models.RecurrenceRule, {
+Bank.hasMany(RecurrenceRule, {
   foreignKey: 'bank_id',
   as: 'recurrenceRules'
 });
-models.RecurrenceRule.belongsTo(models.Bank, {
+RecurrenceRule.belongsTo(Bank, {
   foreignKey: 'bank_id',
   as: 'bank'
 });
 
 // User-Payment
-models.User.hasMany(models.Payment, {
+User.hasMany(Payment, {
   foreignKey: 'user_id',
   as: 'payments'
 });
-models.Payment.belongsTo(models.User, {
+Payment.belongsTo(User, {
   foreignKey: 'user_id',
   as: 'user'
 });
 
 // Expense-ExpensesRecurrenceException
-models.Expense.hasMany(models.ExpensesRecurrenceException, {
+Expense.hasMany(ExpensesRecurrenceException, {
   foreignKey: 'expense_id',
   as: 'exceptions'
 });
-models.ExpensesRecurrenceException.belongsTo(models.Expense, {
+ExpensesRecurrenceException.belongsTo(Expense, {
   foreignKey: 'expense_id',
   as: 'expense'
 });
 
 // User-ExpensesRecurrenceException
-models.User.hasMany(models.ExpensesRecurrenceException, {
+User.hasMany(ExpensesRecurrenceException, {
   foreignKey: 'user_id',
   as: 'expenseExceptions'
 });
-models.ExpensesRecurrenceException.belongsTo(models.User, {
+ExpensesRecurrenceException.belongsTo(User, {
   foreignKey: 'user_id',
   as: 'user'
 });
 
 // Income-IncomesRecurrenceException
-models.Income.hasMany(models.IncomesRecurrenceException, {
+Income.hasMany(IncomesRecurrenceException, {
   foreignKey: 'income_id',
   as: 'exceptions'
 });
-models.IncomesRecurrenceException.belongsTo(models.Income, {
+IncomesRecurrenceException.belongsTo(Income, {
   foreignKey: 'income_id',
   as: 'income'
 });
 
 // User-IncomesRecurrenceException
-models.User.hasMany(models.IncomesRecurrenceException, {
+User.hasMany(IncomesRecurrenceException, {
   foreignKey: 'user_id',
   as: 'incomeExceptions'
 });
-models.IncomesRecurrenceException.belongsTo(models.User, {
+IncomesRecurrenceException.belongsTo(User, {
   foreignKey: 'user_id',
   as: 'user'
 });
 
 // User-FinancialGoal
-models.User.hasOne(models.FinancialGoal, {
+User.hasOne(FinancialGoal, {
   foreignKey: 'user_id',
   as: 'financial_goal'
 });
-models.FinancialGoal.belongsTo(models.User, {
+FinancialGoal.belongsTo(User, {
   foreignKey: 'user_id',
   as: 'user'
 });
@@ -255,21 +271,22 @@ Object.keys(models).forEach(modelName => {
   }
 });
 
-// Export models and sequelize instance
-export { models, sequelize };
-
-// Export each model individually
-export const User = models.User;
-export const Category = models.Category;
-export const Bank = models.Bank;
-export const Expense = models.Expense;
-export const Income = models.Income;
-export const Budget = models.Budget;
-export const VerificationCode = models.VerificationCode;
-export const UserBank = models.UserBank;
-export const RecurrenceRule = models.RecurrenceRule;
-export const ExpensesRecurrenceException = models.ExpensesRecurrenceException;
-export const IncomesRecurrenceException = models.IncomesRecurrenceException;
-export const Payment = models.Payment;
-export const FinancialGoal = models.FinancialGoal;
-export const AuditLog = models.AuditLog;
+// Exportar tudo
+export { 
+  models,
+  sequelize,
+  User,
+  Category,
+  Bank,
+  Expense,
+  Income,
+  Budget,
+  VerificationCode,
+  UserBank,
+  RecurrenceRule,
+  ExpensesRecurrenceException,
+  IncomesRecurrenceException,
+  Payment,
+  FinancialGoal,
+  AuditLog
+};
