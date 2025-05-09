@@ -1,10 +1,9 @@
 import { Router } from 'express';
-import db from '../models/index.js';
+import { Bank, UserBank } from '../models/index.js';
 import { authenticate } from '../middleware/auth.js';
 import { checkSubscription } from '../middleware/subscriptionCheck.js';
 
 const router = Router();
-const { Bank, UserBank } = db;
 
 // Rota pública - Listar todos os bancos (sem autenticação)
 // Usada durante o cadastro de novos usuários

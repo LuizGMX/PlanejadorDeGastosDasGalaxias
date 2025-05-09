@@ -1,9 +1,8 @@
 import express from 'express';
-import { models } from '../models/index.js';
+import { Budget } from '../models/index.js';
 import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
-const { Budget } = models;
 
 // Listar orçamentos do usuário
 router.get('/', authenticate, async (req, res) => {

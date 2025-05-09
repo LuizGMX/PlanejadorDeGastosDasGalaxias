@@ -1,85 +1,19 @@
-import crypto from 'crypto';
-import dotenv from 'dotenv';
+import CryptoJS from 'crypto-js';
 
-dotenv.config();
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'your-secure-encryption-key';
 
-// Chave e IV para criptografia
-const key = process.env.ENCRYPTION_KEY || 'uma_chave_secreta_de_32_caracteres';
-const iv = process.env.ENCRYPTION_IV || '1234567890123456';
-
-// Cache para evitar descriptografia repetida
-const decryptCache = new Map();
-const CACHE_MAX_SIZE = 500;
-
-// Limpar o cache a cada 15 minutos
-setInterval(() => {
-  const cacheSize = decryptCache.size;
-  decryptCache.clear();
-  console.log(`Cache de descriptografia limpo: ${cacheSize} entradas removidas`);
-}, 15 * 60 * 1000);
-
-// Função para encriptar dados
 export const encrypt = (text) => {
   if (!text) return null;
-  
-  try {
-    const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(key), Buffer.from(iv));
-    let encrypted = cipher.update(text.toString(), 'utf8', 'hex');
-    encrypted += cipher.final('hex');
-    return encrypted;
-  } catch (error) {
-    console.error('Erro ao encriptar:', error);
-    return text; // Em caso de erro, retorna o texto original
-  }
+  return CryptoJS.AES.encrypt(text, ENCRYPTION_KEY).toString();
 };
 
-// Função para decriptar dados com cache
-export const decrypt = (text) => {
-  if (!text) return null;
-  
-  // Verificar se o valor já está no cache
-  if (decryptCache.has(text)) {
-    return decryptCache.get(text);
-  }
-  
-  try {
-    const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(key), Buffer.from(iv));
-    let decrypted = decipher.update(text, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
-    
-    // Adicionar ao cache
-    if (decryptCache.size >= CACHE_MAX_SIZE) {
-      // Limpar o primeiro item se o cache estiver cheio
-      // Pegar o primeiro item do iterador
-      const keys = Array.from(decryptCache.keys());
-      if (keys.length > 0) {
-        decryptCache.delete(keys[0]);
-      }
-    }
-    decryptCache.set(text, decrypted);
-    
-    return decrypted;
-  } catch (error) {
-    console.error('Erro ao decriptar:', error);
-    return text; // Em caso de erro, retorna o texto original
-  }
+export const decrypt = (ciphertext) => {
+  if (!ciphertext) return null;
+  const bytes = CryptoJS.AES.decrypt(ciphertext, ENCRYPTION_KEY);
+  return bytes.toString(CryptoJS.enc.Utf8);
 };
 
-// Função para limpar o cache 
-export const clearDecryptCache = () => {
-  decryptCache.clear();
-};
-
-// Função para gerar hash de texto
 export const hash = (text) => {
   if (!text) return null;
-  
-  try {
-    return crypto.createHash('sha256').update(String(text)).digest('hex');
-  } catch (error) {
-    console.error('Erro ao gerar hash:', error);
-    return null;
-  }
-};
-
-export default { encrypt, decrypt, clearDecryptCache, hash }; 
+  return CryptoJS.SHA256(text).toString();
+}; 

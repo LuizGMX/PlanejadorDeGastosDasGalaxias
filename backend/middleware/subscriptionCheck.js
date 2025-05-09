@@ -1,8 +1,6 @@
-import { models } from '../models/index.js';
+import { Payment } from '../models/index.js';
 import { Op } from 'sequelize';
 import sequelize from '../config/db.js';
-
-const { Payment } = models;
 
 // Middleware para verificar se o usuário tem uma assinatura ativa
 export const checkSubscription = async (req, res, next) => {

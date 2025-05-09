@@ -76,131 +76,90 @@ const Login = () => {
       const apiUrl = `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/banks`;
       console.log('URL da API:', apiUrl);
       
-      // Criar um AbortController com timeout
-      const abortController = new AbortController();
-      const timeoutId = setTimeout(() => abortController.abort(), 15000); // 15 segundos de timeout
+      // Não incluímos o token na solicitação para a rota pública
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+      console.log('Status da resposta:', response.status);
       
-      try {
-        // Não incluímos o token na solicitação para a rota pública
-        const response = await fetch(apiUrl, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          },
-          signal: abortController.signal
-        });
-        
-        // Limpar o timeout
-        clearTimeout(timeoutId);
-        
-        console.log('Status da resposta:', response.status);
-        
-        // Se a resposta for 202 (ainda carregando no servidor), esperar e tentar novamente
-        if (response.status === 202) {
-          console.log('Servidor ainda está carregando os bancos, tentando novamente em 2 segundos...');
+      if (!response.ok) {
+        // Tratar códigos de erro específicos
+        if (response.status === 401) {
+          console.error('Erro 401: Não autorizado ao tentar buscar bancos durante o cadastro');
+          
+          // Retry com backoff exponencial para códigos de erro 401, 500, 502, 503, 504
           if (retryCount < 5) {
-            setError('O servidor está processando a lista de bancos. Aguarde um momento...');
-            setTimeout(() => fetchBanks(retryCount + 1, 2000), 2000);
-            return false;
-          } else {
-            throw new Error('Servidor demorou muito para carregar os bancos');
+            const nextDelay = delay * 1.5; // Backoff exponencial
+            console.log(`Tentando novamente em ${nextDelay/1000} segundos... (Tentativa ${retryCount + 1} de 5)`);
+            setError(`Problema ao conectar com o servidor. Tentando novamente em ${Math.round(nextDelay/1000)} segundos...`);
+            
+            await new Promise(resolve => setTimeout(resolve, nextDelay));
+            return fetchBanks(retryCount + 1, nextDelay);
           }
+          
+          throw new Error('Erro de autorização ao buscar bancos. Por favor, contate o suporte.');
         }
         
-        if (!response.ok) {
-          // Tratar códigos de erro específicos
-          if (response.status === 401) {
-            console.error('Erro 401: Não autorizado ao tentar buscar bancos durante o cadastro');
-            
-            // Retry com backoff exponencial para códigos de erro 401, 500, 502, 503, 504
-            if (retryCount < 5) {
-              const nextDelay = delay * 1.5; // Backoff exponencial
-              console.log(`Tentando novamente em ${nextDelay/1000} segundos... (Tentativa ${retryCount + 1} de 5)`);
-              setError(`Problema ao conectar com o servidor. Tentando novamente em ${Math.round(nextDelay/1000)} segundos...`);
-              
-              setTimeout(() => fetchBanks(retryCount + 1, nextDelay), nextDelay);
-              return false;
-            }
-            
-            throw new Error('Erro de autorização ao buscar bancos. Por favor, contate o suporte.');
-          }
+        if (response.status === 429 && retryCount < 5) {
+          console.log(`Recebido erro 429, aguardando ${delay}ms antes de tentar novamente...`);
+          setError(`Muitas requisições. Tentando novamente em ${delay/1000} segundos...`);
           
-          if (response.status === 429 && retryCount < 5) {
-            console.log(`Recebido erro 429, aguardando ${delay}ms antes de tentar novamente...`);
-            setError(`Muitas requisições. Tentando novamente em ${delay/1000} segundos...`);
-            
-            setTimeout(() => fetchBanks(retryCount + 1, delay * 2), delay);
-            return false;
-          }
-          
-          // Retry para erros de servidor
-          if ([500, 502, 503, 504].includes(response.status) && retryCount < 5) {
-            const nextDelay = delay * 1.5;
-            console.log(`Erro do servidor ${response.status}, tentando novamente em ${nextDelay/1000} segundos...`);
-            setError(`Problema no servidor. Tentando novamente em ${Math.round(nextDelay/1000)} segundos...`);
-            
-            setTimeout(() => fetchBanks(retryCount + 1, nextDelay), nextDelay);
-            return false;
-          }
-          
-          try {
-            // Tentar ler o corpo da resposta para entender melhor o erro
-            const errorData = await response.json();
-            console.error('Detalhes do erro:', errorData);
-            throw new Error(errorData.message || `Erro ao carregar bancos: ${response.status}`);
-          } catch (jsonError) {
-            throw new Error(`Erro ao carregar bancos: ${response.status}`);
-          }
+          await new Promise(resolve => setTimeout(resolve, delay));
+          return fetchBanks(retryCount + 1, delay * 2);
         }
         
-        const data = await response.json();
-        console.log('Dados recebidos:', data);
-        
-        // Verificar se os dados são válidos
-        if (!Array.isArray(data)) {
-          console.error('Resposta inválida: dados não são um array:', data);
-          
-          // Se, após todas as tentativas, o erro persistir, use dados de fallback
-          if (retryCount >= 5) {
-            console.log('Número máximo de tentativas alcançado, usando dados de fallback');
-            setBanks([]);
-            return true;
-          }
-          
-          // Tenta mais uma vez após um atraso
+        // Retry para erros de servidor
+        if ([500, 502, 503, 504].includes(response.status) && retryCount < 5) {
           const nextDelay = delay * 1.5;
-          console.log(`Tentando novamente em ${nextDelay/1000} segundos...`);
-          setError(`Formato de dados inválido. Tentando novamente...`);
+          console.log(`Erro do servidor ${response.status}, tentando novamente em ${nextDelay/1000} segundos...`);
+          setError(`Problema no servidor. Tentando novamente em ${Math.round(nextDelay/1000)} segundos...`);
           
-          setTimeout(() => fetchBanks(retryCount + 1, nextDelay), nextDelay);
-          return false;
+          await new Promise(resolve => setTimeout(resolve, nextDelay));
+          return fetchBanks(retryCount + 1, nextDelay);
         }
         
-        const sortedBanks = data.sort((a, b) => (b.usage_count || 0) - (a.usage_count || 0));
-        console.log('Bancos ordenados:', sortedBanks);
-        
-        setBanks(sortedBanks);
-        return true;
-      } catch (fetchError) {
-        // Limpar o timeout em caso de erro
-        clearTimeout(timeoutId);
-        
-        // Se foi um erro de timeout/abort, tentar novamente
-        if (fetchError.name === 'AbortError') {
-          console.error('Timeout ao buscar bancos');
-          if (retryCount < 5) {
-            const nextDelay = delay * 1.5;
-            console.log(`Timeout ao buscar bancos, tentando novamente em ${nextDelay/1000} segundos...`);
-            setError(`Tempo limite excedido. Tentando novamente...`);
-            
-            setTimeout(() => fetchBanks(retryCount + 1, nextDelay), nextDelay);
-            return false;
-          }
+        try {
+          // Tentar ler o corpo da resposta para entender melhor o erro
+          const errorData = await response.json();
+          console.error('Detalhes do erro:', errorData);
+          throw new Error(errorData.message || `Erro ao carregar bancos: ${response.status}`);
+        } catch (jsonError) {
+          throw new Error(`Erro ao carregar bancos: ${response.status}`);
         }
-        
-        throw fetchError; // Re-lançar para o catch externo
       }
+      
+      const data = await response.json();
+      console.log('Dados recebidos:', data);
+      
+      // Verificar se os dados são válidos
+      if (!Array.isArray(data)) {
+        console.error('Resposta inválida: dados não são um array:', data);
+        
+        // Se, após todas as tentativas, o erro persistir, use dados de fallback
+        if (retryCount >= 5) {
+          console.log('Número máximo de tentativas alcançado, usando dados de fallback');
+          setBanks([]);
+          return true;
+        }
+        
+        // Tenta mais uma vez após um atraso
+        const nextDelay = delay * 1.5;
+        console.log(`Tentando novamente em ${nextDelay/1000} segundos...`);
+        setError(`Formato de dados inválido. Tentando novamente...`);
+        
+        await new Promise(resolve => setTimeout(resolve, nextDelay));
+        return fetchBanks(retryCount + 1, nextDelay);
+      }
+      
+      const sortedBanks = data.sort((a, b) => (b.usage_count || 0) - (a.usage_count || 0));
+      console.log('Bancos ordenados:', sortedBanks);
+      
+      setBanks(sortedBanks);
+      return true;
     } catch (error) {
       console.error('Erro ao carregar bancos:', error);
       
@@ -210,8 +169,8 @@ const Login = () => {
         console.log(`Erro ao buscar bancos, tentando novamente em ${nextDelay/1000} segundos...`);
         setError(`Erro ao carregar bancos. Tentando novamente...`);
         
-        setTimeout(() => fetchBanks(retryCount + 1, nextDelay), nextDelay);
-        return false;
+        await new Promise(resolve => setTimeout(resolve, nextDelay));
+        return fetchBanks(retryCount + 1, nextDelay);
       }
       
       setError('Erro ao carregar bancos. Você pode continuar o cadastro mesmo assim.');

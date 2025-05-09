@@ -1,6 +1,4 @@
-import { models } from '../../models/index.js';
-
-const { Bank, Category, Payment, User } = models;
+import { Bank, Category, Payment, User } from '../../models/index.js';
 
 // import { seedUserAndExpenses } from './userAndExpensesSeeder.js';
 // import { seedUserAndIncomes } from './userAndIncomesSeeder.js';

@@ -1,8 +1,8 @@
 import { DataTypes } from 'sequelize';
-import { encrypt, decrypt } from '../utils/encryption.js';
+import { encrypt, decrypt } from '../utils/encryption';
 
-const Bank = (sequelize) => {
-  const BankModel = sequelize.define('Bank', {
+export default (sequelize) => {
+  const Bank = sequelize.define('Bank', {
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
@@ -13,27 +13,10 @@ const Bank = (sequelize) => {
       allowNull: false,
       get() {
         const value = this.getDataValue('name');
-        if (!value) return null;
-        
-        try {
-          return decrypt(value);
-        } catch (error) {
-          console.error('Erro ao descriptografar nome do banco:', error);
-          return value;
-        }
+        return value ? decrypt(value) : null;
       },
       set(value) {
-        if (!value) {
-          this.setDataValue('name', null);
-          return;
-        }
-        
-        try {
-          this.setDataValue('name', encrypt(value));
-        } catch (error) {
-          console.error('Erro ao criptografar nome do banco:', error);
-          this.setDataValue('name', value);
-        }
+        this.setDataValue('name', encrypt(value));
       }
     },
     code: {
@@ -41,27 +24,10 @@ const Bank = (sequelize) => {
       allowNull: false,
       get() {
         const value = this.getDataValue('code');
-        if (!value) return null;
-        
-        try {
-          return decrypt(value);
-        } catch (error) {
-          console.error('Erro ao descriptografar código do banco:', error);
-          return value;
-        }
+        return value ? decrypt(value) : null;
       },
       set(value) {
-        if (!value) {
-          this.setDataValue('code', null);
-          return;
-        }
-        
-        try {
-          this.setDataValue('code', encrypt(value));
-        } catch (error) {
-          console.error('Erro ao criptografar código do banco:', error);
-          this.setDataValue('code', value);
-        }
+        this.setDataValue('code', encrypt(value));
       }
     },
     balance: {
@@ -78,7 +44,5 @@ const Bank = (sequelize) => {
     tableName: 'banks'
   });
 
-  return BankModel;
+  return Bank;
 };
-
-export default Bank;

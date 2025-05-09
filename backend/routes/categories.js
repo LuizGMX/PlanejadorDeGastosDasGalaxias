@@ -1,10 +1,9 @@
 import express from 'express';
-import { models } from '../models/index.js';
+import { Category } from '../models/index.js';
 import { authenticate } from '../middleware/auth.js';
 import { literal } from 'sequelize';
 
 const router = express.Router();
-const { Category } = models;
 
 // Listar todas as categorias
 router.get('/', authenticate, async (req, res) => {

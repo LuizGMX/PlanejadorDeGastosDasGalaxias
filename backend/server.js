@@ -18,14 +18,13 @@ import userRoutes from './routes/users.js';
 import telegramRoutes from './routes/telegramRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import userDataRoutes from './routes/userData.js';
-import { models } from './models/index.js';
+import { sequelize, User, Category, Bank, Expense, Income, Budget, VerificationCode, UserBank, RecurrenceRule, ExpensesRecurrenceException, IncomesRecurrenceException, Payment, FinancialGoal, AuditLog } from './models/index.js';
 import seedDatabase from './database/seeds/index.js';
 import { telegramService } from './services/telegramService.js';
 import { maskSensitiveData } from './middleware/dataMasking.js';
 import { auditLogMiddleware } from './middleware/auditLog.js';
+import { verifyToken, verifyOwnership } from './middleware/authMiddleware.js';
 import { injectModelContext } from './middleware/modelContextMiddleware.js';
-import { authenticate } from './middleware/auth.js';
-import sequelize from './config/db.js';
 
 import healthRoutes from './routes/healthRoutes.js';
 import { configureRateLimit, authLimiter } from './middleware/rateLimit.js';
@@ -34,7 +33,6 @@ import { configureRateLimit, authLimiter } from './middleware/rateLimit.js';
 import { checkSubscription } from './middleware/subscriptionCheck.js';
 
 import net from 'net';
-import { configureTimeouts } from './middleware/timeout.js';
 
 dotenv.config();
 
@@ -63,184 +61,20 @@ app.use(helmet({
 app.use(
   cors({
     // origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-    origin: function(origin, callback) {
-      const allowedOrigins = [
-        'http://localhost:3000',
-        'http://127.0.0.1:3000',
-        'https://planejadordasgalaxias.com.br',
-        process.env.FRONTEND_URL
-      ].filter(Boolean); // Remove valores undefined ou vazios
-      
-      // Permitir requisições sem origem (como de aplicações mobile ou curl)
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        console.log(`Origem bloqueada pelo CORS: ${origin}`);
-        callback(null, false);
-      }
-    },
+    origin:  'http://localhost:3000',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Accept', 'X-Requested-With'],
-    credentials: true,
-    maxAge: 86400 // Cache da preflight por 24 horas
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Accept'],
+    credentials: true
   })
 );
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
-
-// Define API_PREFIX from environment variable with "api" as default
-const API_PREFIX = process.env.NODE_ENV === 'production' 
-  ? (process.env.API_PREFIX && process.env.API_PREFIX.trim() !== '' ? `/${process.env.API_PREFIX}` : '')
-  : '/api';
-
-console.log("API_PREFIX " + API_PREFIX);
-
-// ===== ROTAS PRIORITÁRIAS =====
-// Estas rotas são processadas antes de qualquer middleware pesado
-// para garantir resposta rápida mesmo em situações de sobrecarga
-
-// Adicionar as rotas de saúde ANTES de qualquer middleware pesado
-app.use('/health', healthRoutes);
-app.use(`${API_PREFIX}/health`, healthRoutes);
-
-// Rota direta para check-email 
-app.post('/auth/check-email', async (req, res) => {
-  try {
-    const { email } = req.body;
-    
-    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
-      return res.status(400).json({ 
-        message: !email ? 'E-mail é obrigatório' : 'E-mail inválido' 
-      });
-    }
-    
-    // Responder imediatamente para evitar timeout no cliente
-    return res.json({
-      isNewUser: true,
-      name: null,
-      email: null,
-      message: 'Verificação em andamento. Por favor, continue.'
-    });
-  } catch (error) {
-    return res.status(500).json({ message: 'Erro ao verificar email' });
-  }
-});
-
-app.post(`${API_PREFIX}/auth/check-email`, async (req, res) => {
-  try {
-    const { email } = req.body;
-    
-    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
-      return res.status(400).json({ 
-        message: !email ? 'E-mail é obrigatório' : 'E-mail inválido' 
-      });
-    }
-    
-    // Responder imediatamente para evitar timeout no cliente
-    return res.json({
-      isNewUser: true,
-      name: null,
-      email: null,
-      message: 'Verificação em andamento. Por favor, continue.'
-    });
-  } catch (error) {
-    return res.status(500).json({ message: 'Erro ao verificar email' });
-  }
-});
-
-// Rota de verificação de código também como prioritária
-app.post('/auth/verify-code', async (req, res) => {
-  try {
-    const { email, code } = req.body;
-    
-    if (!email || !code) {
-      return res.status(400).json({ 
-        message: 'Email e código são obrigatórios' 
-      });
-    }
-    
-    // Resposta rápida para evitar timeout
-    return res.json({
-      message: 'Verificação recebida. Processando...',
-      status: 'verifying'
-    });
-  } catch (error) {
-    return res.status(500).json({ message: 'Erro ao processar verificação' });
-  }
-});
-
-app.post(`${API_PREFIX}/auth/verify-code`, async (req, res) => {
-  try {
-    const { email, code } = req.body;
-    
-    if (!email || !code) {
-      return res.status(400).json({ 
-        message: 'Email e código são obrigatórios' 
-      });
-    }
-    
-    // Resposta rápida para evitar timeout
-    return res.json({
-      message: 'Verificação recebida. Processando...',
-      status: 'verifying'
-    });
-  } catch (error) {
-    return res.status(500).json({ message: 'Erro ao processar verificação' });
-  }
-});
-
-// Rota de login como prioritária
-app.post('/auth/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    
-    if (!email || !password) {
-      return res.status(400).json({ 
-        message: 'Email e senha são obrigatórios' 
-      });
-    }
-    
-    // Resposta básica para evitar timeout
-    return res.json({
-      message: 'Autenticação em processamento...',
-      status: 'authenticating'
-    });
-  } catch (error) {
-    return res.status(500).json({ message: 'Erro no login' });
-  }
-});
-
-app.post(`${API_PREFIX}/auth/login`, async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    
-    if (!email || !password) {
-      return res.status(400).json({ 
-        message: 'Email e senha são obrigatórios' 
-      });
-    }
-    
-    // Resposta básica para evitar timeout
-    return res.json({
-      message: 'Autenticação em processamento...',
-      status: 'authenticating'
-    });
-  } catch (error) {
-    return res.status(500).json({ message: 'Erro no login' });
-  }
-});
-
-// ===== MIDDLEWARES E ROTAS REGULARES =====
-
-// Limite de tamanho do body JSON para evitar problemas
-app.use(express.json({ limit: '10mb' }));  // Reduzido para 10mb
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// Aplicar o middleware de timeout SOMENTE após as rotas prioritárias
-app.use(configureTimeouts());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Aplicar rate limiting global
 app.use(configureRateLimit());
+
+// Middleware para autenticação
+app.use(verifyToken);
 
 // Middleware para injetar contexto nos models
 app.use(injectModelContext);
@@ -251,22 +85,12 @@ app.use(maskSensitiveData);
 // Middleware para logs de auditoria
 app.use(auditLogMiddleware);
 
-// Adicionar middleware para verificar a saúde da conexão antes de processar requisições críticas
-app.use(async (req, res, next) => {
-  // Apenas verificar em rotas que não são healthcheck para evitar ciclos
-  if (!req.path.includes('/health') && !req.path.includes('/auth/check-email') && !req.path.includes('/auth/verify-code')) {
-    try {
-      // A cada 100 requisições, verificar a conexão para prevenir problemas
-      if (Math.random() < 0.01) {
-        await sequelize.authenticate({ timeout: 5000 });
-      }
-    } catch (error) {
-      console.error('❌ Erro de conexão com o banco de dados detectado durante requisição:', error);
-      // Não bloquear a requisição, apenas registrar o erro
-    }
-  }
-  next();
-});
+// Define API_PREFIX from environment variable with "api" as default
+const API_PREFIX = process.env.NODE_ENV === 'production' 
+  ? (process.env.API_PREFIX && process.env.API_PREFIX.trim() !== '' ? `/${process.env.API_PREFIX}` : '')
+  : '/api';
+
+console.log("API_PREFIX " + API_PREFIX);
 
 // Middleware para injetar o parâmetro include_all_recurring nas requisições de despesas e receitas
 app.use(`${API_PREFIX}/expenses`, (req, res, next) => {
@@ -293,91 +117,26 @@ app.use(`${API_PREFIX}/incomes`, (req, res, next) => {
   next();
 });
 
-// Rotas públicas
+// Rotas da API
 app.use(`${API_PREFIX}/auth`, authLimiter, authRoutes);
-app.use(`${API_PREFIX}/banks`, bankRoutes);
-
-// Middleware de autenticação para rotas protegidas
-app.use(authenticate);
-
-// Rotas protegidas
-app.use(`${API_PREFIX}/dashboard`, dashboardRoutes);
 app.use(`${API_PREFIX}/categories`, categoryRoutes);
+// Rotas protegidas que exigem assinatura ativa
 app.use(`${API_PREFIX}/expenses`, expenseRoutes);
 app.use(`${API_PREFIX}/incomes`, incomeRoutes);
+app.use(`${API_PREFIX}/dashboard`, dashboardRoutes);
+app.use(`${API_PREFIX}/banks`, bankRoutes);
 app.use(`${API_PREFIX}/budgets`, budgetRoutes);
 app.use(`${API_PREFIX}/spreadsheet`, spreadsheetRoutes);
 app.use(`${API_PREFIX}/users`, userRoutes);
 app.use(`${API_PREFIX}/telegram`, telegramRoutes);
+app.use(`${API_PREFIX}/health`, healthRoutes);
 app.use(`${API_PREFIX}/payments`, paymentRoutes);
 app.use(`${API_PREFIX}/user-data`, userDataRoutes);
 
-// Middleware para lidar com rotas não encontradas
-app.use((req, res, next) => {
-  // Ignorar rotas de saúde e estáticas
-  if (req.path.includes('/health') || req.path.startsWith('/static')) {
-    return next();
-  }
-  
-  console.warn(`🔍 Rota não encontrada: ${req.method} ${req.originalUrl}`);
-  res.status(404).json({
-    error: 'Rota não encontrada',
-    message: 'O endpoint solicitado não existe neste servidor.',
-    path: req.originalUrl
-  });
-});
-
-// Middleware global para tratamento de erros
-app.use((err, req, res, next) => {
-  // Registrar o erro com detalhes
-  console.error('🚨 ERRO GLOBAL CAPTURADO:');
-  console.error(`  Método: ${req.method}`);
-  console.error(`  URL: ${req.originalUrl}`);
-  console.error(`  Mensagem: ${err.message}`);
-  console.error(`  Stack: ${err.stack}`);
-
-  // Verificar se a resposta já foi enviada
-  if (res.headersSent) {
-    console.error('  As headers já foram enviadas, não é possível enviar resposta de erro.');
-    return next(err);
-  }
-
-  // Tratar erros de timeout específico do banco de dados
-  if (err.name === 'SequelizeConnectionError' || 
-      err.name === 'SequelizeConnectionRefusedError' ||
-      err.name === 'SequelizeHostNotFoundError' ||
-      err.name === 'SequelizeAccessDeniedError' ||
-      err.message.includes('timeout')) {
-    console.error('  Erro de conexão com o banco de dados detectado');
-    return res.status(503).json({
-      error: 'Serviço temporariamente indisponível',
-      message: 'Erro na conexão com o banco de dados. Por favor, tente novamente mais tarde.'
-    });
-  }
-
-  // Tratar erros de validação
-  if (err.name === 'SequelizeValidationError' || 
-      err.name === 'ValidationError') {
-    return res.status(400).json({
-      error: 'Erro de validação',
-      message: 'Os dados enviados são inválidos',
-      details: err.errors
-    });
-  }
-
-  // Resposta genérica para outros tipos de erro
-  res.status(500).json({
-    error: 'Erro interno do servidor',
-    message: process.env.NODE_ENV === 'production' 
-      ? 'Ocorreu um erro inesperado. Por favor, tente novamente.'
-      : err.message
-  });
-});
-
 let server;
 
-// Adicionar configuração para servir arquivos estáticos em produção
 if (process.env.NODE_ENV === 'production') {
+
   const staticPath = '/var/www/PlanejadorDeGastosDasGalaxias/frontend/build';
   app.use(express.static(staticPath));
 
@@ -387,7 +146,33 @@ if (process.env.NODE_ENV === 'production') {
       res.sendFile('index.html', { root: staticPath });
     }
   });
+
+  const privateKey = readFileSync(
+    '/etc/letsencrypt/live/planejadordasgalaxias.com.br/privkey.pem',
+    'utf8'
+  );
+  const certificate = readFileSync(
+    '/etc/letsencrypt/live/planejadordasgalaxias.com.br/cert.pem',
+    'utf8'
+  );
+  const ca = readFileSync(
+    '/etc/letsencrypt/live/planejadordasgalaxias.com.br/chain.pem',
+    'utf8'
+  );
+
+  const credentials = { key: privateKey, cert: certificate, ca: ca };
+
+  server = https.createServer(credentials, app);
+  server.listen(5000, '0.0.0.0', () => {
+    console.log('🚀 Servidor HTTPS rodando na porta 5000 em modo produção');
+  });
+} else {
+  server = http.createServer(app);
+  server.listen(5000, () => {
+    console.log('🚀 Servidor HTTP rodando na porta 5000 em modo desenvolvimento');
+  });
 }
+
 
 if (process.env.SENDGRID_API_KEY) {
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -416,179 +201,75 @@ const gracefulShutdown = (server) => {
   }, 10000);
 };
 
-// Constante para a porta principal e alternativas
-const DEFAULT_PORT = 5000;
-const ALTERNATIVE_PORTS = [5001, 5002, 5003, 5005, 5010];
-
-const checkPortAvailability = async (port) => {
-  console.log(`🔍 Verificando disponibilidade da porta ${port}...`);
-  return new Promise((resolve) => {
-    const tester = net.createServer()
-      .once('error', (err) => {
-        if (err.code === 'EADDRINUSE') {
-          console.log(`⚠️ Porta ${port} já está em uso, tentando outra...`);
-          resolve(false);
-        } else {
-          console.error(`❌ Erro ao verificar porta ${port}:`, err.message);
-          // Em caso de erro, vamos considerar a porta como não disponível
-          resolve(false);
-        }
-      })
-      .once('listening', () => {
-        console.log(`✅ Porta ${port} está disponível`);
-        tester.close();
-        resolve(true);
-      })
-      .listen(port);
-      
-    // Adicionar um timeout para evitar que fique preso
-    setTimeout(() => {
-      try {
-        tester.close();
-        console.log(`⏱️ Timeout ao verificar porta ${port}`);
-        resolve(false);
-      } catch (err) {
-        // Ignorar erros ao fechar
-      }
-    }, 3000);
-  });
-};
-
-const findAvailablePort = async (defaultPort, alternativePorts) => {
-  console.log(`🔍 Tentando iniciar servidor na porta padrão: ${defaultPort}`);
-  
-  try {
-    // Forçar uso da porta 5000 em produção
-    if (process.env.NODE_ENV === 'production' && defaultPort === 5000) {
-      console.log('🚀 Modo de produção detectado: forçando uso da porta 5000');
-      return defaultPort;
-    }
-    
-    // Primeiro, tentamos a porta padrão
-    if (await checkPortAvailability(defaultPort)) {
-      return defaultPort;
-    }
-    
-    console.log(`⚠️ Porta ${defaultPort} não está disponível`);
-    
-    // Se a porta padrão não estiver disponível, tentamos as alternativas
-    for (const port of alternativePorts) {
-      if (await checkPortAvailability(port)) {
-        console.log(`🔄 Usando porta alternativa: ${port}`);
-        return port;
-      }
-    }
-  } catch (error) {
-    console.error('❌ Erro ao verificar disponibilidade de portas:', error);
-  }
-  
-  // Se nenhuma porta estiver disponível, registramos um erro
-  console.error('❌ Todas as portas alternativas estão em uso. Não foi possível iniciar o servidor.');
-  return null;
-};
-
 const startServer = async () => {
   try {
-    console.log('📋 Iniciando servidor...');
-    
     // Sincronizar banco de dados na ordem correta
-    console.log('🔄 Sincronizando banco de dados...');
-    try {
-      await sequelize.sync({ force: false });
-      console.log('✅ Banco de dados sincronizado com sucesso');
-    } catch (dbError) {
-      console.error('❌ Erro ao sincronizar banco de dados:', dbError);
-      throw new Error(`Falha ao sincronizar banco de dados: ${dbError.message}`);
-    }
+    await sequelize.sync({ force: false });
     
     // Criar tabelas na ordem correta
-    console.log('📊 Criando tabelas...');
-    try {
-      await models.User.sync({ force: false });
-      await models.Category.sync({ force: false });
-      await models.Bank.sync({ force: false });
-      await models.Expense.sync({ force: false });
-      await models.Income.sync({ force: false });
-      await models.Budget.sync({ force: false });
-      await models.VerificationCode.sync({ force: false });
-      await models.UserBank.sync({ force: false });
-      await models.RecurrenceRule.sync({ force: false });
-      await models.ExpensesRecurrenceException.sync({ force: false });
-      await models.IncomesRecurrenceException.sync({ force: false });
-      await models.Payment.sync({ force: false });
-      await models.FinancialGoal.sync({ force: false });
-      await models.AuditLog.sync({ force: false });
-      console.log('✅ Tabelas criadas com sucesso');
-    } catch (tableError) {
-      console.error('❌ Erro ao criar tabelas:', tableError);
-      throw new Error(`Falha ao criar tabelas: ${tableError.message}`);
-    }
+    await User.sync({ force: false });
+    await Category.sync({ force: false });
+    await Bank.sync({ force: false });
+    await Expense.sync({ force: false });
+    await Income.sync({ force: false });
+    await Budget.sync({ force: false });
+    await VerificationCode.sync({ force: false });
+    await UserBank.sync({ force: false });
+    await RecurrenceRule.sync({ force: false });
+    await ExpensesRecurrenceException.sync({ force: false });
+    await IncomesRecurrenceException.sync({ force: false });
+    await Payment.sync({ force: false });
+    await FinancialGoal.sync({ force: false });
+    await AuditLog.sync({ force: false });
 
-    // Encontrar uma porta disponível
-    console.log('🔍 Procurando porta disponível...');
-    const port = await findAvailablePort(DEFAULT_PORT, ALTERNATIVE_PORTS);
-    
-    if (!port) {
-      console.error('❌ Não foi possível encontrar uma porta disponível. Encerrando aplicação.');
-      process.exit(1);
-    }
-    
-    console.log(`🎯 Porta escolhida: ${port}`);
+    // Verificar se a porta está em uso
+    const checkPort = () => {
+      return new Promise((resolve, reject) => {
+        const tester = net.createServer()
+          .once('error', (err) => {
+            if (err.code === 'EADDRINUSE') {
+              console.error('⚠️ A porta 5000 já está em uso. Por favor, verifique se há outro processo rodando.');
+              process.exit(1);
+            }
+            reject(err);
+          })
+          .once('listening', () => {
+            tester.once('close', () => resolve())
+              .close();
+          })
+          .listen(5000);
+      });
+    };
 
-    // Inicializar o servidor
-    console.log('🚀 Inicializando servidor HTTP/HTTPS...');
-    
+    await checkPort();
+
+    // Inicializar o servidor apenas uma vez
     if (process.env.NODE_ENV === 'production') {
-      try {
-        const privateKey = readFileSync(
-          '/etc/letsencrypt/live/planejadordasgalaxias.com.br/privkey.pem',
-          'utf8'
-        );
-        const certificate = readFileSync(
-          '/etc/letsencrypt/live/planejadordasgalaxias.com.br/cert.pem',
-          'utf8'
-        );
-        const ca = readFileSync(
-          '/etc/letsencrypt/live/planejadordasgalaxias.com.br/chain.pem',
-          'utf8'
-        );
+      const privateKey = readFileSync(
+        '/etc/letsencrypt/live/planejadordasgalaxias.com.br/privkey.pem',
+        'utf8'
+      );
+      const certificate = readFileSync(
+        '/etc/letsencrypt/live/planejadordasgalaxias.com.br/cert.pem',
+        'utf8'
+      );
+      const ca = readFileSync(
+        '/etc/letsencrypt/live/planejadordasgalaxias.com.br/chain.pem',
+        'utf8'
+      );
 
-        const credentials = { key: privateKey, cert: certificate, ca: ca };
-        server = https.createServer(credentials, app);
-        console.log('✅ Servidor HTTPS criado com sucesso');
-      } catch (sslError) {
-        console.error('❌ Erro ao configurar SSL:', sslError);
-        console.log('⚠️ Tentando iniciar como servidor HTTP em vez de HTTPS...');
-        server = http.createServer(app);
-      }
+      const credentials = { key: privateKey, cert: certificate, ca: ca };
+      server = https.createServer(credentials, app);
     } else {
       server = http.createServer(app);
-      console.log('✅ Servidor HTTP criado com sucesso');
     }
 
-    // Adicionar tratamento de erro para o servidor
-    server.on('error', (err) => {
-      console.error('❌ Erro ao iniciar servidor:', err);
-      if (err.code === 'EADDRINUSE') {
-        console.error(`Porta ${port} já está em uso. Tente reiniciar o servidor.`);
-      }
-    });
-
-    console.log(`🔌 Tentando escutar na porta ${port}...`);
-    server.listen(port, process.env.NODE_ENV === 'production' ? '0.0.0.0' : undefined, () => {
-      console.log(`🚀 Servidor ${process.env.NODE_ENV === 'production' ? 'HTTPS' : 'HTTP'} rodando na porta ${port} em modo ${process.env.NODE_ENV || 'desenvolvimento'}`);
-      
-      // Escrever a porta em uso em um arquivo para referência
-      try {
-        writeFileSync('./server-port.txt', port.toString());
-        console.log(`✅ Porta do servidor (${port}) salva em server-port.txt`);
-      } catch (err) {
-        console.error('❌ Não foi possível salvar a porta do servidor em arquivo:', err.message);
-      }
+    server.listen(5000, process.env.NODE_ENV === 'production' ? '0.0.0.0' : undefined, () => {
+      console.log(`🚀 Servidor ${process.env.NODE_ENV === 'production' ? 'HTTPS' : 'HTTP'} rodando na porta 5000 em modo ${process.env.NODE_ENV || 'desenvolvimento'}`);
     });
 
   } catch (error) {
-    console.error('❌ Erro fatal ao iniciar o servidor:', error);
+    console.error('Erro ao iniciar o servidor:', error);
     process.exit(1);
   }
 };
@@ -612,12 +293,4 @@ telegramService.init().then(() => {
 
 app.get('/', (req, res) => {
   res.send('Backend está funcionando');
-});
-
-process.on('SIGTERM', () => gracefulShutdown(server));
-process.on('SIGINT', () => gracefulShutdown(server));
-
-startServer().catch(err => {
-  console.error('Erro fatal ao iniciar o servidor:', err);
-  process.exit(1);
 });

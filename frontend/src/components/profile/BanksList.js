@@ -101,80 +101,25 @@ const BanksList = ({ auth, setMessage, setError }) => {
   const [banks, setBanks] = useState([]);
   const [selectedBanks, setSelectedBanks] = useState([]);
   const [bankSearch, setBankSearch] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [loadingError, setLoadingError] = useState(null);
 
-  // Função para buscar bancos com retry
-  const fetchBanks = async (retryCount = 0) => {
-    const maxRetries = 3;
-    setLoading(true);
-    setLoadingError(null);
-
-    try {
-      // Criar um AbortController com timeout
-      const abortController = new AbortController();
-      const timeoutId = setTimeout(() => abortController.abort(), 15000); // 15 segundos de timeout
-
+  useEffect(() => {
+    const fetchBanks = async () => {
       try {
-        // Primeiro, tentamos buscar a lista de bancos
-        const availableBanksResponse = await fetch(
-          `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/banks`,
-          { 
-            signal: abortController.signal
-          }
-        );
-
-        // Se a resposta for 202 (ainda carregando no servidor), esperar e tentar novamente
-        if (availableBanksResponse.status === 202) {
-          clearTimeout(timeoutId);
-          console.log('Servidor ainda está carregando os bancos, tentando novamente em 2 segundos...');
-          if (retryCount < maxRetries) {
-            setTimeout(() => fetchBanks(retryCount + 1), 2000);
-            return;
-          } else {
-            throw new Error('Servidor demorou muito para carregar os bancos');
-          }
-        }
-
-        // Se houver erro no servidor
-        if (!availableBanksResponse.ok) {
-          clearTimeout(timeoutId);
-          throw new Error(`Erro ao carregar bancos: ${availableBanksResponse.status}`);
-        }
-
-        // Usar um novo AbortController para o segundo request
-        const abortController2 = new AbortController();
-        const timeoutId2 = setTimeout(() => abortController2.abort(), 15000);
-
-        // Busca dos bancos favoritos do usuário
-        const userBanksResponse = await fetch(
-          `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/banks/favorites`, 
-          {
+        const [availableBanksResponse, userBanksResponse] = await Promise.all([
+          fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/banks`),
+          fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/banks/favorites`, {
             headers: {
               'Authorization': `Bearer ${auth.token}`
-            },
-            signal: abortController2.signal
-          }
-        );
-
-        clearTimeout(timeoutId); // Limpar o primeiro timeout
-        clearTimeout(timeoutId2); // Limpar o segundo timeout
-
-        if (!userBanksResponse.ok) {
-          throw new Error(`Erro ao carregar bancos favoritos: ${userBanksResponse.status}`);
+            }
+          })
+        ]);
+        if (!availableBanksResponse.ok || !userBanksResponse.ok) {
+          throw new Error('Erro ao carregar bancos');
         }
-
-        // Processar as respostas
         const [allBanks, favorites] = await Promise.all([
           availableBanksResponse.json(),
           userBanksResponse.json()
         ]);
-        
-        // Verificar se a lista de bancos é válida
-        if (!Array.isArray(allBanks) || allBanks.length === 0) {
-          console.error('Resposta inválida: lista de bancos vazia ou não é um array');
-          throw new Error('Lista de bancos inválida recebida do servidor');
-        }
         
         setBanks(allBanks);
         
@@ -185,40 +130,12 @@ const BanksList = ({ auth, setMessage, setError }) => {
         
         console.log('Bancos ativos recebidos:', activeBankIds);
         setSelectedBanks(activeBankIds);
-        setLoading(false);
-      } catch (fetchError) {
-        clearTimeout(timeoutId);
-        throw fetchError; // Re-lançar para o catch externo
+      } catch (error) {
+        console.error('Erro ao carregar bancos:', error);
       }
-    } catch (error) {
-      console.error('Erro ao carregar bancos:', error);
-      
-      // Tentar novamente se for um timeout ou erro de rede
-      const isTimeoutOrNetworkError = 
-        error.name === 'AbortError' || 
-        error.name === 'TypeError' || 
-        error.message.includes('timeout') ||
-        error.message.includes('network');
-        
-      if (isTimeoutOrNetworkError && retryCount < maxRetries) {
-        console.log(`Tentando novamente (${retryCount + 1}/${maxRetries})...`);
-        setTimeout(() => fetchBanks(retryCount + 1), 2000);
-        return;
-      }
-      
-      setLoadingError(`Não foi possível carregar a lista de bancos. ${error.message}`);
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
+    };
     fetchBanks();
   }, [auth.token]);
-
-  // Função para tentar novamente manualmente
-  const handleRetry = () => {
-    fetchBanks();
-  };
 
   const selectBank = useCallback(async (bankId) => {
     try {
@@ -308,46 +225,22 @@ const BanksList = ({ auth, setMessage, setError }) => {
         <p className={styles.banksDescription}>
           Selecione os bancos que você utiliza para gerenciar seus despesas.
         </p>
-        
-        {loadingError ? (
-          <div className={styles.errorContainer}>
-            <p className={styles.errorMessage}>{loadingError}</p>
-            <button 
-              className={styles.retryButton}
-              onClick={handleRetry}
-              disabled={loading}
-            >
-              {loading ? 'Carregando...' : 'Tentar Novamente'}
-            </button>
-          </div>
-        ) : (
-          <>
-            <div className={styles.searchContainer}>
-              <input
-                type="text"
-                placeholder="Buscar banco..."
-                value={bankSearch}
-                onChange={(e) => setBankSearch(e.target.value)}
-                className={styles.searchInput}
-                disabled={loading}
-              />
-            </div>
-            
-            {loading ? (
-              <div className={styles.loadingContainer}>
-                <p>Carregando lista de bancos...</p>
-              </div>
-            ) : (
-              <div className={styles.banksGrid}>
-                {filteredBanks.length > 0 ? (
-                  filteredBanks.map(bank => renderBankCard(bank, selectedBanks.includes(bank.id)))
-                ) : (
-                  <p className={styles.emptyMessage}>Nenhum banco encontrado com esse nome.</p>
-                )}
-              </div>
-            )}
-          </>
-        )}
+        <div className={styles.searchContainer}>
+          <input
+            type="text"
+            placeholder="Buscar banco..."
+            value={bankSearch}
+            onChange={(e) => setBankSearch(e.target.value)}
+            className={styles.searchInput}
+          />
+        </div>
+        <div className={styles.banksGrid}>
+          {filteredBanks.length > 0 ? (
+            filteredBanks.map(bank => renderBankCard(bank, selectedBanks.includes(bank.id)))
+          ) : (
+            <p className={styles.emptyMessage}>Nenhum banco encontrado com esse nome.</p>
+          )}
+        </div>
       </div>
     </div>
   );

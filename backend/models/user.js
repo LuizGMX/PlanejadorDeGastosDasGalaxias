@@ -1,5 +1,5 @@
 import { DataTypes } from 'sequelize';
-import { encrypt, decrypt } from '../utils/encryption.js';
+import { encrypt, decrypt } from '../utils/encryption';
 
 export default (sequelize) => {
   const User = sequelize.define('User', {

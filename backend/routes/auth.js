@@ -1,21 +1,24 @@
-import express from 'express';
-import bcrypt from 'bcrypt';
+import { Router } from 'express';
+import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
-import { models } from '../models/index.js';
-import { sendVerificationEmail } from '../services/emailService.js';
-import { generateVerificationCode } from '../utils/verificationCode.js';
+import { User, VerificationCode, UserBank, Bank, Payment, FinancialGoal } from '../models/index.js';
 import { Op } from 'sequelize';
 import sequelize from '../config/db.js';
+import { sendVerificationEmail } from '../services/emailService.js';
 
-const router = express.Router();
-const { User, VerificationCode, UserBank, Bank, Payment, FinancialGoal } = models;
+dotenv.config();
+
+const router = Router();
 
 // Utility Functions
+const generateVerificationCode = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
 const generateJWT = (userId, email) => {
-  const secret = process.env.JWT_SECRET || 'default-secret-key';
   return jwt.sign(
     { userId, email },
-    secret,
+    process.env.JWT_SECRET,
     { expiresIn: '24h' }
   );
 };
@@ -83,131 +86,175 @@ export const authenticate = async (req, res, next) => {
 
 // Rotas
 router.post('/check-email', async (req, res) => {
-  const { email } = req.body;
-  
-  if (!email) {
-    return res.status(400).json({ message: 'E-mail é obrigatório' });
-  }
-  
-  // Verifica se o email é válido
-  if (!/^\S+@\S+\.\S+$/.test(email)) {
-    return res.status(400).json({ message: 'E-mail inválido' });
-  }
+  console.log('===========================================');
+  console.log('INICIANDO /${process.env.API_PREFIX}/auth/check-email');
+  console.log('Timestamp:', new Date().toISOString());
+  console.log('Cabeçalhos:', JSON.stringify(req.headers));
+  console.log('Body completo:', JSON.stringify(req.body));
   
   try {
-    // Primeiro responde rapidamente para evitar timeout
-    res.json({
-      isNewUser: true,
-      message: 'Verificação em andamento. Por favor, continue.'
+    const { email } = req.body;
+    console.log('Email extraído do body:', email);
+    
+    if (!email) {
+      console.log('ERRO: Email não fornecido');
+      return res.status(400).json({ message: 'E-mail é obrigatório' });
+    }
+    
+    // Verifica se o email é válido
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      console.log('ERRO: Email inválido:', email);
+      return res.status(400).json({ message: 'E-mail inválido' });
+    }
+    
+    console.log('Buscando usuário no banco de dados...');
+    const user = await User.findOne({ 
+      where: { email },
+      attributes: ['id', 'name', 'email']
     });
     
-    // Depois faz a consulta ao banco de dados e envia email (após já ter respondido)
-    setTimeout(async () => {
-      try {
-        const user = await User.findOne({ 
-          where: { email },
-          attributes: ['id', 'name', 'email'],
-          timeout: 5000
-        });
-        
-        if (user) {
-          const code = generateVerificationCode();
-          
-          try {
-            await VerificationCode.destroy({ where: { email } });
-            await VerificationCode.create({
-              email,
-              code,
-              expires_at: new Date(Date.now() + 10 * 60 * 1000)
-            });
-            
-            // Enviar email assincronamente
-            sendVerificationEmail(email, code).catch(e => 
-              console.error('Erro ao enviar email:', e)
-            );
-          } catch (dbErr) {
-            console.error('Erro ao processar código para o usuário:', dbErr);
-          }
-        }
-      } catch (err) {
-        console.error('Erro ao processar verificação de email:', err);
-      }
-    }, 100);
-  } catch (error) {
-    // Se já enviei resposta, não preciso responder novamente
-    if (!res.headersSent) {
-      return res.status(500).json({ message: 'Erro ao verificar email' });
+    console.log('Usuário encontrado:', user ? 'Sim' : 'Não');
+    if (user) {
+      console.log('Detalhes do usuário encontrado (ID, Nome):', user.id, user.name);
     }
+    
+    // Se o usuário existir, gera e envia o código imediatamente
+    if (user) {
+      try {
+        console.log('Gerando código para usuário existente...');
+        const code = generateVerificationCode();
+        console.log('Código gerado:', code);
+
+        console.log('Removendo códigos antigos...');
+        await VerificationCode.destroy({ where: { email } });
+        
+        console.log('Salvando novo código...');
+        await VerificationCode.create({
+          email,
+          code,
+          expires_at: new Date(Date.now() + 10 * 60 * 1000)
+        });
+
+        console.log('Enviando email...');
+        try {
+          await sendVerificationEmail(email, code);
+          console.log('Email enviado com sucesso');
+        } catch (emailError) {
+          console.error('ERRO ao enviar email:', emailError);
+          console.error('Stack trace do erro de email:', emailError.stack);
+        }
+
+        console.log('Retornando resposta de sucesso para usuário existente');
+        return res.json({
+          isNewUser: false,
+          name: user.name,
+          email: user.email,
+          message: 'Código enviado com sucesso!'
+        });
+      } catch (userExistsError) {
+        console.error('ERRO no fluxo de usuário existente:', userExistsError);
+        console.error('Stack trace:', userExistsError.stack);
+        return res.status(500).json({ message: 'Erro interno ao processar usuário existente' });
+      }
+    }
+    
+    // Se não existir, retorna que é um novo usuário
+    console.log('Retornando resposta para novo usuário');
+    return res.json({
+      isNewUser: true,
+      name: null,
+      email: null
+    });
+  } catch (error) {
+    console.error('ERRO CRÍTICO ao verificar email:', error);
+    console.error('Stack trace completo:', error.stack);
+    console.error('Tipo de erro:', error.name);
+    console.error('Mensagem de erro:', error.message);
+    return res.status(500).json({ message: 'Erro interno ao verificar email', error: error.message });
+  } finally {
+    console.log('FINALIZANDO /${process.env.API_PREFIX}/auth/check-email');
+    console.log('===========================================');
   }
 });
 
 router.post('/send-code', async (req, res) => {
-  const { 
-    email, 
-    name,      
-    financialGoalName,
-    financialGoalAmount,
-    financialGoalPeriodType,
-    financialGoalPeriodValue,
-    selectedBanks,
-    isNewUser
-  } = req.body;
-
-  // Validação básica do email
-  if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
-    return res.status(400).json({ message: 'E-mail inválido' });
-  }
-
-  // Se for novo usuário, valida os dados necessários
-  if (isNewUser && (!name || !financialGoalName || !financialGoalAmount || !financialGoalPeriodType || !financialGoalPeriodValue)) {
-    return res.status(400).json({ message: 'Todos os dados são obrigatórios para novos usuários' });
-  }
-
+  console.log('/${process.env.API_PREFIX}/auth/send-code chamado');
   try {
-    // Primeiro responde rapidamente
-    res.json({ message: 'Código sendo enviado. Por favor, aguarde.' });
-    
-    // Depois processa assincronamente
-    setTimeout(async () => {
-      try {
-        // Gera o código de verificação
-        const code = generateVerificationCode();
-        
-        // Remove códigos antigos
-        await VerificationCode.destroy({ where: { email } });
-        
-        // Prepara os dados do usuário para salvar com o código
-        const userData = isNewUser ? {
-          name,
-          financialGoalName,
-          financialGoalAmount,
-          financialGoalPeriodType,
-          financialGoalPeriodValue,
-          selectedBanks
-        } : null;
-        
-        // Salva o código com os dados do usuário
-        await VerificationCode.create({
-          email,
-          code,
-          user_data: userData ? JSON.stringify(userData) : null,
-          expires_at: new Date(Date.now() + 10 * 60 * 1000) // 10 minutos
-        });
-        
-        // Envia o email
-        await sendVerificationEmail(email, code);
-      } catch (err) {
-        console.error('Erro ao processar envio de código:', err);
-      }
-    }, 100);
-  } catch (error) {
-    if (!res.headersSent) {
-      return res.status(500).json({ message: 'Erro ao enviar código' });
+    const { 
+      email, 
+      name,      
+      financialGoalName,
+      financialGoalAmount,
+      financialGoalPeriodType,
+      financialGoalPeriodValue,
+      selectedBanks,
+      isNewUser
+    } = req.body;
+
+    console.log('Dados recebidos:', { 
+      email, 
+      name,      
+      financialGoalName,
+      financialGoalAmount,
+      financialGoalPeriodType,
+      financialGoalPeriodValue,
+      selectedBanks: selectedBanks ? selectedBanks.length : 0,
+      isNewUser 
+    });
+
+    // Validação básica do email
+    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+      return res.status(400).json({ message: 'E-mail inválido' });
     }
+
+    // Se for novo usuário, valida os dados necessários
+    if (isNewUser && (!name || !financialGoalName || !financialGoalAmount || !financialGoalPeriodType || !financialGoalPeriodValue)) {
+      return res.status(400).json({ message: 'Todos os dados são obrigatórios para novos usuários' });
+    }
+
+    // Gera o código de verificação
+    const code = generateVerificationCode();
+    console.log('Código gerado:', code);
+
+    // Remove códigos antigos
+    await VerificationCode.destroy({ where: { email } });
+
+    // Prepara os dados do usuário para salvar com o código
+    const userData = isNewUser ? {
+      name,
+      financialGoalName,
+      financialGoalAmount,
+      financialGoalPeriodType,
+      financialGoalPeriodValue,
+      selectedBanks
+    } : null;
+
+    // Salva o código com os dados do usuário
+    await VerificationCode.create({
+      email,
+      code,
+      user_data: userData ? JSON.stringify(userData) : null,
+      expires_at: new Date(Date.now() + 10 * 60 * 1000) // 10 minutos
+    });
+
+    // Envia o email
+    try {
+      await sendVerificationEmail(email, code);
+      console.log('Email enviado com sucesso');
+    } catch (emailError) {
+      console.error('Erro ao enviar email:', emailError);
+      throw new Error('Falha ao enviar email de verificação');
+    }
+
+    return res.json({ message: 'Código enviado com sucesso!' });
+  } catch (error) {
+    console.error('Erro ao enviar código:', error);
+    return res.status(500).json({ message: error.message || 'Erro interno ao enviar código' });
   }
 });
 
 router.post('/verify-code', async (req, res) => {
+  const t = await sequelize.transaction();
   try {
     const { 
       email, 
@@ -221,196 +268,200 @@ router.post('/verify-code', async (req, res) => {
       selectedBanks 
     } = req.body;
 
-    // Resposta rápida para evitar timeout na UI
-    res.json({ 
-      message: 'Verificação em processamento', 
-      status: 'verifying',
-      email: email
+    console.log('Dados recebidos no verify-code:', {
+      email,
+      isNewUser,
+      selectedBanks: selectedBanks ? selectedBanks.length : 0
     });
 
-    // Processamento em background, após a resposta
-    setTimeout(async () => {
-      const t = await sequelize.transaction();
-      try {
-        // Validação do código de verificação
-        const verificationCode = await VerificationCode.findOne({
-          where: {
-            email,
-            code,
-            expires_at: { [Op.gt]: new Date() }
-          }
-        });
-
-        if (!verificationCode) {
-          await t.rollback();
-          return; // Código inválido, mas já respondemos ao cliente
-        }
-
-        // Busca o usuário
-        let user = await User.findOne({ where: { email } });
-
-        // Se for um novo usuário, cria o usuário
-        if (isNewUser && !user) {
-          user = await User.create({
-            email,
-            name,
-            desired_budget: financialGoalAmount || 0
-          }, { transaction: t });
-
-          // Se houver meta financeira, cria
-          if (financialGoalName && financialGoalAmount) {
-            // Calcular a data de término baseada no período
-            const startDate = new Date();
-            let endDate = new Date(startDate);
-            
-            if (financialGoalPeriodType && financialGoalPeriodValue) {
-              const periodValue = parseInt(financialGoalPeriodValue);
-              
-              switch (financialGoalPeriodType) {
-                case 'days':
-                  endDate.setDate(startDate.getDate() + periodValue);
-                  break;
-                case 'months':
-                  endDate.setMonth(startDate.getMonth() + periodValue);
-                  break;
-                case 'years':
-                  endDate.setFullYear(startDate.getFullYear() + periodValue);
-                  break;
-                default:
-                  endDate.setFullYear(startDate.getFullYear() + 1); // Padrão: 1 ano
-              }
-            } else {
-              // Se não tiver período definido, define 1 ano como padrão
-              endDate.setFullYear(startDate.getFullYear() + 1);
-            }
-            
-            await FinancialGoal.create({
-              user_id: user.id,
-              name: financialGoalName,
-              amount: financialGoalAmount,
-              period_type: financialGoalPeriodType || 'years',
-              period_value: financialGoalPeriodValue || 1,
-              start_date: startDate,
-              end_date: endDate
-            }, { transaction: t });
-          }
-
-          // Criar registro de pagamento inicial com 7 dias gratuitos
-          const trialExpirationDate = new Date();
-          trialExpirationDate.setDate(trialExpirationDate.getDate() + 7); // 7 dias de teste
-          
-          await Payment.create({
-            user_id: user.id,
-            subscription_expiration: trialExpirationDate,
-            payment_status: 'approved',
-            payment_method: 'trial',
-            payment_amount: 0,
-            payment_date: new Date()
-          }, { transaction: t });
-        }
-
-        // Associar bancos ao usuário, se houver
-        if (selectedBanks && selectedBanks.length > 0) {
-          try {
-            // Pegar todos os bancos existentes para ter certeza de quais devem ser ativos e inativos
-            const allBanks = await Bank.findAll({
-              attributes: ['id'],
-              transaction: t
-            });
-            
-            // Para cada banco no sistema
-            for (const bank of allBanks) {
-              // Verificar se o banco está na lista de selecionados
-              const isSelected = selectedBanks.includes(bank.id);
-              
-              // Remover qualquer associação existente primeiro
-              await UserBank.destroy({
-                where: { 
-                  user_id: user.id, 
-                  bank_id: bank.id 
-                },
-                transaction: t
-              });
-              
-              // Criar associação para todos os bancos, mas marcando como ativo apenas os selecionados
-              await UserBank.create({
-                user_id: user.id,
-                bank_id: bank.id,
-                is_active: isSelected // true para selecionados, false para não selecionados
-              }, { transaction: t });
-            }
-          } catch (error) {
-            console.error('Erro ao associar bancos:', error);
-            await t.rollback();
-            return;
-          }
-        }
-
-        // Remove o código de verificação
-        await verificationCode.destroy({ transaction: t });
-
-        // Gera o token JWT
-        const token = jwt.sign(
-          { userId: user.id, email: user.email },
-          process.env.JWT_SECRET,
-          { expiresIn: '7d' }
-        );
-
-        // Commit da transação
-        await t.commit();
-      } catch (error) {
-        await t.rollback();
-        console.error('Erro ao verificar código:', error);
+    // Validação do código de verificação
+    const verificationCode = await VerificationCode.findOne({
+      where: {
+        email,
+        code,
+        expires_at: { [Op.gt]: new Date() }
       }
-    }, 100);
-  } catch (error) {
-    if (!res.headersSent) {
-      res.status(500).json({ message: 'Erro ao verificar código' });
+    });
+
+    if (!verificationCode) {
+      await t.rollback();
+      return res.status(400).json({ message: 'Código inválido ou expirado' });
     }
+
+    // Busca o usuário
+    let user = await User.findOne({ where: { email } });
+
+    // Se for um novo usuário, cria o usuário
+    if (isNewUser && !user) {
+      user = await User.create({
+        email,
+        name,
+        desired_budget: financialGoalAmount || 0
+      }, { transaction: t });
+
+      // Se houver meta financeira, cria
+      if (financialGoalName && financialGoalAmount) {
+        // Calcular a data de término baseada no período
+        const startDate = new Date();
+        let endDate = new Date(startDate);
+        
+        if (financialGoalPeriodType && financialGoalPeriodValue) {
+          const periodValue = parseInt(financialGoalPeriodValue);
+          
+          switch (financialGoalPeriodType) {
+            case 'days':
+              endDate.setDate(startDate.getDate() + periodValue);
+              break;
+            case 'months':
+              endDate.setMonth(startDate.getMonth() + periodValue);
+              break;
+            case 'years':
+              endDate.setFullYear(startDate.getFullYear() + periodValue);
+              break;
+            default:
+              endDate.setFullYear(startDate.getFullYear() + 1); // Padrão: 1 ano
+          }
+        } else {
+          // Se não tiver período definido, define 1 ano como padrão
+          endDate.setFullYear(startDate.getFullYear() + 1);
+        }
+        
+        await FinancialGoal.create({
+          user_id: user.id,
+          name: financialGoalName,
+          amount: financialGoalAmount,
+          period_type: financialGoalPeriodType || 'years',
+          period_value: financialGoalPeriodValue || 1,
+          start_date: startDate,
+          end_date: endDate
+        }, { transaction: t });
+      }
+
+      // Criar registro de pagamento inicial com 7 dias gratuitos
+      const trialExpirationDate = new Date();
+      trialExpirationDate.setDate(trialExpirationDate.getDate() + 7); // 7 dias de teste
+      
+      await Payment.create({
+        user_id: user.id,
+        subscription_expiration: trialExpirationDate,
+        payment_status: 'approved',
+        payment_method: 'trial',
+        payment_amount: 0,
+        payment_date: new Date()
+      }, { transaction: t });
+    }
+
+    // Associar bancos ao usuário, se houver
+    if (selectedBanks && selectedBanks.length > 0) {
+      console.log('Associando bancos ao usuário:', { userId: user.id, selectedBanks });
+      
+      try {
+        // Pegar todos os bancos existentes para ter certeza de quais devem ser ativos e inativos
+        const allBanks = await Bank.findAll({
+          attributes: ['id'],
+          transaction: t
+        });
+        
+        // Para cada banco no sistema
+        for (const bank of allBanks) {
+          // Verificar se o banco está na lista de selecionados
+          const isSelected = selectedBanks.includes(bank.id);
+          
+          // Remover qualquer associação existente primeiro
+          await UserBank.destroy({
+            where: { 
+              user_id: user.id, 
+              bank_id: bank.id 
+            },
+            transaction: t
+          });
+          
+          // Criar associação para todos os bancos, mas marcando como ativo apenas os selecionados
+          await UserBank.create({
+            user_id: user.id,
+            bank_id: bank.id,
+            is_active: isSelected // true para selecionados, false para não selecionados
+          }, { 
+            transaction: t
+          });
+          
+          console.log(`Banco ${bank.id} associado com is_active=${isSelected}`);
+        }
+        
+        console.log('Bancos associados com sucesso');
+      } catch (error) {
+        console.error('Erro ao associar bancos:', error);
+        throw error; // Re-throw para que a transação seja revertida
+      }
+    }
+
+    // Remove o código de verificação
+    await verificationCode.destroy({ transaction: t });
+
+    // Gera o token JWT
+    const token = jwt.sign(
+      { userId: user.id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    // Commit da transação
+    await t.commit();
+
+    res.json({ 
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        telegram_verified: user.telegram_verified
+      }
+    });
+  } catch (error) {
+    await t.rollback();
+    console.error('Erro ao verificar código:', error);
+    res.status(500).json({ message: 'Erro ao verificar código' });
   }
 });
 
 router.post('/send-access-code', async (req, res) => {
+  console.log('/${process.env.API_PREFIX}/auth/send-access-code chamado');
   try {
     const { email } = req.body;
     if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
       return res.status(400).json({ message: 'E-mail inválido' });
     }
 
-    // Resposta rápida
-    res.json({ message: 'Solicitação recebida, processando envio de código.' });
-
-    // Processamento em background
-    setTimeout(async () => {
-      try {
-        const user = await User.findOne({ where: { email } });
-        if (!user) {
-          return; // Já respondemos ao cliente
-        }
-    
-        // Gera o código de verificação
-        const code = generateVerificationCode();
-        
-        // Remove códigos antigos
-        await VerificationCode.destroy({ where: { email } });
-        
-        // Cria novo código
-        await VerificationCode.create({ 
-          email, 
-          code, 
-          expires_at: new Date(Date.now() + 10 * 60 * 1000) // 10 minutos
-        });
-    
-        // Envia o email
-        await sendVerificationEmail(email, code);
-      } catch (error) {
-        console.error('Erro ao processar envio de código de acesso:', error);
-      }
-    }, 100);
-  } catch (error) {
-    if (!res.headersSent) {
-      return res.status(500).json({ message: 'Erro interno ao enviar código de acesso' });
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(404).json({ message: 'Usuário não encontrado' });
     }
+
+    // Gera o código de verificação
+    const code = generateVerificationCode();
+    
+    // Remove códigos antigos
+    await VerificationCode.destroy({ where: { email } });
+    
+    // Cria novo código
+    await VerificationCode.create({ 
+      email, 
+      code, 
+      expires_at: new Date(Date.now() + 10 * 60 * 1000) // 10 minutos
+    });
+
+    // Envia o email
+    await sendVerificationEmail(email, code);
+
+    // Log para debug
+    console.log('=================================');
+    console.log(`Novo código de acesso para ${email}: ${code}`);
+    console.log('=================================');
+
+    return res.json({ message: 'Código de acesso enviado com sucesso!' });
+  } catch (error) {
+    console.error('Erro ao enviar código de acesso:', error);
+    return res.status(500).json({ message: 'Erro interno ao enviar código de acesso' });
   }
 });
 
@@ -730,48 +781,93 @@ router.post('/change-email/verify', authenticate, async (req, res) => {
   }
 });
 
-// Rota otimizada para login
+// Rota de login
 router.post('/login', async (req, res) => {
+  console.log('===========================================');
+  console.log('INICIANDO /${process.env.API_PREFIX}/auth/login');
+  console.log('Timestamp:', new Date().toISOString());
+  console.log('Body parcial:', JSON.stringify({ ...req.body, email: req.body.email ? `${req.body.email.slice(0, 3)}...` : undefined }));
+  
+  const t = await sequelize.transaction();
+  
   try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Email e senha são obrigatórios' });
+    const { email, code } = req.body;
+    
+    if (!email || !code) {
+      await t.rollback();
+      return res.status(400).json({ message: 'Email e código são obrigatórios' });
+    }
+    
+    // Buscar código válido mais recente
+    const verificationCode = await VerificationCode.findOne({
+      where: {
+        email: email.toLowerCase(),
+        code: code,
+        expires_at: { [Op.gt]: new Date() }, // ainda não expirou
+        used: false
+      },
+      order: [['created_at', 'DESC']],
+      transaction: t
+    });
+    
+    if (!verificationCode) {
+      await t.rollback();
+      return res.status(401).json({ message: 'Código inválido ou expirado' });
+    }
+    
+    // Marcar código como usado
+    verificationCode.used = true;
+    await verificationCode.save({ transaction: t });
+    
+    // Buscar ou criar usuário
+    let user = await User.findOne({ 
+      where: { email: email.toLowerCase() },
+      transaction: t
+    });
+    
+    if (!user) {
+      console.log(`User ${email} não encontrado. Isso não deveria acontecer neste ponto.`);
+      await t.rollback();
+      return res.status(404).json({ message: 'Usuário não encontrado' });
     }
 
-    // Resposta rápida para evitar timeout
-    res.json({
-      message: 'Autenticando. Por favor, aguarde...',
-      status: 'authenticating'
+    // Verificar se o usuário tem uma assinatura ativa
+    const activeSubscription = await Payment.findOne({
+      where: {
+        user_id: user.id,
+        payment_status: 'approved',
+        subscription_expiration: {
+          [Op.gt]: new Date() // Assinatura ainda não expirou
+        }
+      },
+      transaction: t
     });
 
-    // Processamento em background
-    setTimeout(async () => {
-      try {
-        const user = await User.findOne({ 
-          where: { email },
-          attributes: ['id', 'name', 'email', 'password'],
-          raw: true
-        });
+    const hasActiveSubscription = !!activeSubscription;
     
-        if (!user) {
-          return; // Usuário não encontrado, mas já respondemos
-        }
+    // Gerar token JWT
+    const token = generateJWT(user.id, user.email);
     
-        const isValidPassword = await bcrypt.compare(password, user.password);
-        if (!isValidPassword) {
-          return; // Senha inválida, mas já respondemos
-        }
+    await t.commit();
     
-        const token = generateJWT(user.id, user.email);
-      } catch (error) {
-        console.error('Erro ao processar login:', error);
-      }
-    }, 100);
+    // Enviar resposta com token
+    res.json({ 
+      message: 'Login realizado com sucesso',
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email
+      },
+      hasActiveSubscription
+    });
+    
   } catch (error) {
-    if (!res.headersSent) {
-      return res.status(500).json({ message: 'Erro ao realizar login' });
-    }
+    await t.rollback();
+    console.error('Erro detalhado no login:', error);
+    res.status(500).json({ message: 'Erro ao realizar login' });
+  } finally {
+    console.log('FINALIZANDO /${process.env.API_PREFIX}/auth/login');
   }
 });
 

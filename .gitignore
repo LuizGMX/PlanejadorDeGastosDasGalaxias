@@ -43,4 +43,3 @@ coverage/
 backend/.env.production
 frontend/package-lock.json
 frontend/package-lock.json
-backend/package.json

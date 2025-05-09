@@ -1,274 +1,288 @@
-// models/index.js - Definição e associação dos modelos
-import sequelize from '../config/db.js';
-import UserModel from './user.js';
-import CategoryModel from './category.js';
-import BankModel from './bank.js';
-import ExpenseModel from './expense.js';
-import IncomeModel from './income.js';
-import BudgetModel from './budget.js';
-import VerificationCodeModel from './verificationCode.js';
-import UserBankModel from './userBank.js';
-import RecurrenceRuleModel from './recurrenceRule.js';
-import ExpensesRecurrenceExceptionModel from './expensesRecurrenceException.js';
-import IncomesRecurrenceExceptionModel from './incomesRecurrenceException.js';
-import PaymentModel from './payment.js';
-import FinancialGoalModel from './financialGoal.js';
-import AuditLogModel from './auditLog.js';
+// models/index.js
+import { Sequelize } from 'sequelize';
+import dotenv from 'dotenv';
+import defineUserModel from './user.js';
+import defineCategoryModel from './category.js';
+import defineExpenseModel from './expense.js';
+import defineIncomeModel from './income.js';
+import defineBankModel from './bank.js';
+import defineBudgetModel from './budget.js';
+import defineVerificationCodeModel from './verificationCode.js';
+import defineUserBankModel from './userBank.js';
+import defineRecurrenceRuleModel from './recurrenceRule.js';
+import defineExpensesRecurrenceExceptionModel from './expensesRecurrenceException.js';
+import defineIncomesRecurrenceExceptionModel from './incomesRecurrenceException.js';
+import definePaymentModel from './payment.js';
+import defineFinancialGoalModel from './financialGoal.js';
+import AuditLog from './auditLog.js';
 
-// Objeto para armazenar todos os modelos
-const db = {};
+// Configurações do banco de dados
+dotenv.config();
+const sequelize = new Sequelize(
+  process.env.DB_NAME || 'planejador',
+  process.env.DB_USER || 'root',
+  process.env.DB_PASSWORD || 'root',
+  {
+    host: process.env.DB_HOST || 'localhost',
+    dialect: 'mysql',
+    logging: false,
+    define: {
+      charset: 'utf8mb4',
+      collate: 'utf8mb4_unicode_ci',
+      timestamps: true
+    }
+  }
+);
 
-// Inicializar modelos
-db.User = UserModel(sequelize);
-db.Category = CategoryModel(sequelize);
-db.Bank = BankModel(sequelize);
-db.Expense = ExpenseModel(sequelize);
-db.Income = IncomeModel(sequelize);
-db.Budget = BudgetModel(sequelize);
-db.VerificationCode = VerificationCodeModel(sequelize);
-db.UserBank = UserBankModel(sequelize);
-db.RecurrenceRule = RecurrenceRuleModel(sequelize);
-db.ExpensesRecurrenceException = ExpensesRecurrenceExceptionModel(sequelize);
-db.IncomesRecurrenceException = IncomesRecurrenceExceptionModel(sequelize);
-db.Payment = PaymentModel(sequelize);
-db.FinancialGoal = FinancialGoalModel(sequelize);
-db.AuditLog = AuditLogModel(sequelize);
+// Definição dos modelos
+const User = defineUserModel(sequelize);
+const Category = defineCategoryModel(sequelize);
+const Expense = defineExpenseModel(sequelize);
+const Income = defineIncomeModel(sequelize);
+const Bank = defineBankModel(sequelize);
+const Budget = defineBudgetModel(sequelize);
+const VerificationCode = defineVerificationCodeModel(sequelize);
+const UserBank = defineUserBankModel(sequelize);
+const RecurrenceRule = defineRecurrenceRuleModel(sequelize);
+const ExpensesRecurrenceException = defineExpensesRecurrenceExceptionModel(sequelize);
+const IncomesRecurrenceException = defineIncomesRecurrenceExceptionModel(sequelize);
+const Payment = definePaymentModel(sequelize);
+const FinancialGoal = defineFinancialGoalModel(sequelize);
 
-// Guardar a instância do Sequelize no objeto db
-db.sequelize = sequelize;
-
-// Configurar as associações entre os modelos
+// Associações entre modelos
 // User-Expense
-db.User.hasMany(db.Expense, {
+User.hasMany(Expense, {
   foreignKey: 'user_id',
   as: 'expenses'
 });
-db.Expense.belongsTo(db.User, {
+Expense.belongsTo(User, {
   foreignKey: 'user_id',
   as: 'user'
 });
 
 // User-Income
-db.User.hasMany(db.Income, {
+User.hasMany(Income, {
   foreignKey: 'user_id',
   as: 'incomes'
 });
-db.Income.belongsTo(db.User, {
+Income.belongsTo(User, {
   foreignKey: 'user_id',
   as: 'user'
 });
 
 // User-Category
-db.User.hasMany(db.Category, {
+User.hasMany(Category, {
   foreignKey: 'user_id',
   as: 'categories'
 });
-db.Category.belongsTo(db.User, {
+Category.belongsTo(User, {
   foreignKey: 'user_id',
   as: 'user'
 });
 
 // User-Budget
-db.User.hasMany(db.Budget, {
+User.hasMany(Budget, {
   foreignKey: 'user_id',
   as: 'budgets'
 });
-db.Budget.belongsTo(db.User, {
+Budget.belongsTo(User, {
   foreignKey: 'user_id',
   as: 'user'
 });
 
 // User-VerificationCode
-db.User.hasMany(db.VerificationCode, {
+User.hasMany(VerificationCode, {
   foreignKey: 'user_id',
   as: 'verificationCodes'
 });
-db.VerificationCode.belongsTo(db.User, {
+VerificationCode.belongsTo(User, {
   foreignKey: 'user_id',
   as: 'user'
 });
 
 // Category-Expense
-db.Category.hasMany(db.Expense, {
+Category.hasMany(Expense, {
   foreignKey: 'category_id',
   as: 'expenses'
 });
-db.Expense.belongsTo(db.Category, {
+Expense.belongsTo(Category, {
   foreignKey: 'category_id',
   as: 'Category'
 });
 
 // Category-Income
-db.Category.hasMany(db.Income, {
+Category.hasMany(Income, {
   foreignKey: 'category_id',
   as: 'incomes'
 });
-db.Income.belongsTo(db.Category, {
+Income.belongsTo(Category, {
   foreignKey: 'category_id',
   as: 'Category'
 });
 
 // Category-Budget
-db.Category.hasMany(db.Budget, {
+Category.hasMany(Budget, {
   foreignKey: 'category_id',
   as: 'budgets'
 });
-db.Budget.belongsTo(db.Category, {
+Budget.belongsTo(Category, {
   foreignKey: 'category_id',
   as: 'category'
 });
 
 // Bank-Expense
-db.Bank.hasMany(db.Expense, {
+Bank.hasMany(Expense, {
   foreignKey: 'bank_id',
   as: 'expenses'
 });
-db.Expense.belongsTo(db.Bank, {
+Expense.belongsTo(Bank, {
   foreignKey: 'bank_id',
   as: 'bank'
 });
 
 // Bank-Income
-db.Bank.hasMany(db.Income, {
+Bank.hasMany(Income, {
   foreignKey: 'bank_id',
   as: 'incomes'
 });
-db.Income.belongsTo(db.Bank, {
+Income.belongsTo(Bank, {
   foreignKey: 'bank_id',
   as: 'bank'
 });
 
 // User-Bank (Many-to-Many)
-db.User.belongsToMany(db.Bank, {
-  through: db.UserBank,
+User.belongsToMany(Bank, {
+  through: UserBank,
   foreignKey: 'user_id',
   otherKey: 'bank_id',
   as: 'banks'
 });
-db.Bank.belongsToMany(db.User, {
-  through: db.UserBank,
+Bank.belongsToMany(User, {
+  through: UserBank,
   foreignKey: 'bank_id',
   otherKey: 'user_id',
   as: 'users'
 });
 
 // Associações adicionais para UserBank
-db.UserBank.belongsTo(db.Bank, {
+UserBank.belongsTo(Bank, {
   foreignKey: 'bank_id',
   as: 'bank'
 });
-db.UserBank.belongsTo(db.User, {
+UserBank.belongsTo(User, {
   foreignKey: 'user_id',
   as: 'user'
 });
 
 // User-RecurrenceRule
-db.User.hasMany(db.RecurrenceRule, {
+User.hasMany(RecurrenceRule, {
   foreignKey: 'user_id',
   as: 'recurrenceRules'
 });
-db.RecurrenceRule.belongsTo(db.User, {
+RecurrenceRule.belongsTo(User, {
   foreignKey: 'user_id',
   as: 'user'
 });
 
 // RecurrenceRule-Category
-db.Category.hasMany(db.RecurrenceRule, {
+Category.hasMany(RecurrenceRule, {
   foreignKey: 'category_id',
   as: 'recurrenceRules'
 });
-db.RecurrenceRule.belongsTo(db.Category, {
+RecurrenceRule.belongsTo(Category, {
   foreignKey: 'category_id',
   as: 'Category'
 });
 
 // RecurrenceRule-Bank
-db.Bank.hasMany(db.RecurrenceRule, {
+Bank.hasMany(RecurrenceRule, {
   foreignKey: 'bank_id',
   as: 'recurrenceRules'
 });
-db.RecurrenceRule.belongsTo(db.Bank, {
+RecurrenceRule.belongsTo(Bank, {
   foreignKey: 'bank_id',
   as: 'bank'
 });
 
 // User-Payment
-db.User.hasMany(db.Payment, {
+User.hasMany(Payment, {
   foreignKey: 'user_id',
   as: 'payments'
 });
-db.Payment.belongsTo(db.User, {
+Payment.belongsTo(User, {
   foreignKey: 'user_id',
   as: 'user'
 });
 
 // Expense-ExpensesRecurrenceException
-db.Expense.hasMany(db.ExpensesRecurrenceException, {
+Expense.hasMany(ExpensesRecurrenceException, {
   foreignKey: 'expense_id',
   as: 'exceptions'
 });
-db.ExpensesRecurrenceException.belongsTo(db.Expense, {
+ExpensesRecurrenceException.belongsTo(Expense, {
   foreignKey: 'expense_id',
   as: 'expense'
 });
 
 // User-ExpensesRecurrenceException
-db.User.hasMany(db.ExpensesRecurrenceException, {
+User.hasMany(ExpensesRecurrenceException, {
   foreignKey: 'user_id',
   as: 'expenseExceptions'
 });
-db.ExpensesRecurrenceException.belongsTo(db.User, {
+ExpensesRecurrenceException.belongsTo(User, {
   foreignKey: 'user_id',
   as: 'user'
 });
 
 // Income-IncomesRecurrenceException
-db.Income.hasMany(db.IncomesRecurrenceException, {
+Income.hasMany(IncomesRecurrenceException, {
   foreignKey: 'income_id',
   as: 'exceptions'
 });
-db.IncomesRecurrenceException.belongsTo(db.Income, {
+IncomesRecurrenceException.belongsTo(Income, {
   foreignKey: 'income_id',
   as: 'income'
 });
 
 // User-IncomesRecurrenceException
-db.User.hasMany(db.IncomesRecurrenceException, {
+User.hasMany(IncomesRecurrenceException, {
   foreignKey: 'user_id',
   as: 'incomeExceptions'
 });
-db.IncomesRecurrenceException.belongsTo(db.User, {
+IncomesRecurrenceException.belongsTo(User, {
   foreignKey: 'user_id',
   as: 'user'
 });
 
 // User-FinancialGoal
-db.User.hasOne(db.FinancialGoal, {
+User.hasOne(FinancialGoal, {
   foreignKey: 'user_id',
   as: 'financial_goal'
 });
-db.FinancialGoal.belongsTo(db.User, {
+FinancialGoal.belongsTo(User, {
   foreignKey: 'user_id',
   as: 'user'
 });
 
-// Exportações
-export default db;
-export const models = db;
-export { sequelize }; // Exportar o sequelize diretamente
-export const { 
-  User, 
-  Category, 
-  Bank, 
-  Expense, 
-  Income, 
-  Budget, 
-  VerificationCode, 
-  UserBank, 
-  RecurrenceRule, 
-  ExpensesRecurrenceException, 
-  IncomesRecurrenceException, 
-  Payment, 
-  FinancialGoal, 
-  AuditLog 
-} = db;
+const models = {
+  User,
+  Category,
+  Bank,
+  Expense,
+  Income,
+  Budget,
+  VerificationCode,
+  UserBank,
+  RecurrenceRule,
+  ExpensesRecurrenceException,
+  IncomesRecurrenceException,
+  Payment,
+  FinancialGoal,
+  AuditLog
+};
+
+// Exporta os modelos e a instância do Sequelize
+export {
+  sequelize,
+  models
+};

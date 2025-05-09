@@ -1,5 +1,5 @@
 import express from 'express';
-import { models } from '../models/index.js';
+import { Expense, Category, Bank, ExpensesRecurrenceException } from '../models/index.js';
 import { authenticate } from '../middleware/auth.js';
 import { v4 as uuidv4 } from 'uuid';
 import { Op } from 'sequelize';
@@ -11,7 +11,6 @@ import checkSubscription from '../middleware/subscriptionCheck.js';
 import { calculateRecurringOccurrences, getNextRecurringDate } from '../utils/recurrenceUtils.js';
 
 const router = Router();
-const { Expense, Category, Bank, ExpensesRecurrenceException } = models;
 
 // Todas as rotas usam o middleware de autenticação seguido do middleware de verificação de assinatura
 router.use(authenticate);

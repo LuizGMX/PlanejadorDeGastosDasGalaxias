@@ -1,13 +1,12 @@
-import express from 'express';
-import { models } from '../models/index.js';
+import { Router } from 'express';
+import { User, Bank, VerificationCode, UserBank, FinancialGoal } from '../models/index.js';
 import { authenticate } from '../middleware/auth.js';
 import { sendVerificationEmail } from '../services/emailService.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-const router = express.Router();
-const { User, Bank, VerificationCode, UserBank, FinancialGoal } = models;
+const router = Router();
 
 const generateVerificationCode = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();

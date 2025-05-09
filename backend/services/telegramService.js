@@ -1,10 +1,8 @@
 import { Telegraf } from 'telegraf';
-import { models } from '../models/index.js';
+import { User, Expense, Income, Category, Bank, Budget, VerificationCode, UserBank } from '../models/index.js';
 import { Op } from 'sequelize';
 import { sendVerificationEmail } from './emailService.js';
 import crypto from 'crypto';
-
-const { User, Expense, Income, Category, Bank, Budget, VerificationCode, UserBank } = models;
 
 // Função para gerar código de verificação
 const generateVerificationCode = () => {
