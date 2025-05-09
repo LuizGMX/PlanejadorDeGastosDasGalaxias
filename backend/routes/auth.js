@@ -1,7 +1,9 @@
 import { Router } from 'express';
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
-import { User, VerificationCode, UserBank, Bank, Payment, FinancialGoal } from '../models/index.js';
+import {models} from '../models/index.js';
+const {User, VerificationCode, UserBank, Bank, Payment, FinancialGoal} = models;
+
 import { Op } from 'sequelize';
 import sequelize from '../config/db.js';
 import { sendVerificationEmail } from '../services/emailService.js';
