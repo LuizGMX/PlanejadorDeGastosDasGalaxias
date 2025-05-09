@@ -40,6 +40,9 @@ const app = express();
 
 app.set('trust proxy', 1);
 
+// Configurar os modelos no app.locals para serem acessíveis nos middlewares
+app.locals.models = models;
+
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
   crossOriginOpenerPolicy: { policy: "unsafe-none" },
