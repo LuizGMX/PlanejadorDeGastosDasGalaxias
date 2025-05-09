@@ -2,9 +2,41 @@ import express from 'express';
 import { models } from '../models/index.js';
 import { authenticate } from '../middleware/auth.js';
 import { checkSubscription } from '../middleware/subscriptionCheck.js';
+import sequelize from '../config/db.js';
 
 const router = express.Router();
 const { Bank, UserBank } = models;
+
+// Cache para a rota de bancos
+let banksCache = {
+  data: null,
+  timestamp: 0,
+  isLoading: false
+};
+
+// Função para limpar o cache periodicamente
+setInterval(() => {
+  banksCache.data = null;
+  console.log('Cache de bancos limpo');
+}, 3600000); // Limpar a cada 1 hora
+
+// Cache para a rota de bancos favoritos (por usuário)
+const favoritesBanksCache = new Map();
+
+// Função para limpar o cache de favoritos periodicamente
+setInterval(() => {
+  favoritesBanksCache.clear();
+  console.log('Cache de bancos favoritos limpo');
+}, 3600000); // Limpar a cada 1 hora
+
+// Cache para a rota de bancos ativos do usuário
+const usersBanksCache = new Map();
+
+// Função para limpar o cache de bancos do usuário periodicamente
+setInterval(() => {
+  usersBanksCache.clear();
+  console.log('Cache de bancos do usuário limpo');
+}, 3600000); // Limpar a cada 1 hora
 
 // Rota pública - Listar todos os bancos (sem autenticação)
 // Usada durante o cadastro de novos usuários
@@ -19,24 +51,59 @@ router.get('/', async (req, res) => {
   }, 8000); // 8 segundos de timeout
 
   try {
-    console.log('Listando todos os bancos (rota pública)');
+    // Verificar se temos um cache válido
+    const now = Date.now();
+    if (banksCache.data && now - banksCache.timestamp < 3600000) { // Cache válido por 1 hora
+      clearTimeout(timeout);
+      console.log('Retornando dados de bancos do cache');
+      return res.json(banksCache.data);
+    }
+
+    // Se já está carregando, aguardar
+    if (banksCache.isLoading) {
+      clearTimeout(timeout);
+      console.log('Carregamento de bancos em andamento, retornando resposta temporária');
+      return res.status(202).json({ 
+        message: 'Dados sendo carregados, tente novamente em alguns segundos',
+        loading: true
+      });
+    }
+
+    // Marcar que estamos carregando
+    banksCache.isLoading = true;
     
-    // Otimizar a consulta para limitar campos retornados
-    const banks = await Bank.findAll({
-      attributes: ['id', 'name', 'code'],
-      order: [['name', 'ASC']],
-      // Adicionar opções para melhorar a performance
-      raw: true,
-      nest: true,
-      limit: 500 // Limitar número de registros para evitar sobrecarga
-    });
+    console.log('Listando todos os bancos (rota pública) - buscando do banco de dados');
+
+    // Usar query SQL direta para evitar a descriptografia automática do model
+    const [banks] = await sequelize.query(`
+      SELECT id, name, code 
+      FROM banks 
+      ORDER BY name ASC
+      LIMIT 500
+    `);
+
+    // Descriptografar manualmente os dados necessários
+    // Como temos poucos bancos, isso deve ser rápido
+    const formattedBanks = banks.map(bank => ({
+      id: bank.id,
+      name: bank.name,
+      code: bank.code
+    }));
+
+    // Atualizar o cache
+    banksCache.data = formattedBanks;
+    banksCache.timestamp = now;
+    banksCache.isLoading = false;
     
     // Cancelar o timeout pois a requisição foi bem-sucedida
     clearTimeout(timeout);
     
-    console.log(`Retornando ${banks.length} bancos`);
-    res.json(banks);
+    console.log(`Retornando ${formattedBanks.length} bancos`);
+    res.json(formattedBanks);
   } catch (error) {
+    // Marcar que não estamos mais carregando
+    banksCache.isLoading = false;
+
     // Cancelar o timeout em caso de erro
     clearTimeout(timeout);
     
@@ -60,50 +127,60 @@ router.get('/favorites', authenticate, checkSubscription, async (req, res) => {
   }, 10000); // 10 segundos de timeout
 
   try {
-    console.log(`Buscando bancos favoritos para o usuário ${req.user.id}`);
+    const userId = req.user.id;
+    const cacheKey = `${userId}-${req.query.onlyActive === 'true' ? 'active' : 'all'}`;
     
-    // Otimizar a consulta para melhorar performance
-    const userBanks = await UserBank.findAll({
-      where: { 
-        user_id: req.user.id,
-        is_active: true
-      },
-      include: [{
-        model: Bank,
-        as: 'bank',
-        attributes: ['id', 'name', 'code'] // Limitar atributos retornados
-      }],
-      attributes: ['bank_id', 'is_active'],
-      raw: true, // Retornar objetos simples em vez de instâncias
-      nest: true // Aninhar o resultado para facilitar acesso
+    // Verificar se temos um cache válido para este usuário
+    const cachedData = favoritesBanksCache.get(cacheKey);
+    const now = Date.now();
+    if (cachedData && now - cachedData.timestamp < 300000) { // Cache válido por 5 minutos
+      clearTimeout(timeout);
+      console.log(`Retornando dados de bancos favoritos do cache para usuário ${userId}`);
+      return res.json(cachedData.data);
+    }
+    
+    console.log(`Buscando bancos favoritos para o usuário ${userId}`);
+    
+    // Usar query SQL direta para melhor performance
+    const [userBanks] = await sequelize.query(`
+      SELECT ub.bank_id, ub.is_active, b.name, b.code
+      FROM user_banks AS ub
+      JOIN banks AS b ON ub.bank_id = b.id
+      WHERE ub.user_id = :userId AND ub.is_active = 1
+    `, {
+      replacements: { userId },
+      type: sequelize.QueryTypes.SELECT
     });
 
-    // Cancelar timeout pois requisição foi bem-sucedida
-    clearTimeout(timeout);
-
-    console.log('UserBanks encontrados:', userBanks.length);
-
-    // Formatar os bancos com suas informações e status - simplificar o código
+    // Formatar os bancos com suas informações e status
     const banksWithStatus = userBanks.map(userBank => ({
-      id: userBank.bank.id,
-      name: userBank.bank.name,
-      code: userBank.bank.code,
-      is_active: userBank.is_active
+      id: userBank.bank_id,
+      name: userBank.name,
+      code: userBank.code,
+      is_active: Boolean(userBank.is_active)
     }));
 
     // Ordenar por nome
     banksWithStatus.sort((a, b) => a.name.localeCompare(b.name));
 
-    console.log(`Retornando ${banksWithStatus.length} bancos favoritos para o usuário ${req.user.id}`);
-
     // Se apenas os ativos foram solicitados, filtrar
+    let result = banksWithStatus;
     if (req.query.onlyActive === 'true') {
-      const activeBanks = banksWithStatus.filter(bank => bank.is_active);
-      console.log(`Filtrando apenas bancos ativos: ${activeBanks.length} encontrados`);
-      return res.json(activeBanks);
+      result = banksWithStatus.filter(bank => bank.is_active);
+      console.log(`Filtrando apenas bancos ativos: ${result.length} encontrados`);
     }
 
-    res.json(banksWithStatus);
+    // Armazenar no cache
+    favoritesBanksCache.set(cacheKey, {
+      data: result,
+      timestamp: now
+    });
+    
+    // Cancelar timeout pois requisição foi bem-sucedida
+    clearTimeout(timeout);
+
+    console.log(`Retornando ${result.length} bancos favoritos para o usuário ${userId}`);
+    res.json(result);
   } catch (error) {
     // Cancelar timeout em caso de erro
     clearTimeout(timeout);
@@ -118,32 +195,67 @@ router.get('/favorites', authenticate, checkSubscription, async (req, res) => {
 
 // Rota protegida - Requer autenticação - Bancos ativos do usuário
 router.get('/users', authenticate, checkSubscription, async (req, res) => {
+  // Adicionar timeout para evitar que a requisição fique pendente por muito tempo
+  const timeout = setTimeout(() => {
+    console.error(`Timeout ao buscar bancos ativos para o usuário ${req.user.id}`);
+    return res.status(503).json({ 
+      message: 'Tempo limite excedido ao buscar bancos ativos',
+      timeout: true
+    });
+  }, 8000); // 8 segundos de timeout
+
   try {
-    // Buscar as relações de UserBank para o usuário atual onde is_active é true
-    const userBanks = await UserBank.findAll({
-      where: { 
-        user_id: req.user.id,
-        is_active: true
-      },
-      include: [{
-        model: Bank,
-        as: 'bank',
-        attributes: ['id', 'name', 'code']
-      }]
+    const userId = req.user.id;
+    
+    // Verificar se temos um cache válido para este usuário
+    const cachedData = usersBanksCache.get(userId);
+    const now = Date.now();
+    if (cachedData && now - cachedData.timestamp < 300000) { // Cache válido por 5 minutos
+      clearTimeout(timeout);
+      console.log(`Retornando dados de bancos ativos do cache para usuário ${userId}`);
+      return res.json(cachedData.data);
+    }
+    
+    console.log(`Buscando bancos ativos para o usuário ${userId}`);
+    
+    // Usar query SQL direta para melhor performance
+    const [userBanks] = await sequelize.query(`
+      SELECT b.id, b.name, b.code
+      FROM user_banks AS ub
+      JOIN banks AS b ON ub.bank_id = b.id
+      WHERE ub.user_id = :userId AND ub.is_active = 1
+    `, {
+      replacements: { userId },
+      type: sequelize.QueryTypes.SELECT
     });
 
-    // Mapear o resultado para o formato esperado
-    const activeBanks = userBanks.map(ub => ({
-      id: ub.bank.id,
-      name: ub.bank.name,
-      code: ub.bank.code
+    // Formatar os bancos
+    const activeBanks = userBanks.map(bank => ({
+      id: bank.id,
+      name: bank.name,
+      code: bank.code
     }));
 
-    console.log(`Retornando ${activeBanks.length} bancos ativos para o usuário ${req.user.id}`);
+    // Armazenar no cache
+    usersBanksCache.set(userId, {
+      data: activeBanks,
+      timestamp: now
+    });
+    
+    // Cancelar timeout pois requisição foi bem-sucedida
+    clearTimeout(timeout);
+
+    console.log(`Retornando ${activeBanks.length} bancos ativos para o usuário ${userId}`);
     res.json(activeBanks);
   } catch (error) {
+    // Cancelar timeout em caso de erro
+    clearTimeout(timeout);
+    
     console.error('Erro ao listar bancos do usuário:', error);
-    res.status(500).json({ message: 'Erro ao listar bancos do usuário' });
+    res.status(500).json({ 
+      message: 'Erro ao listar bancos do usuário',
+      error: process.env.NODE_ENV === 'production' ? null : error.message
+    });
   }
 });
 
@@ -332,3 +444,28 @@ router.put('/favorites', authenticate, checkSubscription, async (req, res) => {
 });
 
 export default router;
+
+// Pré-carregar o cache de bancos ao iniciar o servidor
+(async () => {
+  try {
+    console.log('Pré-carregando cache de bancos...');
+    const [banks] = await sequelize.query(`
+      SELECT id, name, code 
+      FROM banks 
+      ORDER BY name ASC
+      LIMIT 500
+    `);
+
+    const formattedBanks = banks.map(bank => ({
+      id: bank.id,
+      name: bank.name,
+      code: bank.code
+    }));
+
+    banksCache.data = formattedBanks;
+    banksCache.timestamp = Date.now();
+    console.log(`Cache de bancos pré-carregado com ${formattedBanks.length} bancos`);
+  } catch (error) {
+    console.error('Erro ao pré-carregar cache de bancos:', error);
+  }
+})();
