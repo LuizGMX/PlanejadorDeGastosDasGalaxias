@@ -10,7 +10,13 @@ export const verifyToken = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await models.User.findByPk(decoded.id);
+    const userId = decoded.userId || decoded.id;
+    
+    if (!userId) {
+      return res.status(401).json({ error: 'Token inválido: identificação do usuário ausente' });
+    }
+
+    const user = await models.User.findByPk(userId);
 
     if (!user) {
       return res.status(401).json({ error: 'Usuário não encontrado' });
@@ -19,6 +25,7 @@ export const verifyToken = async (req, res, next) => {
     req.user = user;
     next();
   } catch (error) {
+    console.error('Erro na verificação do token:', error.message);
     return res.status(401).json({ error: 'Token inválido' });
   }
 };

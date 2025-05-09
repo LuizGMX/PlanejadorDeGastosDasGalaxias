@@ -73,8 +73,45 @@ app.use(express.urlencoded({ extended: true }));
 // Aplicar rate limiting global
 app.use(configureRateLimit());
 
-// Middleware para autenticação
-app.use(verifyToken);
+// Define API_PREFIX from environment variable with "api" as default
+const API_PREFIX = process.env.NODE_ENV === 'production' 
+  ? (process.env.API_PREFIX && process.env.API_PREFIX.trim() !== '' ? `/${process.env.API_PREFIX}` : '')
+  : '/api';
+
+console.log("API_PREFIX " + API_PREFIX);
+
+// Definir as rotas públicas que não necessitam de autenticação
+const publicPaths = [
+  `${API_PREFIX}/auth/check-email`,
+  `${API_PREFIX}/auth/send-code`,
+  `${API_PREFIX}/auth/verify-code`,
+  `${API_PREFIX}/auth/login`,
+  `${API_PREFIX}/auth/register`,
+  `${API_PREFIX}/banks`,
+  `${API_PREFIX}/health`,
+  `${API_PREFIX}/payments/webhook`
+];
+
+// Middleware para verificar autenticação apenas nas rotas protegidas
+app.use((req, res, next) => {
+  // Função para verificar se um caminho começa com alguma das rotas públicas
+  const isPublicPath = (path) => {
+    return publicPaths.some(publicPath => {
+      return path === publicPath || path.startsWith(`${publicPath}/`);
+    });
+  };
+
+  // Verifica se a rota é pública
+  if (isPublicPath(req.path) ||
+      (req.path.includes('/banks') && !req.path.includes('/banks/favorites') && !req.path.includes('/banks/users'))) {
+    console.log(`Rota pública detectada: ${req.path}`);
+    return next();
+  }
+  
+  console.log(`Aplicando autenticação para: ${req.path}`);
+  // Se não for rota pública, aplica middleware de autenticação
+  verifyToken(req, res, next);
+});
 
 // Middleware para injetar contexto nos models
 app.use(injectModelContext);
@@ -84,13 +121,6 @@ app.use(maskSensitiveData);
 
 // Middleware para logs de auditoria
 app.use(auditLogMiddleware);
-
-// Define API_PREFIX from environment variable with "api" as default
-const API_PREFIX = process.env.NODE_ENV === 'production' 
-  ? (process.env.API_PREFIX && process.env.API_PREFIX.trim() !== '' ? `/${process.env.API_PREFIX}` : '')
-  : '/api';
-
-console.log("API_PREFIX " + API_PREFIX);
 
 // Middleware para injetar o parâmetro include_all_recurring nas requisições de despesas e receitas
 app.use(`${API_PREFIX}/expenses`, (req, res, next) => {

@@ -873,4 +873,16 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// Rota para verificar se o token é válido
+router.get('/verify-token', authenticate, (req, res) => {
+  res.status(200).json({
+    valid: true,
+    user: {
+      id: req.user.id,
+      name: req.user.name,
+      email: req.user.email
+    }
+  });
+});
+
 export default router;
