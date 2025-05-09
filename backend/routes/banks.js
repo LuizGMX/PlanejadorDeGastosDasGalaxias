@@ -7,6 +7,28 @@ import sequelize from '../config/db.js';
 const router = express.Router();
 const { Bank, UserBank } = models;
 
+// Lista de bancos padrão para fallback
+const defaultBanks = [
+  { id: 1, name: "Caixa Econômica Federal", code: "104" },
+  { id: 2, name: "Bradesco", code: "237" },
+  { id: 3, name: "Itaú", code: "341" },
+  { id: 4, name: "Banco do Brasil", code: "001" },
+  { id: 5, name: "Santander", code: "033" },
+  { id: 6, name: "Nubank", code: "260" },
+  { id: 7, name: "Inter", code: "077" },
+  { id: 8, name: "C6 Bank", code: "336" },
+  { id: 9, name: "Sicoob", code: "756" },
+  { id: 10, name: "Sicredi", code: "748" }
+];
+
+// Opções padronizadas para consultas SQL
+const standardQueryOptions = {
+  type: sequelize.QueryTypes.SELECT,
+  timeout: 10000, // 10 segundos de timeout
+  plain: false, // Garantir que sempre retorne um array, mesmo com um único resultado
+  raw: true // Retornar resultados brutos para melhor performance
+};
+
 // Cache para a rota de bancos
 let banksCache = {
   data: null,
@@ -78,20 +100,32 @@ router.get('/', async (req, res) => {
     console.log('Listando todos os bancos (rota pública) - buscando do banco de dados');
 
     try {
-      // Usar query SQL direta para evitar a descriptografia automática do model
-      // Adicionado LIMIT e timeout para evitar problemas de performance
-      const [banks] = await sequelize.query(`
+      // Usar query SQL direta com timeout
+      const result = await sequelize.query(`
         SELECT id, name, code 
         FROM banks 
         ORDER BY name ASC
         LIMIT 500
-      `, {
-        type: sequelize.QueryTypes.SELECT,
-        timeout: 10000 // 10 segundos de timeout na query
-      });
+      `, standardQueryOptions);
+
+      // Garantir que result é um array
+      if (!Array.isArray(result)) {
+        console.error('Erro: Resultado da query não é um array');
+        throw new Error('Resultado da query não é um array');
+      }
+
+      // Verificar se o array está vazio
+      if (result.length === 0) {
+        console.warn('Atenção: A consulta retornou um array vazio, usando lista de bancos padrão');
+        banksCache.data = defaultBanks;
+        banksCache.timestamp = now;
+        banksCache.isLoading = false;
+        clearTimeout(timeout);
+        return res.json(defaultBanks);
+      }
 
       // Formatar os bancos (sem descriptografia para melhorar performance)
-      const formattedBanks = banks.map(bank => ({
+      const formattedBanks = result.map(bank => ({
         id: bank.id,
         name: bank.name,
         code: bank.code
@@ -117,8 +151,13 @@ router.get('/', async (req, res) => {
         return res.json(banksCache.data);
       }
       
-      // Caso contrário, propagar o erro
-      throw dbError;
+      // Se não temos cache, usar a lista de bancos padrão como último recurso
+      console.log('Usando lista de bancos padrão como fallback');
+      banksCache.data = defaultBanks;
+      banksCache.timestamp = now;
+      banksCache.isLoading = false;
+      clearTimeout(timeout);
+      return res.json(defaultBanks);
     }
   } catch (error) {
     // Restaurar o estado do cache em caso de erro
@@ -162,18 +201,24 @@ router.get('/favorites', authenticate, checkSubscription, async (req, res) => {
     console.log(`Buscando bancos favoritos para o usuário ${userId}`);
     
     // Usar query SQL direta para melhor performance
-    const [userBanks] = await sequelize.query(`
+    const result = await sequelize.query(`
       SELECT ub.bank_id, ub.is_active, b.name, b.code
       FROM user_banks AS ub
       JOIN banks AS b ON ub.bank_id = b.id
       WHERE ub.user_id = :userId AND ub.is_active = 1
     `, {
-      replacements: { userId },
-      type: sequelize.QueryTypes.SELECT
+      ...standardQueryOptions,
+      replacements: { userId }
     });
 
+    // Garantir que result é um array
+    if (!Array.isArray(result)) {
+      console.error(`Erro: Resultado da query não é um array para usuário ${userId}`);
+      throw new Error('Resultado da query não é um array');
+    }
+
     // Formatar os bancos com suas informações e status
-    const banksWithStatus = userBanks.map(userBank => ({
+    const banksWithStatus = result.map(userBank => ({
       id: userBank.bank_id,
       name: userBank.name,
       code: userBank.code,
@@ -184,23 +229,23 @@ router.get('/favorites', authenticate, checkSubscription, async (req, res) => {
     banksWithStatus.sort((a, b) => a.name.localeCompare(b.name));
 
     // Se apenas os ativos foram solicitados, filtrar
-    let result = banksWithStatus;
+    let resultBanks = banksWithStatus;
     if (req.query.onlyActive === 'true') {
-      result = banksWithStatus.filter(bank => bank.is_active);
-      console.log(`Filtrando apenas bancos ativos: ${result.length} encontrados`);
+      resultBanks = banksWithStatus.filter(bank => bank.is_active);
+      console.log(`Filtrando apenas bancos ativos: ${resultBanks.length} encontrados`);
     }
 
     // Armazenar no cache
     favoritesBanksCache.set(cacheKey, {
-      data: result,
+      data: resultBanks,
       timestamp: now
     });
     
     // Cancelar timeout pois requisição foi bem-sucedida
     clearTimeout(timeout);
 
-    console.log(`Retornando ${result.length} bancos favoritos para o usuário ${userId}`);
-    res.json(result);
+    console.log(`Retornando ${resultBanks.length} bancos favoritos para o usuário ${userId}`);
+    res.json(resultBanks);
   } catch (error) {
     // Cancelar timeout em caso de erro
     clearTimeout(timeout);
@@ -239,18 +284,24 @@ router.get('/users', authenticate, checkSubscription, async (req, res) => {
     console.log(`Buscando bancos ativos para o usuário ${userId}`);
     
     // Usar query SQL direta para melhor performance
-    const [userBanks] = await sequelize.query(`
+    const result = await sequelize.query(`
       SELECT b.id, b.name, b.code
       FROM user_banks AS ub
       JOIN banks AS b ON ub.bank_id = b.id
       WHERE ub.user_id = :userId AND ub.is_active = 1
     `, {
-      replacements: { userId },
-      type: sequelize.QueryTypes.SELECT
+      ...standardQueryOptions,
+      replacements: { userId }
     });
 
+    // Garantir que result é um array
+    if (!Array.isArray(result)) {
+      console.error(`Erro: Resultado da query não é um array para usuário ${userId}`);
+      throw new Error('Resultado da query não é um array');
+    }
+
     // Formatar os bancos
-    const activeBanks = userBanks.map(bank => ({
+    const activeBanks = result.map(bank => ({
       id: bank.id,
       name: bank.name,
       code: bank.code
@@ -479,17 +530,31 @@ export default router;
       attempts++;
       try {
         // Usar query SQL direta com timeout
-        const [banks] = await sequelize.query(`
+        const result = await sequelize.query(`
           SELECT id, name, code 
           FROM banks 
           ORDER BY name ASC
           LIMIT 500
-        `, {
-          type: sequelize.QueryTypes.SELECT,
-          timeout: 10000 // 10 segundos de timeout
-        });
+        `, standardQueryOptions);
 
-        const formattedBanks = banks.map(bank => ({
+        // Garantir que result é um array
+        if (!Array.isArray(result)) {
+          console.error(`❌ Resultado da query não é um array na tentativa #${attempts}`);
+          throw new Error('Resultado da query não é um array');
+        }
+
+        // Verificar se o array está vazio
+        if (result.length === 0) {
+          console.warn(`❌ A consulta retornou um array vazio na tentativa #${attempts}, usando lista de bancos padrão`);
+          banksCache.data = defaultBanks;
+          banksCache.timestamp = Date.now();
+          banksCache.isLoading = false;
+          success = true;
+          console.log(`✅ Cache de bancos pré-carregado com lista padrão: ${defaultBanks.length} bancos`);
+          return;
+        }
+
+        const formattedBanks = result.map(bank => ({
           id: bank.id,
           name: bank.name,
           code: bank.code
@@ -513,9 +578,20 @@ export default router;
     
     if (!success) {
       console.error(`❌ Não foi possível pré-carregar o cache de bancos após ${maxAttempts} tentativas`);
+      console.log('Usando lista de bancos padrão como fallback');
+      
+      // Usar a lista de bancos padrão como fallback
+      banksCache.data = defaultBanks;
+      banksCache.timestamp = Date.now();
+      banksCache.isLoading = false;
+      console.log(`✅ Cache de bancos pré-carregado com lista padrão: ${defaultBanks.length} bancos`);
     }
   } catch (error) {
     console.error('❌ Erro fatal ao pré-carregar cache de bancos:', error);
+    // Mesmo em caso de erro fatal, usar lista de fallback
+    console.log('Usando lista de bancos padrão como fallback após erro fatal');
+    banksCache.data = defaultBanks;
+    banksCache.timestamp = Date.now();
   } finally {
     // Garantir que a flag de carregamento seja desligada em qualquer caso
     banksCache.isLoading = false;

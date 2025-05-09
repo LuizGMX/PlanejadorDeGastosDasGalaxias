@@ -170,6 +170,12 @@ const BanksList = ({ auth, setMessage, setError }) => {
           userBanksResponse.json()
         ]);
         
+        // Verificar se a lista de bancos é válida
+        if (!Array.isArray(allBanks) || allBanks.length === 0) {
+          console.error('Resposta inválida: lista de bancos vazia ou não é um array');
+          throw new Error('Lista de bancos inválida recebida do servidor');
+        }
+        
         setBanks(allBanks);
         
         // Filtrar apenas os bancos ativos da resposta da API
