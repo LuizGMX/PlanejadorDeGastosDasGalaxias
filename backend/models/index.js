@@ -1,20 +1,20 @@
 // models/index.js
 import { Sequelize } from 'sequelize';
 import dotenv from 'dotenv';
-import User from './user.js';
-import Category from './category.js';
-import Bank from './bank.js';
-import Expense from './expense.js';
-import Income from './income.js';
-import Budget from './budget.js';
-import VerificationCode from './verificationCode.js';
-import UserBank from './userBank.js';
-import RecurrenceRule from './recurrenceRule.js';
-import ExpensesRecurrenceException from './expensesRecurrenceException.js';
-import IncomesRecurrenceException from './incomesRecurrenceException.js';
-import Payment from './payment.js';
-import FinancialGoal from './financialGoal.js';
-import AuditLog from './auditLog.js';
+import UserModel from './user.js';
+import CategoryModel from './category.js';
+import BankModel from './bank.js';
+import ExpenseModel from './expense.js';
+import IncomeModel from './income.js';
+import BudgetModel from './budget.js';
+import VerificationCodeModel from './verificationCode.js';
+import UserBankModel from './userBank.js';
+import RecurrenceRuleModel from './recurrenceRule.js';
+import ExpensesRecurrenceExceptionModel from './expensesRecurrenceException.js';
+import IncomesRecurrenceExceptionModel from './incomesRecurrenceException.js';
+import PaymentModel from './payment.js';
+import FinancialGoalModel from './financialGoal.js';
+import AuditLogModel from './auditLog.js';
 
 // Configurações do banco de dados
 dotenv.config();
@@ -51,20 +51,20 @@ const sequelize = new Sequelize(
 
 // Definição dos modelos
 const models = {
-  User: User(sequelize),
-  Category: Category(sequelize),
-  Bank: Bank(sequelize),
-  Expense: Expense(sequelize),
-  Income: Income(sequelize),
-  Budget: Budget(sequelize),
-  VerificationCode: VerificationCode(sequelize),
-  UserBank: UserBank(sequelize),
-  RecurrenceRule: RecurrenceRule(sequelize),
-  ExpensesRecurrenceException: ExpensesRecurrenceException(sequelize),
-  IncomesRecurrenceException: IncomesRecurrenceException(sequelize),
-  Payment: Payment(sequelize),
-  FinancialGoal: FinancialGoal(sequelize),
-  AuditLog: AuditLog(sequelize)
+  User: UserModel(sequelize),
+  Category: CategoryModel(sequelize),
+  Bank: BankModel(sequelize),
+  Expense: ExpenseModel(sequelize),
+  Income: IncomeModel(sequelize),
+  Budget: BudgetModel(sequelize),
+  VerificationCode: VerificationCodeModel(sequelize),
+  UserBank: UserBankModel(sequelize),
+  RecurrenceRule: RecurrenceRuleModel(sequelize),
+  ExpensesRecurrenceException: ExpensesRecurrenceExceptionModel(sequelize),
+  IncomesRecurrenceException: IncomesRecurrenceExceptionModel(sequelize),
+  Payment: PaymentModel(sequelize),
+  FinancialGoal: FinancialGoalModel(sequelize),
+  AuditLog: AuditLogModel(sequelize)
 };
 
 // Associações entre modelos
