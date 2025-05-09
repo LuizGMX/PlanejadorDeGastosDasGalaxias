@@ -7,7 +7,6 @@ import sequelize from '../config/db.js';
 import { sendVerificationEmail } from '../services/emailService.js';
 
 dotenv.config();
-
 const router = Router();
 
 // Utility Functions
