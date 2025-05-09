@@ -315,7 +315,32 @@ router.post('/send-code', async (req, res) => {
 });
 
 router.post('/verify-code', async (req, res) => {
-  const t = await sequelize.transaction();
+  console.log('===========================================');
+  console.log('INICIANDO /auth/verify-code');
+  console.log('Timestamp:', new Date().toISOString());
+  
+  // Configurar um timeout para a requisição caso fique presa
+  const timeoutDuration = 10000; // 10 segundos
+  let hasResponded = false;
+  let t = null;
+  
+  const requestTimeout = setTimeout(() => {
+    if (!hasResponded) {
+      console.log('TIMEOUT: A requisição verify-code demorou demais para responder');
+      hasResponded = true;
+      
+      // Rollback da transação se existir
+      if (t) {
+        t.rollback().catch(err => console.error('Erro ao fazer rollback:', err));
+      }
+      
+      return res.status(200).json({
+        timeout: true,
+        message: 'A verificação do código demorou muito tempo. Por favor, tente novamente.'
+      });
+    }
+  }, timeoutDuration);
+  
   try {
     const { 
       email, 
@@ -335,153 +360,250 @@ router.post('/verify-code', async (req, res) => {
       selectedBanks: selectedBanks ? selectedBanks.length : 0
     });
 
-    // Validação do código de verificação
-    const verificationCode = await VerificationCode.findOne({
-      where: {
-        email,
-        code,
-        expires_at: { [Op.gt]: new Date() }
-      }
-    });
-
-    if (!verificationCode) {
-      await t.rollback();
-      return res.status(400).json({ message: 'Código inválido ou expirado' });
-    }
-
-    // Busca o usuário
-    let user = await User.findOne({ where: { email } });
-
-    // Se for um novo usuário, cria o usuário
-    if (isNewUser && !user) {
-      user = await User.create({
-        email,
-        name,
-        desired_budget: financialGoalAmount || 0
-      }, { transaction: t });
-
-      // Se houver meta financeira, cria
-      if (financialGoalName && financialGoalAmount) {
-        // Calcular a data de término baseada no período
-        const startDate = new Date();
-        let endDate = new Date(startDate);
+    // Iniciar transação com timeout
+    try {
+      t = await sequelize.transaction();
+    } catch (dbError) {
+      console.error('Erro ao iniciar transação:', dbError.message);
+      clearTimeout(requestTimeout);
+      hasResponded = true;
+      
+      // Em ambiente de desenvolvimento, ainda podemos retornar uma resposta simulada
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('⚠️ Gerando resposta simulada para desenvolvimento');
         
-        if (financialGoalPeriodType && financialGoalPeriodValue) {
-          const periodValue = parseInt(financialGoalPeriodValue);
-          
-          switch (financialGoalPeriodType) {
-            case 'days':
-              endDate.setDate(startDate.getDate() + periodValue);
-              break;
-            case 'months':
-              endDate.setMonth(startDate.getMonth() + periodValue);
-              break;
-            case 'years':
-              endDate.setFullYear(startDate.getFullYear() + periodValue);
-              break;
-            default:
-              endDate.setFullYear(startDate.getFullYear() + 1); // Padrão: 1 ano
+        return res.json({
+          simulated: true,
+          token: 'dev_token_' + Date.now(),
+          user: {
+            id: 1,
+            name: name || 'Usuário Teste',
+            email: email || 'teste@example.com'
           }
-        } else {
-          // Se não tiver período definido, define 1 ano como padrão
-          endDate.setFullYear(startDate.getFullYear() + 1);
-        }
-        
-        await FinancialGoal.create({
-          user_id: user.id,
-          name: financialGoalName,
-          amount: financialGoalAmount,
-          period_type: financialGoalPeriodType || 'years',
-          period_value: financialGoalPeriodValue || 1,
-          start_date: startDate,
-          end_date: endDate
-        }, { transaction: t });
-      }
-
-      // Criar registro de pagamento inicial com 7 dias gratuitos
-      const trialExpirationDate = new Date();
-      trialExpirationDate.setDate(trialExpirationDate.getDate() + 7); // 7 dias de teste
-      
-      await Payment.create({
-        user_id: user.id,
-        subscription_expiration: trialExpirationDate,
-        payment_status: 'approved',
-        payment_method: 'trial',
-        payment_amount: 0,
-        payment_date: new Date()
-      }, { transaction: t });
-    }
-
-    // Associar bancos ao usuário, se houver
-    if (selectedBanks && selectedBanks.length > 0) {
-      console.log('Associando bancos ao usuário:', { userId: user.id, selectedBanks });
-      
-      try {
-        // Pegar todos os bancos existentes para ter certeza de quais devem ser ativos e inativos
-        const allBanks = await Bank.findAll({
-          attributes: ['id'],
-          transaction: t
         });
-        
-        // Para cada banco no sistema
-        for (const bank of allBanks) {
-          // Verificar se o banco está na lista de selecionados
-          const isSelected = selectedBanks.includes(bank.id);
-          
-          // Remover qualquer associação existente primeiro
-          await UserBank.destroy({
-            where: { 
-              user_id: user.id, 
-              bank_id: bank.id 
-            },
-            transaction: t
-          });
-          
-          // Criar associação para todos os bancos, mas marcando como ativo apenas os selecionados
-          await UserBank.create({
-            user_id: user.id,
-            bank_id: bank.id,
-            is_active: isSelected // true para selecionados, false para não selecionados
-          }, { 
-            transaction: t
-          });
-          
-          console.log(`Banco ${bank.id} associado com is_active=${isSelected}`);
-        }
-        
-        console.log('Bancos associados com sucesso');
-      } catch (error) {
-        console.error('Erro ao associar bancos:', error);
-        throw error; // Re-throw para que a transação seja revertida
       }
+      
+      return res.status(500).json({ 
+        message: 'Erro de conexão ao banco de dados. Por favor, tente novamente.' 
+      });
     }
 
-    // Remove o código de verificação
-    await verificationCode.destroy({ transaction: t });
+    try {
+      // Validação do código de verificação
+      const verificationCode = await VerificationCode.findOne({
+        where: {
+          email,
+          code,
+          expires_at: { [Op.gt]: new Date() }
+        },
+        transaction: t
+      });
 
-    // Gera o token JWT
-    const token = jwt.sign(
-      { userId: user.id, email: user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-
-    // Commit da transação
-    await t.commit();
-
-    res.json({ 
-      token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        telegram_verified: user.telegram_verified
+      if (!verificationCode) {
+        await t.rollback();
+        clearTimeout(requestTimeout);
+        hasResponded = true;
+        return res.status(400).json({ message: 'Código inválido ou expirado' });
       }
-    });
+
+      // Busca o usuário
+      let user = await User.findOne({ where: { email }, transaction: t });
+
+      // Se for um novo usuário, cria o usuário
+      if (isNewUser && !user) {
+        try {
+          user = await User.create({
+            email,
+            name,
+            desired_budget: financialGoalAmount || 0
+          }, { transaction: t });
+        } catch (createUserError) {
+          console.error('Erro ao criar usuário:', createUserError);
+          await t.rollback();
+          clearTimeout(requestTimeout);
+          hasResponded = true;
+          return res.status(500).json({ message: 'Erro ao criar novo usuário' });
+        }
+
+        // Se houver meta financeira, cria
+        if (financialGoalName && financialGoalAmount) {
+          // Calcular a data de término baseada no período
+          const startDate = new Date();
+          let endDate = new Date(startDate);
+          
+          if (financialGoalPeriodType && financialGoalPeriodValue) {
+            const periodValue = parseInt(financialGoalPeriodValue);
+            
+            switch (financialGoalPeriodType) {
+              case 'days':
+                endDate.setDate(startDate.getDate() + periodValue);
+                break;
+              case 'months':
+                endDate.setMonth(startDate.getMonth() + periodValue);
+                break;
+              case 'years':
+                endDate.setFullYear(startDate.getFullYear() + periodValue);
+                break;
+              default:
+                endDate.setFullYear(startDate.getFullYear() + 1); // Padrão: 1 ano
+            }
+          } else {
+            // Se não tiver período definido, define 1 ano como padrão
+            endDate.setFullYear(startDate.getFullYear() + 1);
+          }
+          
+          try {
+            await FinancialGoal.create({
+              user_id: user.id,
+              name: financialGoalName,
+              amount: financialGoalAmount,
+              period_type: financialGoalPeriodType || 'years',
+              period_value: financialGoalPeriodValue || 1,
+              start_date: startDate,
+              end_date: endDate
+            }, { transaction: t });
+          } catch (goalError) {
+            console.error('Erro ao criar meta financeira:', goalError);
+            // Não cancelamos a operação por falha na criação da meta
+          }
+        }
+
+        // Criar registro de pagamento inicial com 7 dias gratuitos
+        const trialExpirationDate = new Date();
+        trialExpirationDate.setDate(trialExpirationDate.getDate() + 7); // 7 dias de teste
+        
+        try {
+          await Payment.create({
+            user_id: user.id,
+            subscription_expiration: trialExpirationDate,
+            payment_status: 'approved',
+            payment_method: 'trial',
+            payment_amount: 0,
+            payment_date: new Date()
+          }, { transaction: t });
+        } catch (paymentError) {
+          console.error('Erro ao criar registro de pagamento inicial:', paymentError);
+          // Não cancelamos a operação por falha na criação do pagamento
+        }
+      }
+
+      // Associar bancos ao usuário, se houver
+      if (selectedBanks && selectedBanks.length > 0 && user) {
+        console.log('Associando bancos ao usuário:', { userId: user.id, selectedBanks });
+        
+        try {
+          // Pegar todos os bancos existentes para ter certeza de quais devem ser ativos e inativos
+          const allBanks = await Bank.findAll({
+            attributes: ['id'],
+            transaction: t
+          });
+          
+          // Para cada banco no sistema
+          for (const bank of allBanks) {
+            // Verificar se o banco está na lista de selecionados
+            const isSelected = selectedBanks.includes(bank.id);
+            
+            // Remover qualquer associação existente primeiro
+            await UserBank.destroy({
+              where: { 
+                user_id: user.id, 
+                bank_id: bank.id 
+              },
+              transaction: t
+            });
+            
+            // Criar associação para todos os bancos, mas marcando como ativo apenas os selecionados
+            await UserBank.create({
+              user_id: user.id,
+              bank_id: bank.id,
+              is_active: isSelected // true para selecionados, false para não selecionados
+            }, { 
+              transaction: t
+            });
+            
+            console.log(`Banco ${bank.id} associado com is_active=${isSelected}`);
+          }
+          
+          console.log('Bancos associados com sucesso');
+        } catch (bankError) {
+          console.error('Erro ao associar bancos:', bankError);
+          // Não fazemos rollback aqui, pois isso não é crítico
+        }
+      }
+
+      // Remove o código de verificação
+      await verificationCode.destroy({ transaction: t });
+
+      // Gera o token JWT
+      const token = jwt.sign(
+        { userId: user.id, email: user.email },
+        process.env.JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      // Commit da transação
+      await t.commit();
+      t = null; // Evitar rollback
+
+      clearTimeout(requestTimeout);
+      hasResponded = true;
+      res.json({ 
+        token,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          telegram_verified: user.telegram_verified
+        }
+      });
+    } catch (error) {
+      console.error('Erro ao verificar código:', error);
+      
+      if (t) {
+        try {
+          await t.rollback();
+        } catch (rollbackError) {
+          console.error('Erro ao fazer rollback:', rollbackError);
+        }
+      }
+      
+      if (!hasResponded) {
+        clearTimeout(requestTimeout);
+        hasResponded = true;
+        res.status(500).json({ message: 'Erro ao verificar código' });
+      }
+    }
   } catch (error) {
-    await t.rollback();
-    console.error('Erro ao verificar código:', error);
-    res.status(500).json({ message: 'Erro ao verificar código' });
+    console.error('Erro global ao verificar código:', error);
+    
+    if (t) {
+      try {
+        await t.rollback();
+      } catch (rollbackError) {
+        console.error('Erro ao fazer rollback:', rollbackError);
+      }
+    }
+    
+    if (!hasResponded) {
+      clearTimeout(requestTimeout);
+      hasResponded = true;
+      res.status(500).json({ message: 'Erro ao processar a solicitação' });
+    }
+  } finally {
+    // Garantir que o timeout seja limpo
+    clearTimeout(requestTimeout);
+    
+    // Se ainda tem uma transação ativa, fazer rollback
+    if (t) {
+      try {
+        await t.rollback();
+      } catch (rollbackError) {
+        console.error('Erro ao fazer rollback final:', rollbackError);
+      }
+    }
+    
+    console.log('FINALIZANDO /auth/verify-code');
+    console.log('===========================================');
   }
 });
 

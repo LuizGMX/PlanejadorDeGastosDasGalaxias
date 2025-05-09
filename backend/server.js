@@ -317,24 +317,39 @@ const gracefulShutdown = (server) => {
 
 const startServer = async () => {
   try {
-    // Sincronizar banco de dados na ordem correta
-    await sequelize.sync({ force: false });
-    
-    // Criar tabelas na ordem correta
-    await models.User.sync({ force: false });
-    await models.Category.sync({ force: false });
-    await models.Bank.sync({ force: false });
-    await models.Expense.sync({ force: false });
-    await models.Income.sync({ force: false });
-    await models.Budget.sync({ force: false });
-    await models.VerificationCode.sync({ force: false });
-    await models.UserBank.sync({ force: false });
-    await models.RecurrenceRule.sync({ force: false });
-    await models.ExpensesRecurrenceException.sync({ force: false });
-    await models.IncomesRecurrenceException.sync({ force: false });
-    await models.Payment.sync({ force: false });
-    await models.FinancialGoal.sync({ force: false });
-    await models.AuditLog.sync({ force: false });
+    // Tentar sincronizar o banco de dados, mas não bloquear o servidor se falhar
+    try {
+      console.log('🔄 Tentando sincronizar o banco de dados...');
+      // Sincronizar banco de dados na ordem correta
+      await sequelize.sync({ force: false });
+      
+      // Criar tabelas na ordem correta
+      await models.User.sync({ force: false });
+      await models.Category.sync({ force: false });
+      await models.Bank.sync({ force: false });
+      await models.Expense.sync({ force: false });
+      await models.Income.sync({ force: false });
+      await models.Budget.sync({ force: false });
+      await models.VerificationCode.sync({ force: false });
+      await models.UserBank.sync({ force: false });
+      await models.RecurrenceRule.sync({ force: false });
+      await models.ExpensesRecurrenceException.sync({ force: false });
+      await models.IncomesRecurrenceException.sync({ force: false });
+      await models.Payment.sync({ force: false });
+      await models.FinancialGoal.sync({ force: false });
+      await models.AuditLog.sync({ force: false });
+      
+      console.log('✅ Banco de dados sincronizado com sucesso!');
+    } catch (dbError) {
+      console.error('⚠️ Erro ao sincronizar banco de dados:', dbError.message);
+      console.log('⚠️ O servidor continuará inicializando sem sincronização do banco');
+      
+      if (process.env.NODE_ENV === 'production') {
+        console.error('⚠️ Como estamos em produção, isso pode causar problemas. Verifique a conexão com o banco de dados.');
+      } else {
+        console.log('🔧 Como estamos em ambiente de desenvolvimento, o servidor continuará com funcionalidade limitada.');
+      }
+    }
 
     // Verificar se a porta está em uso
     const checkPort = () => {
@@ -355,35 +370,66 @@ const startServer = async () => {
       });
     };
 
-    await checkPort();
+    try {
+      await checkPort();
+    } catch (portError) {
+      console.error('❌ Erro ao verificar porta:', portError);
+      throw portError;
+    }
 
     // Inicializar o servidor apenas uma vez
+    let serverConfig = {};
+    
     if (process.env.NODE_ENV === 'production') {
-      const privateKey = readFileSync(
-        '/etc/letsencrypt/live/planejadordasgalaxias.com.br/privkey.pem',
-        'utf8'
-      );
-      const certificate = readFileSync(
-        '/etc/letsencrypt/live/planejadordasgalaxias.com.br/cert.pem',
-        'utf8'
-      );
-      const ca = readFileSync(
-        '/etc/letsencrypt/live/planejadordasgalaxias.com.br/chain.pem',
-        'utf8'
-      );
+      try {
+        const privateKey = readFileSync(
+          '/etc/letsencrypt/live/planejadordasgalaxias.com.br/privkey.pem',
+          'utf8'
+        );
+        const certificate = readFileSync(
+          '/etc/letsencrypt/live/planejadordasgalaxias.com.br/cert.pem',
+          'utf8'
+        );
+        const ca = readFileSync(
+          '/etc/letsencrypt/live/planejadordasgalaxias.com.br/chain.pem',
+          'utf8'
+        );
 
-      const credentials = { key: privateKey, cert: certificate, ca: ca };
-      server = https.createServer(credentials, app);
+        serverConfig = { key: privateKey, cert: certificate, ca: ca };
+        server = https.createServer(serverConfig, app);
+      } catch (sslError) {
+        console.error('❌ Erro ao carregar certificados SSL:', sslError.message);
+        console.log('⚠️ Iniciando em HTTP mesmo em produção devido ao erro nos certificados');
+        server = http.createServer(app);
+      }
     } else {
       server = http.createServer(app);
     }
 
+    // Configurar timeout para o servidor
+    server.timeout = 60000; // 60 segundos
+    server.keepAliveTimeout = 65000; // Recomendado: um pouco mais que o timeout
+
+    // Iniciar o servidor
     server.listen(5000, process.env.NODE_ENV === 'production' ? '0.0.0.0' : undefined, () => {
-      console.log(`🚀 Servidor ${process.env.NODE_ENV === 'production' ? 'HTTPS' : 'HTTP'} rodando na porta 5000 em modo ${process.env.NODE_ENV || 'desenvolvimento'}`);
+      const serverType = process.env.NODE_ENV === 'production' && serverConfig.key ? 'HTTPS' : 'HTTP';
+      console.log(`🚀 Servidor ${serverType} rodando na porta 5000 em modo ${process.env.NODE_ENV || 'desenvolvimento'}`);
+    });
+
+    // Evento para tratamento de erros do servidor
+    server.on('error', (err) => {
+      console.error('Erro no servidor:', err);
+      if (err.code === 'EADDRINUSE') {
+        console.error('A porta 5000 está em uso. Tentando fechar o servidor...');
+        setTimeout(() => {
+          server.close();
+          process.exit(1);
+        }, 1000);
+      }
     });
 
   } catch (error) {
-    console.error('Erro ao iniciar o servidor:', error);
+    console.error('Erro fatal ao iniciar o servidor:', error);
     process.exit(1);
   }
 };
@@ -403,8 +449,9 @@ telegramService.init().then(() => {
   console.log('🤖 Verificação de inicialização do bot do Telegram concluída');
 }).catch(error => {
   console.error('❌ Erro durante a inicialização do bot do Telegram:', error);
+  console.log('O servidor continuará funcionando mesmo sem o bot do Telegram');
 });
 
 app.get('/', (req, res) => {
-  res.send('Backend está funcionando');
+  res.status(200).send('Backend está funcionando');
 });

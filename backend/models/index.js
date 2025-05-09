@@ -18,14 +18,96 @@ import AuditLog from './auditLog.js';
 
 // Configurações do banco de dados
 dotenv.config();
-const sequelize = new Sequelize(
-  process.env.DB_NAME || 'planejador',
-  process.env.DB_USER || 'root',
-  process.env.DB_PASSWORD || 'root',
+
+// Configurações de ambiente
+const isDevelopment = process.env.NODE_ENV !== 'production';
+console.log(`Ambiente: ${isDevelopment ? 'Desenvolvimento' : 'Produção'}`);
+
+// Conectar ao banco de dados com timeout e retry
+const connectWithRetry = async (config, retries = 5) => {
+  console.log('Tentando conectar ao banco de dados...');
+  console.log(`Configuração: ${config.host}:${config.port || 3306}/${config.database}`);
+  
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const seq = new Sequelize(
+        config.database,
+        config.username,
+        config.password,
+        {
+          host: config.host,
+          port: config.port || 3306,
+          dialect: 'mysql',
+          logging: isDevelopment,
+          dialectOptions: {
+            connectTimeout: 10000, // 10 segundos
+          },
+          pool: {
+            max: 10,
+            min: 0,
+            acquire: 30000,
+            idle: 10000
+          },
+          define: {
+            charset: 'utf8mb4',
+            collate: 'utf8mb4_unicode_ci',
+            timestamps: true
+          }
+        }
+      );
+
+      // Testar a conexão
+      await seq.authenticate();
+      console.log('✅ Conexão com banco de dados estabelecida com sucesso!');
+      return seq;
+    } catch (error) {
+      console.error(`❌ Tentativa ${attempt} falhou:`, error.message);
+      
+      if (attempt === retries) {
+        console.error('Não foi possível conectar ao banco de dados após várias tentativas.');
+        if (isDevelopment) {
+          console.log('🔧 Em ambiente de desenvolvimento, criando instância simulada do banco');
+          
+          // Mock do Sequelize para ambiente de desenvolvimento quando não conseguir conectar
+          const mockSequelize = new Sequelize('sqlite::memory:');
+          return mockSequelize;
+        }
+        throw error;
+      }
+      
+      // Esperar antes de tentar novamente
+      const delay = Math.pow(2, attempt) * 1000; // Backoff exponencial
+      console.log(`Aguardando ${delay/1000} segundos antes de tentar novamente...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+};
+
+// Configuração do banco de dados
+const dbConfig = {
+  database: process.env.DB_NAME || 'planejador',
+  username: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  host: process.env.DB_HOST || 'localhost',
+  port: process.env.DB_PORT || 3306
+};
+
+// Inicialmente, criar uma conexão simples
+let sequelize = new Sequelize(
+  dbConfig.database,
+  dbConfig.username,
+  dbConfig.password,
   {
-    host: process.env.DB_HOST || 'localhost',
+    host: dbConfig.host,
+    port: dbConfig.port,
     dialect: 'mysql',
     logging: false,
+    pool: {
+      max: 5,
+      min: 0,
+      acquire: 30000,
+      idle: 10000
+    },
     define: {
       charset: 'utf8mb4',
       collate: 'utf8mb4_unicode_ci',
@@ -33,6 +115,46 @@ const sequelize = new Sequelize(
     }
   }
 );
+
+// Flag para indicar se estamos usando uma conexão simulada
+let usingMockDatabase = false;
+
+// Função para inicializar a conexão de forma segura
+const initializeConnection = async () => {
+  try {
+    // Tentar conectar
+    await sequelize.authenticate({timeout: 5000});
+    console.log('Conexão ao banco de dados bem-sucedida!');
+  } catch (error) {
+    console.error('Erro na conexão inicial ao banco de dados:', error.message);
+    console.log('Tentando reconectar com estratégia de retry...');
+    
+    try {
+      // Tentar novamente com retry
+      sequelize = await connectWithRetry(dbConfig);
+    } catch (retryError) {
+      console.error('Falha na reconexão:', retryError.message);
+      
+      if (isDevelopment) {
+        console.log('⚠️ Usando SQLite em memória para desenvolvimento');
+        sequelize = new Sequelize('sqlite::memory:', {
+          logging: false
+        });
+        usingMockDatabase = true;
+      } else {
+        throw retryError;
+      }
+    }
+  }
+  
+  return sequelize;
+};
+
+// Chamada inicializar (mas não espera pela promessa)
+initializeConnection().catch(err => {
+  console.error('Falha fatal na inicialização do banco:', err);
+  process.exit(1);
+});
 
 // Definição dos modelos
 const User = defineUserModel(sequelize);
