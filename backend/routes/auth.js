@@ -14,7 +14,6 @@ const router = Router();
 const generateVerificationCode = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
-
 const generateJWT = (userId, email) => {
   return jwt.sign(
     { userId, email },
