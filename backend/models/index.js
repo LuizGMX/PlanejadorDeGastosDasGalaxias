@@ -291,3 +291,19 @@ Object.keys(models).forEach(modelName => {
 
 // Export models and sequelize instance
 export { models, sequelize };
+
+// Export each model individually
+export const User = models.User;
+export const Category = models.Category;
+export const Bank = models.Bank;
+export const Expense = models.Expense;
+export const Income = models.Income;
+export const Budget = models.Budget;
+export const VerificationCode = models.VerificationCode;
+export const UserBank = models.UserBank;
+export const RecurrenceRule = models.RecurrenceRule;
+export const ExpensesRecurrenceException = models.ExpensesRecurrenceException;
+export const IncomesRecurrenceException = models.IncomesRecurrenceException;
+export const Payment = models.Payment;
+export const FinancialGoal = models.FinancialGoal;
+export const AuditLog = models.AuditLog;
