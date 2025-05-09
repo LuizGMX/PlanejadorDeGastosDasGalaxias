@@ -29,7 +29,13 @@ import { checkSubscription } from './middleware/subscriptionCheck.js';
 
 import net from 'net';
 
+// Carrega variáveis de ambiente
 dotenv.config();
+
+// Verifica a presença da chave de criptografia
+if (!process.env.ENCRYPTION_KEY) {
+  console.warn('Aviso: ENCRYPTION_KEY não definida nas variáveis de ambiente. Usando chave padrão, o que não é recomendado para produção.');
+}
 
 const app = express();
 

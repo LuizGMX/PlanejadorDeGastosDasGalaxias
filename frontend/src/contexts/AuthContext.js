@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
+import { getApiUrl, API_ENDPOINTS } from '../utils/apiConfig';
 
 // Criar o contexto de autenticação
 export const AuthContext = createContext();
@@ -59,7 +60,7 @@ export const AuthProvider = ({ children }) => {
     
     try {
       const response = await fetch(
-        `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/payments/status`, 
+        API_ENDPOINTS.PAYMENT_STATUS, 
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -87,7 +88,7 @@ export const AuthProvider = ({ children }) => {
       if (token) {
         try {
           console.log('Tentando buscar dados do usuário com token armazenado');
-          const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/auth/me`, {
+          const response = await fetch(API_ENDPOINTS.ME, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -195,7 +196,7 @@ export const AuthProvider = ({ children }) => {
   // Função para fazer login
   const login = async (email, password) => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/auth/login`, {
+      const response = await fetch(API_ENDPOINTS.LOGIN, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -244,39 +245,34 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
-  // Função para registrar um novo usuário
-  const register = async (userData) => {
+  // Função para verificar email
+  const checkEmail = async (email) => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/auth/register`, {
+      const response = await fetch(API_ENDPOINTS.CHECK_EMAIL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(userData),
+        body: JSON.stringify({ email }),
       });
 
       const data = await response.json();
-
-      if (response.ok) {
-        return { success: true, message: 'Usuário registrado com sucesso' };
-      } else {
-        return { success: false, message: data.message || 'Erro ao registrar usuário' };
-      }
+      return { success: response.ok, data };
     } catch (error) {
-      console.error('Erro ao registrar usuário:', error);
-      return { success: false, message: 'Erro de conexão ao tentar registrar usuário' };
+      console.error('Erro ao verificar email:', error);
+      return { success: false, message: 'Erro de conexão ao verificar email' };
     }
   };
 
-  // Função para atualizar o status da assinatura
+  // Função para atualizar status da assinatura
   const refreshSubscriptionStatus = async () => {
     if (!auth.token) return false;
     
     try {
       const hasActiveSubscription = await checkSubscriptionStatus(auth.token);
       
-      setAuth(prevAuth => ({
-        ...prevAuth,
+      setAuth(prev => ({ 
+        ...prev,
         subscriptionExpired: !hasActiveSubscription,
         hasActiveSubscription: hasActiveSubscription
       }));
@@ -288,19 +284,25 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Valor do contexto
-  const value = {
-    auth,
-    setAuth,
+  // Funções e estados expostos pelo contexto
+  const contextValue = {
+    token: auth.token,
+    user: auth.user,
+    loading: auth.loading,
+    subscriptionExpired: auth.subscriptionExpired,
+    hasActiveSubscription: auth.hasActiveSubscription,
     login,
     logout,
-    register,
-    apiInterceptor,
-    checkSubscriptionStatus,
-    refreshSubscriptionStatus
+    checkEmail,
+    refreshSubscriptionStatus,
+    apiInterceptor
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={contextValue}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export default AuthContext; 

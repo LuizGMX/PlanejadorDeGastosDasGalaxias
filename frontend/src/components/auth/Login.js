@@ -1,6 +1,7 @@
 import React, { useState, useContext, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
+import { API_ENDPOINTS, getApiUrl } from '../../utils/apiConfig';
 import CurrencyInput from 'react-currency-input-field';
 import styles from '../../styles/login.module.css';
 import logo from '../../assets/logo.svg';
@@ -73,7 +74,7 @@ const Login = () => {
       setError('');
       console.log('Iniciando busca de bancos...');
       
-      const apiUrl = `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/banks`;
+      const apiUrl = getApiUrl('banks');
       console.log('URL da API:', apiUrl);
       
       // Não incluímos o token na solicitação para a rota pública
@@ -235,12 +236,8 @@ const Login = () => {
     try {
       if (step === 'email') {
         console.log('Enviando email para verificação:', formData.email);
-        console.log('REACT_APP_API_PREFIX:' + process.env.REACT_APP_API_PREFIX + ' REACT_APP_API_URL:' + process.env.REACT_APP_API_URL);
         
-        const prefix = process.env.REACT_APP_API_PREFIX?.trim();
-        const url = `${process.env.REACT_APP_API_URL}${prefix ? `/${prefix}` : ''}/auth/check-email`;
-        console.log('URL:' + url);
-        const response = await fetch(url, {
+        const response = await fetch(API_ENDPOINTS.CHECK_EMAIL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: formData.email })

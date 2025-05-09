@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import Login from './components/auth/Login';
-
+import Register from './components/auth/Register';
 import Dashboard from './components/dashboard/Dashboard';
 import SubscriptionStatus from './components/payment/SubscriptionStatus';
 import ExpensesWrapper from './components/expenses/ExpensesWrapper';
@@ -59,31 +59,91 @@ const Navigation = ({ setHasSidebar }) => {
   return isMobile ? <MobileNavbar /> : <Sidebar />;
 };
 
+// Componente para autenticar rotas
+const RequireAuth = ({ children }) => {
+  const { auth } = React.useContext(AuthContext);
+  
+  if (auth.loading) {
+    return (
+      <div className="loading-screen">
+        <div className="spinner"></div>
+        <p>Carregando...</p>
+      </div>
+    );
+  }
+  
+  if (!auth.token) {
+    return <Navigate to="/login" />;
+  }
+  
+  return children;
+};
+
+// Componente para redirecionar usuários logados
+const RedirectIfAuthenticated = ({ children }) => {
+  const { auth } = React.useContext(AuthContext);
+  
+  if (auth.loading) {
+    return (
+      <div className="loading-screen">
+        <div className="spinner"></div>
+        <p>Carregando...</p>
+      </div>
+    );
+  }
+  
+  if (auth.token) {
+    return <Navigate to="/dashboard" />;
+  }
+  
+  return children;
+};
+
 function App() {
-  const [apiStatus, setApiStatus] = useState(null);
+  const [apiStatus, setApiStatus] = useState({
+    healthy: null,
+    message: 'Verificando conectividade...',
+    checking: true
+  });
   const [isIOSDevice, setIsIOSDevice] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [hasSidebar, setHasSidebar] = useState(false);
 
-  // Verificar a saúde da API ao iniciar o aplicativo
+  // Verificar saúde da API ao iniciar
   useEffect(() => {
-    async function checkHealth() {
+    const checkApi = async () => {
       try {
-        const healthResult = await checkApiHealth();
-        setApiStatus(healthResult);
+        const health = await checkApiHealth();
+        const diagnosis = diagnoseProblem(health);
         
-        if (!healthResult.healthy) {
-          console.error('API não está saudável:', healthResult);
-          const diagnosis = diagnoseProblem(healthResult);
-          console.log('Diagnóstico do problema:', diagnosis);
+        setApiStatus({
+          healthy: health.healthy,
+          message: diagnosis,
+          checking: false,
+          details: health
+        });
+
+        // Se API não estiver saudável, tenta novamente a cada 30s
+        if (!health.healthy) {
+          console.warn('API não está saudável. Verificação será repetida em 30s.');
+          const timer = setTimeout(() => checkApi(), 30000);
+          return () => clearTimeout(timer);
         }
       } catch (error) {
         console.error('Erro ao verificar saúde da API:', error);
-        setApiStatus({ healthy: false, error: error.message });
+        setApiStatus({
+          healthy: false,
+          message: 'Erro ao verificar serviço. Tentando novamente em 30s...',
+          checking: false,
+          error: error.message
+        });
+        
+        const timer = setTimeout(() => checkApi(), 30000);
+        return () => clearTimeout(timer);
       }
-    }
-    
-    checkHealth();
+    };
+
+    checkApi();
   }, []);
 
   useEffect(() => {
@@ -116,35 +176,45 @@ function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Mostrar tela de carregamento enquanto verifica API
+  if (apiStatus.checking) {
+    return (
+      <div className="api-checking">
+        <div className="spinner"></div>
+        <p>{apiStatus.message}</p>
+      </div>
+    );
+  }
+
+  // Mostrar tela de erro se API não estiver disponível
+  if (apiStatus.healthy === false) {
+    return (
+      <div className="api-error">
+        <h2>Serviço temporariamente indisponível</h2>
+        <p>{apiStatus.message}</p>
+        <button onClick={() => window.location.reload()}>
+          Tentar novamente
+        </button>
+        <p className="error-details">
+          {apiStatus.error && `Detalhes: ${apiStatus.error}`}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <AuthProvider>
       <Router {...routerConfig}>
         <Toaster position="top-right" />
-        {/* Banner de aviso quando a API não está disponível */}
-        {apiStatus && !apiStatus.healthy && (
-          <div style={{
-            position: 'fixed', 
-            top: 0, 
-            left: 0, 
-            right: 0, 
-            backgroundColor: '#f44336', 
-            color: 'white', 
-            padding: '10px', 
-            textAlign: 'center', 
-            zIndex: 9999
-          }}>
-            Erro de conexão com o servidor. Algumas funcionalidades podem não estar disponíveis. 
-            {apiStatus.error && ` Erro: ${apiStatus.error}`}
-          </div>
-        )}
         <div className={`app ${isIOSDevice ? 'ios-device' : ''} ${hasSidebar ? 'with-sidebar' : ''}`}>
           {/* Renderização condicional da navegação baseada em autenticação */}
           <Navigation setHasSidebar={setHasSidebar} />
           
           <div className={`mainContent ${isMobile ? 'mobile' : ''}`}>
             <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/" element={<Navigate to="/dashboard" />} />
+              <Route path="/login" element={<RedirectIfAuthenticated><Login /></RedirectIfAuthenticated>} />
+              <Route path="/register" element={<RedirectIfAuthenticated><Register /></RedirectIfAuthenticated>} />
+              <Route path="/" element={<RequireAuth><Layout /></RequireAuth>} />
               
               {/* Rotas protegidas que exigem assinatura ativa */}
               <Route path="/dashboard" element={

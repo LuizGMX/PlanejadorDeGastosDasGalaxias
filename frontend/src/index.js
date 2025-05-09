@@ -25,6 +25,7 @@ import './styles/mobile/forms.mobile.css';
 
 import App from './App';
 import { initIOSSupport, isIOS } from './utils/iosSupport';
+import { checkApiHealth, diagnoseProblem } from './utils/apiHealth';
 
 // Inicializar suporte ao iOS
 console.log('Initializing application, checking for iOS...');
@@ -53,6 +54,35 @@ if (isIOSDevice) {
     console.log('Forcing mobile navbar display for iOS device');
   }
 }
+
+// Verificar se estamos em ambiente de produção
+const isProduction = process.env.NODE_ENV === 'production';
+
+// Função para verificar conectividade com API
+const checkApiConnection = async () => {
+  try {
+    console.log('Verificando conectividade com a API...');
+    const healthResult = await checkApiHealth();
+    
+    if (!healthResult.healthy) {
+      const diagnosis = diagnoseProblem(healthResult);
+      console.error('Problema de conectividade API:', diagnosis);
+      
+      // Em produção, podemos exibir um alerta ou uma mensagem mais amigável
+      if (isProduction) {
+        // Mostrar algum alerta no console, mas não interromper o carregamento
+        console.warn('A aplicação pode enfrentar problemas de conectividade.');
+      }
+    } else {
+      console.log('API está acessível e funcionando corretamente.');
+    }
+  } catch (error) {
+    console.error('Erro ao verificar conectividade com API:', error);
+  }
+};
+
+// Verificar conectividade antes de iniciar o aplicativo
+checkApiConnection();
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

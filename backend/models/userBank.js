@@ -1,4 +1,5 @@
 import { DataTypes } from 'sequelize';
+import { encryptFields } from '../middleware/cryptoMiddleware.js';
 
 export default (sequelize) => {
   const UserBank = sequelize.define('UserBank', {
@@ -9,11 +10,19 @@ export default (sequelize) => {
     },
     user_id: {
       type: DataTypes.INTEGER,
-      allowNull: false
+      allowNull: false,
+      references: {
+        model: 'users',
+        key: 'id'
+      }
     },
     bank_id: {
       type: DataTypes.INTEGER,
-      allowNull: false
+      allowNull: false,
+      references: {
+        model: 'banks',
+        key: 'id'
+      }
     },
     is_active: {
       type: DataTypes.BOOLEAN,
@@ -24,5 +33,8 @@ export default (sequelize) => {
     tableName: 'user_banks'
   });
 
+  // Aplica criptografia aos campos sensíveis, se necessário
+  encryptFields(['user_id'])(UserBank);
+  
   return UserBank;
 };

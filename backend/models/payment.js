@@ -1,4 +1,5 @@
 import { DataTypes } from 'sequelize';
+import { encryptFields } from '../middleware/cryptoMiddleware.js';
 
 export default (sequelize) => {
   const Payment = sequelize.define('Payment', {
@@ -15,35 +16,35 @@ export default (sequelize) => {
         key: 'id'
       }
     },
-    subscription_expiration: {
-      type: DataTypes.DATE,
-      allowNull: false,
-      comment: 'Data até quando o usuário tem acesso ao sistema'
+    mp_payment_id: {
+      type: DataTypes.STRING,
+      allowNull: true
     },
-    payment_date: {
-      type: DataTypes.DATE,
-      allowNull: true,
-      comment: 'Data em que o pagamento foi realizado'
+    mp_preference_id: {
+      type: DataTypes.STRING,
+      allowNull: true
     },
     payment_status: {
-      type: DataTypes.ENUM('pending', 'approved', 'rejected', 'refunded'),
-      defaultValue: 'pending',
-      allowNull: false
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: 'pending'
+    },
+    amount: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+      defaultValue: 0
     },
     payment_method: {
       type: DataTypes.STRING,
-      allowNull: true,
-      comment: 'Método de pagamento usado (cartão, pix, etc)'
+      allowNull: true
     },
-    payment_id: {
-      type: DataTypes.STRING,
-      allowNull: true,
-      comment: 'ID do pagamento no gateway (Mercado Pago)'
+    payment_date: {
+      type: DataTypes.DATE,
+      allowNull: true
     },
-    payment_amount: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: true,
-      comment: 'Valor do pagamento'
+    subscription_expiration: {
+      type: DataTypes.DATE,
+      allowNull: true
     },
     created_at: {
       type: DataTypes.DATE,
@@ -59,6 +60,13 @@ export default (sequelize) => {
     updatedAt: 'updated_at',
     tableName: 'payments'
   });
+
+  // Aplica criptografia aos campos sensíveis
+  encryptFields([
+    'mp_payment_id',
+    'mp_preference_id',
+    'payment_method'
+  ])(Payment);
 
   return Payment;
 }; 
