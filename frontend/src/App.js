@@ -2,7 +2,6 @@ import React, { useState, useEffect, useContext } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import Login from './components/auth/Login';
-import EmailCheck from './components/auth/EmailCheck';
 
 import Dashboard from './components/dashboard/Dashboard';
 import SubscriptionStatus from './components/payment/SubscriptionStatus';
@@ -144,17 +143,8 @@ function App() {
           
           <div className={`mainContent ${isMobile ? 'mobile' : ''}`}>
             <Routes>
-              <Route path="/" element={<Navigate to="/login" />} />
               <Route path="/login" element={<Login />} />
-              <Route path="/email-check" element={<EmailCheck />} />
-              <Route path="/payment-success/:token" element={<PaymentSuccess />} />
-              <Route path="/payment/success" element={<PaymentSuccessPage />} />
-              <Route path="/payment/error" element={<PaymentFailPage />} />
-              <Route path="/payment/:token?" element={
-                <ProtectedRoute needsSubscription={false}>
-                  <SubscriptionPage />
-                </ProtectedRoute>
-              } />
+              <Route path="/" element={<Navigate to="/dashboard" />} />
               
               {/* Rotas protegidas que exigem assinatura ativa */}
               <Route path="/dashboard" element={

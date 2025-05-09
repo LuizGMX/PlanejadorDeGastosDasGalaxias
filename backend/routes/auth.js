@@ -1,9 +1,7 @@
 import { Router } from 'express';
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
-import {models} from '../models/index.js';
-const {User, VerificationCode, UserBank, Bank, Payment, FinancialGoal} = models;
-
+import { User, VerificationCode, UserBank, Bank, Payment, FinancialGoal } from '../models/index.js';
 import { Op } from 'sequelize';
 import sequelize from '../config/db.js';
 import { sendVerificationEmail } from '../services/emailService.js';
@@ -89,24 +87,10 @@ export const authenticate = async (req, res, next) => {
 // Rotas
 router.post('/check-email', async (req, res) => {
   console.log('===========================================');
-  console.log('INICIANDO /auth/check-email');
+  console.log('INICIANDO /${process.env.API_PREFIX}/auth/check-email');
   console.log('Timestamp:', new Date().toISOString());
-  
-  // Configurar um timeout para a requisição caso fique presa
-  const timeoutDuration = 10000; // 10 segundos
-  let hasResponded = false;
-  
-  const requestTimeout = setTimeout(() => {
-    if (!hasResponded) {
-      console.log('TIMEOUT: A requisição check-email demorou demais para responder');
-      hasResponded = true;
-      return res.status(200).json({
-        isNewUser: false,
-        timeout: true,
-        message: 'A verificação de email demorou muito tempo. Por favor, tente novamente.'
-      });
-    }
-  }, timeoutDuration);
+  console.log('Cabeçalhos:', JSON.stringify(req.headers));
+  console.log('Body completo:', JSON.stringify(req.body));
   
   try {
     const { email } = req.body;
@@ -114,16 +98,12 @@ router.post('/check-email', async (req, res) => {
     
     if (!email) {
       console.log('ERRO: Email não fornecido');
-      clearTimeout(requestTimeout);
-      hasResponded = true;
       return res.status(400).json({ message: 'E-mail é obrigatório' });
     }
     
     // Verifica se o email é válido
     if (!/^\S+@\S+\.\S+$/.test(email)) {
       console.log('ERRO: Email inválido:', email);
-      clearTimeout(requestTimeout);
-      hasResponded = true;
       return res.status(400).json({ message: 'E-mail inválido' });
     }
     
@@ -155,15 +135,16 @@ router.post('/check-email', async (req, res) => {
           expires_at: new Date(Date.now() + 10 * 60 * 1000)
         });
 
-        // Enviar email em background e não esperar pela conclusão
-        console.log('Enviando email em segundo plano...');
-        sendVerificationEmail(email, code).catch(emailError => {
-          console.error('ERRO ao enviar email (não bloqueante):', emailError);
-        });
+        console.log('Enviando email...');
+        try {
+          await sendVerificationEmail(email, code);
+          console.log('Email enviado com sucesso');
+        } catch (emailError) {
+          console.error('ERRO ao enviar email:', emailError);
+          console.error('Stack trace do erro de email:', emailError.stack);
+        }
 
         console.log('Retornando resposta de sucesso para usuário existente');
-        clearTimeout(requestTimeout);
-        hasResponded = true;
         return res.json({
           isNewUser: false,
           name: user.name,
@@ -173,16 +154,12 @@ router.post('/check-email', async (req, res) => {
       } catch (userExistsError) {
         console.error('ERRO no fluxo de usuário existente:', userExistsError);
         console.error('Stack trace:', userExistsError.stack);
-        clearTimeout(requestTimeout);
-        hasResponded = true;
         return res.status(500).json({ message: 'Erro interno ao processar usuário existente' });
       }
     }
     
     // Se não existir, retorna que é um novo usuário
     console.log('Retornando resposta para novo usuário');
-    clearTimeout(requestTimeout);
-    hasResponded = true;
     return res.json({
       isNewUser: true,
       name: null,
@@ -193,40 +170,15 @@ router.post('/check-email', async (req, res) => {
     console.error('Stack trace completo:', error.stack);
     console.error('Tipo de erro:', error.name);
     console.error('Mensagem de erro:', error.message);
-    
-    if (!hasResponded) {
-      clearTimeout(requestTimeout);
-      hasResponded = true;
-      return res.status(500).json({ message: 'Erro interno ao verificar email', error: error.message });
-    }
+    return res.status(500).json({ message: 'Erro interno ao verificar email', error: error.message });
   } finally {
-    // Garantir que o timeout seja limpo caso a função saia antes
-    clearTimeout(requestTimeout);
-    console.log('FINALIZANDO /auth/check-email');
+    console.log('FINALIZANDO /${process.env.API_PREFIX}/auth/check-email');
     console.log('===========================================');
   }
 });
 
 router.post('/send-code', async (req, res) => {
-  console.log('===========================================');
-  console.log('INICIANDO /auth/send-code');
-  console.log('Timestamp:', new Date().toISOString());
-  
-  // Configurar um timeout para a requisição caso fique presa
-  const timeoutDuration = 10000; // 10 segundos
-  let hasResponded = false;
-  
-  const requestTimeout = setTimeout(() => {
-    if (!hasResponded) {
-      console.log('TIMEOUT: A requisição send-code demorou demais para responder');
-      hasResponded = true;
-      return res.status(200).json({
-        timeout: true,
-        message: 'O envio do código demorou muito tempo. Por favor, tente novamente.'
-      });
-    }
-  }, timeoutDuration);
-  
+  console.log('/${process.env.API_PREFIX}/auth/send-code chamado');
   try {
     const { 
       email, 
@@ -252,15 +204,11 @@ router.post('/send-code', async (req, res) => {
 
     // Validação básica do email
     if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
-      clearTimeout(requestTimeout);
-      hasResponded = true;
       return res.status(400).json({ message: 'E-mail inválido' });
     }
 
     // Se for novo usuário, valida os dados necessários
     if (isNewUser && (!name || !financialGoalName || !financialGoalAmount || !financialGoalPeriodType || !financialGoalPeriodValue)) {
-      clearTimeout(requestTimeout);
-      hasResponded = true;
       return res.status(400).json({ message: 'Todos os dados são obrigatórios para novos usuários' });
     }
 
@@ -289,58 +237,24 @@ router.post('/send-code', async (req, res) => {
       expires_at: new Date(Date.now() + 10 * 60 * 1000) // 10 minutos
     });
 
-    // Enviar email em background e não esperar pela conclusão
-    console.log('Enviando email em segundo plano...');
-    sendVerificationEmail(email, code).catch(emailError => {
-      console.error('ERRO ao enviar email (não bloqueante):', emailError);
-    });
+    // Envia o email
+    try {
+      await sendVerificationEmail(email, code);
+      console.log('Email enviado com sucesso');
+    } catch (emailError) {
+      console.error('Erro ao enviar email:', emailError);
+      throw new Error('Falha ao enviar email de verificação');
+    }
 
-    clearTimeout(requestTimeout);
-    hasResponded = true;
     return res.json({ message: 'Código enviado com sucesso!' });
   } catch (error) {
     console.error('Erro ao enviar código:', error);
-    
-    if (!hasResponded) {
-      clearTimeout(requestTimeout);
-      hasResponded = true;
-      return res.status(500).json({ message: error.message || 'Erro interno ao enviar código' });
-    }
-  } finally {
-    // Garantir que o timeout seja limpo caso a função saia antes
-    clearTimeout(requestTimeout);
-    console.log('FINALIZANDO /auth/send-code');
-    console.log('===========================================');
+    return res.status(500).json({ message: error.message || 'Erro interno ao enviar código' });
   }
 });
 
 router.post('/verify-code', async (req, res) => {
-  console.log('===========================================');
-  console.log('INICIANDO /auth/verify-code');
-  console.log('Timestamp:', new Date().toISOString());
-  
-  // Configurar um timeout para a requisição caso fique presa
-  const timeoutDuration = 10000; // 10 segundos
-  let hasResponded = false;
-  let t = null;
-  
-  const requestTimeout = setTimeout(() => {
-    if (!hasResponded) {
-      console.log('TIMEOUT: A requisição verify-code demorou demais para responder');
-      hasResponded = true;
-      
-      // Rollback da transação se existir
-      if (t) {
-        t.rollback().catch(err => console.error('Erro ao fazer rollback:', err));
-      }
-      
-      return res.status(200).json({
-        timeout: true,
-        message: 'A verificação do código demorou muito tempo. Por favor, tente novamente.'
-      });
-    }
-  }, timeoutDuration);
-  
+  const t = await sequelize.transaction();
   try {
     const { 
       email, 
@@ -360,250 +274,153 @@ router.post('/verify-code', async (req, res) => {
       selectedBanks: selectedBanks ? selectedBanks.length : 0
     });
 
-    // Iniciar transação com timeout
-    try {
-      t = await sequelize.transaction();
-    } catch (dbError) {
-      console.error('Erro ao iniciar transação:', dbError.message);
-      clearTimeout(requestTimeout);
-      hasResponded = true;
-      
-      // Em ambiente de desenvolvimento, ainda podemos retornar uma resposta simulada
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('⚠️ Gerando resposta simulada para desenvolvimento');
-        
-        return res.json({
-          simulated: true,
-          token: 'dev_token_' + Date.now(),
-          user: {
-            id: 1,
-            name: name || 'Usuário Teste',
-            email: email || 'teste@example.com'
-          }
-        });
+    // Validação do código de verificação
+    const verificationCode = await VerificationCode.findOne({
+      where: {
+        email,
+        code,
+        expires_at: { [Op.gt]: new Date() }
       }
-      
-      return res.status(500).json({ 
-        message: 'Erro de conexão ao banco de dados. Por favor, tente novamente.' 
-      });
+    });
+
+    if (!verificationCode) {
+      await t.rollback();
+      return res.status(400).json({ message: 'Código inválido ou expirado' });
     }
 
-    try {
-      // Validação do código de verificação
-      const verificationCode = await VerificationCode.findOne({
-        where: {
-          email,
-          code,
-          expires_at: { [Op.gt]: new Date() }
-        },
-        transaction: t
-      });
+    // Busca o usuário
+    let user = await User.findOne({ where: { email } });
 
-      if (!verificationCode) {
-        await t.rollback();
-        clearTimeout(requestTimeout);
-        hasResponded = true;
-        return res.status(400).json({ message: 'Código inválido ou expirado' });
+    // Se for um novo usuário, cria o usuário
+    if (isNewUser && !user) {
+      user = await User.create({
+        email,
+        name,
+        desired_budget: financialGoalAmount || 0
+      }, { transaction: t });
+
+      // Se houver meta financeira, cria
+      if (financialGoalName && financialGoalAmount) {
+        // Calcular a data de término baseada no período
+        const startDate = new Date();
+        let endDate = new Date(startDate);
+        
+        if (financialGoalPeriodType && financialGoalPeriodValue) {
+          const periodValue = parseInt(financialGoalPeriodValue);
+          
+          switch (financialGoalPeriodType) {
+            case 'days':
+              endDate.setDate(startDate.getDate() + periodValue);
+              break;
+            case 'months':
+              endDate.setMonth(startDate.getMonth() + periodValue);
+              break;
+            case 'years':
+              endDate.setFullYear(startDate.getFullYear() + periodValue);
+              break;
+            default:
+              endDate.setFullYear(startDate.getFullYear() + 1); // Padrão: 1 ano
+          }
+        } else {
+          // Se não tiver período definido, define 1 ano como padrão
+          endDate.setFullYear(startDate.getFullYear() + 1);
+        }
+        
+        await FinancialGoal.create({
+          user_id: user.id,
+          name: financialGoalName,
+          amount: financialGoalAmount,
+          period_type: financialGoalPeriodType || 'years',
+          period_value: financialGoalPeriodValue || 1,
+          start_date: startDate,
+          end_date: endDate
+        }, { transaction: t });
       }
 
-      // Busca o usuário
-      let user = await User.findOne({ where: { email }, transaction: t });
+      // Criar registro de pagamento inicial com 7 dias gratuitos
+      const trialExpirationDate = new Date();
+      trialExpirationDate.setDate(trialExpirationDate.getDate() + 7); // 7 dias de teste
+      
+      await Payment.create({
+        user_id: user.id,
+        subscription_expiration: trialExpirationDate,
+        payment_status: 'approved',
+        payment_method: 'trial',
+        payment_amount: 0,
+        payment_date: new Date()
+      }, { transaction: t });
+    }
 
-      // Se for um novo usuário, cria o usuário
-      if (isNewUser && !user) {
-        try {
-          user = await User.create({
-            email,
-            name,
-            desired_budget: financialGoalAmount || 0
-          }, { transaction: t });
-        } catch (createUserError) {
-          console.error('Erro ao criar usuário:', createUserError);
-          await t.rollback();
-          clearTimeout(requestTimeout);
-          hasResponded = true;
-          return res.status(500).json({ message: 'Erro ao criar novo usuário' });
-        }
-
-        // Se houver meta financeira, cria
-        if (financialGoalName && financialGoalAmount) {
-          // Calcular a data de término baseada no período
-          const startDate = new Date();
-          let endDate = new Date(startDate);
-          
-          if (financialGoalPeriodType && financialGoalPeriodValue) {
-            const periodValue = parseInt(financialGoalPeriodValue);
-            
-            switch (financialGoalPeriodType) {
-              case 'days':
-                endDate.setDate(startDate.getDate() + periodValue);
-                break;
-              case 'months':
-                endDate.setMonth(startDate.getMonth() + periodValue);
-                break;
-              case 'years':
-                endDate.setFullYear(startDate.getFullYear() + periodValue);
-                break;
-              default:
-                endDate.setFullYear(startDate.getFullYear() + 1); // Padrão: 1 ano
-            }
-          } else {
-            // Se não tiver período definido, define 1 ano como padrão
-            endDate.setFullYear(startDate.getFullYear() + 1);
-          }
-          
-          try {
-            await FinancialGoal.create({
-              user_id: user.id,
-              name: financialGoalName,
-              amount: financialGoalAmount,
-              period_type: financialGoalPeriodType || 'years',
-              period_value: financialGoalPeriodValue || 1,
-              start_date: startDate,
-              end_date: endDate
-            }, { transaction: t });
-          } catch (goalError) {
-            console.error('Erro ao criar meta financeira:', goalError);
-            // Não cancelamos a operação por falha na criação da meta
-          }
-        }
-
-        // Criar registro de pagamento inicial com 7 dias gratuitos
-        const trialExpirationDate = new Date();
-        trialExpirationDate.setDate(trialExpirationDate.getDate() + 7); // 7 dias de teste
+    // Associar bancos ao usuário, se houver
+    if (selectedBanks && selectedBanks.length > 0) {
+      console.log('Associando bancos ao usuário:', { userId: user.id, selectedBanks });
+      
+      try {
+        // Pegar todos os bancos existentes para ter certeza de quais devem ser ativos e inativos
+        const allBanks = await Bank.findAll({
+          attributes: ['id'],
+          transaction: t
+        });
         
-        try {
-          await Payment.create({
-            user_id: user.id,
-            subscription_expiration: trialExpirationDate,
-            payment_status: 'approved',
-            payment_method: 'trial',
-            payment_amount: 0,
-            payment_date: new Date()
-          }, { transaction: t });
-        } catch (paymentError) {
-          console.error('Erro ao criar registro de pagamento inicial:', paymentError);
-          // Não cancelamos a operação por falha na criação do pagamento
-        }
-      }
-
-      // Associar bancos ao usuário, se houver
-      if (selectedBanks && selectedBanks.length > 0 && user) {
-        console.log('Associando bancos ao usuário:', { userId: user.id, selectedBanks });
-        
-        try {
-          // Pegar todos os bancos existentes para ter certeza de quais devem ser ativos e inativos
-          const allBanks = await Bank.findAll({
-            attributes: ['id'],
+        // Para cada banco no sistema
+        for (const bank of allBanks) {
+          // Verificar se o banco está na lista de selecionados
+          const isSelected = selectedBanks.includes(bank.id);
+          
+          // Remover qualquer associação existente primeiro
+          await UserBank.destroy({
+            where: { 
+              user_id: user.id, 
+              bank_id: bank.id 
+            },
             transaction: t
           });
           
-          // Para cada banco no sistema
-          for (const bank of allBanks) {
-            // Verificar se o banco está na lista de selecionados
-            const isSelected = selectedBanks.includes(bank.id);
-            
-            // Remover qualquer associação existente primeiro
-            await UserBank.destroy({
-              where: { 
-                user_id: user.id, 
-                bank_id: bank.id 
-              },
-              transaction: t
-            });
-            
-            // Criar associação para todos os bancos, mas marcando como ativo apenas os selecionados
-            await UserBank.create({
-              user_id: user.id,
-              bank_id: bank.id,
-              is_active: isSelected // true para selecionados, false para não selecionados
-            }, { 
-              transaction: t
-            });
-            
-            console.log(`Banco ${bank.id} associado com is_active=${isSelected}`);
-          }
+          // Criar associação para todos os bancos, mas marcando como ativo apenas os selecionados
+          await UserBank.create({
+            user_id: user.id,
+            bank_id: bank.id,
+            is_active: isSelected // true para selecionados, false para não selecionados
+          }, { 
+            transaction: t
+          });
           
-          console.log('Bancos associados com sucesso');
-        } catch (bankError) {
-          console.error('Erro ao associar bancos:', bankError);
-          // Não fazemos rollback aqui, pois isso não é crítico
+          console.log(`Banco ${bank.id} associado com is_active=${isSelected}`);
         }
-      }
-
-      // Remove o código de verificação
-      await verificationCode.destroy({ transaction: t });
-
-      // Gera o token JWT
-      const token = jwt.sign(
-        { userId: user.id, email: user.email },
-        process.env.JWT_SECRET,
-        { expiresIn: '7d' }
-      );
-
-      // Commit da transação
-      await t.commit();
-      t = null; // Evitar rollback
-
-      clearTimeout(requestTimeout);
-      hasResponded = true;
-      res.json({ 
-        token,
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          telegram_verified: user.telegram_verified
-        }
-      });
-    } catch (error) {
-      console.error('Erro ao verificar código:', error);
-      
-      if (t) {
-        try {
-          await t.rollback();
-        } catch (rollbackError) {
-          console.error('Erro ao fazer rollback:', rollbackError);
-        }
-      }
-      
-      if (!hasResponded) {
-        clearTimeout(requestTimeout);
-        hasResponded = true;
-        res.status(500).json({ message: 'Erro ao verificar código' });
+        
+        console.log('Bancos associados com sucesso');
+      } catch (error) {
+        console.error('Erro ao associar bancos:', error);
+        throw error; // Re-throw para que a transação seja revertida
       }
     }
+
+    // Remove o código de verificação
+    await verificationCode.destroy({ transaction: t });
+
+    // Gera o token JWT
+    const token = jwt.sign(
+      { userId: user.id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    // Commit da transação
+    await t.commit();
+
+    res.json({ 
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        telegram_verified: user.telegram_verified
+      }
+    });
   } catch (error) {
-    console.error('Erro global ao verificar código:', error);
-    
-    if (t) {
-      try {
-        await t.rollback();
-      } catch (rollbackError) {
-        console.error('Erro ao fazer rollback:', rollbackError);
-      }
-    }
-    
-    if (!hasResponded) {
-      clearTimeout(requestTimeout);
-      hasResponded = true;
-      res.status(500).json({ message: 'Erro ao processar a solicitação' });
-    }
-  } finally {
-    // Garantir que o timeout seja limpo
-    clearTimeout(requestTimeout);
-    
-    // Se ainda tem uma transação ativa, fazer rollback
-    if (t) {
-      try {
-        await t.rollback();
-      } catch (rollbackError) {
-        console.error('Erro ao fazer rollback final:', rollbackError);
-      }
-    }
-    
-    console.log('FINALIZANDO /auth/verify-code');
-    console.log('===========================================');
+    await t.rollback();
+    console.error('Erro ao verificar código:', error);
+    res.status(500).json({ message: 'Erro ao verificar código' });
   }
 });
 
@@ -1051,188 +868,6 @@ router.post('/login', async (req, res) => {
     res.status(500).json({ message: 'Erro ao realizar login' });
   } finally {
     console.log('FINALIZANDO /${process.env.API_PREFIX}/auth/login');
-  }
-});
-
-// Rota para verificar se o token é válido
-router.get('/verify-token', authenticate, (req, res) => {
-  res.status(200).json({
-    valid: true,
-    user: {
-      id: req.user.id,
-      name: req.user.name,
-      email: req.user.email
-    }
-  });
-});
-
-// Nova rota para verificar token sem precisar de autenticação prévia (via POST)
-router.post('/check-token', async (req, res) => {
-  try {
-    console.log('=== VERIFICAÇÃO DE TOKEN SEM AUTENTICAÇÃO PRÉVIA ===');
-    const { token } = req.body;
-    
-    if (!token) {
-      return res.status(400).json({ 
-        valid: false, 
-        message: 'Token não fornecido' 
-      });
-    }
-    
-    try {
-      // Verificar o token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      const userId = decoded.userId || decoded.id;
-      
-      if (!userId) {
-        return res.status(401).json({ 
-          valid: false, 
-          message: 'Token inválido: identificação do usuário ausente' 
-        });
-      }
-      
-      // Buscar o usuário
-      const user = await User.findByPk(userId);
-      
-      if (!user) {
-        return res.status(404).json({ 
-          valid: false, 
-          message: 'Usuário não encontrado' 
-        });
-      }
-      
-      // Verificar se tem assinatura ativa
-      const activeSubscription = await Payment.findOne({
-        where: {
-          user_id: user.id,
-          payment_status: 'approved',
-          subscription_expiration: {
-            [Op.gt]: new Date()
-          }
-        }
-      });
-      
-      // Token é válido e usuário existe
-      return res.status(200).json({
-        valid: true,
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          telegram_verified: user.telegram_verified
-        },
-        hasActiveSubscription: !!activeSubscription
-      });
-    } catch (error) {
-      console.error('Erro ao verificar token:', error.message);
-      
-      // Retornar informações úteis sobre o erro
-      if (error.name === 'TokenExpiredError') {
-        return res.status(401).json({ 
-          valid: false, 
-          message: 'Token expirado', 
-          expired: true 
-        });
-      }
-      
-      return res.status(401).json({ 
-        valid: false, 
-        message: 'Token inválido' 
-      });
-    }
-  } catch (error) {
-    console.error('Erro ao processar verificação de token:', error);
-    return res.status(500).json({ 
-      valid: false, 
-      message: 'Erro interno ao verificar token' 
-    });
-  }
-});
-
-// Nova rota para verificar token sem precisar de autenticação prévia (via GET)
-router.get('/check-token', async (req, res) => {
-  try {
-    console.log('=== VERIFICAÇÃO DE TOKEN VIA GET ===');
-    // Extrair o token do cabeçalho Authorization
-    const authHeader = req.headers.authorization;
-    console.log('Authorization Header:', authHeader ? `${authHeader.substring(0, 15)}...` : 'Não fornecido');
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(400).json({ 
-        valid: false, 
-        message: 'Token não fornecido ou formato inválido' 
-      });
-    }
-    
-    const token = authHeader.split(' ')[1];
-    
-    try {
-      // Verificar o token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      const userId = decoded.userId || decoded.id;
-      
-      if (!userId) {
-        return res.status(401).json({ 
-          valid: false, 
-          message: 'Token inválido: identificação do usuário ausente' 
-        });
-      }
-      
-      // Buscar o usuário
-      const user = await User.findByPk(userId);
-      
-      if (!user) {
-        return res.status(404).json({ 
-          valid: false, 
-          message: 'Usuário não encontrado' 
-        });
-      }
-      
-      // Verificar se tem assinatura ativa
-      const activeSubscription = await Payment.findOne({
-        where: {
-          user_id: user.id,
-          payment_status: 'approved',
-          subscription_expiration: {
-            [Op.gt]: new Date()
-          }
-        }
-      });
-      
-      // Token é válido e usuário existe
-      return res.status(200).json({
-        valid: true,
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          telegram_verified: user.telegram_verified
-        },
-        hasActiveSubscription: !!activeSubscription
-      });
-    } catch (error) {
-      console.error('Erro ao verificar token:', error.message);
-      
-      // Retornar informações úteis sobre o erro
-      if (error.name === 'TokenExpiredError') {
-        return res.status(401).json({ 
-          valid: false, 
-          message: 'Token expirado', 
-          expired: true 
-        });
-      }
-      
-      return res.status(401).json({ 
-        valid: false, 
-        message: 'Token inválido' 
-      });
-    }
-  } catch (error) {
-    console.error('Erro ao processar verificação de token:', error);
-    return res.status(500).json({ 
-      valid: false, 
-      message: 'Erro interno ao verificar token' 
-    });
   }
 });
 

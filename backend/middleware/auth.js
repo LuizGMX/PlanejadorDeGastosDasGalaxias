@@ -1,6 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { models } from '../models/index.js';
-const {User} = models;
+import { User } from '../models/index.js';
 import sequelize from '../config/db.js';
 
 export const authenticate = async (req, res, next) => {

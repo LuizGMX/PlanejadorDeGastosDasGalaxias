@@ -1,6 +1,5 @@
 import { Router } from 'express';
-import { models } from '../models/index.js';
-const { User, Bank, VerificationCode, UserBank, FinancialGoal } = models;
+import { User, Bank, VerificationCode, UserBank, FinancialGoal } from '../models/index.js';
 import { authenticate } from '../middleware/auth.js';
 import { sendVerificationEmail } from '../services/emailService.js';
 import dotenv from 'dotenv';

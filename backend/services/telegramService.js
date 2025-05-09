@@ -1,6 +1,5 @@
 import { Telegraf } from 'telegraf';
-import { models } from '../models/index.js';
-const { User, Expense, Income, Category, Bank, Budget, VerificationCode, UserBank } = models;
+import { User, Expense, Income, Category, Bank, Budget, VerificationCode, UserBank } from '../models/index.js';
 import { Op } from 'sequelize';
 import { sendVerificationEmail } from './emailService.js';
 import crypto from 'crypto';

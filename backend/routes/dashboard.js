@@ -1,8 +1,16 @@
 import { Sequelize } from 'sequelize';
 import express from 'express';
-import { models } from '../models/index.js';
-const { Expense, Income, Category, Bank, Budget, User, ExpensesRecurrenceException, IncomesRecurrenceException, FinancialGoal } = models;
-
+import { 
+  Expense, 
+  Income, 
+  Category, 
+  Bank, 
+  Budget, 
+  User,
+  ExpensesRecurrenceException,
+  IncomesRecurrenceException,
+  FinancialGoal
+} from '../models/index.js';
 import { Op } from 'sequelize';
 import { authenticate } from '../middleware/auth.js';
 import checkSubscription from '../middleware/subscriptionCheck.js';

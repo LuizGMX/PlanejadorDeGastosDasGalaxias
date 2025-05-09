@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import dotenv from 'dotenv';
-import { models } from '../models/index.js';
-const { User, Payment } = models;
+import { User, Payment } from '../models/index.js';
 import { authenticate } from '../middleware/auth.js';
 import { Op } from 'sequelize';
 import sequelize from '../config/db.js';

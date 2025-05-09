@@ -17,14 +17,9 @@ import spreadsheetRoutes from './routes/spreadsheetRoutes.js';
 import userRoutes from './routes/users.js';
 import telegramRoutes from './routes/telegramRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
-import userDataRoutes from './routes/userData.js';
-import { sequelize, models } from './models/index.js';
+import { sequelize, User, Category, Bank, Expense, Income, Budget, VerificationCode, UserBank, RecurrenceRule, ExpensesRecurrenceException, IncomesRecurrenceException, Payment, FinancialGoal } from './models/index.js';
 import seedDatabase from './database/seeds/index.js';
 import { telegramService } from './services/telegramService.js';
-import { maskSensitiveData } from './middleware/dataMasking.js';
-import { auditLogMiddleware } from './middleware/auditLog.js';
-import { verifyToken, verifyOwnership } from './middleware/authMiddleware.js';
-import { injectModelContext } from './middleware/modelContextMiddleware.js';
 
 import healthRoutes from './routes/healthRoutes.js';
 import { configureRateLimit, authLimiter } from './middleware/rateLimit.js';
@@ -39,30 +34,6 @@ dotenv.config();
 const app = express();
 
 app.set('trust proxy', 1);
-
-// Adicionar middleware para debug de CORS
-app.use((req, res, next) => {
-  console.log('Headers recebidos:', req.headers);
-  next();
-});
-
-// Configurar cabeçalhos CORS para permitir todas as origens durante o desenvolvimento
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  
-  // Handle preflight OPTIONS requests
-  if (req.method === 'OPTIONS') {
-    console.log('Preflight OPTIONS request recebida');
-    return res.status(200).end();
-  }
-  
-  return next();
-});
-
-// Configurar os modelos no app.locals para serem acessíveis nos middlewares
-app.locals.models = models;
 
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
@@ -82,88 +53,17 @@ app.use(helmet({
   },
 }));
 
+app.use(
+  cors({
+    // origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin:  'http://localhost:3000',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Accept'],
+    credentials: true
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Log de todas as requisições para depuração
-app.use((req, res, next) => {
-  console.log(`📥 [${new Date().toISOString()}] ${req.method} ${req.path} (URL completa: ${req.originalUrl})`);
-  console.log(`   Headers: ${JSON.stringify(req.headers)}`);
-  if (req.body && Object.keys(req.body).length > 0) {
-    console.log(`   Body: ${JSON.stringify(req.body)}`);
-  }
-  next();
-});
-
-// Endpoint básico de verificação de saúde - sempre acessível sem autenticação
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    timestamp: new Date().toISOString()
-  });
-});
-
-// Endpoint explícito de teste de email diretamente na raiz
-app.post('/check-email-test', async (req, res) => {
-  console.log('===========================================');
-  console.log('ROTA DIRETA NA RAIZ: /check-email-test');
-  console.log('Timestamp:', new Date().toISOString());
-  console.log('Body recebido:', req.body);
-  
-  try {
-    const { email } = req.body;
-    
-    if (!email) {
-      console.log('ERRO: Email não fornecido');
-      return res.status(400).json({ message: 'E-mail é obrigatório' });
-    }
-    
-    return res.json({
-      isNewUser: true,
-      name: null,
-      email: email,
-      message: 'Rota de teste na raiz funcionando!'
-    });
-  } catch (error) {
-    console.error('ERRO ao processar requisição de teste:', error);
-    return res.status(500).json({ message: 'Erro interno no servidor', error: error.message });
-  }
-});
-
-// Endpoint de status - sempre acessível sem autenticação
-app.get('/status', (req, res) => {
-  res.json({
-    status: 'online',
-    timestamp: new Date().toISOString()
-  });
-});
-
-// Rota direta para teste de check-email sem passar pelos middlewares
-app.post('/test-check-email', async (req, res) => {
-  console.log('===========================================');
-  console.log('TESTE DIRETO: /test-check-email');
-  console.log('Timestamp:', new Date().toISOString());
-  console.log('Body recebido:', req.body);
-  
-  try {
-    const { email } = req.body;
-    
-    if (!email) {
-      console.log('ERRO: Email não fornecido');
-      return res.status(400).json({ message: 'E-mail é obrigatório' });
-    }
-    
-    return res.json({
-      isNewUser: true,
-      name: null,
-      email: null,
-      message: 'Rota de teste funcionando!'
-    });
-  } catch (error) {
-    console.error('ERRO ao processar requisição de teste:', error);
-    return res.status(500).json({ message: 'Erro interno no servidor', error: error.message });
-  }
-});
 
 // Aplicar rate limiting global
 app.use(configureRateLimit());
@@ -174,113 +74,6 @@ const API_PREFIX = process.env.NODE_ENV === 'production'
   : '/api';
 
 console.log("API_PREFIX " + API_PREFIX);
-
-// Definir as rotas públicas que não necessitam de autenticação
-const publicPaths = [
-  // Todas as rotas de autenticação devem ser públicas
-  `${API_PREFIX}/auth`,
-  // Endpoint específico de verificação de token (explícito para clareza)
-  `${API_PREFIX}/auth/check-token`,
-  // Rotas específicas de bancos (listar todos)
-  `${API_PREFIX}/banks`,
-  // Rotas de saúde da API
-  `${API_PREFIX}/health`,
-  // Webhook de pagamentos
-  `${API_PREFIX}/payments/webhook`,
-  // Rota principal para verificação
-  '/'
-];
-
-// Adicionar versões simplificadas das rotas (sem o prefixo API) para roteamento flexível
-if (API_PREFIX) {
-  publicPaths.push('/auth', '/health', '/banks', '/auth/check-token', '/payments/webhook');
-}
-
-console.log('Rotas públicas configuradas:', publicPaths);
-
-// Middleware para verificar autenticação apenas nas rotas protegidas
-app.use((req, res, next) => {
-  // Endpoints de saúde e status são sempre acessíveis diretamente
-  if (req.path === '/health' || req.path === '/status' || 
-     req.path === `${API_PREFIX}/health` || req.path === `${API_PREFIX}/health/status`) {
-    return next();
-  }
-
-  console.log(`🔍 Verificando autenticação para rota: ${req.path}`);
-  console.log(`   Método: ${req.method}`);
-  console.log(`   URL completa: ${req.originalUrl}`);
-
-  // Extrair o token para fins de diagnóstico
-  const authHeader = req.headers.authorization;
-  if (authHeader) {
-    console.log(`   Token presente no header: ${authHeader.substring(0, 15)}...`);
-  } else {
-    console.log(`   Sem token no header de autorização`);
-  }
-
-  // Verificação simples da rota para casos comuns
-  if (req.path === '/health' || req.path === `${API_PREFIX}/health` || 
-      req.path === '/auth' || req.path.startsWith('/auth/') || 
-      req.path === `${API_PREFIX}/auth` || req.path.startsWith(`${API_PREFIX}/auth/`)) {
-    console.log(`   🔓 Rota pública comum detectada: ${req.path}`);
-    return next();
-  }
-  
-  // Verificação de rota para endpoints de banco
-  if ((req.path === '/banks' || req.path === `${API_PREFIX}/banks`) && 
-      req.method === 'GET') {
-    console.log(`   🔓 Rota pública de banco detectada: ${req.path}`);
-    return next();
-  }
-
-  // Função para verificar se um caminho começa com alguma das rotas públicas
-  const isPublicPath = (path) => {
-    for (const publicPath of publicPaths) {
-      if (path === publicPath || path.startsWith(`${publicPath}/`)) {
-        console.log(`   ✅ Rota pública encontrada: ${path} corresponde a ${publicPath}`);
-        return true;
-      }
-    }
-    console.log(`   ❌ Nenhuma rota pública correspondente para: ${path}`);
-    return false;
-  };
-
-  // Verificações adicionais para caminhos de autenticação 
-  const isAuthPath = req.path.startsWith(`${API_PREFIX}/auth`) || req.path.startsWith('/auth');
-  if (isAuthPath) {
-    console.log(`   🔑 Rota de autenticação detectada: ${req.path}`);
-  }
-
-  // Verifica condições para rotas públicas
-  const isBankPublicPath = (req.path.includes('/banks') || req.path.includes(`${API_PREFIX}/banks`)) && 
-                          !req.path.includes('/banks/favorites') && 
-                          !req.path.includes('/banks/users') &&
-                          !req.path.includes(`${API_PREFIX}/banks/favorites`) && 
-                          !req.path.includes(`${API_PREFIX}/banks/users`);
-  
-  if (isBankPublicPath) {
-    console.log(`   💰 Rota pública de banco detectada: ${req.path}`);
-  }
-
-  // Verifica se a rota é pública
-  if (isPublicPath(req.path) || isBankPublicPath || isAuthPath || req.path === '/' || req.path === '/status') {
-    console.log(`   🔓 ROTA PÚBLICA DETECTADA: ${req.path} - Pulando autenticação`);
-    return next();
-  }
-  
-  console.log(`   🔒 Aplicando autenticação para rota protegida: ${req.path}`);
-  // Se não for rota pública, aplica middleware de autenticação
-  verifyToken(req, res, next);
-});
-
-// Middleware para injetar contexto nos models
-app.use(injectModelContext);
-
-// Middleware para mascarar dados sensíveis
-app.use(maskSensitiveData);
-
-// Middleware para logs de auditoria
-app.use(auditLogMiddleware);
 
 // Middleware para injetar o parâmetro include_all_recurring nas requisições de despesas e receitas
 app.use(`${API_PREFIX}/expenses`, (req, res, next) => {
@@ -321,7 +114,7 @@ app.use(`${API_PREFIX}/users`, userRoutes);
 app.use(`${API_PREFIX}/telegram`, telegramRoutes);
 app.use(`${API_PREFIX}/health`, healthRoutes);
 app.use(`${API_PREFIX}/payments`, paymentRoutes);
-app.use(`${API_PREFIX}/user-data`, userDataRoutes);
+
 
 let server;
 
@@ -393,39 +186,23 @@ const gracefulShutdown = (server) => {
 
 const startServer = async () => {
   try {
-    // Tentar sincronizar o banco de dados, mas não bloquear o servidor se falhar
-    try {
-      console.log('🔄 Tentando sincronizar o banco de dados...');
-      // Sincronizar banco de dados na ordem correta
-      await sequelize.sync({ force: false });
-      
-      // Criar tabelas na ordem correta
-      await models.User.sync({ force: false });
-      await models.Category.sync({ force: false });
-      await models.Bank.sync({ force: false });
-      await models.Expense.sync({ force: false });
-      await models.Income.sync({ force: false });
-      await models.Budget.sync({ force: false });
-      await models.VerificationCode.sync({ force: false });
-      await models.UserBank.sync({ force: false });
-      await models.RecurrenceRule.sync({ force: false });
-      await models.ExpensesRecurrenceException.sync({ force: false });
-      await models.IncomesRecurrenceException.sync({ force: false });
-      await models.Payment.sync({ force: false });
-      await models.FinancialGoal.sync({ force: false });
-      await models.AuditLog.sync({ force: false });
-      
-      console.log('✅ Banco de dados sincronizado com sucesso!');
-    } catch (dbError) {
-      console.error('⚠️ Erro ao sincronizar banco de dados:', dbError.message);
-      console.log('⚠️ O servidor continuará inicializando sem sincronização do banco');
-      
-      if (process.env.NODE_ENV === 'production') {
-        console.error('⚠️ Como estamos em produção, isso pode causar problemas. Verifique a conexão com o banco de dados.');
-      } else {
-        console.log('🔧 Como estamos em ambiente de desenvolvimento, o servidor continuará com funcionalidade limitada.');
-      }
-    }
+    // Sincronizar banco de dados na ordem correta
+    await sequelize.sync({ force: false });
+    
+    // Criar tabelas na ordem correta
+    await User.sync({ force: false });
+    await Category.sync({ force: false });
+    await Bank.sync({ force: false });
+    await Expense.sync({ force: false });
+    await Income.sync({ force: false });
+    await Budget.sync({ force: false });
+    await VerificationCode.sync({ force: false });
+    await UserBank.sync({ force: false });
+    await RecurrenceRule.sync({ force: false });
+    await ExpensesRecurrenceException.sync({ force: false });
+    await IncomesRecurrenceException.sync({ force: false });
+    await Payment.sync({ force: false });
+    await FinancialGoal.sync({ force: false });
 
     // Verificar se a porta está em uso
     const checkPort = () => {
@@ -446,66 +223,35 @@ const startServer = async () => {
       });
     };
 
-    try {
-      await checkPort();
-    } catch (portError) {
-      console.error('❌ Erro ao verificar porta:', portError);
-      throw portError;
-    }
+    await checkPort();
 
     // Inicializar o servidor apenas uma vez
-    let serverConfig = {};
-    
     if (process.env.NODE_ENV === 'production') {
-      try {
-        const privateKey = readFileSync(
-          '/etc/letsencrypt/live/planejadordasgalaxias.com.br/privkey.pem',
-          'utf8'
-        );
-        const certificate = readFileSync(
-          '/etc/letsencrypt/live/planejadordasgalaxias.com.br/cert.pem',
-          'utf8'
-        );
-        const ca = readFileSync(
-          '/etc/letsencrypt/live/planejadordasgalaxias.com.br/chain.pem',
-          'utf8'
-        );
+      const privateKey = readFileSync(
+        '/etc/letsencrypt/live/planejadordasgalaxias.com.br/privkey.pem',
+        'utf8'
+      );
+      const certificate = readFileSync(
+        '/etc/letsencrypt/live/planejadordasgalaxias.com.br/cert.pem',
+        'utf8'
+      );
+      const ca = readFileSync(
+        '/etc/letsencrypt/live/planejadordasgalaxias.com.br/chain.pem',
+        'utf8'
+      );
 
-        serverConfig = { key: privateKey, cert: certificate, ca: ca };
-        server = https.createServer(serverConfig, app);
-      } catch (sslError) {
-        console.error('❌ Erro ao carregar certificados SSL:', sslError.message);
-        console.log('⚠️ Iniciando em HTTP mesmo em produção devido ao erro nos certificados');
-        server = http.createServer(app);
-      }
+      const credentials = { key: privateKey, cert: certificate, ca: ca };
+      server = https.createServer(credentials, app);
     } else {
       server = http.createServer(app);
     }
 
-    // Configurar timeout para o servidor
-    server.timeout = 60000; // 60 segundos
-    server.keepAliveTimeout = 65000; // Recomendado: um pouco mais que o timeout
-
-    // Iniciar o servidor
     server.listen(5000, process.env.NODE_ENV === 'production' ? '0.0.0.0' : undefined, () => {
-      const serverType = process.env.NODE_ENV === 'production' && serverConfig.key ? 'HTTPS' : 'HTTP';
-      console.log(`🚀 Servidor ${serverType} rodando na porta 5000 em modo ${process.env.NODE_ENV || 'desenvolvimento'}`);
-    });
-
-    // Evento para tratamento de erros do servidor
-    server.on('error', (err) => {
-      console.error('Erro no servidor:', err);
-      if (err.code === 'EADDRINUSE') {
-        console.error('A porta 5000 está em uso. Tentando fechar o servidor...');
-        setTimeout(() => {
-          server.close();
-          process.exit(1);
-        }, 1000);
-      }
+      console.log(`🚀 Servidor ${process.env.NODE_ENV === 'production' ? 'HTTPS' : 'HTTP'} rodando na porta 5000 em modo ${process.env.NODE_ENV || 'desenvolvimento'}`);
     });
 
   } catch (error) {
-    console.error('Erro fatal ao iniciar o servidor:', error);
+    console.error('Erro ao iniciar o servidor:', error);
     process.exit(1);
   }
 };
@@ -525,9 +271,8 @@ telegramService.init().then(() => {
   console.log('🤖 Verificação de inicialização do bot do Telegram concluída');
 }).catch(error => {
   console.error('❌ Erro durante a inicialização do bot do Telegram:', error);
-  console.log('O servidor continuará funcionando mesmo sem o bot do Telegram');
 });
 
 app.get('/', (req, res) => {
-  res.status(200).send('Backend está funcionando');
+  res.send('Backend está funcionando');
 });
