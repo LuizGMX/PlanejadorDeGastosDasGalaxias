@@ -1,6 +1,5 @@
 // models/index.js
-import { Sequelize } from 'sequelize';
-import dotenv from 'dotenv';
+import sequelize from '../config/db.js';
 import UserModel from './user.js';
 import CategoryModel from './category.js';
 import BankModel from './bank.js';
@@ -15,39 +14,6 @@ import IncomesRecurrenceExceptionModel from './incomesRecurrenceException.js';
 import PaymentModel from './payment.js';
 import FinancialGoalModel from './financialGoal.js';
 import AuditLogModel from './auditLog.js';
-
-// Configurações do banco de dados
-dotenv.config();
-const sequelize = new Sequelize(
-  process.env.DB_NAME || 'planejador',
-  process.env.DB_USER || 'root',
-  process.env.DB_PASSWORD || '',
-  {
-    host: process.env.DB_HOST || 'localhost',
-    dialect: 'mysql',
-    logging: console.log, // Ativado para debug
-    define: {
-      timestamps: true,
-      underscored: true,
-      charset: 'utf8mb4',
-      collate: 'utf8mb4_unicode_ci'
-    },
-    pool: {
-      max: 10, // Aumentado para 10 conexões
-      min: 0,
-      acquire: 60000, // 60 segundos
-      idle: 20000 // 20 segundos
-    },
-    dialectOptions: {
-      connectTimeout: 120000, // 120 segundos
-      statement_timeout: 120000,
-      idle_in_transaction_session_timeout: 120000
-    },
-    retry: {
-      max: 3 // Tentativas de reconexão
-    }
-  }
-);
 
 // Definição dos modelos
 const models = {
