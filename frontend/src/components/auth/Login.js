@@ -238,6 +238,13 @@ const Login = () => {
         console.log('REACT_APP_API_PREFIX:' + process.env.REACT_APP_API_PREFIX + ' REACT_APP_API_URL:' + process.env.REACT_APP_API_URL);
         
         try {
+          // Usar a URL correta considerando o ambiente de produção
+          const isProduction = window.location.hostname !== 'localhost';
+          const baseUrl = isProduction 
+            ? 'https://planejadordasgalaxias.com.br' 
+            : 'http://localhost:5000';
+          const apiPrefix = '/api';
+          
           // Usar URL fixa para testes
           const url = `http://localhost:5000/test-check-email`;
           console.log('URL de teste:', url);

@@ -87,7 +87,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Log de todas as requisições para depuração
 app.use((req, res, next) => {
-  console.log(`📥 [${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+  console.log(`📥 [${new Date().toISOString()}] ${req.method} ${req.path} (URL completa: ${req.originalUrl})`);
   console.log(`   Headers: ${JSON.stringify(req.headers)}`);
   if (req.body && Object.keys(req.body).length > 0) {
     console.log(`   Body: ${JSON.stringify(req.body)}`);
@@ -101,6 +101,33 @@ app.get('/health', (req, res) => {
     status: 'ok',
     timestamp: new Date().toISOString()
   });
+});
+
+// Endpoint explícito de teste de email diretamente na raiz
+app.post('/check-email-test', async (req, res) => {
+  console.log('===========================================');
+  console.log('ROTA DIRETA NA RAIZ: /check-email-test');
+  console.log('Timestamp:', new Date().toISOString());
+  console.log('Body recebido:', req.body);
+  
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      console.log('ERRO: Email não fornecido');
+      return res.status(400).json({ message: 'E-mail é obrigatório' });
+    }
+    
+    return res.json({
+      isNewUser: true,
+      name: null,
+      email: email,
+      message: 'Rota de teste na raiz funcionando!'
+    });
+  } catch (error) {
+    console.error('ERRO ao processar requisição de teste:', error);
+    return res.status(500).json({ message: 'Erro interno no servidor', error: error.message });
+  }
 });
 
 // Endpoint de status - sempre acessível sem autenticação
