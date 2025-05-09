@@ -73,6 +73,22 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Endpoint básico de verificação de saúde - sempre acessível sem autenticação
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Endpoint de status - sempre acessível sem autenticação
+app.get('/status', (req, res) => {
+  res.json({
+    status: 'online',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Aplicar rate limiting global
 app.use(configureRateLimit());
 
@@ -99,12 +115,24 @@ const publicPaths = [
   '/'
 ];
 
+// Adicionar versões simplificadas das rotas (sem o prefixo API) para roteamento flexível
+if (API_PREFIX) {
+  publicPaths.push('/auth', '/health', '/banks', '/auth/check-token', '/payments/webhook');
+}
+
+console.log('Rotas públicas configuradas:', publicPaths);
+
 // Middleware para verificar autenticação apenas nas rotas protegidas
 app.use((req, res, next) => {
+  // Endpoints de saúde e status são sempre acessíveis diretamente
+  if (req.path === '/health' || req.path === '/status' || 
+     req.path === `${API_PREFIX}/health` || req.path === `${API_PREFIX}/health/status`) {
+    return next();
+  }
+
   console.log(`🔍 Verificando autenticação para rota: ${req.path}`);
   console.log(`   Método: ${req.method}`);
   console.log(`   URL completa: ${req.originalUrl}`);
-  console.log(`   Verificando token para: ${req.path}`);
 
   // Extrair o token para fins de diagnóstico
   const authHeader = req.headers.authorization;
@@ -114,8 +142,20 @@ app.use((req, res, next) => {
     console.log(`   Sem token no header de autorização`);
   }
 
-  // Log das rotas públicas configuradas
-  console.log(`   Rotas públicas configuradas: ${JSON.stringify(publicPaths)}`);
+  // Verificação simples da rota para casos comuns
+  if (req.path === '/health' || req.path === `${API_PREFIX}/health` || 
+      req.path === '/auth' || req.path.startsWith('/auth/') || 
+      req.path === `${API_PREFIX}/auth` || req.path.startsWith(`${API_PREFIX}/auth/`)) {
+    console.log(`   🔓 Rota pública comum detectada: ${req.path}`);
+    return next();
+  }
+  
+  // Verificação de rota para endpoints de banco
+  if ((req.path === '/banks' || req.path === `${API_PREFIX}/banks`) && 
+      req.method === 'GET') {
+    console.log(`   🔓 Rota pública de banco detectada: ${req.path}`);
+    return next();
+  }
 
   // Função para verificar se um caminho começa com alguma das rotas públicas
   const isPublicPath = (path) => {
@@ -129,28 +169,25 @@ app.use((req, res, next) => {
     return false;
   };
 
-  // Verificações específicas para rotas de autenticação
-  if (req.path.includes('/auth/')) {
-    console.log(`   🔑 Rota de autenticação específica: ${req.path}`);
-  }
-
   // Verificações adicionais para caminhos de autenticação 
-  const isAuthPath = req.path.startsWith(`${API_PREFIX}/auth`);
+  const isAuthPath = req.path.startsWith(`${API_PREFIX}/auth`) || req.path.startsWith('/auth');
   if (isAuthPath) {
     console.log(`   🔑 Rota de autenticação detectada: ${req.path}`);
   }
 
   // Verifica condições para rotas públicas
-  const isBankPublicPath = req.path.includes('/banks') && 
+  const isBankPublicPath = (req.path.includes('/banks') || req.path.includes(`${API_PREFIX}/banks`)) && 
                           !req.path.includes('/banks/favorites') && 
-                          !req.path.includes('/banks/users');
+                          !req.path.includes('/banks/users') &&
+                          !req.path.includes(`${API_PREFIX}/banks/favorites`) && 
+                          !req.path.includes(`${API_PREFIX}/banks/users`);
   
   if (isBankPublicPath) {
     console.log(`   💰 Rota pública de banco detectada: ${req.path}`);
   }
 
   // Verifica se a rota é pública
-  if (isPublicPath(req.path) || isBankPublicPath || isAuthPath) {
+  if (isPublicPath(req.path) || isBankPublicPath || isAuthPath || req.path === '/' || req.path === '/status') {
     console.log(`   🔓 ROTA PÚBLICA DETECTADA: ${req.path} - Pulando autenticação`);
     return next();
   }
