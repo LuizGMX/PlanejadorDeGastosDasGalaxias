@@ -52,17 +52,28 @@ app.use(helmet({
   },
 }));
 
+// Configuração CORS mais permissiva
 app.use(
   cors({
-    // origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-    origin:  'http://localhost:3000',
+    // Permitir qualquer origem
+    origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Accept'],
     credentials: true
   })
 );
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({
+  limit: '50mb',
+  verify: (req, res, buf, encoding) => {
+    try {
+      JSON.parse(buf);
+    } catch (e) {
+      res.status(400).json({ message: 'Erro ao analisar JSON inválido' });
+      throw new Error('JSON inválido');
+    }
+  }
+}));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Aplicar rate limiting global
 app.use(configureRateLimit());
@@ -250,16 +261,6 @@ const startServer = async () => {
   }
 };
 
-process.on('uncaughtException', (error) => {
-  console.error('Erro não capturado:', error);
-  process.exit(1);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Promessa rejeitada não tratada:', reason);
-  process.exit(1);
-});
-
 // Inicializar o bot do Telegram
 telegramService.init().then(() => {
   console.log('🤖 Verificação de inicialização do bot do Telegram concluída');
@@ -267,6 +268,26 @@ telegramService.init().then(() => {
   console.error('❌ Erro durante a inicialização do bot do Telegram:', error);
 });
 
+// Rota básica para verificação de saúde do servidor
 app.get('/', (req, res) => {
   res.send('Backend está funcionando');
+});
+
+// Middleware de tratamento de erros (deve ser o último middleware)
+app.use((err, req, res, next) => {
+  console.error('Erro não tratado na aplicação:', err);
+  res.status(500).json({ message: 'Erro interno do servidor. Por favor, tente novamente mais tarde.' });
+});
+
+// Tratamento mais robusto de exceções não capturadas
+process.on('uncaughtException', (error) => {
+  console.error('Erro não capturado:', error);
+  // Não finalizamos o processo para manter o servidor rodando
+  // Apenas registramos o erro
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Promessa rejeitada não tratada:', reason);
+  // Não finalizamos o processo para manter o servidor rodando
+  // Apenas registramos o erro
 });
