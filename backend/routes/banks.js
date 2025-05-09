@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { Bank, UserBank } from '../models/index.js';
+import db, { Bank, UserBank } from '../models/index.js';
 import { authenticate } from '../middleware/auth.js';
 import { checkSubscription } from '../middleware/subscriptionCheck.js';
 

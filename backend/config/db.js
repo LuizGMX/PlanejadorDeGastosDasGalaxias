@@ -98,15 +98,14 @@ const monitorDatabaseConnection = () => {
 // Iniciar monitoramento de conexão
 monitorDatabaseConnection();
 
-// Função para sincronizar o banco de dados
+// Redirecionamento para a instância compartilhada de Sequelize
+import db, { sequelize, models } from '../models/index.js';
+
+// Função para sincronizar o banco de dados usando a instância compartilhada
 export const syncDatabase = async () => {
   try {
-    // Sincronizar banco de dados na ordem correta
+    // Sincronizar banco de dados
     await sequelize.sync({ force: false });
-    
-    // Agora que todos os modelos são gerenciados no models/index.js, não precisamos
-    // sincronizar individualmente aqui
-    
     console.log('✅ Banco de dados sincronizado com sucesso!');
   } catch (error) {
     console.error('❌ Erro ao sincronizar o banco de dados:', error);
@@ -131,4 +130,5 @@ export const testConnection = async () => {
   }
 };
 
+// Re-exportar sequelize para compatibilidade
 export default sequelize;
