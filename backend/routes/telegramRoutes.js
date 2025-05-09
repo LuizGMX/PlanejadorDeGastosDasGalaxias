@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { User, VerificationCode } from '../models/index.js';
+import { models } from '../models/index.js';
+const { User, VerificationCode } = models;
 import { telegramService } from '../services/telegramService.js';
 import { sendVerificationEmail } from '../services/emailService.js';
 import { authenticate } from './auth.js';

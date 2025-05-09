@@ -18,7 +18,7 @@ import userRoutes from './routes/users.js';
 import telegramRoutes from './routes/telegramRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import userDataRoutes from './routes/userData.js';
-import { sequelize, User, Category, Bank, Expense, Income, Budget, VerificationCode, UserBank, RecurrenceRule, ExpensesRecurrenceException, IncomesRecurrenceException, Payment, FinancialGoal, AuditLog } from './models/index.js';
+import { sequelize, models } from './models/index.js';
 import seedDatabase from './database/seeds/index.js';
 import { telegramService } from './services/telegramService.js';
 import { maskSensitiveData } from './middleware/dataMasking.js';
@@ -207,20 +207,20 @@ const startServer = async () => {
     await sequelize.sync({ force: false });
     
     // Criar tabelas na ordem correta
-    await User.sync({ force: false });
-    await Category.sync({ force: false });
-    await Bank.sync({ force: false });
-    await Expense.sync({ force: false });
-    await Income.sync({ force: false });
-    await Budget.sync({ force: false });
-    await VerificationCode.sync({ force: false });
-    await UserBank.sync({ force: false });
-    await RecurrenceRule.sync({ force: false });
-    await ExpensesRecurrenceException.sync({ force: false });
-    await IncomesRecurrenceException.sync({ force: false });
-    await Payment.sync({ force: false });
-    await FinancialGoal.sync({ force: false });
-    await AuditLog.sync({ force: false });
+    await models.User.sync({ force: false });
+    await models.Category.sync({ force: false });
+    await models.Bank.sync({ force: false });
+    await models.Expense.sync({ force: false });
+    await models.Income.sync({ force: false });
+    await models.Budget.sync({ force: false });
+    await models.VerificationCode.sync({ force: false });
+    await models.UserBank.sync({ force: false });
+    await models.RecurrenceRule.sync({ force: false });
+    await models.ExpensesRecurrenceException.sync({ force: false });
+    await models.IncomesRecurrenceException.sync({ force: false });
+    await models.Payment.sync({ force: false });
+    await models.FinancialGoal.sync({ force: false });
+    await models.AuditLog.sync({ force: false });
 
     // Verificar se a porta está em uso
     const checkPort = () => {

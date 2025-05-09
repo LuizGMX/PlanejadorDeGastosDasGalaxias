@@ -1,4 +1,4 @@
-import { sequelize } from '../models/index.js';
+import { sequelize, models } from '../models/index.js';
 import { encrypt } from '../utils/encryption.js';
 
 async function encryptExistingData() {

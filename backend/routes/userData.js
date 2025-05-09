@@ -1,9 +1,9 @@
-import express from 'express';
-import { sequelize } from '../models/index.js';
+import { Router } from 'express';
+import { sequelize, models } from '../models/index.js';
 import { auditLogMiddleware } from '../middleware/auditLog.js';
 import { maskSensitiveData } from '../middleware/dataMasking.js';
 
-const router = express.Router();
+const router = Router();
 
 // Exportar dados pessoais
 router.get('/export', maskSensitiveData, auditLogMiddleware('EXPORT_PERSONAL_DATA'), async (req, res) => {

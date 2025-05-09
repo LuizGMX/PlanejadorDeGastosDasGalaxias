@@ -1,4 +1,4 @@
-import { sequelize } from '../models/index.js';
+import { sequelize, models } from '../models/index.js';
 
 const createAuditLog = async (req, action, details) => {
   try {

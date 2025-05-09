@@ -1,6 +1,6 @@
 import express from 'express';
 import os from 'os';
-import { sequelize } from '../models/index.js';
+import { sequelize, models } from '../models/index.js';
 import seedDatabase from '../database/seeds/index.js';
 
 const router = express.Router();

@@ -1,11 +1,12 @@
 import express from 'express';
-import { Expense, Category, Bank, ExpensesRecurrenceException } from '../models/index.js';
+import { Router } from 'express';
+import { models } from '../models/index.js';
+const { Expense, Category, Bank, ExpensesRecurrenceException } = models;
 import { authenticate } from '../middleware/auth.js';
 import { v4 as uuidv4 } from 'uuid';
 import { Op } from 'sequelize';
 import { Sequelize } from 'sequelize';
 import { literal } from 'sequelize';
-import { Router } from 'express';
 import sequelize from '../config/db.js';
 import checkSubscription from '../middleware/subscriptionCheck.js';
 import { calculateRecurringOccurrences, getNextRecurringDate } from '../utils/recurrenceUtils.js';

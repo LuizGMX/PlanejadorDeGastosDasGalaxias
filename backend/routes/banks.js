@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { Bank, UserBank } from '../models/index.js';
+import { models } from '../models/index.js';
+const { Bank, UserBank } = models;
 import { authenticate } from '../middleware/auth.js';
 import { checkSubscription } from '../middleware/subscriptionCheck.js';
 

@@ -1,6 +1,6 @@
-import express from 'express';
 import { Router } from 'express';
-import { Income, Category, Bank, IncomesRecurrenceException } from '../models/index.js';
+import { models } from '../models/index.js';
+const { Income, Category, Bank, IncomesRecurrenceException } = models;
 import { v4 as uuidv4 } from 'uuid';
 import { Op, Sequelize, literal } from 'sequelize';
 import { authenticate } from '../middleware/auth.js';

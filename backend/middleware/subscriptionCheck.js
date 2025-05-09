@@ -1,4 +1,5 @@
-import { Payment } from '../models/index.js';
+import { models } from '../models/index.js';
+const { Payment } = models;
 import { Op } from 'sequelize';
 import sequelize from '../config/db.js';
 
