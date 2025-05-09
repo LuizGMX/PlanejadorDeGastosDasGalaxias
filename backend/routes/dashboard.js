@@ -1,8 +1,7 @@
 import { Sequelize } from 'sequelize';
 import express from 'express';
-
-const {models} = import('../models/index.js');
-const {Expense, Income, Category, Bank, Budget, User, ExpensesRecurrenceException, IncomesRecurrenceException, FinancialGoal} = models;
+import { models } from '../models/index.js';
+const { Expense, Income, Category, Bank, Budget, User, ExpensesRecurrenceException, IncomesRecurrenceException, FinancialGoal } = models;
 
 import { Op } from 'sequelize';
 import { authenticate } from '../middleware/auth.js';
