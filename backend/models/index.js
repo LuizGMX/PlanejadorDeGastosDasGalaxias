@@ -1,51 +1,5 @@
-// models/index.js - Uma abordagem mais tradicional e direta
-import { Sequelize } from 'sequelize';
-import dotenv from 'dotenv';
-import path from 'path';
-import fs from 'fs';
-
-// Carregar variáveis de ambiente
-dotenv.config();
-
-// Criar instância do Sequelize diretamente aqui
-const dbSequelize = new Sequelize(
-  process.env.DB_NAME || 'planejador',
-  process.env.DB_USER || 'root',
-  process.env.DB_PASSWORD || '',
-  {
-    host: process.env.DB_HOST || 'localhost',
-    dialect: 'mysql',
-    logging: process.env.NODE_ENV === 'production' ? false : console.log,
-    define: {
-      charset: 'utf8mb4',
-      collate: 'utf8mb4_unicode_ci',
-      timestamps: true
-    },
-    pool: {
-      max: 20,
-      min: 5,
-      acquire: 60000,
-      idle: 10000
-    }
-  }
-);
-
-// Objeto que vai armazenar todos os modelos
-const db = {};
-
-// Importar todos os modelos dinamicamente
-fs.readdirSync(__dirname)
-  .filter(file => 
-    file.indexOf('.') !== 0 && 
-    file !== 'index.js' && 
-    file.slice(-3) === '.js'
-  )
-  .forEach(file => {
-    // Usar require.default ou import dinâmico não funcionaria
-    // Então, vamos importar os principais modelos manualmente
-  });
-
-// Importações manuais
+// models/index.js - Definição e associação dos modelos
+import sequelize from '../config/db.js';
 import UserModel from './user.js';
 import CategoryModel from './category.js';
 import BankModel from './bank.js';
@@ -61,23 +15,29 @@ import PaymentModel from './payment.js';
 import FinancialGoalModel from './financialGoal.js';
 import AuditLogModel from './auditLog.js';
 
-// Inicializar modelos manualmente
-db.User = UserModel(dbSequelize);
-db.Category = CategoryModel(dbSequelize);
-db.Bank = BankModel(dbSequelize);
-db.Expense = ExpenseModel(dbSequelize);
-db.Income = IncomeModel(dbSequelize);
-db.Budget = BudgetModel(dbSequelize);
-db.VerificationCode = VerificationCodeModel(dbSequelize);
-db.UserBank = UserBankModel(dbSequelize);
-db.RecurrenceRule = RecurrenceRuleModel(dbSequelize);
-db.ExpensesRecurrenceException = ExpensesRecurrenceExceptionModel(dbSequelize);
-db.IncomesRecurrenceException = IncomesRecurrenceExceptionModel(dbSequelize);
-db.Payment = PaymentModel(dbSequelize);
-db.FinancialGoal = FinancialGoalModel(dbSequelize);
-db.AuditLog = AuditLogModel(dbSequelize);
+// Objeto para armazenar todos os modelos
+const db = {};
 
-// Realizar as associações
+// Inicializar modelos
+db.User = UserModel(sequelize);
+db.Category = CategoryModel(sequelize);
+db.Bank = BankModel(sequelize);
+db.Expense = ExpenseModel(sequelize);
+db.Income = IncomeModel(sequelize);
+db.Budget = BudgetModel(sequelize);
+db.VerificationCode = VerificationCodeModel(sequelize);
+db.UserBank = UserBankModel(sequelize);
+db.RecurrenceRule = RecurrenceRuleModel(sequelize);
+db.ExpensesRecurrenceException = ExpensesRecurrenceExceptionModel(sequelize);
+db.IncomesRecurrenceException = IncomesRecurrenceExceptionModel(sequelize);
+db.Payment = PaymentModel(sequelize);
+db.FinancialGoal = FinancialGoalModel(sequelize);
+db.AuditLog = AuditLogModel(sequelize);
+
+// Guardar a instância do Sequelize no objeto db
+db.sequelize = sequelize;
+
+// Configurar as associações entre os modelos
 // User-Expense
 db.User.hasMany(db.Expense, {
   foreignKey: 'user_id',
@@ -292,13 +252,10 @@ db.FinancialGoal.belongsTo(db.User, {
   as: 'user'
 });
 
-// Adicionar o Sequelize ao objeto db
-db.sequelize = dbSequelize;
-db.Sequelize = Sequelize;
-
-// Exportar como default e também nomear exports
+// Exportações
 export default db;
 export const models = db;
+export { sequelize }; // Exportar o sequelize diretamente
 export const { 
   User, 
   Category, 
@@ -315,4 +272,3 @@ export const {
   FinancialGoal, 
   AuditLog 
 } = db;
-export const sequelize = dbSequelize;
