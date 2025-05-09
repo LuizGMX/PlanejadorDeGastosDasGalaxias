@@ -81,7 +81,6 @@ export const authenticate = async (req, res, next) => {
     console.log(`FINALIZANDO ${process.env.API_PREFIX}/auth/authenticate middleware`);
   }
 };
-
 // Rotas
 router.post('/check-email', async (req, res) => {
   console.log('===========================================');
