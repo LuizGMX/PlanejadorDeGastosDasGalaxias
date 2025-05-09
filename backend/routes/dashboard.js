@@ -1,7 +1,7 @@
 import { Sequelize } from 'sequelize';
 import express from 'express';
 
-const {models} = require('../models/index.js');
+const {models} = import('../models/index.js');
 const {Expense, Income, Category, Bank, Budget, User, ExpensesRecurrenceException, IncomesRecurrenceException, FinancialGoal} = models;
 
 import { Op } from 'sequelize';
