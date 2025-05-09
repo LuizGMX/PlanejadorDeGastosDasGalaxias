@@ -1,7 +1,6 @@
 const https = require("https");
 const fs = require("fs");
 const express = require("express");
-const bodyParser = require("body-parser");
 const { exec } = require("child_process");
 const app = express();
 const PORT = 9000;
@@ -15,7 +14,7 @@ const options = {
 };
 
 // Middleware para processar o corpo do JSON
-app.use(bodyParser.json());
+app.use(express.json());
 
 // Rota do webhook
 app.post("/github-webhook", (req, res) => {
