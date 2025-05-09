@@ -89,10 +89,24 @@ export const authenticate = async (req, res, next) => {
 // Rotas
 router.post('/check-email', async (req, res) => {
   console.log('===========================================');
-  console.log('INICIANDO /${process.env.API_PREFIX}/auth/check-email');
+  console.log('INICIANDO /auth/check-email');
   console.log('Timestamp:', new Date().toISOString());
-  console.log('Cabeçalhos:', JSON.stringify(req.headers));
-  console.log('Body completo:', JSON.stringify(req.body));
+  
+  // Configurar um timeout para a requisição caso fique presa
+  const timeoutDuration = 10000; // 10 segundos
+  let hasResponded = false;
+  
+  const requestTimeout = setTimeout(() => {
+    if (!hasResponded) {
+      console.log('TIMEOUT: A requisição check-email demorou demais para responder');
+      hasResponded = true;
+      return res.status(200).json({
+        isNewUser: false,
+        timeout: true,
+        message: 'A verificação de email demorou muito tempo. Por favor, tente novamente.'
+      });
+    }
+  }, timeoutDuration);
   
   try {
     const { email } = req.body;
@@ -100,12 +114,16 @@ router.post('/check-email', async (req, res) => {
     
     if (!email) {
       console.log('ERRO: Email não fornecido');
+      clearTimeout(requestTimeout);
+      hasResponded = true;
       return res.status(400).json({ message: 'E-mail é obrigatório' });
     }
     
     // Verifica se o email é válido
     if (!/^\S+@\S+\.\S+$/.test(email)) {
       console.log('ERRO: Email inválido:', email);
+      clearTimeout(requestTimeout);
+      hasResponded = true;
       return res.status(400).json({ message: 'E-mail inválido' });
     }
     
@@ -137,16 +155,15 @@ router.post('/check-email', async (req, res) => {
           expires_at: new Date(Date.now() + 10 * 60 * 1000)
         });
 
-        console.log('Enviando email...');
-        try {
-          await sendVerificationEmail(email, code);
-          console.log('Email enviado com sucesso');
-        } catch (emailError) {
-          console.error('ERRO ao enviar email:', emailError);
-          console.error('Stack trace do erro de email:', emailError.stack);
-        }
+        // Enviar email em background e não esperar pela conclusão
+        console.log('Enviando email em segundo plano...');
+        sendVerificationEmail(email, code).catch(emailError => {
+          console.error('ERRO ao enviar email (não bloqueante):', emailError);
+        });
 
         console.log('Retornando resposta de sucesso para usuário existente');
+        clearTimeout(requestTimeout);
+        hasResponded = true;
         return res.json({
           isNewUser: false,
           name: user.name,
@@ -156,12 +173,16 @@ router.post('/check-email', async (req, res) => {
       } catch (userExistsError) {
         console.error('ERRO no fluxo de usuário existente:', userExistsError);
         console.error('Stack trace:', userExistsError.stack);
+        clearTimeout(requestTimeout);
+        hasResponded = true;
         return res.status(500).json({ message: 'Erro interno ao processar usuário existente' });
       }
     }
     
     // Se não existir, retorna que é um novo usuário
     console.log('Retornando resposta para novo usuário');
+    clearTimeout(requestTimeout);
+    hasResponded = true;
     return res.json({
       isNewUser: true,
       name: null,
@@ -172,15 +193,40 @@ router.post('/check-email', async (req, res) => {
     console.error('Stack trace completo:', error.stack);
     console.error('Tipo de erro:', error.name);
     console.error('Mensagem de erro:', error.message);
-    return res.status(500).json({ message: 'Erro interno ao verificar email', error: error.message });
+    
+    if (!hasResponded) {
+      clearTimeout(requestTimeout);
+      hasResponded = true;
+      return res.status(500).json({ message: 'Erro interno ao verificar email', error: error.message });
+    }
   } finally {
-    console.log('FINALIZANDO /${process.env.API_PREFIX}/auth/check-email');
+    // Garantir que o timeout seja limpo caso a função saia antes
+    clearTimeout(requestTimeout);
+    console.log('FINALIZANDO /auth/check-email');
     console.log('===========================================');
   }
 });
 
 router.post('/send-code', async (req, res) => {
-  console.log('/${process.env.API_PREFIX}/auth/send-code chamado');
+  console.log('===========================================');
+  console.log('INICIANDO /auth/send-code');
+  console.log('Timestamp:', new Date().toISOString());
+  
+  // Configurar um timeout para a requisição caso fique presa
+  const timeoutDuration = 10000; // 10 segundos
+  let hasResponded = false;
+  
+  const requestTimeout = setTimeout(() => {
+    if (!hasResponded) {
+      console.log('TIMEOUT: A requisição send-code demorou demais para responder');
+      hasResponded = true;
+      return res.status(200).json({
+        timeout: true,
+        message: 'O envio do código demorou muito tempo. Por favor, tente novamente.'
+      });
+    }
+  }, timeoutDuration);
+  
   try {
     const { 
       email, 
@@ -206,11 +252,15 @@ router.post('/send-code', async (req, res) => {
 
     // Validação básica do email
     if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+      clearTimeout(requestTimeout);
+      hasResponded = true;
       return res.status(400).json({ message: 'E-mail inválido' });
     }
 
     // Se for novo usuário, valida os dados necessários
     if (isNewUser && (!name || !financialGoalName || !financialGoalAmount || !financialGoalPeriodType || !financialGoalPeriodValue)) {
+      clearTimeout(requestTimeout);
+      hasResponded = true;
       return res.status(400).json({ message: 'Todos os dados são obrigatórios para novos usuários' });
     }
 
@@ -239,19 +289,28 @@ router.post('/send-code', async (req, res) => {
       expires_at: new Date(Date.now() + 10 * 60 * 1000) // 10 minutos
     });
 
-    // Envia o email
-    try {
-      await sendVerificationEmail(email, code);
-      console.log('Email enviado com sucesso');
-    } catch (emailError) {
-      console.error('Erro ao enviar email:', emailError);
-      throw new Error('Falha ao enviar email de verificação');
-    }
+    // Enviar email em background e não esperar pela conclusão
+    console.log('Enviando email em segundo plano...');
+    sendVerificationEmail(email, code).catch(emailError => {
+      console.error('ERRO ao enviar email (não bloqueante):', emailError);
+    });
 
+    clearTimeout(requestTimeout);
+    hasResponded = true;
     return res.json({ message: 'Código enviado com sucesso!' });
   } catch (error) {
     console.error('Erro ao enviar código:', error);
-    return res.status(500).json({ message: error.message || 'Erro interno ao enviar código' });
+    
+    if (!hasResponded) {
+      clearTimeout(requestTimeout);
+      hasResponded = true;
+      return res.status(500).json({ message: error.message || 'Erro interno ao enviar código' });
+    }
+  } finally {
+    // Garantir que o timeout seja limpo caso a função saia antes
+    clearTimeout(requestTimeout);
+    console.log('FINALIZANDO /auth/send-code');
+    console.log('===========================================');
   }
 });
 
