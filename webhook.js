@@ -13,46 +13,64 @@ const options = {
     ca: fs.readFileSync(`/etc/letsencrypt/live/${domain}/fullchain.pem`), // Cadeia de certificação
 };
 
-// Middleware para processar o corpo do JSON
-app.use(express.json());
+// Removendo o middleware de processamento JSON global
+// app.use(express.json());
 
-// Rota do webhook
+// Rota do webhook - processando o JSON manualmente
 app.post("/github-webhook", (req, res) => {
-    if (req.headers['x-github-event'] === 'push') {
-        console.log("Evento push recebido!");
+    // Processamos o corpo da requisição manualmente
+    let data = '';
+    
+    req.on('data', chunk => {
+        data += chunk;
+    });
+    
+    req.on('end', () => {
+        // Processamento só ocorre quando todos os dados foram recebidos
+        try {
+            // Tentar fazer parse do JSON, mas não é necessário para este webhook
+            // const payload = JSON.parse(data);
+            
+            // Verificamos o header diretamente
+            if (req.headers['x-github-event'] === 'push') {
+                console.log("Evento push recebido!");
 
-        console.log(`executando comando: cd /var/www/pgg/frontend && pnpm i && export $(grep -v '^#' .env | xargs) && pnpm build`)
-
-        exec(
-            `git pull && cd /var/www/pgg/frontend && pnpm i && export $(grep -v '^#' .env | xargs) && pnpm build`,
-            (err, stdout, stderr) => {
-                if (err) {
-                    console.error(`Erro no frontend: ${stderr}`);
-                    return;
-                }
-                console.log(`Frontend: ${stdout}`);
-
-                console.log(`executando comando: cd /var/www/pgg/backend && pnpm i && pm2 restart backend-planejador`)
+                console.log(`executando comando: cd /var/www/pgg/frontend && pnpm i && export $(grep -v '^#' .env | xargs) && pnpm build`)
 
                 exec(
-                    `cd /var/www/pgg/backend && pnpm i && export $(grep -v '^#' .env | xargs) && pm2 restart backend-planejador`,
+                    `git pull && cd /var/www/pgg/frontend && pnpm i && export $(grep -v '^#' .env | xargs) && pnpm build`,
                     (err, stdout, stderr) => {
                         if (err) {
-                            console.error(`Erro no backend: ${stderr}`);
+                            console.error(`Erro no frontend: ${stderr}`);
                             return;
                         }
-                        console.log(`Backend: ${stdout}`);
-                        console.log("WEBHOOK FINALIZADO COM SUCESSO!!!!!");
+                        console.log(`Frontend: ${stdout}`);
+
+                        console.log(`executando comando: cd /var/www/pgg/backend && pnpm i && pm2 restart backend-planejador`)
+
+                        exec(
+                            `cd /var/www/pgg/backend && pnpm i && export $(grep -v '^#' .env | xargs) && pm2 restart backend-planejador`,
+                            (err, stdout, stderr) => {
+                                if (err) {
+                                    console.error(`Erro no backend: ${stderr}`);
+                                    return;
+                                }
+                                console.log(`Backend: ${stdout}`);
+                                console.log("WEBHOOK FINALIZADO COM SUCESSO!!!!!");
+                            }
+                        );
                     }
                 );
+                
+                res.status(200).send("Webhook de push recebido e processamento iniciado.");
+            } else {
+                res.status(200).send("Evento não é um push. Ignorando.");
             }
-        );
-
-        
-        res.status(200).send("Webhook de push recebido e processamento iniciado.");
-    } else {
-        res.status(200).send("Evento não é um push. Ignorando.");
-    }
+        } catch (error) {
+            console.error("Erro ao processar webhook:", error);
+            res.status(400).send("Erro ao processar webhook");
+        }
+    });
 });
 
 // Iniciar servidor HTTPS
