@@ -1,4 +1,5 @@
-import { hash } from '../utils/encryption.js';
+// Removendo a importação não utilizada
+// import { hash } from '../utils/encryption.js';
 
 const maskEmail = (email) => {
   if (!email) return null;

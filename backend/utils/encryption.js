@@ -60,4 +60,16 @@ export const clearDecryptCache = () => {
   decryptCache.clear();
 };
 
-export default { encrypt, decrypt, clearDecryptCache }; 
+// Função para gerar hash de texto
+export const hash = (text) => {
+  if (!text) return null;
+  
+  try {
+    return crypto.createHash('sha256').update(String(text)).digest('hex');
+  } catch (error) {
+    console.error('Erro ao gerar hash:', error);
+    return null;
+  }
+};
+
+export default { encrypt, decrypt, clearDecryptCache, hash }; 
