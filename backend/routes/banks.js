@@ -40,7 +40,7 @@ let banksCache = {
 setInterval(() => {
   banksCache.data = null;
   console.log('Cache de bancos limpo');
-}, 3600000); // Limpar a cada 1 hora
+}, 30 * 60 * 1000); // Limpar a cada 30 minutos
 
 // Cache para a rota de bancos ativos do usuário
 const usersBanksCache = new Map();
@@ -53,7 +53,7 @@ setInterval(() => {
   usersBanksCache.clear();
   favoritesBanksCache.clear();
   console.log('Cache de bancos do usuário limpo');
-}, 3600000);
+}, 15 * 60 * 1000); // Limpar a cada 15 minutos
 
 // Rota pública - Listar todos os bancos (sem autenticação)
 // Usada durante o cadastro de novos usuários
@@ -100,9 +100,11 @@ router.get('/', async (req, res) => {
     console.log('Listando todos os bancos (rota pública) - buscando do banco de dados');
 
     try {
-      // Usar query SQL direta com timeout
+      // Usar query SQL direta sem usar as funções de criptografia
       const result = await sequelize.query(`
-        SELECT id, name, code 
+        SELECT id, 
+               name AS encrypted_name, 
+               code AS encrypted_code 
         FROM banks 
         ORDER BY name ASC
         LIMIT 500
@@ -124,11 +126,11 @@ router.get('/', async (req, res) => {
         return res.json(defaultBanks);
       }
 
-      // Formatar os bancos (sem descriptografia para melhorar performance)
+      // Formatar os bancos sem tentar descriptografar
       const formattedBanks = result.map(bank => ({
         id: bank.id,
-        name: bank.name,
-        code: bank.code
+        name: bank.encrypted_name,
+        code: bank.encrypted_code
       }));
 
       // Atualizar o cache
@@ -200,9 +202,12 @@ router.get('/favorites', authenticate, checkSubscription, async (req, res) => {
     
     console.log(`Buscando bancos favoritos para o usuário ${userId}`);
     
-    // Usar query SQL direta para melhor performance
+    // Usar query SQL direta sem usar as funções de criptografia
     const result = await sequelize.query(`
-      SELECT ub.bank_id, ub.is_active, b.name, b.code
+      SELECT ub.bank_id, 
+             ub.is_active, 
+             b.name AS encrypted_name, 
+             b.code AS encrypted_code
       FROM user_banks AS ub
       JOIN banks AS b ON ub.bank_id = b.id
       WHERE ub.user_id = :userId AND ub.is_active = 1
@@ -220,8 +225,8 @@ router.get('/favorites', authenticate, checkSubscription, async (req, res) => {
     // Formatar os bancos com suas informações e status
     const banksWithStatus = result.map(userBank => ({
       id: userBank.bank_id,
-      name: userBank.name,
-      code: userBank.code,
+      name: userBank.encrypted_name,
+      code: userBank.encrypted_code,
       is_active: Boolean(userBank.is_active)
     }));
 
@@ -283,9 +288,11 @@ router.get('/users', authenticate, checkSubscription, async (req, res) => {
     
     console.log(`Buscando bancos ativos para o usuário ${userId}`);
     
-    // Usar query SQL direta para melhor performance
+    // Usar query SQL direta sem usar as funções de criptografia
     const result = await sequelize.query(`
-      SELECT b.id, b.name, b.code
+      SELECT b.id, 
+             b.name AS encrypted_name, 
+             b.code AS encrypted_code
       FROM user_banks AS ub
       JOIN banks AS b ON ub.bank_id = b.id
       WHERE ub.user_id = :userId AND ub.is_active = 1
@@ -303,8 +310,8 @@ router.get('/users', authenticate, checkSubscription, async (req, res) => {
     // Formatar os bancos
     const activeBanks = result.map(bank => ({
       id: bank.id,
-      name: bank.name,
-      code: bank.code
+      name: bank.encrypted_name,
+      code: bank.encrypted_code
     }));
 
     // Armazenar no cache
@@ -529,9 +536,11 @@ export default router;
     while (!success && attempts < maxAttempts) {
       attempts++;
       try {
-        // Usar query SQL direta com timeout
+        // Usar query SQL direta sem usar as funções de criptografia
         const result = await sequelize.query(`
-          SELECT id, name, code 
+          SELECT id, 
+                 name AS encrypted_name, 
+                 code AS encrypted_code 
           FROM banks 
           ORDER BY name ASC
           LIMIT 500
@@ -554,10 +563,11 @@ export default router;
           return;
         }
 
+        // Formatar os bancos sem tentar descriptografar
         const formattedBanks = result.map(bank => ({
           id: bank.id,
-          name: bank.name,
-          code: bank.code
+          name: bank.encrypted_name,
+          code: bank.encrypted_code
         }));
 
         banksCache.data = formattedBanks;

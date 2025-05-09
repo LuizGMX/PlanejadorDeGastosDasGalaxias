@@ -105,7 +105,8 @@ export const configureTimeouts = () => {
       '/auth/login',
       '/auth/register',
       '/auth/send-code',
-      '/auth/me'
+      '/auth/me',
+      '/banks'
     ];
     
     // Verificar se alguma das rotas prioritárias está incluída no caminho

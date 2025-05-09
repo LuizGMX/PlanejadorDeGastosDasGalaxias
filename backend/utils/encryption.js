@@ -9,7 +9,14 @@ const iv = process.env.ENCRYPTION_IV || '1234567890123456';
 
 // Cache para evitar descriptografia repetida
 const decryptCache = new Map();
-const CACHE_MAX_SIZE = 1000;
+const CACHE_MAX_SIZE = 500;
+
+// Limpar o cache a cada 15 minutos
+setInterval(() => {
+  const cacheSize = decryptCache.size;
+  decryptCache.clear();
+  console.log(`Cache de descriptografia limpo: ${cacheSize} entradas removidas`);
+}, 15 * 60 * 1000);
 
 // Função para encriptar dados
 export const encrypt = (text) => {
@@ -43,8 +50,11 @@ export const decrypt = (text) => {
     // Adicionar ao cache
     if (decryptCache.size >= CACHE_MAX_SIZE) {
       // Limpar o primeiro item se o cache estiver cheio
-      const firstKey = decryptCache.keys().next().value;
-      decryptCache.delete(firstKey);
+      // Pegar o primeiro item do iterador
+      const keys = Array.from(decryptCache.keys());
+      if (keys.length > 0) {
+        decryptCache.delete(keys[0]);
+      }
     }
     decryptCache.set(text, decrypted);
     
