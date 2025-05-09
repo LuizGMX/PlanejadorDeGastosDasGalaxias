@@ -20,23 +20,18 @@ setInterval(() => {
   console.log('Cache de bancos limpo');
 }, 3600000); // Limpar a cada 1 hora
 
-// Cache para a rota de bancos favoritos (por usuário)
-const favoritesBanksCache = new Map();
-
-// Função para limpar o cache de favoritos periodicamente
-setInterval(() => {
-  favoritesBanksCache.clear();
-  console.log('Cache de bancos favoritos limpo');
-}, 3600000); // Limpar a cada 1 hora
-
 // Cache para a rota de bancos ativos do usuário
 const usersBanksCache = new Map();
+
+// Cache para bancos favoritos do usuário
+const favoritesBanksCache = new Map();
 
 // Função para limpar o cache de bancos do usuário periodicamente
 setInterval(() => {
   usersBanksCache.clear();
+  favoritesBanksCache.clear();
   console.log('Cache de bancos do usuário limpo');
-}, 3600000); // Limpar a cada 1 hora
+}, 3600000);
 
 // Rota pública - Listar todos os bancos (sem autenticação)
 // Usada durante o cadastro de novos usuários
@@ -48,7 +43,7 @@ router.get('/', async (req, res) => {
       message: 'Tempo limite excedido ao listar bancos',
       timeout: true
     });
-  }, 8000); // 8 segundos de timeout
+  }, 15000); // Aumentado para 15 segundos de timeout
 
   try {
     // Verificar se temos um cache válido
@@ -61,6 +56,14 @@ router.get('/', async (req, res) => {
 
     // Se já está carregando, aguardar
     if (banksCache.isLoading) {
+      // Se estiver carregando, retornar o que temos no cache, mesmo que esteja expirado
+      // Isso evita sobrecarga no banco de dados
+      if (banksCache.data) {
+        clearTimeout(timeout);
+        console.log('Carregamento em andamento, retornando cache existente (mesmo que expirado)');
+        return res.json(banksCache.data);
+      }
+      
       clearTimeout(timeout);
       console.log('Carregamento de bancos em andamento, retornando resposta temporária');
       return res.status(202).json({ 
@@ -74,43 +77,60 @@ router.get('/', async (req, res) => {
     
     console.log('Listando todos os bancos (rota pública) - buscando do banco de dados');
 
-    // Usar query SQL direta para evitar a descriptografia automática do model
-    const [banks] = await sequelize.query(`
-      SELECT id, name, code 
-      FROM banks 
-      ORDER BY name ASC
-      LIMIT 500
-    `);
+    try {
+      // Usar query SQL direta para evitar a descriptografia automática do model
+      // Adicionado LIMIT e timeout para evitar problemas de performance
+      const [banks] = await sequelize.query(`
+        SELECT id, name, code 
+        FROM banks 
+        ORDER BY name ASC
+        LIMIT 500
+      `, {
+        type: sequelize.QueryTypes.SELECT,
+        timeout: 10000 // 10 segundos de timeout na query
+      });
 
-    // Descriptografar manualmente os dados necessários
-    // Como temos poucos bancos, isso deve ser rápido
-    const formattedBanks = banks.map(bank => ({
-      id: bank.id,
-      name: bank.name,
-      code: bank.code
-    }));
+      // Formatar os bancos (sem descriptografia para melhorar performance)
+      const formattedBanks = banks.map(bank => ({
+        id: bank.id,
+        name: bank.name,
+        code: bank.code
+      }));
 
-    // Atualizar o cache
-    banksCache.data = formattedBanks;
-    banksCache.timestamp = now;
-    banksCache.isLoading = false;
-    
-    // Cancelar o timeout pois a requisição foi bem-sucedida
-    clearTimeout(timeout);
-    
-    console.log(`Retornando ${formattedBanks.length} bancos`);
-    res.json(formattedBanks);
+      // Atualizar o cache
+      banksCache.data = formattedBanks;
+      banksCache.timestamp = now;
+      banksCache.isLoading = false;
+      
+      // Cancelar o timeout pois a requisição foi bem-sucedida
+      clearTimeout(timeout);
+      
+      return res.json(formattedBanks);
+    } catch (dbError) {
+      console.error('Erro ao consultar bancos no banco de dados:', dbError);
+      
+      // Se temos dados em cache, mesmo que expirados, usar para emergência
+      if (banksCache.data) {
+        console.log('Usando cache expirado devido a erro no banco de dados');
+        banksCache.isLoading = false;
+        clearTimeout(timeout);
+        return res.json(banksCache.data);
+      }
+      
+      // Caso contrário, propagar o erro
+      throw dbError;
+    }
   } catch (error) {
-    // Marcar que não estamos mais carregando
+    // Restaurar o estado do cache em caso de erro
     banksCache.isLoading = false;
-
-    // Cancelar o timeout em caso de erro
+    
+    // Cancelar o timeout manualmente
     clearTimeout(timeout);
     
     console.error('Erro ao listar bancos:', error);
-    res.status(500).json({ 
-      message: 'Erro ao listar bancos',
-      error: process.env.NODE_ENV === 'production' ? null : error.message 
+    return res.status(500).json({ 
+      message: 'Erro ao listar bancos', 
+      error: error.message 
     });
   }
 });
@@ -449,23 +469,55 @@ export default router;
 (async () => {
   try {
     console.log('Pré-carregando cache de bancos...');
-    const [banks] = await sequelize.query(`
-      SELECT id, name, code 
-      FROM banks 
-      ORDER BY name ASC
-      LIMIT 500
-    `);
+    
+    // Adicionar um contador de tentativas
+    let attempts = 0;
+    const maxAttempts = 5;
+    let success = false;
+    
+    while (!success && attempts < maxAttempts) {
+      attempts++;
+      try {
+        // Usar query SQL direta com timeout
+        const [banks] = await sequelize.query(`
+          SELECT id, name, code 
+          FROM banks 
+          ORDER BY name ASC
+          LIMIT 500
+        `, {
+          type: sequelize.QueryTypes.SELECT,
+          timeout: 10000 // 10 segundos de timeout
+        });
 
-    const formattedBanks = banks.map(bank => ({
-      id: bank.id,
-      name: bank.name,
-      code: bank.code
-    }));
+        const formattedBanks = banks.map(bank => ({
+          id: bank.id,
+          name: bank.name,
+          code: bank.code
+        }));
 
-    banksCache.data = formattedBanks;
-    banksCache.timestamp = Date.now();
-    console.log(`Cache de bancos pré-carregado com ${formattedBanks.length} bancos`);
+        banksCache.data = formattedBanks;
+        banksCache.timestamp = Date.now();
+        console.log(`✅ Cache de bancos pré-carregado com sucesso na tentativa #${attempts} com ${formattedBanks.length} bancos`);
+        success = true;
+      } catch (error) {
+        console.error(`❌ Erro ao pré-carregar cache de bancos na tentativa #${attempts}:`, error);
+        
+        // Aguardar antes da próxima tentativa (tempo exponencial)
+        if (attempts < maxAttempts) {
+          const waitTime = Math.pow(2, attempts) * 1000; // 2s, 4s, 8s, 16s
+          console.log(`Aguardando ${waitTime/1000}s antes da próxima tentativa...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+        }
+      }
+    }
+    
+    if (!success) {
+      console.error(`❌ Não foi possível pré-carregar o cache de bancos após ${maxAttempts} tentativas`);
+    }
   } catch (error) {
-    console.error('Erro ao pré-carregar cache de bancos:', error);
+    console.error('❌ Erro fatal ao pré-carregar cache de bancos:', error);
+  } finally {
+    // Garantir que a flag de carregamento seja desligada em qualquer caso
+    banksCache.isLoading = false;
   }
 })();
