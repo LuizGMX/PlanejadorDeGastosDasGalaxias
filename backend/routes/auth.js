@@ -885,4 +885,174 @@ router.get('/verify-token', authenticate, (req, res) => {
   });
 });
 
+// Nova rota para verificar token sem precisar de autenticação prévia (via POST)
+router.post('/check-token', async (req, res) => {
+  try {
+    console.log('=== VERIFICAÇÃO DE TOKEN SEM AUTENTICAÇÃO PRÉVIA ===');
+    const { token } = req.body;
+    
+    if (!token) {
+      return res.status(400).json({ 
+        valid: false, 
+        message: 'Token não fornecido' 
+      });
+    }
+    
+    try {
+      // Verificar o token
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const userId = decoded.userId || decoded.id;
+      
+      if (!userId) {
+        return res.status(401).json({ 
+          valid: false, 
+          message: 'Token inválido: identificação do usuário ausente' 
+        });
+      }
+      
+      // Buscar o usuário
+      const user = await User.findByPk(userId);
+      
+      if (!user) {
+        return res.status(404).json({ 
+          valid: false, 
+          message: 'Usuário não encontrado' 
+        });
+      }
+      
+      // Verificar se tem assinatura ativa
+      const activeSubscription = await Payment.findOne({
+        where: {
+          user_id: user.id,
+          payment_status: 'approved',
+          subscription_expiration: {
+            [Op.gt]: new Date()
+          }
+        }
+      });
+      
+      // Token é válido e usuário existe
+      return res.status(200).json({
+        valid: true,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          telegram_verified: user.telegram_verified
+        },
+        hasActiveSubscription: !!activeSubscription
+      });
+    } catch (error) {
+      console.error('Erro ao verificar token:', error.message);
+      
+      // Retornar informações úteis sobre o erro
+      if (error.name === 'TokenExpiredError') {
+        return res.status(401).json({ 
+          valid: false, 
+          message: 'Token expirado', 
+          expired: true 
+        });
+      }
+      
+      return res.status(401).json({ 
+        valid: false, 
+        message: 'Token inválido' 
+      });
+    }
+  } catch (error) {
+    console.error('Erro ao processar verificação de token:', error);
+    return res.status(500).json({ 
+      valid: false, 
+      message: 'Erro interno ao verificar token' 
+    });
+  }
+});
+
+// Nova rota para verificar token sem precisar de autenticação prévia (via GET)
+router.get('/check-token', async (req, res) => {
+  try {
+    console.log('=== VERIFICAÇÃO DE TOKEN VIA GET ===');
+    // Extrair o token do cabeçalho Authorization
+    const authHeader = req.headers.authorization;
+    console.log('Authorization Header:', authHeader ? `${authHeader.substring(0, 15)}...` : 'Não fornecido');
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(400).json({ 
+        valid: false, 
+        message: 'Token não fornecido ou formato inválido' 
+      });
+    }
+    
+    const token = authHeader.split(' ')[1];
+    
+    try {
+      // Verificar o token
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const userId = decoded.userId || decoded.id;
+      
+      if (!userId) {
+        return res.status(401).json({ 
+          valid: false, 
+          message: 'Token inválido: identificação do usuário ausente' 
+        });
+      }
+      
+      // Buscar o usuário
+      const user = await User.findByPk(userId);
+      
+      if (!user) {
+        return res.status(404).json({ 
+          valid: false, 
+          message: 'Usuário não encontrado' 
+        });
+      }
+      
+      // Verificar se tem assinatura ativa
+      const activeSubscription = await Payment.findOne({
+        where: {
+          user_id: user.id,
+          payment_status: 'approved',
+          subscription_expiration: {
+            [Op.gt]: new Date()
+          }
+        }
+      });
+      
+      // Token é válido e usuário existe
+      return res.status(200).json({
+        valid: true,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          telegram_verified: user.telegram_verified
+        },
+        hasActiveSubscription: !!activeSubscription
+      });
+    } catch (error) {
+      console.error('Erro ao verificar token:', error.message);
+      
+      // Retornar informações úteis sobre o erro
+      if (error.name === 'TokenExpiredError') {
+        return res.status(401).json({ 
+          valid: false, 
+          message: 'Token expirado', 
+          expired: true 
+        });
+      }
+      
+      return res.status(401).json({ 
+        valid: false, 
+        message: 'Token inválido' 
+      });
+    }
+  } catch (error) {
+    console.error('Erro ao processar verificação de token:', error);
+    return res.status(500).json({ 
+      valid: false, 
+      message: 'Erro interno ao verificar token' 
+    });
+  }
+});
+
 export default router;

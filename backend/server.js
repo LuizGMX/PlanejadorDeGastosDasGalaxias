@@ -85,33 +85,77 @@ console.log("API_PREFIX " + API_PREFIX);
 
 // Definir as rotas públicas que não necessitam de autenticação
 const publicPaths = [
-  `${API_PREFIX}/auth/check-email`,
-  `${API_PREFIX}/auth/send-code`,
-  `${API_PREFIX}/auth/verify-code`,
-  `${API_PREFIX}/auth/login`,
-  `${API_PREFIX}/auth/register`,
+  // Todas as rotas de autenticação devem ser públicas
+  `${API_PREFIX}/auth`,
+  // Endpoint específico de verificação de token (explícito para clareza)
+  `${API_PREFIX}/auth/check-token`,
+  // Rotas específicas de bancos (listar todos)
   `${API_PREFIX}/banks`,
+  // Rotas de saúde da API
   `${API_PREFIX}/health`,
-  `${API_PREFIX}/payments/webhook`
+  // Webhook de pagamentos
+  `${API_PREFIX}/payments/webhook`,
+  // Rota principal para verificação
+  '/'
 ];
 
 // Middleware para verificar autenticação apenas nas rotas protegidas
 app.use((req, res, next) => {
+  console.log(`🔍 Verificando autenticação para rota: ${req.path}`);
+  console.log(`   Método: ${req.method}`);
+  console.log(`   URL completa: ${req.originalUrl}`);
+  console.log(`   Verificando token para: ${req.path}`);
+
+  // Extrair o token para fins de diagnóstico
+  const authHeader = req.headers.authorization;
+  if (authHeader) {
+    console.log(`   Token presente no header: ${authHeader.substring(0, 15)}...`);
+  } else {
+    console.log(`   Sem token no header de autorização`);
+  }
+
+  // Log das rotas públicas configuradas
+  console.log(`   Rotas públicas configuradas: ${JSON.stringify(publicPaths)}`);
+
   // Função para verificar se um caminho começa com alguma das rotas públicas
   const isPublicPath = (path) => {
-    return publicPaths.some(publicPath => {
-      return path === publicPath || path.startsWith(`${publicPath}/`);
-    });
+    for (const publicPath of publicPaths) {
+      if (path === publicPath || path.startsWith(`${publicPath}/`)) {
+        console.log(`   ✅ Rota pública encontrada: ${path} corresponde a ${publicPath}`);
+        return true;
+      }
+    }
+    console.log(`   ❌ Nenhuma rota pública correspondente para: ${path}`);
+    return false;
   };
 
+  // Verificações específicas para rotas de autenticação
+  if (req.path.includes('/auth/')) {
+    console.log(`   🔑 Rota de autenticação específica: ${req.path}`);
+  }
+
+  // Verificações adicionais para caminhos de autenticação 
+  const isAuthPath = req.path.startsWith(`${API_PREFIX}/auth`);
+  if (isAuthPath) {
+    console.log(`   🔑 Rota de autenticação detectada: ${req.path}`);
+  }
+
+  // Verifica condições para rotas públicas
+  const isBankPublicPath = req.path.includes('/banks') && 
+                          !req.path.includes('/banks/favorites') && 
+                          !req.path.includes('/banks/users');
+  
+  if (isBankPublicPath) {
+    console.log(`   💰 Rota pública de banco detectada: ${req.path}`);
+  }
+
   // Verifica se a rota é pública
-  if (isPublicPath(req.path) ||
-      (req.path.includes('/banks') && !req.path.includes('/banks/favorites') && !req.path.includes('/banks/users'))) {
-    console.log(`Rota pública detectada: ${req.path}`);
+  if (isPublicPath(req.path) || isBankPublicPath || isAuthPath) {
+    console.log(`   🔓 ROTA PÚBLICA DETECTADA: ${req.path} - Pulando autenticação`);
     return next();
   }
   
-  console.log(`Aplicando autenticação para: ${req.path}`);
+  console.log(`   🔒 Aplicando autenticação para rota protegida: ${req.path}`);
   // Se não for rota pública, aplica middleware de autenticação
   verifyToken(req, res, next);
 });
