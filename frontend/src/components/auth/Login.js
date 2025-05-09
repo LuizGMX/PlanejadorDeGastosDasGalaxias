@@ -237,57 +237,65 @@ const Login = () => {
         console.log('Enviando email para verificação:', formData.email);
         console.log('REACT_APP_API_PREFIX:' + process.env.REACT_APP_API_PREFIX + ' REACT_APP_API_URL:' + process.env.REACT_APP_API_URL);
         
-        const prefix = process.env.REACT_APP_API_PREFIX?.trim();
-        const url = `${process.env.REACT_APP_API_URL}${prefix ? `/${prefix}` : ''}/auth/check-email`;
-        console.log('URL:' + url);
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: formData.email })
-        });
-
-        if (response.status === 429) {
-          throw new Error('Muitas tentativas. Por favor, aguarde alguns segundos antes de tentar novamente.');
-        }
-
-        const responseText = await response.text();
-        console.log('Resposta bruta do check-email:', responseText);
-        
-        let data;
         try {
-          data = JSON.parse(responseText);
-        } catch (jsonError) {
-          console.error('Erro ao parsear JSON:', jsonError);
+          // Usar URL fixa para testes
+          const url = `http://localhost:5000/test-check-email`;
+          console.log('URL de teste:', url);
+          
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: formData.email })
+          });
+  
+          console.log('Status da resposta:', response.status);
+          
           if (!response.ok) {
             throw new Error('Erro ao verificar email. Por favor, tente novamente.');
           }
-          throw jsonError;
-        }
-
-        if (!response.ok) {
-          throw new Error(data.message || 'Erro ao verificar email');
-        }
-
-        console.log('Resposta do check-email (parseada):', data);
-        
-        // Atualiza o estado com base na resposta
-        const userIsNew = Boolean(data.isNewUser);
-        console.log('É um novo usuário?', userIsNew);
-        
-        setIsNewUser(userIsNew);
-        setFormData(prev => ({ 
-          ...prev, 
-          name: data.name || '',
-          email: data.email || formData.email
-        }));
-        
-        if (userIsNew) {
-          console.log('Redirecionando para etapa de nome (novo usuário)');
-          setStep('name');
-        } else {
-          console.log('Redirecionando para etapa de código (usuário existente)');
-          setStep('code');
-          setSuccess('Código enviado com sucesso! Verifique seu email.');
+  
+          const responseText = await response.text();
+          console.log('Resposta bruta do check-email:', responseText);
+          
+          let data;
+          try {
+            data = JSON.parse(responseText);
+          } catch (jsonError) {
+            console.error('Erro ao parsear JSON:', jsonError);
+            if (!response.ok) {
+              throw new Error('Erro ao verificar email. Por favor, tente novamente.');
+            }
+            throw jsonError;
+          }
+  
+          if (!response.ok) {
+            throw new Error(data.message || 'Erro ao verificar email');
+          }
+  
+          console.log('Resposta do check-email (parseada):', data);
+          
+          // Atualiza o estado com base na resposta
+          const userIsNew = Boolean(data.isNewUser);
+          console.log('É um novo usuário?', userIsNew);
+          
+          setIsNewUser(userIsNew);
+          setFormData(prev => ({ 
+            ...prev, 
+            name: data.name || '',
+            email: data.email || formData.email
+          }));
+          
+          if (userIsNew) {
+            console.log('Redirecionando para etapa de nome (novo usuário)');
+            setStep('name');
+          } else {
+            console.log('Redirecionando para etapa de código (usuário existente)');
+            setStep('code');
+            setSuccess('Código enviado com sucesso! Verifique seu email.');
+          }
+        } catch (error) {
+          console.error('Erro ao verificar email:', error);
+          setError('Erro ao verificar email. Por favor, tente novamente.');
         }
       } else if (step === 'name') {
         console.log('Processando etapa "name" no handleSubmit...');

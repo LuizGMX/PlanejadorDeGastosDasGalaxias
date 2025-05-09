@@ -40,6 +40,27 @@ const app = express();
 
 app.set('trust proxy', 1);
 
+// Adicionar middleware para debug de CORS
+app.use((req, res, next) => {
+  console.log('Headers recebidos:', req.headers);
+  next();
+});
+
+// Configurar cabeçalhos CORS para permitir todas as origens durante o desenvolvimento
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  
+  // Handle preflight OPTIONS requests
+  if (req.method === 'OPTIONS') {
+    console.log('Preflight OPTIONS request recebida');
+    return res.status(200).end();
+  }
+  
+  return next();
+});
+
 // Configurar os modelos no app.locals para serem acessíveis nos middlewares
 app.locals.models = models;
 
@@ -61,17 +82,18 @@ app.use(helmet({
   },
 }));
 
-app.use(
-  cors({
-    // origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-    origin:  'http://localhost:3000',
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Accept'],
-    credentials: true
-  })
-);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Log de todas as requisições para depuração
+app.use((req, res, next) => {
+  console.log(`📥 [${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+  console.log(`   Headers: ${JSON.stringify(req.headers)}`);
+  if (req.body && Object.keys(req.body).length > 0) {
+    console.log(`   Body: ${JSON.stringify(req.body)}`);
+  }
+  next();
+});
 
 // Endpoint básico de verificação de saúde - sempre acessível sem autenticação
 app.get('/health', (req, res) => {
@@ -87,6 +109,33 @@ app.get('/status', (req, res) => {
     status: 'online',
     timestamp: new Date().toISOString()
   });
+});
+
+// Rota direta para teste de check-email sem passar pelos middlewares
+app.post('/test-check-email', async (req, res) => {
+  console.log('===========================================');
+  console.log('TESTE DIRETO: /test-check-email');
+  console.log('Timestamp:', new Date().toISOString());
+  console.log('Body recebido:', req.body);
+  
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      console.log('ERRO: Email não fornecido');
+      return res.status(400).json({ message: 'E-mail é obrigatório' });
+    }
+    
+    return res.json({
+      isNewUser: true,
+      name: null,
+      email: null,
+      message: 'Rota de teste funcionando!'
+    });
+  } catch (error) {
+    console.error('ERRO ao processar requisição de teste:', error);
+    return res.status(500).json({ message: 'Erro interno no servidor', error: error.message });
+  }
 });
 
 // Aplicar rate limiting global
