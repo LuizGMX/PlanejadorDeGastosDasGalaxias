@@ -1,17 +1,17 @@
-import { getApiUrl, API_ENDPOINTS } from './apiConfig';
-
 /**
  * Utilitário para verificar a saúde da API e ajudar no diagnóstico de problemas
  */
+
 export const checkApiHealth = async () => {
   try {
     console.log('Verificando conectividade com a API...');
-    console.log('API URL:', API_ENDPOINTS.HEALTH);
+    console.log('REACT_APP_API_URL:', process.env.REACT_APP_API_URL);
     console.log('NODE_ENV:', process.env.NODE_ENV);
+    console.log('REACT_APP_API_PREFIX:', process.env.REACT_APP_API_PREFIX);
     
     // Tenta acessar a API com um endpoint simples
     const startTime = Date.now();
-    const response = await fetch(API_ENDPOINTS.HEALTH, {
+    const response = await fetch(`${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/health`, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
@@ -99,7 +99,7 @@ export const diagnoseProblem = (healthResult) => {
   }
   
   if (healthResult.isHtml) {
-    return 'API está retornando HTML em vez de JSON: Provavelmente problema de configuração de URL ou rotas do servidor';
+    return 'API está retornando HTML em vez de JSON: Provavelmente problema de configuração do REACT_APP_API_URL ou rotas do Nginx';
   }
   
   if (healthResult.status === 404) {

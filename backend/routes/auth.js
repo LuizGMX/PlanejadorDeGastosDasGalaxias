@@ -84,7 +84,6 @@ export const authenticate = async (req, res, next) => {
   }
 };
 
-
 // Rotas
 router.post('/check-email', async (req, res) => {
   console.log('===========================================');

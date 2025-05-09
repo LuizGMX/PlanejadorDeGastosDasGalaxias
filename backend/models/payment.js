@@ -1,5 +1,4 @@
 import { DataTypes } from 'sequelize';
-import { encryptFields } from '../middleware/cryptoMiddleware.js';
 
 export default (sequelize) => {
   const Payment = sequelize.define('Payment', {
@@ -16,35 +15,35 @@ export default (sequelize) => {
         key: 'id'
       }
     },
-    mp_payment_id: {
-      type: DataTypes.STRING,
-      allowNull: true
-    },
-    mp_preference_id: {
-      type: DataTypes.STRING,
-      allowNull: true
-    },
-    payment_status: {
-      type: DataTypes.STRING,
+    subscription_expiration: {
+      type: DataTypes.DATE,
       allowNull: false,
-      defaultValue: 'pending'
-    },
-    amount: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: false,
-      defaultValue: 0
-    },
-    payment_method: {
-      type: DataTypes.STRING,
-      allowNull: true
+      comment: 'Data até quando o usuário tem acesso ao sistema'
     },
     payment_date: {
       type: DataTypes.DATE,
-      allowNull: true
+      allowNull: true,
+      comment: 'Data em que o pagamento foi realizado'
     },
-    subscription_expiration: {
-      type: DataTypes.DATE,
-      allowNull: true
+    payment_status: {
+      type: DataTypes.ENUM('pending', 'approved', 'rejected', 'refunded'),
+      defaultValue: 'pending',
+      allowNull: false
+    },
+    payment_method: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      comment: 'Método de pagamento usado (cartão, pix, etc)'
+    },
+    payment_id: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      comment: 'ID do pagamento no gateway (Mercado Pago)'
+    },
+    payment_amount: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      comment: 'Valor do pagamento'
     },
     created_at: {
       type: DataTypes.DATE,
@@ -60,13 +59,6 @@ export default (sequelize) => {
     updatedAt: 'updated_at',
     tableName: 'payments'
   });
-
-  // Aplica criptografia aos campos sensíveis
-  encryptFields([
-    'mp_payment_id',
-    'mp_preference_id',
-    'payment_method'
-  ])(Payment);
 
   return Payment;
 }; 

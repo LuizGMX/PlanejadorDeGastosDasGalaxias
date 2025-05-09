@@ -1,5 +1,4 @@
 import { DataTypes } from 'sequelize';
-import { encryptFields } from '../middleware/cryptoMiddleware.js';
 
 export default (sequelize) => {
   const User = sequelize.define('User', {
@@ -104,14 +103,6 @@ export default (sequelize) => {
       }
     }
   });
-
-  // Aplica criptografia aos campos sensíveis
-  encryptFields([
-    'email',
-    'telegram_chat_id',
-    'telegram_username',
-    'financial_goal_name'
-  ])(User);
 
   return User;
 };

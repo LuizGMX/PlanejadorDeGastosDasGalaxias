@@ -27,35 +27,6 @@ O sistema de assinatura foi implementado com as seguintes características:
 3. O pagamento é processado pelo Mercado Pago
 4. Quando o pagamento é confirmado, a assinatura é renovada por 12 meses
 
-## Segurança de Dados
-
-O sistema agora implementa criptografia AES-256-GCM para proteger dados sensíveis dos usuários. As seguintes medidas foram implementadas:
-
-- Todos os dados sensíveis são criptografados antes de serem armazenados no banco de dados
-- Cada usuário tem sua própria chave de criptografia derivada, garantindo isolamento de dados
-- Os dados são descriptografados automaticamente quando acessados por usuários autorizados
-- O sistema utiliza primitivas criptográficas modernas (AES-256 em modo GCM) que fornecem autenticação e confidencialidade
-
-### Configuração de Criptografia
-
-Para configurar a criptografia em ambiente de produção, adicione a seguinte variável de ambiente:
-
-```
-ENCRYPTION_KEY=sua-chave-secreta-com-32-caracteres-min
-```
-
-A chave de criptografia deve ser mantida segura e deve ter pelo menos 32 caracteres para garantir a segurança.
-
-### Migração de Dados Existentes
-
-Para criptografar dados existentes, execute o seguinte comando:
-
-```
-node backend/utils/encryptExistingData.js
-```
-
-Este script deve ser executado somente uma vez durante a migração para o novo sistema de criptografia.
-
 ## Configuração do Ambiente
 
 ### Backend

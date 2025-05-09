@@ -1,5 +1,4 @@
 import { DataTypes } from 'sequelize';
-import { encryptFields } from '../middleware/cryptoMiddleware.js';
 
 export default (sequelize) => {
   const VerificationCode = sequelize.define('VerificationCode', {
@@ -10,45 +9,40 @@ export default (sequelize) => {
     },
     email: {
       type: DataTypes.STRING,
-      allowNull: false,
-      validate: {
-        isEmail: true
-      }
+      allowNull: false
     },
     code: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(6),
       allowNull: false
     },
     user_data: {
       type: DataTypes.TEXT,
       allowNull: true
     },
+    expires_at: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: () => {
+        const date = new Date();
+        date.setMinutes(date.getMinutes() + 10); // Expira em 10 minutos
+        return date;
+      }
+    },
     used: {
       type: DataTypes.BOOLEAN,
       defaultValue: false
-    },
-    expires_at: {
-      type: DataTypes.DATE,
-      allowNull: false
-    },
-    created_at: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW
-    },
-    updated_at: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW
     }
   }, {
+    tableName: 'verification_codes',
     timestamps: true,
-    createdAt: 'created_at',
-    updatedAt: 'updated_at',
-    tableName: 'verification_codes'
+    underscored: true,
+    indexes: [
+      {
+        unique: true,
+        fields: ['email', 'code']
+      }
+    ]
   });
-  
-  // Aplica criptografia aos campos sensíveis
-  // Como não temos um userId associado diretamente, usamos o 'id' do próprio registro
-  encryptFields(['email', 'code', 'user_data'])(VerificationCode);
 
   return VerificationCode;
 };
