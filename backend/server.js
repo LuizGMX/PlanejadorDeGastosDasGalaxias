@@ -3,7 +3,6 @@ import cors from 'cors';
 import { readFileSync, writeFileSync } from 'fs';
 import http from 'http';
 import https from 'https';
-import sgMail from '@sendgrid/mail';
 import dotenv from 'dotenv';
 import helmet from 'helmet';
 import authRoutes from './routes/auth.js';
@@ -154,11 +153,6 @@ if (process.env.NODE_ENV === 'production') {
   server.listen(5000, () => {
     console.log('🚀 Servidor HTTP rodando na porta 5000 em modo desenvolvimento');
   });
-}
-
-
-if (process.env.SENDGRID_API_KEY) {
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 }
 
 writeFileSync('./pid.log', process.pid.toString());
