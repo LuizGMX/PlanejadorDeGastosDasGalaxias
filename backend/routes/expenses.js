@@ -367,8 +367,17 @@ router.get('/', async (req, res) => {
 
     // Decrypt sensitive fields
     const decryptedExpenses = allExpensesWithRecurring.map(expense => {
-      const decryptedDescription = decrypt(expense.description, expense.description_iv);
-      const decryptedAmount = decrypt(expense.amount, expense.amount_iv);
+      let decryptedDescription = expense.description;
+      let decryptedAmount = expense.amount;
+
+      // Check if IVs are defined before decrypting
+      if (expense.description_iv) {
+        decryptedDescription = decrypt(expense.description, expense.description_iv);
+      }
+      if (expense.amount_iv) {
+        decryptedAmount = decrypt(expense.amount, expense.amount_iv);
+      }
+
       return {
         ...expense,
         description: decryptedDescription,
