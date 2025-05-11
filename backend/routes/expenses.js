@@ -22,7 +22,7 @@ const calculateRecurringExpenseOccurrences = async (expense, startDate, endDate)
   return calculateRecurringOccurrences(expense, startDate, endDate, 'expense_date');
 };
 
-// Update the GET route to handle circular structures
+// Ensure proper decryption by validating IVs and encrypted data
 router.get('/', async (req, res) => {
   try {
     const expenses = await Expense.findAll({
@@ -39,12 +39,16 @@ router.get('/', async (req, res) => {
       let decryptedDescription = expense.description;
       let decryptedAmount = expense.amount;
 
-      // Check if IVs are defined before decrypting
-      if (expense.description_iv) {
-        decryptedDescription = decrypt(expense.description, expense.description_iv);
-      }
-      if (expense.amount_iv) {
-        decryptedAmount = decrypt(expense.amount, expense.amount_iv);
+      try {
+        // Check if IVs and encrypted data are defined before decrypting
+        if (expense.description && expense.description_iv) {
+          decryptedDescription = decrypt(expense.description, expense.description_iv);
+        }
+        if (expense.amount && expense.amount_iv) {
+          decryptedAmount = decrypt(expense.amount, expense.amount_iv);
+        }
+      } catch (error) {
+        console.error(`Erro ao descriptografar despesa ID ${expense.id}:`, error);
       }
 
       // Use .toJSON() to avoid circular references
@@ -313,7 +317,7 @@ router.post('/', async (req, res) => {
 
     // Encrypt description and amount
     const { encryptedData: encryptedDescription, iv: descriptionIv } = encrypt(description);
-    const { encryptedData: encryptedAmount, iv: amountIv } = encrypt(parsedAmount.toFixed(2));
+    const { encryptedData: encryptedAmount, iv: amountIv } = encrypt(parsedAmount.toFixed(2).toString());
 
     const expenses = [];
     const installmentGroupId = has_installments ? uuidv4() : null;
@@ -522,7 +526,7 @@ router.put('/:id', async (req, res) => {
 
     // Encrypt description and amount
     const { encryptedData: encryptedDescription, iv: descriptionIv } = encrypt(description);
-    const { encryptedData: encryptedAmount, iv: amountIv } = encrypt(parsedAmount.toFixed(2));
+    const { encryptedData: encryptedAmount, iv: amountIv } = encrypt(parsedAmount.toFixed(2).toString());
 
     if (expense.is_recurring && expense.recurring_group_id) {
       await Expense.update(

@@ -147,8 +147,21 @@ router.get('/', async (req, res) => {
 
     // Decrypt sensitive fields
     const decryptedIncomes = incomes.map(income => {
-      const decryptedDescription = decrypt(income.description, income.description_iv);
-      const decryptedAmount = decrypt(income.amount, income.amount_iv);
+      let decryptedDescription = income.description;
+      let decryptedAmount = income.amount;
+
+      try {
+        // Check if IVs and encrypted data are defined before decrypting
+        if (income.description && income.description_iv) {
+          decryptedDescription = decrypt(income.description, income.description_iv);
+        }
+        if (income.amount && income.amount_iv) {
+          decryptedAmount = decrypt(income.amount, income.amount_iv);
+        }
+      } catch (error) {
+        console.error(`Erro ao descriptografar receita ID ${income.id}:`, error);
+      }
+
       return {
         ...income.toJSON(),
         description: decryptedDescription,
@@ -378,7 +391,7 @@ router.post('/', async (req, res) => {
 
     // Encrypt description and amount
     const { encryptedData: encryptedDescription, iv: descriptionIv } = encrypt(description);
-    const { encryptedData: encryptedAmount, iv: amountIv } = encrypt(parsedAmount.toFixed(2));
+    const { encryptedData: encryptedAmount, iv: amountIv } = encrypt(parsedAmount.toFixed(2).toString());
 
     const incomes = [];
     const recurringGroupId = is_recurring ? uuidv4() : null;
@@ -506,7 +519,7 @@ router.put('/:id', async (req, res) => {
 
     // Encrypt description and amount
     const { encryptedData: encryptedDescription, iv: descriptionIv } = encrypt(description);
-    const { encryptedData: encryptedAmount, iv: amountIv } = encrypt(parsedAmount.toFixed(2));
+    const { encryptedData: encryptedAmount, iv: amountIv } = encrypt(parsedAmount.toFixed(2).toString());
 
     // Se for uma receita recorrente
     if (income.is_recurring) {
