@@ -9,6 +9,7 @@ import { Router } from 'express';
 import sequelize from '../config/db.js';
 import checkSubscription from '../middleware/subscriptionCheck.js';
 import { calculateRecurringOccurrences, getNextRecurringDate } from '../utils/recurrenceUtils.js';
+import { encrypt, decrypt } from '../utils/crypto.js';
 
 const router = Router();
 
@@ -363,8 +364,19 @@ router.get('/', async (req, res) => {
     if (bank_id) {
       console.log(`Filtrando por banco ID: ${bank_id} - Total após filtro: ${allExpensesWithRecurring.filter(e => e.bank_id === parseInt(bank_id)).length}`);
     }
+
+    // Decrypt sensitive fields
+    const decryptedExpenses = allExpensesWithRecurring.map(expense => {
+      const decryptedDescription = decrypt(expense.description, expense.description_iv);
+      const decryptedAmount = decrypt(expense.amount, expense.amount_iv);
+      return {
+        ...expense,
+        description: decryptedDescription,
+        amount: parseFloat(decryptedAmount)
+      };
+    });
     
-    res.json(allExpensesWithRecurring);
+    res.json(decryptedExpenses);
   } catch (error) {
     console.error('Erro ao buscar despesas:', error);
     res.status(500).json({ message: 'Erro ao buscar despesas', error: error.message });
@@ -619,6 +631,10 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'Data da despesa inválida' });
     }
 
+    // Encrypt description and amount
+    const { encryptedData: encryptedDescription, iv: descriptionIv } = encrypt(description);
+    const { encryptedData: encryptedAmount, iv: amountIv } = encrypt(parsedAmount.toFixed(2));
+
     const expenses = [];
     const installmentGroupId = has_installments ? uuidv4() : null;
     const recurringGroupId = is_recurring ? uuidv4() : null;
@@ -653,8 +669,10 @@ router.post('/', async (req, res) => {
         
         expenses.push({
           user_id: req.user.id,
-          description: `${description} (${i}/${totalInstallments})`,
-          amount: finalAmount,
+          description: encryptedDescription,
+          description_iv: descriptionIv,
+          amount: encryptedAmount,
+          amount_iv: amountIv,
           category_id,
           bank_id,
           expense_date: installmentDate,
@@ -674,8 +692,10 @@ router.post('/', async (req, res) => {
       // Cria um único registro para a despesa recorrente com seus metadados
       expenses.push({
         user_id: req.user.id,
-        description,
-        amount: parsedAmount,
+        description: encryptedDescription,
+        description_iv: descriptionIv,
+        amount: encryptedAmount,
+        amount_iv: amountIv,
         category_id,
         bank_id,
         expense_date: startDateObj,
@@ -691,8 +711,10 @@ router.post('/', async (req, res) => {
       // Despesa única simples
       expenses.push({
         user_id: req.user.id,
-        description,
-        amount: parsedAmount,
+        description: encryptedDescription,
+        description_iv: descriptionIv,
+        amount: encryptedAmount,
+        amount_iv: amountIv,
         category_id,
         bank_id,
         expense_date: adjustDate(expense_date),
@@ -797,18 +819,15 @@ router.put('/:id', async (req, res) => {
       current_installment
     } = req.body;
 
-    // Validação dos campos obrigatórios
     if (!description || !rawAmount || !expense_date || !category_id || !bank_id || !payment_method) {
       return res.status(400).json({ message: 'Todos os campos obrigatórios devem ser preenchidos.' });
     }
 
-    // Converte o valor para número
     const parsedAmount = parseFloat(rawAmount);
     if (isNaN(parsedAmount)) {
       return res.status(400).json({ message: 'O valor deve ser um número válido.' });
     }
 
-    // Busca a despesa original
     const expense = await Expense.findOne({
       where: {
         id: req.params.id,
@@ -821,14 +840,17 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Despesa não encontrada.' });
     }
 
-    // Se a despesa for recorrente
+    // Encrypt description and amount
+    const { encryptedData: encryptedDescription, iv: descriptionIv } = encrypt(description);
+    const { encryptedData: encryptedAmount, iv: amountIv } = encrypt(parsedAmount.toFixed(2));
+
     if (expense.is_recurring && expense.recurring_group_id) {
-      // Atualiza todas as despesas do grupo (atual e futuras)
-      const currentDate = new Date(expense.expense_date);
       await Expense.update(
         {
-          description,
-          amount: parsedAmount,
+          description: encryptedDescription,
+          description_iv: descriptionIv,
+          amount: encryptedAmount,
+          amount_iv: amountIv,
           category_id,
           bank_id,
           payment_method,
@@ -840,21 +862,18 @@ router.put('/:id', async (req, res) => {
           where: {
             recurring_group_id: expense.recurring_group_id,
             expense_date: {
-              [Op.gte]: currentDate
+              [Op.gte]: new Date(expense.expense_date)
             },
             user_id: req.user.id
           },
           transaction
         }
       );
-    }
-    // Se a despesa for parcelada
-    else if (expense.has_installments && expense.installment_group_id) {
-      // Atualiza todas as parcelas futuras
-      const currentDate = new Date(expense.expense_date);
+    } else if (expense.has_installments && expense.installment_group_id) {
       await Expense.update(
         {
-          description,
+          description: encryptedDescription,
+          description_iv: descriptionIv,
           category_id,
           bank_id,
           payment_method
@@ -863,7 +882,7 @@ router.put('/:id', async (req, res) => {
           where: {
             installment_group_id: expense.installment_group_id,
             expense_date: {
-              [Op.gte]: currentDate
+              [Op.gte]: new Date(expense.expense_date)
             },
             user_id: req.user.id
           },
@@ -871,32 +890,20 @@ router.put('/:id', async (req, res) => {
         }
       );
 
-      // Atualiza separadamente o valor apenas desta parcela
       await expense.update(
         {
-          amount: parsedAmount
+          amount: encryptedAmount,
+          amount_iv: amountIv
         },
         { transaction }
       );
-      
-      // Certifica-se de que os campos de parcelas continuam corretamente definidos
-      if (!expense.current_installment || !expense.total_installments) {
-        await expense.update({
-          current_installment: expense.current_installment || 
-                               parseInt(req.body.current_installment) || 
-                               1,
-          total_installments: expense.total_installments || 
-                              parseInt(req.body.total_installments) || 
-                              1
-        }, { transaction });
-      }
-    }
-    // Se for uma despesa única
-    else {
+    } else {
       await expense.update(
         {
-          description,
-          amount: parsedAmount,
+          description: encryptedDescription,
+          description_iv: descriptionIv,
+          amount: encryptedAmount,
+          amount_iv: amountIv,
           expense_date: new Date(expense_date),
           category_id,
           bank_id,
@@ -908,7 +915,6 @@ router.put('/:id', async (req, res) => {
 
     await transaction.commit();
 
-    // Busca a despesa atualizada
     const updatedExpense = await Expense.findByPk(req.params.id);
     res.json(updatedExpense);
   } catch (error) {

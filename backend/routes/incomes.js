@@ -6,6 +6,7 @@ import { Op, Sequelize, literal } from 'sequelize';
 import { authenticate } from '../middleware/auth.js';
 import checkSubscription from '../middleware/subscriptionCheck.js';
 import { calculateRecurringOccurrences } from '../utils/recurrenceUtils.js';
+import { encrypt, decrypt } from '../utils/crypto.js';
 
 const router = Router();
 
@@ -144,6 +145,17 @@ router.get('/', async (req, res) => {
       order: [['date', 'DESC']]
     });
 
+    // Decrypt sensitive fields
+    const decryptedIncomes = incomes.map(income => {
+      const decryptedDescription = decrypt(income.description, income.description_iv);
+      const decryptedAmount = decrypt(income.amount, income.amount_iv);
+      return {
+        ...income.toJSON(),
+        description: decryptedDescription,
+        amount: parseFloat(decryptedAmount)
+      };
+    });
+
     // Se está buscando por intervalo de data e precisamos incluir receitas recorrentes
     let expandedRecurringIncomes = [];
     if ((startDate && endDate && is_recurring !== 'false') || include_all_recurring === 'true') {
@@ -252,7 +264,7 @@ router.get('/', async (req, res) => {
     }
 
     // Combina receitas normais e recorrentes expandidas
-    let allIncomes = [...incomes, ...expandedRecurringIncomes];
+    let allIncomes = [...decryptedIncomes, ...expandedRecurringIncomes];
 
     // Aplicamos filtros de mês e ano nas ocorrências recorrentes expandidas
     if (months && months.length > 0 && years && years.length > 0) {
@@ -364,26 +376,9 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'O valor da receita deve ser um número positivo' });
     }
 
-    // Validação e ajuste da data
-    const adjustDate = (dateStr) => {
-      if (!dateStr) throw new Error('Data inválida');
-      
-      // Garante que estamos trabalhando com a data local
-      const [year, month, day] = dateStr.split('T')[0].split('-').map(Number);
-      if (!year || !month || !day) throw new Error('Data inválida');
-      
-      // Cria a data no fuso horário local
-      const date = new Date(year, month - 1, day, 12, 0, 0);
-      if (isNaN(date.getTime())) throw new Error('Data inválida');
-      
-      return date;
-    };
-
-    // Validação da data
-    if (!income_date || isNaN(new Date(income_date).getTime())) {
-      await t.rollback();
-      return res.status(400).json({ message: 'Data da receita inválida' });
-    }
+    // Encrypt description and amount
+    const { encryptedData: encryptedDescription, iv: descriptionIv } = encrypt(description);
+    const { encryptedData: encryptedAmount, iv: amountIv } = encrypt(parsedAmount.toFixed(2));
 
     const incomes = [];
     const recurringGroupId = is_recurring ? uuidv4() : null;
@@ -391,14 +386,16 @@ router.post('/', async (req, res) => {
     // Processamento com base no tipo de receita
     if (is_recurring) {
       // Criar a receita recorrente - apenas um registro
-      const startDateObj = adjustDate(income_date);
+      const startDateObj = new Date(income_date);
       const endDateObj = new Date('2099-12-31'); // Data padrão de fim distante
       
       // Cria um único registro para a receita recorrente com seus metadados
       incomes.push({
         user_id: req.user.id,
-        description,
-        amount: parsedAmount,
+        description: encryptedDescription,
+        description_iv: descriptionIv,
+        amount: encryptedAmount,
+        amount_iv: amountIv,
         category_id,
         bank_id,
         income_date: startDateObj,
@@ -413,11 +410,13 @@ router.post('/', async (req, res) => {
       // Receita única simples
       incomes.push({
         user_id: req.user.id,
-        description,
-        amount: parsedAmount,
+        description: encryptedDescription,
+        description_iv: descriptionIv,
+        amount: encryptedAmount,
+        amount_iv: amountIv,
         category_id,
         bank_id,
-        income_date: adjustDate(income_date),
+        income_date: new Date(income_date),
         payment_method,
         is_recurring: false
       });
@@ -466,6 +465,83 @@ router.post('/:id/exclude-occurrence', async (req, res) => {
   } catch (error) {
     console.error('Erro ao excluir ocorrência:', error);
     res.status(500).json({ message: 'Erro ao excluir ocorrência' });
+  }
+});
+
+// Atualizar receita
+router.put('/:id', async (req, res) => {
+  const t = await Income.sequelize.transaction();
+
+  try {
+    const {
+      description,
+      amount: rawAmount,
+      date,
+      category_id,
+      bank_id,
+      is_recurring,
+      recurrence_type,
+      start_date,
+      end_date
+    } = req.body;
+
+    const income = await Income.findOne({
+      where: {
+        id: req.params.id,
+        user_id: req.user.id
+      },
+      transaction: t
+    });
+
+    if (!income) {
+      await t.rollback();
+      return res.status(404).json({ message: 'Receita não encontrada' });
+    }
+
+    const parsedAmount = Number(rawAmount);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      await t.rollback();
+      return res.status(400).json({ message: 'O valor deve ser um número positivo' });
+    }
+
+    // Encrypt description and amount
+    const { encryptedData: encryptedDescription, iv: descriptionIv } = encrypt(description);
+    const { encryptedData: encryptedAmount, iv: amountIv } = encrypt(parsedAmount.toFixed(2));
+
+    // Se for uma receita recorrente
+    if (income.is_recurring) {
+      await income.update({
+        description: encryptedDescription,
+        description_iv: descriptionIv,
+        amount: encryptedAmount,
+        amount_iv: amountIv,
+        category_id,
+        bank_id,
+        start_date: start_date ? new Date(start_date) : income.start_date,
+        end_date: end_date ? new Date(end_date) : income.end_date,
+        recurrence_type: recurrence_type || income.recurrence_type
+      }, { transaction: t });
+    } else {
+      await income.update({
+        description: encryptedDescription,
+        description_iv: descriptionIv,
+        amount: encryptedAmount,
+        amount_iv: amountIv,
+        date: new Date(date),
+        category_id,
+        bank_id
+      }, { transaction: t });
+    }
+
+    await t.commit();
+    
+    // Busca a receita atualizada
+    const updatedIncome = await Income.findByPk(req.params.id);
+    res.json(updatedIncome);
+  } catch (error) {
+    await t.rollback();
+    console.error('Erro ao atualizar receita:', error);
+    res.status(500).json({ message: 'Erro ao atualizar receita', error: error.message });
   }
 });
 
@@ -578,73 +654,4 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// Atualizar receita
-router.put('/:id', async (req, res) => {
-  const t = await Income.sequelize.transaction();
-
-  try {
-    const {
-      description,
-      amount: rawAmount,
-      date,
-      category_id,
-      bank_id,
-      is_recurring,
-      recurrence_type,
-      start_date,
-      end_date
-    } = req.body;
-
-    const income = await Income.findOne({
-      where: {
-        id: req.params.id,
-        user_id: req.user.id
-      },
-      transaction: t
-    });
-
-    if (!income) {
-      await t.rollback();
-      return res.status(404).json({ message: 'Receita não encontrada' });
-    }
-
-    const parsedAmount = Number(rawAmount);
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      await t.rollback();
-      return res.status(400).json({ message: 'O valor deve ser um número positivo' });
-    }
-
-    // Se for uma receita recorrente
-    if (income.is_recurring) {
-      await income.update({
-        description,
-        amount: parsedAmount,
-        category_id,
-        bank_id,
-        start_date: start_date ? new Date(start_date) : income.start_date,
-        end_date: end_date ? new Date(end_date) : income.end_date,
-        recurrence_type: recurrence_type || income.recurrence_type
-      }, { transaction: t });
-    } else {
-      await income.update({
-        description,
-        amount: parsedAmount,
-        date: new Date(date),
-        category_id,
-        bank_id
-      }, { transaction: t });
-    }
-
-    await t.commit();
-    
-    // Busca a receita atualizada
-    const updatedIncome = await Income.findByPk(req.params.id);
-    res.json(updatedIncome);
-  } catch (error) {
-    await t.rollback();
-    console.error('Erro ao atualizar receita:', error);
-    res.status(500).json({ message: 'Erro ao atualizar receita', error: error.message });
-  }
-});
-
-export default router; 
+export default router;
