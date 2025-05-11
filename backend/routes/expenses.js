@@ -40,7 +40,7 @@ router.get('/', async (req, res) => {
       let decryptedAmount = expense.amount;
 
       try {
-        // Check if IVs and encrypted data are defined before decrypting
+        // Ensure IV is passed correctly during decryption
         if (expense.description && expense.description_iv) {
           decryptedDescription = decrypt(expense.description, expense.description_iv);
         }
@@ -315,7 +315,7 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'Data da despesa inválida' });
     }
 
-    // Encrypt description and amount
+    // Ensure IV is generated and stored correctly during encryption
     const { encryptedData: encryptedDescription, iv: descriptionIv } = encrypt(description);
     const { encryptedData: encryptedAmount, iv: amountIv } = encrypt(parsedAmount.toFixed(2).toString());
 
@@ -524,7 +524,7 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Despesa não encontrada.' });
     }
 
-    // Encrypt description and amount
+    // Ensure IV is generated and stored correctly during encryption
     const { encryptedData: encryptedDescription, iv: descriptionIv } = encrypt(description);
     const { encryptedData: encryptedAmount, iv: amountIv } = encrypt(parsedAmount.toFixed(2).toString());
 
