@@ -1,12 +1,10 @@
 import { Router } from 'express';
-import { User, Bank, VerificationCode, UserBank, FinancialGoal } from '../models/index.js';
+import { User, VerificationCode, FinancialGoal } from '../models/index.js';
 import { authenticate } from '../middleware/auth.js';
-import sgMail from '@sendgrid/mail';
+import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 
 dotenv.config();
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-
 const router = Router();
 
 const generateVerificationCode = () => {
@@ -14,9 +12,18 @@ const generateVerificationCode = () => {
 };
 
 const sendVerificationEmail = async (email, name, code) => {
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: 'planejadordegastosdasgalaxias@gmail.com',
+        pass: 'vzuwyhqfusbbzsps',
+      },
+    });
+
   const msg = {
     to: email,
-    from: process.env.SENDGRID_FROM_EMAIL,
+    from: '"Planejador Das Galáxias" <planejadordegastosdasgalaxias@gmail.com>',
     subject: 'Código de Verificação - Planejador Das Galáxias',
     text: `Seu código de verificação é: ${code}`,
     html: `
@@ -33,7 +40,7 @@ const sendVerificationEmail = async (email, name, code) => {
     `,
   };
   try {
-    await sgMail.send(msg);
+      await transporter.sendMail(msg);
     console.log(`Email enviado com sucesso para: ${email}`);
   } catch (error) {
     console.error(`Erro ao enviar email para ${email}:`, error);
