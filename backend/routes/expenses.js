@@ -34,29 +34,28 @@ router.get('/', async (req, res) => {
       order: [['expense_date', 'DESC']]
     });
 
-    // Decrypt sensitive fields and ensure serializability
     const decryptedExpenses = expenses.map(expense => {
-      let decryptedDescription = expense.description;
-      let decryptedAmount = expense.amount;
+      let description = expense.description;
+      let amount = expense.amount;
 
       try {
-        // Ensure IV is passed correctly during decryption
         if (expense.description && expense.description_iv) {
-          decryptedDescription = decrypt(expense.description, expense.description_iv);
+          const ivDesc = Buffer.from(expense.description_iv, 'hex');
+          description = decrypt(expense.description, ivDesc);
         }
         if (expense.amount && expense.amount_iv) {
-          decryptedAmount = decrypt(expense.amount, expense.amount_iv);
+          const ivAmt = Buffer.from(expense.amount_iv, 'hex');
+          amount = decrypt(expense.amount, ivAmt);
         }
-      } catch (error) {
-        console.error(`Erro ao descriptografar despesa ID ${expense.id}:`, error);
+      } catch (err) {
+        console.error(`Erro ao descriptografar despesa ID ${expense.id}:`, err);
       }
 
-      // Use .toJSON() to avoid circular references
-      const expenseData = expense.toJSON();
+      const data = expense.toJSON();
       return {
-        ...expenseData,
-        description: decryptedDescription,
-        amount: parseFloat(decryptedAmount)
+        ...data,
+        description,
+        amount: parseFloat(amount)
       };
     });
 
