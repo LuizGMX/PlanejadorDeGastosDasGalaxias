@@ -34,6 +34,7 @@ router.get('/', async (req, res) => {
       order: [['expense_date', 'DESC']]
     });
 
+
     const decryptedExpenses = expenses.map(expense => {
       console.log('DESCRIPTOGRAFANDO DESPESA:', expense);
       let description = expense.description;
