@@ -6,6 +6,7 @@ const { exec } = require("child_process");
 const app = express();
 const PORT = 9000;
 const domain = "planejadordasgalaxias.com.br";
+import nodemailer from 'nodemailer';
 
 // Caminhos para os certificados SSL gerados pelo Certbot
 const options = {
@@ -26,7 +27,7 @@ app.post("/github-webhook", (req, res) => {
 
         exec(
             `git pull && cd /var/www/PlanejadorDeGastosDasGalaxias/frontend && pnpm i && export $(grep -v '^#' .env | xargs) && pnpm build`,
-            (err, stdout, stderr) => {
+            async (err, stdout, stderr) => {
                 if (err) {
                     console.error(`Erro no frontend: ${stderr}`);
                     return;
@@ -44,12 +45,33 @@ app.post("/github-webhook", (req, res) => {
                         }
                         console.log(`Backend: ${stdout}`);
                         console.log("WEBHOOK FINALIZADO COM SUCESSO!!!!!");
+
+                        // Enviar e-mail de notificação
+                        const transporter = nodemailer.createTransport({
+                            service: 'gmail',
+                            auth: {
+                                user: 'planejadordegastosdasgalaxias@gmail.com',
+                                pass: 'vzuwyhqfusbbzsps',
+                            },
+                        });
+
+                        const msg = {
+                            from: '"Planejador Das Galáxias" <planejadordegastosdasgalaxias@gmail.com>',
+                            to: "luizguestape54@hotmail.com",
+                            subject: 'Webhook finalizado com sucesso',
+                            html: `
+                                <h1> Webhook finalizado com sucesso</h1>
+                            `,
+                        };
+                        transporter.sendMail(msg);
+
                     }
+
                 );
             }
         );
 
-        
+
         res.status(200).send("Webhook de push recebido e processamento iniciado.");
     } else {
         res.status(200).send("Evento não é um push. Ignorando.");

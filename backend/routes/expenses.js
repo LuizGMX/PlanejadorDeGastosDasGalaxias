@@ -35,6 +35,7 @@ router.get('/', async (req, res) => {
     });
 
     const decryptedExpenses = expenses.map(expense => {
+      console.log('DESCRIPTOGRAFANDO DESPESA:', expense);
       let description = expense.description;
       let amount = expense.amount;
 
