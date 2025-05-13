@@ -4,9 +4,11 @@ import { toast } from 'react-hot-toast';
 import AuthContext from '../../contexts/AuthContext';
 import '../../styles/Payment.css';
 import { Wallet, initMercadoPago } from '@mercadopago/sdk-react';
+import dotenv from 'dotenv';
+
 
 // Inicializar MercadoPago com a chave pública
-initMercadoPago("TEST-6843259428100870-092419-deed0d1c053a9c2d56093554d6a039c2-115322747");
+initMercadoPago(process.env.REACT_APP_MERCADOPAGO_PUBLIC_KEY);
 
 const Payment = () => {
   const { auth, apiInterceptor } = useContext(AuthContext);
