@@ -303,6 +303,8 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'O valor da despesa deve ser um número positivo' });
     }
 
+    console.log('Valor de parsedAmount antes da criptografia:', parsedAmount);
+
     // Validação e ajuste da data
     const adjustDate = (dateStr) => {
       if (!dateStr) throw new Error('Data inválida');
