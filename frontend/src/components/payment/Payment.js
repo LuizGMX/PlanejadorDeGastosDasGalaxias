@@ -65,6 +65,8 @@ const Payment = () => {
   const handlePayment = async () => {
     try {
       setProcessingPayment(true);
+      const uniqueReference = `${auth.userId}-${Date.now()}`; // Gera um código único com base no ID do usuário e timestamp
+
       const response = await apiInterceptor(
         `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_API_PREFIX ? `/${process.env.REACT_APP_API_PREFIX}` : ''}/payments/create-payment`,
         {
@@ -72,7 +74,10 @@ const Payment = () => {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${auth.token}`
-          }
+          },
+          body: JSON.stringify({
+            external_reference: uniqueReference // Adiciona o campo external_reference
+          })
         }
       );
 
@@ -290,4 +295,4 @@ const Payment = () => {
   );
 };
 
-export default Payment; 
+export default Payment;
