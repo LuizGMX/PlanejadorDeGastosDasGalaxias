@@ -70,9 +70,19 @@ export default (sequelize) => {
         this.setDataValue('amount', Number(numValue.toFixed(2)));
       }
     },
+    amount_iv: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      description: 'IV usado para descriptografar o valor'
+    },
     description: {
       type: DataTypes.STRING,
       allowNull: false
+    },
+    description_iv: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      description: 'IV usado para descriptografar a descrição'
     },
     expense_date: {
       type: DataTypes.DATE,

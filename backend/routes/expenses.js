@@ -328,6 +328,13 @@ router.post('/', async (req, res) => {
     const { encryptedData: encryptedDescription, iv: descriptionIv } = encrypt(description);
     const { encryptedData: encryptedAmount, iv: amountIv } = encrypt(parsedAmount.toFixed(2).toString());
 
+    console.log('Dados enviados para o banco de dados:', {
+      description: encryptedDescription,
+      description_iv: descriptionIv,
+      amount: encryptedAmount,
+      amount_iv: amountIv
+    });
+
     const expenses = [];
     const installmentGroupId = has_installments ? uuidv4() : null;
     const recurringGroupId = is_recurring ? uuidv4() : null;
