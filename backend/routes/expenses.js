@@ -303,6 +303,7 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'O valor da despesa deve ser um número positivo' });
     }
 
+    console.log('Valor bruto recebido para amount:', rawAmount);
     console.log('Valor de parsedAmount antes da criptografia:', parsedAmount);
 
     // Validação e ajuste da data
@@ -329,6 +330,9 @@ router.post('/', async (req, res) => {
     // Ensure IV is generated and stored correctly during encryption
     const { encryptedData: encryptedDescription, iv: descriptionIv } = encrypt(description);
     const { encryptedData: encryptedAmount, iv: amountIv } = encrypt(parsedAmount.toFixed(2).toString());
+
+    console.log('Valor criptografado para amount:', encryptedAmount);
+    console.log('IV gerado para amount:', amountIv);
 
     console.log('Dados enviados para o banco de dados:', {
       description: encryptedDescription,

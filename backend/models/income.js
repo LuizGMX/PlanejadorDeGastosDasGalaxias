@@ -18,36 +18,28 @@ export default (sequelize) => {
       onDelete: 'CASCADE'
     },
     amount: {
-      type: DataTypes.DECIMAL(10, 2),
+      type: DataTypes.TEXT,
       allowNull: false,
       validate: {
-        min: 0,
         isValidAmount(value) {
-          const numValue = Number(value);
-          if (isNaN(numValue)) {
-            throw new Error('O valor deve ser um número válido');
-          }
-          if (numValue < 0) {
-            throw new Error('O valor não pode ser negativo');
+          if (typeof value !== 'string') {
+            throw new Error('O valor deve ser uma string criptografada');
           }
         }
       },
       get() {
-        const value = this.getDataValue('amount');
-        if (value === null || value === undefined) return 0;
-        return Number(parseFloat(value).toFixed(2));
+        const encryptedValue = this.getDataValue('amount');
+        if (!encryptedValue) return null;
+        // Add decryption logic here
+        return encryptedValue;
       },
       set(value) {
-        if (value === null || value === undefined) {
-          this.setDataValue('amount', 0);
+        if (!value) {
+          this.setDataValue('amount', null);
           return;
         }
-        const numValue = Number(value);
-        if (isNaN(numValue)) {
-          this.setDataValue('amount', 0);
-          return;
-        }
-        this.setDataValue('amount', Number(numValue.toFixed(2)));
+        // Add encryption logic here
+        this.setDataValue('amount', value);
       }
     },
     amount_iv: {
