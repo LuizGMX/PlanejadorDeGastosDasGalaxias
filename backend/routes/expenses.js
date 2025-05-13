@@ -22,7 +22,7 @@ const calculateRecurringExpenseOccurrences = async (expense, startDate, endDate)
   return calculateRecurringOccurrences(expense, startDate, endDate, 'expense_date');
 };
 
-// Ensure proper decryption by validating IVs and encrypted data
+// Adicionando logs detalhados para depuração
 router.get('/', async (req, res) => {
   try {
     const expenses = await Expense.findAll({
@@ -34,9 +34,15 @@ router.get('/', async (req, res) => {
       order: [['expense_date', 'DESC']]
     });
 
-
     const decryptedExpenses = expenses.map(expense => {
-      console.log('DESCRIPTOGRAFANDO DESPESA:', expense);
+      console.log('DESCRIPTOGRAFANDO DESPESA:', {
+        id: expense.id,
+        description: expense.description,
+        description_iv: expense.description_iv,
+        amount: expense.amount,
+        amount_iv: expense.amount_iv
+      });
+
       let description = expense.description;
       let amount = expense.amount;
 
@@ -44,10 +50,12 @@ router.get('/', async (req, res) => {
         if (expense.description && expense.description_iv) {
           const ivDesc = Buffer.from(expense.description_iv, 'hex');
           description = decrypt(expense.description, ivDesc);
+          console.log(`Descrição descriptografada para despesa ID ${expense.id}:`, description);
         }
         if (expense.amount && expense.amount_iv) {
           const ivAmt = Buffer.from(expense.amount_iv, 'hex');
           amount = decrypt(expense.amount, ivAmt);
+          console.log(`Valor descriptografado para despesa ID ${expense.id}:`, amount);
         }
       } catch (err) {
         console.error(`Erro ao descriptografar despesa ID ${expense.id}:`, err);
