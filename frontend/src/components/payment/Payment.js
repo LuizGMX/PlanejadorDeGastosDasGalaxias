@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import AuthContext from '../../contexts/AuthContext';
 import '../../styles/Payment.css';
-import { Wallet, initMercadoPago } from '@mercadopago/sdk-react';
-import dotenv from 'dotenv';
+import { initMercadoPago } from '@mercadopago/sdk-react';
+
 
 
 // Inicializar MercadoPago com a chave pública
