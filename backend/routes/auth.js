@@ -357,6 +357,19 @@ router.post('/verify-code', async (req, res) => {
 
     // Se for um novo usuário, cria o usuário
     if (isNewUser && !user) {
+      // Debugging log to verify data before creating the user
+      console.log('Dados para criar usuário:', {
+        email,
+        name,
+        desired_budget: financialGoalAmount || 0
+      });
+
+      // Ensure name and email are not null
+      if (!name || !email) {
+        throw new Error('Nome e email são obrigatórios para criar um novo usuário.');
+      }
+
+      // Ensure all required fields are passed to User.create
       user = await User.create({
         email,
         name,
