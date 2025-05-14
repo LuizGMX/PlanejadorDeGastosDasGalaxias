@@ -1,12 +1,16 @@
-const https = require("https");
-const fs = require("fs");
-const express = require("express");
-const bodyParser = require("body-parser");
-const { exec } = require("child_process");
+import https from "https";
+import fs from "fs";
+import express from "express";
+import bodyParser from "body-parser";
+import { exec } from "child_process";
+import nodemailer from "nodemailer";
+import dotenv from "dotenv";
+
+dotenv.config();
+
 const app = express();
 const PORT = 9000;
 const domain = "planejadordasgalaxias.com.br";
-import nodemailer from 'nodemailer';
 
 // Caminhos para os certificados SSL gerados pelo Certbot
 const options = {
