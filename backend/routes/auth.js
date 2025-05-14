@@ -357,8 +357,8 @@ router.post('/verify-code', async (req, res) => {
 
     // Se for um novo usuário, cria o usuário
     if (isNewUser && !user) {
-      // Debugging log to verify data before creating the user
-      console.log('Dados para criar usuário:', {
+      // Log the exact data being passed to Sequelize
+      console.log('Dados enviados para Sequelize User.create:', {
         email,
         name,
         desired_budget: financialGoalAmount || 0
@@ -366,10 +366,10 @@ router.post('/verify-code', async (req, res) => {
 
       // Ensure name and email are not null
       if (!name || !email) {
+        console.error('Erro: Nome ou email está nulo antes de User.create');
         throw new Error('Nome e email são obrigatórios para criar um novo usuário.');
       }
 
-      // Ensure all required fields are passed to User.create
       user = await User.create({
         email,
         name,
