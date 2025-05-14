@@ -171,7 +171,7 @@ const Payment = () => {
                   onClick={handlePayment}
                   disabled={processingPayment}
                 >
-                  {processingPayment ? 'Processando...' : 'Assinar Agora - R$ 4,99/mês (Pagamento único de R$ 49,90 por ano, ou divida em 10x de R$ 4,99)'}
+                  {processingPayment ? 'Processando...' : 'Assinar Agora - R$ 5,54/mês (Pagamento único de R$ 49,90 por ano, ou divida em 9x de R$ 5,54)'}
                 </button>
                 
                 <div className="subscription-benefits">
