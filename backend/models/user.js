@@ -227,12 +227,12 @@ export default (sequelize) => {
           if (user.changed(field) && user[field]) {
             try {
               const encrypted = encrypt(user[field].toString());
-              user[field] = encrypted.encryptedData;
-              user[`${field}_iv`] = encrypted.iv;
+              user.setDataValue(field, encrypted.encryptedData);
+              user.setDataValue(`${field}_iv`, encrypted.iv);
             } catch (error) {
               console.error(`Failed to encrypt field: ${field}`, error);
               // Retain the original value if encryption fails
-              user[field] = user[field];
+              user.setDataValue(field, user[field]);
             }
           }
         });
