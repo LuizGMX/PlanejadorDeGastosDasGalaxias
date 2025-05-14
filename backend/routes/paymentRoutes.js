@@ -4,6 +4,7 @@ import { User, Payment } from '../models/index.js';
 import { authenticate } from '../middleware/auth.js';
 import { Op } from 'sequelize';
 import sequelize from '../config/db.js';
+dotenv.config();
 
 // Importação do MercadoPago com fallback
 let MercadoPagoConfig, Preference;
@@ -34,7 +35,7 @@ const initMercadoPago = async () => {
     // Cria implementações de fallback para ambiente de desenvolvimento
     MercadoPagoConfig = class MercadoPagoConfig {
       constructor(config) {
-        this.accessToken = config?.accessToken || 'test-token';
+        this.accessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN || 'test-token';
         console.warn('Usando implementação de fallback para MercadoPagoConfig');
       }
     };
@@ -74,7 +75,6 @@ initMercadoPago().then(success => {
   console.error('Erro ao inicializar MercadoPago:', err);
 });
 
-dotenv.config();
 const router = Router();
 
 // Constante com o preço da assinatura
