@@ -81,6 +81,11 @@ export default (sequelize) => {
         this.setDataValue('telegram_chat_id', encrypt(value));
       }
     },
+    telegram_chat_id_iv: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      description: 'IV used for decrypting the telegram_chat_id field'
+    },
     telegram_username: {
       type: DataTypes.STRING,
       allowNull: true,
@@ -96,6 +101,11 @@ export default (sequelize) => {
         }
         this.setDataValue('telegram_username', encrypt(value));
       }
+    },
+    telegram_username_iv: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      description: 'IV used for decrypting the telegram_username field'
     },
     telegram_verified: {
       type: DataTypes.BOOLEAN,
@@ -117,14 +127,35 @@ export default (sequelize) => {
         this.setDataValue('financial_goal_name', encrypt(value));
       }
     },
-    financial_goal_amount: {
-      type: DataTypes.DECIMAL(10, 2),
+    financial_goal_name_iv: {
+      type: DataTypes.STRING,
       allowNull: true,
-      defaultValue: 0,
+      description: 'IV used for decrypting the financial_goal_name field'
+    },
+    financial_goal_amount: {
+      type: DataTypes.STRING,
+      allowNull: true,
       get() {
-        const value = this.getDataValue('financial_goal_amount');
-        return value === null ? 0 : Number(value);
+        const encryptedValue = this.getDataValue('financial_goal_amount');
+        const iv = this.getDataValue('financial_goal_amount_iv');
+        if (!encryptedValue || !iv) return null;
+        return decrypt(encryptedValue, iv);
+      },
+      set(value) {
+        if (!value) {
+          this.setDataValue('financial_goal_amount', null);
+          this.setDataValue('financial_goal_amount_iv', null);
+          return;
+        }
+        const { encrypted, iv } = encrypt(value.toString());
+        this.setDataValue('financial_goal_amount', encrypted);
+        this.setDataValue('financial_goal_amount_iv', iv);
       }
+    },
+    financial_goal_amount_iv: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      description: 'IV used for decrypting the financial_goal_amount field'
     },
     financial_goal_period_type: {
       type: DataTypes.ENUM('days', 'months', 'years'),
@@ -185,6 +216,7 @@ export default (sequelize) => {
           'telegram_chat_id',
           'telegram_username',
           'financial_goal_name',
+          'financial_goal_amount',
           'financial_goal_period_type',
           'financial_goal_period_value',
           'financial_goal_start_date',

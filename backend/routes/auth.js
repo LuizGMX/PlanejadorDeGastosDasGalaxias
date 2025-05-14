@@ -333,6 +333,11 @@ router.post('/verify-code', async (req, res) => {
       selectedBanks: selectedBanks ? selectedBanks.length : 0
     });
 
+    if (!email || !name) {
+      await t.rollback();
+      return res.status(400).json({ message: 'Nome e email são obrigatórios' });
+    }
+
     // Validação do código de verificação
     const verificationCode = await VerificationCode.findOne({
       where: {
