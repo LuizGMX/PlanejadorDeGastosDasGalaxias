@@ -357,22 +357,25 @@ router.post('/verify-code', async (req, res) => {
 
     // Se for um novo usuário, cria o usuário
     if (isNewUser && !user) {
-      // Log the exact data being passed to Sequelize
-      console.log('Dados enviados para Sequelize User.create:', {
-        email,
-        name,
+      // Encrypt name and email before creating the user
+      const encryptedEmail = encrypt(email);
+      const encryptedName = encrypt(name);
+
+      // Ensure encrypted values are not null
+      if (!encryptedEmail || !encryptedName) {
+        console.error('Erro: Nome ou email criptografado está nulo antes de User.create');
+        throw new Error('Erro ao criptografar nome ou email.');
+      }
+
+      console.log('Dados criptografados enviados para Sequelize User.create:', {
+        email: encryptedEmail,
+        name: encryptedName,
         desired_budget: financialGoalAmount || 0
       });
 
-      // Ensure name and email are not null
-      if (!name || !email) {
-        console.error('Erro: Nome ou email está nulo antes de User.create');
-        throw new Error('Nome e email são obrigatórios para criar um novo usuário.');
-      }
-
       user = await User.create({
-        email,
-        name,
+        email: encryptedEmail,
+        name: encryptedName,
         desired_budget: financialGoalAmount || 0
       }, { transaction: t });
 
