@@ -5,6 +5,7 @@ import { User, VerificationCode, UserBank, Bank, Payment, FinancialGoal } from '
 import { Op } from 'sequelize';
 import sequelize from '../config/db.js';
 import nodemailer from 'nodemailer';
+import { encrypt } from '../utils/crypto.js';
 
 dotenv.config();
 
