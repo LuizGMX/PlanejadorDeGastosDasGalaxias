@@ -358,6 +358,17 @@ router.post('/verify-code', async (req, res) => {
 
     // Se for um novo usuário, cria o usuário
     if (isNewUser && !user) {
+      // Validate and log input types before encryption
+      if (typeof email !== 'string' || typeof name !== 'string') {
+        console.error('Erro: email ou name não são strings:', { email, name });
+        throw new Error('Email e nome devem ser strings para criptografia.');
+      }
+
+      console.log('Tipos de dados antes da criptografia:', {
+        emailType: typeof email,
+        nameType: typeof name
+      });
+
       // Encrypt name and email before creating the user
       const encryptedEmail = encrypt(email);
       const encryptedName = encrypt(name);
