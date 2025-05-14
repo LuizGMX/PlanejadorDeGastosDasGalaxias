@@ -78,7 +78,7 @@ initMercadoPago().then(success => {
 const router = Router();
 
 // Constante com o preço da assinatura
-const SUBSCRIPTION_PRICE = 59.90;
+const SUBSCRIPTION_PRICE = 49.90;
 
 
 // Verificação de acesso do usuário
@@ -379,7 +379,7 @@ router.post('/create-payment', authenticate, async (req, res) => {
           excluded_payment_types: [
             { id: 'ticket' } // Excluir pagamento por boleto
           ],
-          installments: 12, // Parcelas
+          installments: 13, // Parcelas
           default_installments: 1
         },
         // URLs de retorno
