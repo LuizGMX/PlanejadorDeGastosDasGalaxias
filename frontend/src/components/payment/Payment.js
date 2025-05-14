@@ -6,7 +6,7 @@ import '../../styles/Payment.css';
 import { initMercadoPago } from '@mercadopago/sdk-react';
 
 
-
+console.log('Chave pública do Mercado Pago:', process.env.REACT_APP_MERCADOPAGO_PUBLIC_KEY);
 // Inicializar MercadoPago com a chave pública
 initMercadoPago(process.env.REACT_APP_MERCADOPAGO_PUBLIC_KEY);
 
