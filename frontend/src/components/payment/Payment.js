@@ -171,7 +171,7 @@ const Payment = () => {
                   onClick={handlePayment}
                   disabled={processingPayment}
                 >
-                  {processingPayment ? 'Processando...' : 'Assinar Agora - R$ 4,99/mês (Pagamento único de R$ 59,90 por ano, ou divida em 12x de R$ 4,99)'}
+                  {processingPayment ? 'Processando...' : 'Assinar Agora - R$ 4,99/mês (Pagamento único de R$ 49,90 por ano, ou divida em 10x de R$ 4,99)'}
                 </button>
                 
                 <div className="subscription-benefits">
@@ -190,8 +190,7 @@ const Payment = () => {
         
         <div className="payment-info">
           <h3>Informações de Pagamento</h3>
-          <p>Aceitamos pagamentos seguros através do Mercado Pago</p>
-          <p>A assinatura é renovada anualmente por R$ 59,90</p>
+          <p>Aceitamos pagamentos seguros através do Mercado Pago</p>          
         </div>
       </div>
     </div>
