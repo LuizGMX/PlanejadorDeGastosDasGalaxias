@@ -225,7 +225,9 @@ export default (sequelize) => {
         ];
         fieldsToEncrypt.forEach((field) => {
           if (user.changed(field) && user[field]) {
+            console.log(`Encrypting field: ${field}, Original value:`, user[field]);
             user[field] = encrypt(user[field].toString());
+            console.log(`Encrypted value for field: ${field}:`, user[field]);
           }
         });
       }
