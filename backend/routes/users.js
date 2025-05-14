@@ -61,19 +61,21 @@ router.get('/', authenticate, async (req, res) => {
   }
 });
 
-// Rota para buscar usuário por ID
+// Route to get user details
 router.get('/:id', authenticate, async (req, res) => {
   try {
-    const user = await User.findByPk(req.params.id, {
-      attributes: ['id', 'name', 'email', 'created_at', 'updated_at']
-    });
+    const user = await User.findByPk(req.params.id);
     if (!user) {
-      return res.status(404).json({ message: 'Usuário não encontrado' });
+      return res.status(404).json({ message: 'User not found' });
     }
-    res.json(user);
+    res.json({
+      id: user.id,
+      name: user.name,
+      email: user.getDecryptedEmail(), // Decrypt email before sending
+    });
   } catch (error) {
-    console.error('Erro ao buscar usuário:', error);
-    res.status(500).json({ message: 'Erro ao buscar usuário' });
+    console.error('Error fetching user:', error);
+    res.status(500).json({ message: 'Error fetching user' });
   }
 });
 
@@ -337,4 +339,27 @@ router.post('/change-email/verify', authenticate, async (req, res) => {
   }
 });
 
-export default router; 
+// Route to create a new user
+router.post('/create', async (req, res) => {
+  try {
+    const { name, email, ...otherData } = req.body;
+    const newUser = await User.create({
+      name,
+      email, // Will be encrypted by the model hook
+      ...otherData
+    });
+    res.status(201).json({
+      message: 'User created successfully',
+      user: {
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.getDecryptedEmail(), // Decrypt email before sending
+      }
+    });
+  } catch (error) {
+    console.error('Error creating user:', error);
+    res.status(500).json({ message: 'Error creating user' });
+  }
+});
+
+export default router;
