@@ -78,7 +78,7 @@ initMercadoPago().then(success => {
 const router = Router();
 
 // Constante com o preço da assinatura
-const SUBSCRIPTION_PRICE = 49.90;
+const SUBSCRIPTION_PRICE = 1;
 
 
 // Verificação de acesso do usuário
