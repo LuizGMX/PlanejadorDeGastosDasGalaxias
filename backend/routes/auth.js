@@ -369,9 +369,11 @@ router.post('/verify-code', async (req, res) => {
         nameType: typeof name
       });
 
-      // Encrypt name and email before creating the user
-      const encryptedEmail = encrypt(email);
-      const encryptedName = encrypt(name);
+      // Encrypt name and email before creating the user (store only the encrypted string)
+      const encryptedEmailObj = encrypt(String(email));
+      const encryptedNameObj = encrypt(String(name));
+      const encryptedEmail = encryptedEmailObj.encryptedData;
+      const encryptedName = encryptedNameObj.encryptedData;
 
       // Ensure encrypted values are not null
       if (!encryptedEmail || !encryptedName) {
