@@ -358,11 +358,21 @@ router.post('/verify-code', async (req, res) => {
 
     // Se for um novo usuário, cria o usuário
     if (isNewUser && !user) {
+      // Debug: log dados enviados para o User.create
+      console.log('User.create payload:', {
+        email: String(email),
+        name: String(name),
+        desired_budget: financialGoalAmount || 0
+      });
+
       user = await User.create({
         email: String(email),
         name: String(name),
         desired_budget: financialGoalAmount || 0
       }, { transaction: t });
+
+      // Debug: log resultado do User.create
+      console.log('User criado:', user ? user.toJSON() : user);
 
       // Se houver meta financeira, cria
       if (financialGoalName && financialGoalAmount) {
