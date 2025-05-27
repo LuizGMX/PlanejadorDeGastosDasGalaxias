@@ -375,10 +375,16 @@ router.post('/verify-code', async (req, res) => {
       const encryptedEmail = encryptedEmailObj.encryptedData;
       const encryptedName = encryptedNameObj.encryptedData;
 
-      // Ensure encrypted values are not null
-      if (!encryptedEmail || !encryptedName) {
-        console.error('Erro: Nome ou email criptografado está nulo antes de User.create');
-        throw new Error('Erro ao criptografar nome ou email.');
+      // Extra logging for debugging encryption output
+      console.log('Resultado do encrypt(email):', encryptedEmailObj);
+      console.log('Resultado do encrypt(name):', encryptedNameObj);
+      if (!encryptedEmail || typeof encryptedEmail !== 'string') {
+        console.error('Falha ao criptografar email:', encryptedEmailObj);
+        throw new Error('Falha ao criptografar email. Verifique as variáveis de ambiente KEY e IV.');
+      }
+      if (!encryptedName || typeof encryptedName !== 'string') {
+        console.error('Falha ao criptografar nome:', encryptedNameObj);
+        throw new Error('Falha ao criptografar nome. Verifique as variáveis de ambiente KEY e IV.');
       }
 
       console.log('Dados criptografados enviados para Sequelize User.create:', {
