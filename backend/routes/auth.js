@@ -315,6 +315,11 @@ router.post('/send-code', async (req, res) => {
 router.post('/verify-code', async (req, res) => {
   const t = await sequelize.transaction();
   try {
+    console.log('=== DEBUG VERIFY-CODE ===');
+    console.log('req.body completo:', JSON.stringify(req.body, null, 2));
+    console.log('typeof req.body:', typeof req.body);
+    console.log('Object.keys(req.body):', Object.keys(req.body));
+    
     const { 
       email, 
       code, 
@@ -327,14 +332,15 @@ router.post('/verify-code', async (req, res) => {
       selectedBanks 
     } = req.body;
 
-    console.log('Dados recebidos no verify-code:', {
-      email,
-      name,
-      isNewUser,
-      financialGoalName,
-      financialGoalAmount,
-      selectedBanks: selectedBanks ? selectedBanks.length : 0
-    });
+    console.log('=== VALORES EXTRAÍDOS ===');
+    console.log('email:', email, 'tipo:', typeof email);
+    console.log('code:', code, 'tipo:', typeof code);
+    console.log('isNewUser:', isNewUser, 'tipo:', typeof isNewUser);
+    console.log('name:', name, 'tipo:', typeof name);
+    console.log('financialGoalName:', financialGoalName, 'tipo:', typeof financialGoalName);
+    console.log('financialGoalAmount:', financialGoalAmount, 'tipo:', typeof financialGoalAmount);
+    console.log('selectedBanks:', selectedBanks, 'tipo:', typeof selectedBanks);
+    console.log('========================');
 
     if (!email || !code) {
       await t.rollback();
@@ -366,18 +372,35 @@ router.post('/verify-code', async (req, res) => {
 
     // Se for um novo usuário, cria o usuário
     if (isNewUser && !user) {
+      // Validação adicional antes de criar o usuário
+      if (!email || email === null || email === undefined || email === '') {
+        console.error('ERRO: Email inválido para criação do usuário:', email);
+        await t.rollback();
+        return res.status(400).json({ message: 'Email é obrigatório e não pode ser vazio' });
+      }
+      
+      if (!name || name === null || name === undefined || name === '') {
+        console.error('ERRO: Nome inválido para criação do usuário:', name);
+        await t.rollback();
+        return res.status(400).json({ message: 'Nome é obrigatório e não pode ser vazio' });
+      }
+
       // Debug: log dados enviados para o User.create
-      console.log('User.create payload:', {
+      console.log('=== CRIANDO USUÁRIO ===');
+      console.log('Email a ser usado:', email, 'String(email):', String(email));
+      console.log('Nome a ser usado:', name, 'String(name):', String(name));
+      console.log('Budget:', financialGoalAmount || 0);
+      
+      const userData = {
         email: String(email),
         name: String(name),
         desired_budget: financialGoalAmount || 0
-      });
+      };
+      
+      console.log('userData final:', userData);
+      console.log('=======================');
 
-      user = await User.create({
-        email: String(email),
-        name: String(name),  // Use the name from req.body directly
-        desired_budget: financialGoalAmount || 0
-      }, { transaction: t });
+      user = await User.create(userData, { transaction: t });
 
       // Debug: log resultado do User.create
       console.log('User criado:', user ? user.toJSON() : user);
