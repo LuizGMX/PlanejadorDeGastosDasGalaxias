@@ -391,17 +391,47 @@ router.post('/verify-code', async (req, res) => {
       console.log('Nome a ser usado:', name, 'String(name):', String(name));
       console.log('Budget:', financialGoalAmount || 0);
       
+      // Sanitizar e garantir que os valores não sejam null
+      const sanitizedEmail = email && email.toString().trim();
+      const sanitizedName = name && name.toString().trim();
+      const sanitizedBudget = financialGoalAmount ? Number(financialGoalAmount) : 0;
+      
+      // Validação final dos dados sanitizados
+      if (!sanitizedEmail || sanitizedEmail === 'null' || sanitizedEmail === 'undefined') {
+        console.error('ERRO: Email sanitizado inválido:', sanitizedEmail);
+        await t.rollback();
+        return res.status(400).json({ message: 'Email inválido após sanitização' });
+      }
+      
+      if (!sanitizedName || sanitizedName === 'null' || sanitizedName === 'undefined') {
+        console.error('ERRO: Nome sanitizado inválido:', sanitizedName);
+        await t.rollback();
+        return res.status(400).json({ message: 'Nome inválido após sanitização' });
+      }
+      
       const userData = {
-        email: String(email),
-        name: String(name),
-        desired_budget: financialGoalAmount || 0
+        email: sanitizedEmail,
+        name: sanitizedName,
+        desired_budget: sanitizedBudget
       };
       
-      console.log('userData final:', userData);
+      console.log('userData final sanitizado:', userData);
       console.log('=======================');
 
       try {
-        user = await User.create(userData, { transaction: t });
+        // Usar build + save ao invés de create para ter mais controle
+        user = User.build(userData);
+        
+        // Log do objeto antes de salvar
+        console.log('=== OBJETO USER ANTES DE SALVAR ===');
+        console.log('user.email:', user.email);
+        console.log('user.name:', user.name);
+        console.log('user.desired_budget:', user.desired_budget);
+        console.log('user.dataValues:', user.dataValues);
+        console.log('==================================');
+        
+        await user.save({ transaction: t });
+        
         console.log('=== USUÁRIO CRIADO COM SUCESSO ===');
         console.log('User ID:', user.id);
         console.log('User dados:', user.toJSON());
@@ -425,12 +455,17 @@ router.post('/verify-code', async (req, res) => {
             });
           });
         }
+        
+        // Log adicional do objeto user no momento do erro
+        console.error('=== ESTADO DO OBJETO USER NO ERRO ===');
+        console.error('user.email:', user ? user.email : 'user é null');
+        console.error('user.name:', user ? user.name : 'user é null');
+        console.error('user.dataValues:', user ? user.dataValues : 'user é null');
+        console.error('====================================');
+        
         console.error('=============================');
         throw createError; // Re-throw para manter o comportamento original
       }
-
-      // Debug: log resultado do User.create
-      console.log('User criado:', user ? user.toJSON() : user);
 
       // Se houver meta financeira, cria
       if (financialGoalName && financialGoalAmount) {
