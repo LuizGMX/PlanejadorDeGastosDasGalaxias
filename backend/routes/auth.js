@@ -314,8 +314,8 @@ router.post('/send-code', async (req, res) => {
 
 router.post('/verify-code', async (req, res) => {
   const t = await sequelize.transaction();
-  try {
-    console.log('=== DEBUG VERIFY-CODE ===');
+
+   console.log('=== DEBUG VERIFY-CODE ===');
     console.log('req.body completo:', JSON.stringify(req.body, null, 2));
     console.log('typeof req.body:', typeof req.body);
     console.log('Object.keys(req.body):', Object.keys(req.body));
@@ -341,6 +341,8 @@ router.post('/verify-code', async (req, res) => {
     console.log('financialGoalAmount:', financialGoalAmount, 'tipo:', typeof financialGoalAmount);
     console.log('selectedBanks:', selectedBanks, 'tipo:', typeof selectedBanks);
     console.log('========================');
+
+  try {   
 
     if (!email || !code) {
       await t.rollback();
