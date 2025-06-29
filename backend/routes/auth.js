@@ -314,8 +314,8 @@ router.post('/send-code', async (req, res) => {
 
 router.post('/verify-code', async (req, res) => {
   const t = await sequelize.transaction();
-
-   console.log('=== DEBUG VERIFY-CODE ===');
+  try {
+    console.log('=== DEBUG VERIFY-CODE ===');
     console.log('req.body completo:', JSON.stringify(req.body, null, 2));
     console.log('typeof req.body:', typeof req.body);
     console.log('Object.keys(req.body):', Object.keys(req.body));
@@ -341,8 +341,6 @@ router.post('/verify-code', async (req, res) => {
     console.log('financialGoalAmount:', financialGoalAmount, 'tipo:', typeof financialGoalAmount);
     console.log('selectedBanks:', selectedBanks, 'tipo:', typeof selectedBanks);
     console.log('========================');
-
-  try {   
 
     if (!email || !code) {
       await t.rollback();
@@ -402,7 +400,34 @@ router.post('/verify-code', async (req, res) => {
       console.log('userData final:', userData);
       console.log('=======================');
 
-      user = await User.create(userData, { transaction: t });
+      try {
+        user = await User.create(userData, { transaction: t });
+        console.log('=== USUÁRIO CRIADO COM SUCESSO ===');
+        console.log('User ID:', user.id);
+        console.log('User dados:', user.toJSON());
+        console.log('==================================');
+      } catch (createError) {
+        console.error('=== ERRO AO CRIAR USUÁRIO ===');
+        console.error('Erro completo:', createError);
+        console.error('Nome do erro:', createError.name);
+        console.error('Mensagem:', createError.message);
+        console.error('Dados que foram enviados:', userData);
+        
+        if (createError.errors) {
+          console.error('Detalhes dos erros de validação:');
+          createError.errors.forEach((err, index) => {
+            console.error(`Erro ${index + 1}:`, {
+              message: err.message,
+              type: err.type,
+              path: err.path,
+              value: err.value,
+              validatorKey: err.validatorKey
+            });
+          });
+        }
+        console.error('=============================');
+        throw createError; // Re-throw para manter o comportamento original
+      }
 
       // Debug: log resultado do User.create
       console.log('User criado:', user ? user.toJSON() : user);
