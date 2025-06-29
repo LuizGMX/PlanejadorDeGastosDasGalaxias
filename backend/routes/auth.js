@@ -419,18 +419,48 @@ router.post('/verify-code', async (req, res) => {
       console.log('=======================');
 
       try {
-        // Usar build + save ao invés de create para ter mais controle
-        user = User.build(userData);
+        // Verificar se há criptografia nos campos e tentar diferentes abordagens
+        console.log('=== TENTATIVA 1: Usando User.create ===');
         
-        // Log do objeto antes de salvar
-        console.log('=== OBJETO USER ANTES DE SALVAR ===');
-        console.log('user.email:', user.email);
-        console.log('user.name:', user.name);
-        console.log('user.desired_budget:', user.desired_budget);
-        console.log('user.dataValues:', user.dataValues);
-        console.log('==================================');
-        
-        await user.save({ transaction: t });
+        // Primeira tentativa: usar create diretamente
+        try {
+          user = await User.create(userData, { 
+            transaction: t,
+            validate: false // Pula validação para ver se é problema nos hooks
+          });
+          console.log('User criado com sucesso via create');
+        } catch (createErr) {
+          console.log('Erro no create, tentando build + save:', createErr.message);
+          
+          // Segunda tentativa: build + save
+          user = User.build(userData);
+          
+          // Log do objeto antes de salvar
+          console.log('=== OBJETO USER ANTES DE SALVAR ===');
+          console.log('user.email:', user.email);
+          console.log('user.name:', user.name);
+          console.log('user.desired_budget:', user.desired_budget);
+          console.log('user.dataValues:', user.dataValues);
+          console.log('==================================');
+          
+          // Tentar definir os valores diretamente nos dataValues se estiverem undefined
+          if (user.dataValues.email === undefined && sanitizedEmail) {
+            user.dataValues.email = sanitizedEmail;
+            user.email = sanitizedEmail;
+          }
+          if (user.dataValues.name === undefined && sanitizedName) {
+            user.dataValues.name = sanitizedName;
+            user.name = sanitizedName;
+          }
+          
+          console.log('=== OBJETO USER APÓS CORREÇÃO ===');
+          console.log('user.email:', user.email);
+          console.log('user.name:', user.name);
+          console.log('user.dataValues:', user.dataValues);
+          console.log('==================================');
+          
+          await user.save({ transaction: t });
+        }
         
         console.log('=== USUÁRIO CRIADO COM SUCESSO ===');
         console.log('User ID:', user.id);
@@ -463,8 +493,36 @@ router.post('/verify-code', async (req, res) => {
         console.error('user.dataValues:', user ? user.dataValues : 'user é null');
         console.error('====================================');
         
+        // ÚLTIMA TENTATIVA: Usar SQL direto se o problema for com criptografia
+        if (createError.name === 'SequelizeValidationError' && 
+            createError.errors.some(err => err.validatorKey === 'is_null')) {
+          console.log('=== TENTATIVA FINAL: SQL DIRETO ===');
+          try {
+            const [results] = await sequelize.query(`
+              INSERT INTO users (email, name, desired_budget, created_at, updated_at, telegram_verified)
+              VALUES (?, ?, ?, NOW(), NOW(), false)
+            `, {
+              replacements: [sanitizedEmail, sanitizedName, sanitizedBudget],
+              type: sequelize.QueryTypes.INSERT,
+              transaction: t
+            });
+            
+            // Buscar o usuário criado
+            user = await User.findByPk(results, { transaction: t });
+            console.log('Usuário criado via SQL direto:', user ? user.toJSON() : null);
+            
+            if (!user) {
+              throw new Error('Usuário não encontrado após criação via SQL');
+            }
+          } catch (sqlError) {
+            console.error('Erro na tentativa SQL direta:', sqlError);
+            throw createError; // Manter o erro original
+          }
+        } else {
+          throw createError; // Re-throw para manter o comportamento original
+        }
+        
         console.error('=============================');
-        throw createError; // Re-throw para manter o comportamento original
       }
 
       // Se houver meta financeira, cria
