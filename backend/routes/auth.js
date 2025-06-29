@@ -5,7 +5,6 @@ import { User, VerificationCode, UserBank, Bank, Payment, FinancialGoal } from '
 import { Op } from 'sequelize';
 import sequelize from '../config/db.js';
 import nodemailer from 'nodemailer';
-import { encrypt } from '../utils/crypto.js';
 
 dotenv.config();
 
@@ -330,13 +329,22 @@ router.post('/verify-code', async (req, res) => {
 
     console.log('Dados recebidos no verify-code:', {
       email,
+      name,
       isNewUser,
+      financialGoalName,
+      financialGoalAmount,
       selectedBanks: selectedBanks ? selectedBanks.length : 0
     });
 
-    if (!email || !name) {
+    if (!email || !code) {
       await t.rollback();
-      return res.status(400).json({ message: 'Nome e email são obrigatórios' });
+      return res.status(400).json({ message: 'Email e código são obrigatórios' });
+    }
+
+    // For new users, name is required
+    if (isNewUser && !name) {
+      await t.rollback();
+      return res.status(400).json({ message: 'Nome é obrigatório para novos usuários' });
     }
 
     // Validação do código de verificação
@@ -367,7 +375,7 @@ router.post('/verify-code', async (req, res) => {
 
       user = await User.create({
         email: String(email),
-        name: String(name),
+        name: String(name),  // Use the name from req.body directly
         desired_budget: financialGoalAmount || 0
       }, { transaction: t });
 
@@ -424,6 +432,12 @@ router.post('/verify-code', async (req, res) => {
         payment_amount: 0,
         payment_date: new Date()
       }, { transaction: t });
+    }
+
+    // For existing users, make sure we have the user
+    if (!user) {
+      await t.rollback();
+      return res.status(404).json({ message: 'Usuário não encontrado' });
     }
 
     // Associar bancos ao usuário, se houver
