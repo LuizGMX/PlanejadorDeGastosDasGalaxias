@@ -26,7 +26,7 @@ router.post('/init-verification', authenticate, async (req, res) => {
         message: 'Usuário não encontrado'
       });
     }
-    if (!user.email) {
+    if (!user.get("email")) {
       return res.status(400).json({
         success: false,
         message: 'Usuário não possui email cadastrado'
@@ -36,7 +36,7 @@ router.post('/init-verification', authenticate, async (req, res) => {
     // Verifica se já existe um código válido
     const existingCode = await VerificationCode.findOne({
       where: {
-        email: user.email,
+        email: user.get("email"),
         expires_at: {
           [Op.gt]: new Date()
         },
@@ -56,7 +56,7 @@ router.post('/init-verification', authenticate, async (req, res) => {
     // Remove códigos antigos
     await VerificationCode.destroy({
       where: {
-        email: user.email
+        email: user.get("email")
       }
     });
 
@@ -66,7 +66,7 @@ router.post('/init-verification', authenticate, async (req, res) => {
 
     // Salva o código
     await VerificationCode.create({
-      email: user.email,
+      email: user.get("email"),
       code: code,
       expires_at: new Date(Date.now() + 5 * 60 * 1000), // 5 minutos
       used: false
