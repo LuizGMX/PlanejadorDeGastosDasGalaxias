@@ -16,7 +16,7 @@ router.post('/init-verification', authenticate, async (req, res) => {
     const userId = req.user.id;
     console.log('Iniciando verificação para usuário:', userId);
 
-    const user = await User.findByPk(userId);
+    const user = await User.findByPk(userId).dataValues;
 
     console.log(user);
 
