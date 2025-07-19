@@ -1,7 +1,5 @@
 import { Router } from 'express';
 import { User, VerificationCode } from '../models/index.js';
-import { telegramService } from '../services/telegramService.js';
-import { sendVerificationEmail } from '../services/emailService.js';
 import { authenticate } from './auth.js';
 import { Op } from 'sequelize';
 
@@ -23,6 +21,12 @@ router.post('/init-verification', authenticate, async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Usuário não encontrado'
+      });
+    }
+    if (!user.email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Usuário não possui email cadastrado'
       });
     }
 

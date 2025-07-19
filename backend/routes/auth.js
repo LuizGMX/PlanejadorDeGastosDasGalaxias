@@ -5,6 +5,7 @@ import { User, VerificationCode, UserBank, Bank, Payment, FinancialGoal } from '
 import { Op } from 'sequelize';
 import sequelize from '../config/db.js';
 import nodemailer from 'nodemailer';
+import { encrypt } from '../utils/crypto.js';
 
 dotenv.config();
 
@@ -315,11 +316,6 @@ router.post('/send-code', async (req, res) => {
 router.post('/verify-code', async (req, res) => {
   const t = await sequelize.transaction();
   try {
-    console.log('=== DEBUG VERIFY-CODE ===');
-    console.log('req.body completo:', JSON.stringify(req.body, null, 2));
-    console.log('typeof req.body:', typeof req.body);
-    console.log('Object.keys(req.body):', Object.keys(req.body));
-    
     const { 
       email, 
       code, 
@@ -332,25 +328,15 @@ router.post('/verify-code', async (req, res) => {
       selectedBanks 
     } = req.body;
 
-    console.log('=== VALORES EXTRAÍDOS ===');
-    console.log('email:', email, 'tipo:', typeof email);
-    console.log('code:', code, 'tipo:', typeof code);
-    console.log('isNewUser:', isNewUser, 'tipo:', typeof isNewUser);
-    console.log('name:', name, 'tipo:', typeof name);
-    console.log('financialGoalName:', financialGoalName, 'tipo:', typeof financialGoalName);
-    console.log('financialGoalAmount:', financialGoalAmount, 'tipo:', typeof financialGoalAmount);
-    console.log('selectedBanks:', selectedBanks, 'tipo:', typeof selectedBanks);
-    console.log('========================');
+    console.log('Dados recebidos no verify-code:', {
+      email,
+      isNewUser,
+      selectedBanks: selectedBanks ? selectedBanks.length : 0
+    });
 
-    if (!email || !code) {
+    if (!email || !name) {
       await t.rollback();
-      return res.status(400).json({ message: 'Email e código são obrigatórios' });
-    }
-
-    // For new users, name is required
-    if (isNewUser && !name) {
-      await t.rollback();
-      return res.status(400).json({ message: 'Nome é obrigatório para novos usuários' });
+      return res.status(400).json({ message: 'Nome e email são obrigatórios' });
     }
 
     // Validação do código de verificação
@@ -372,158 +358,21 @@ router.post('/verify-code', async (req, res) => {
 
     // Se for um novo usuário, cria o usuário
     if (isNewUser && !user) {
-      // Validação adicional antes de criar o usuário
-      if (!email || email === null || email === undefined || email === '') {
-        console.error('ERRO: Email inválido para criação do usuário:', email);
-        await t.rollback();
-        return res.status(400).json({ message: 'Email é obrigatório e não pode ser vazio' });
-      }
-      
-      if (!name || name === null || name === undefined || name === '') {
-        console.error('ERRO: Nome inválido para criação do usuário:', name);
-        await t.rollback();
-        return res.status(400).json({ message: 'Nome é obrigatório e não pode ser vazio' });
-      }
-
       // Debug: log dados enviados para o User.create
-      console.log('=== CRIANDO USUÁRIO ===');
-      console.log('Email a ser usado:', email, 'String(email):', String(email));
-      console.log('Nome a ser usado:', name, 'String(name):', String(name));
-      console.log('Budget:', financialGoalAmount || 0);
-      
-      // Sanitizar e garantir que os valores não sejam null
-      const sanitizedEmail = email && email.toString().trim();
-      const sanitizedName = name && name.toString().trim();
-      const sanitizedBudget = financialGoalAmount ? Number(financialGoalAmount) : 0;
-      
-      // Validação final dos dados sanitizados
-      if (!sanitizedEmail || sanitizedEmail === 'null' || sanitizedEmail === 'undefined') {
-        console.error('ERRO: Email sanitizado inválido:', sanitizedEmail);
-        await t.rollback();
-        return res.status(400).json({ message: 'Email inválido após sanitização' });
-      }
-      
-      if (!sanitizedName || sanitizedName === 'null' || sanitizedName === 'undefined') {
-        console.error('ERRO: Nome sanitizado inválido:', sanitizedName);
-        await t.rollback();
-        return res.status(400).json({ message: 'Nome inválido após sanitização' });
-      }
-      
-      const userData = {
-        email: sanitizedEmail,
-        name: sanitizedName,
-        desired_budget: sanitizedBudget
-      };
-      
-      console.log('userData final sanitizado:', userData);
-      console.log('=======================');
+      console.log('User.create payload:', {
+        email: String(email),
+        name: String(name),
+        desired_budget: financialGoalAmount || 0
+      });
 
-      try {
-        // Verificar se há criptografia nos campos e tentar diferentes abordagens
-        console.log('=== TENTATIVA 1: Usando User.create ===');
-        
-        // Primeira tentativa: usar create diretamente
-        try {
-          user = await User.create(userData, { 
-            transaction: t,
-            validate: false // Pula validação para ver se é problema nos hooks
-          });
-          console.log('User criado com sucesso via create');
-        } catch (createErr) {
-          console.log('Erro no create, tentando build + save:', createErr.message);
-          
-          // Segunda tentativa: build + save
-          user = User.build(userData);
-          
-          // Log do objeto antes de salvar
-          console.log('=== OBJETO USER ANTES DE SALVAR ===');
-          console.log('user.email:', user.email);
-          console.log('user.name:', user.name);
-          console.log('user.desired_budget:', user.desired_budget);
-          console.log('user.dataValues:', user.dataValues);
-          console.log('==================================');
-          
-          // Tentar definir os valores diretamente nos dataValues se estiverem undefined
-          if (user.dataValues.email === undefined && sanitizedEmail) {
-            user.dataValues.email = sanitizedEmail;
-            user.email = sanitizedEmail;
-          }
-          if (user.dataValues.name === undefined && sanitizedName) {
-            user.dataValues.name = sanitizedName;
-            user.name = sanitizedName;
-          }
-          
-          console.log('=== OBJETO USER APÓS CORREÇÃO ===');
-          console.log('user.email:', user.email);
-          console.log('user.name:', user.name);
-          console.log('user.dataValues:', user.dataValues);
-          console.log('==================================');
-          
-          await user.save({ transaction: t });
-        }
-        
-        console.log('=== USUÁRIO CRIADO COM SUCESSO ===');
-        console.log('User ID:', user.id);
-        console.log('User dados:', user.toJSON());
-        console.log('==================================');
-      } catch (createError) {
-        console.error('=== ERRO AO CRIAR USUÁRIO ===');
-        console.error('Erro completo:', createError);
-        console.error('Nome do erro:', createError.name);
-        console.error('Mensagem:', createError.message);
-        console.error('Dados que foram enviados:', userData);
-        
-        if (createError.errors) {
-          console.error('Detalhes dos erros de validação:');
-          createError.errors.forEach((err, index) => {
-            console.error(`Erro ${index + 1}:`, {
-              message: err.message,
-              type: err.type,
-              path: err.path,
-              value: err.value,
-              validatorKey: err.validatorKey
-            });
-          });
-        }
-        
-        // Log adicional do objeto user no momento do erro
-        console.error('=== ESTADO DO OBJETO USER NO ERRO ===');
-        console.error('user.email:', user ? user.email : 'user é null');
-        console.error('user.name:', user ? user.name : 'user é null');
-        console.error('user.dataValues:', user ? user.dataValues : 'user é null');
-        console.error('====================================');
-        
-        // ÚLTIMA TENTATIVA: Usar SQL direto se o problema for com criptografia
-        if (createError.name === 'SequelizeValidationError' && 
-            createError.errors.some(err => err.validatorKey === 'is_null')) {
-          console.log('=== TENTATIVA FINAL: SQL DIRETO ===');
-          try {
-            const [results] = await sequelize.query(`
-              INSERT INTO users (email, name, desired_budget, created_at, updated_at, telegram_verified)
-              VALUES (?, ?, ?, NOW(), NOW(), false)
-            `, {
-              replacements: [sanitizedEmail, sanitizedName, sanitizedBudget],
-              type: sequelize.QueryTypes.INSERT,
-              transaction: t
-            });
-            
-            // Buscar o usuário criado
-            user = await User.findByPk(results, { transaction: t });
-            console.log('Usuário criado via SQL direto:', user ? user.toJSON() : null);
-            
-            if (!user) {
-              throw new Error('Usuário não encontrado após criação via SQL');
-            }
-          } catch (sqlError) {
-            console.error('Erro na tentativa SQL direta:', sqlError);
-            throw createError; // Manter o erro original
-          }
-        } else {
-          throw createError; // Re-throw para manter o comportamento original
-        }
-        
-        console.error('=============================');
-      }
+      user = await User.create({
+        email: String(email),
+        name: String(name),
+        desired_budget: financialGoalAmount || 0
+      }, { transaction: t });
+
+      // Debug: log resultado do User.create
+      console.log('User criado:', user ? user.toJSON() : user);
 
       // Se houver meta financeira, cria
       if (financialGoalName && financialGoalAmount) {
@@ -575,12 +424,6 @@ router.post('/verify-code', async (req, res) => {
         payment_amount: 0,
         payment_date: new Date()
       }, { transaction: t });
-    }
-
-    // For existing users, make sure we have the user
-    if (!user) {
-      await t.rollback();
-      return res.status(404).json({ message: 'Usuário não encontrado' });
     }
 
     // Associar bancos ao usuário, se houver
