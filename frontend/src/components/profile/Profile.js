@@ -24,6 +24,8 @@ const Profile = () => {
     financialGoalPeriodValue: auth.user?.financial_goal_period_value || ''
   });
 
+  console.log('Dados do usuário no Profile:', auth.user);
+
   // Estados da mudança de email
   const [emailChangeData, setEmailChangeData] = useState({
     current_email: auth.user?.email || '',
